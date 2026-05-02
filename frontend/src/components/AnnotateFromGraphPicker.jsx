@@ -196,7 +196,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10000,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   modal: {
     backgroundColor: '#faf9f6',
@@ -207,7 +207,7 @@ const styles = {
     maxHeight: '70vh',
     display: 'flex',
     flexDirection: 'column',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   header: {
     display: 'flex',
@@ -219,13 +219,13 @@ const styles = {
   title: {
     fontSize: '18px',
     fontWeight: '600',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#1a1a1a',
   },
   subtitle: {
     fontSize: '14px',
     color: '#888',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     marginTop: '2px',
   },
   closeBtn: {
@@ -235,7 +235,7 @@ const styles = {
     cursor: 'pointer',
     padding: '0 0 0 12px',
     color: '#666',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   body: {
     padding: '12px 20px 20px',
@@ -245,7 +245,7 @@ const styles = {
   hint: {
     fontSize: '14px',
     color: '#888',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     padding: '8px 0',
   },
   corpusSection: {
@@ -260,7 +260,7 @@ const styles = {
     border: 'none',
     borderBottom: '1px solid #eee',
     cursor: 'pointer',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontSize: '15px',
     textAlign: 'left',
   },
@@ -274,12 +274,12 @@ const styles = {
     fontWeight: '600',
     color: '#1a1a1a',
     flex: 1,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   docCount: {
     fontSize: '13px',
     color: '#999',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   docsContainer: {
     paddingLeft: '20px',
@@ -296,7 +296,7 @@ const styles = {
     border: '1px solid #e0e0e0',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontSize: '14px',
     textAlign: 'left',
     marginBottom: '4px',
@@ -304,7 +304,7 @@ const styles = {
   docTitle: {
     flex: 1,
     color: '#1a1a1a',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   tagBadge: {
     fontSize: '11px',
@@ -312,7 +312,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '3px',
     padding: '1px 5px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     flexShrink: 0,
   },
   existingSection: {
@@ -324,7 +324,7 @@ const styles = {
   existingLabel: {
     fontSize: '12px',
     color: '#999',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     padding: '2px 0 4px',
   },
   existingItem: {
@@ -333,12 +333,12 @@ const styles = {
   existingQuote: {
     fontSize: '12px',
     color: '#666',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   existingComment: {
     fontSize: '12px',
     color: '#888',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
 };
 

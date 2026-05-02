@@ -461,7 +461,7 @@ const styles = {
   conceptName: {
     margin: 0,
     fontSize: '28px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#111',
     fontWeight: '400',
     flex: 1,
@@ -469,7 +469,7 @@ const styles = {
   description: {
     marginBottom: '24px',
     fontSize: '15px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#888',
   },
   descriptionRow: {
@@ -492,7 +492,7 @@ const styles = {
     borderRight: '1px solid #bbb',
     cursor: 'pointer',
     fontSize: '13px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#888',
     whiteSpace: 'nowrap',
   },
@@ -515,7 +515,7 @@ const styles = {
   },
   pathAbove: {
     fontSize: '13px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#999',
     fontStyle: 'normal',
     marginBottom: '6px',
@@ -539,7 +539,7 @@ const styles = {
   },
   parentName: {
     fontSize: '18px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#111',
     fontWeight: '400',
     wordBreak: 'break-word',
@@ -557,13 +557,13 @@ const styles = {
   },
   voteCount: {
     fontSize: '14px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#555',
   },
   userVotedBadge: {
     fontSize: '11px',
     padding: '1px 6px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     border: '1px solid #333',
     color: '#333',
     borderRadius: '2px',
@@ -585,7 +585,7 @@ const styles = {
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '500',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#555',
     transition: 'all 0.2s',
   },
@@ -600,7 +600,7 @@ const styles = {
   },
   similarityBadge: {
     fontSize: '12px',
-    fontFamily: '"EB Garamond", "Garamond", "Georgia", serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     color: '#777',
     fontStyle: 'normal',
     cursor: 'default',

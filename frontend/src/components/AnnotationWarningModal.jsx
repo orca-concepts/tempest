@@ -52,7 +52,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10000,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   modal: {
     backgroundColor: '#fafaf7',
@@ -61,20 +61,20 @@ const styles = {
     padding: '28px 32px',
     maxWidth: 440,
     width: '90%',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   title: {
     fontSize: 20,
     fontWeight: 600,
     marginBottom: 14,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   body: {
     fontSize: 15,
     lineHeight: 1.55,
     color: '#333',
     marginBottom: 18,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   checkboxLabel: {
     display: 'flex',
@@ -84,7 +84,7 @@ const styles = {
     color: '#555',
     marginBottom: 20,
     cursor: 'pointer',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   checkbox: {
     cursor: 'pointer',
@@ -101,7 +101,7 @@ const styles = {
     backgroundColor: 'transparent',
     cursor: 'pointer',
     fontSize: 14,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   confirmBtn: {
     padding: '7px 18px',
@@ -111,7 +111,7 @@ const styles = {
     color: '#fff',
     cursor: 'pointer',
     fontSize: 14,
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
 };
 

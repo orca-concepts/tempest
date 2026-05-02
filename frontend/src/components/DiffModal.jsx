@@ -747,7 +747,7 @@ const styles = {
     maxHeight: '85vh',
     display: 'flex',
     flexDirection: 'column',
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
   },
   header: {
@@ -763,7 +763,7 @@ const styles = {
     fontSize: '20px',
     fontWeight: '600',
     color: '#333',
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
   },
   headerRight: {
     display: 'flex',
@@ -778,7 +778,7 @@ const styles = {
     gap: '6px',
   },
   thresholdSelect: {
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '13px',
     padding: '2px 4px',
     border: '1px solid #ccc',
@@ -786,7 +786,7 @@ const styles = {
     backgroundColor: '#fff',
   },
   addButton: {
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '14px',
     padding: '5px 12px',
     backgroundColor: '#333',
@@ -817,7 +817,7 @@ const styles = {
   },
   searchInput: {
     flex: 1,
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '15px',
     padding: '6px 10px',
     border: '1px solid #ccc',
@@ -825,7 +825,7 @@ const styles = {
     backgroundColor: '#fff',
   },
   searchButton: {
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '14px',
     padding: '6px 14px',
     backgroundColor: '#333',
@@ -835,7 +835,7 @@ const styles = {
     cursor: 'pointer',
   },
   searchCancelButton: {
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '14px',
     padding: '6px 14px',
     backgroundColor: 'transparent',
@@ -880,7 +880,7 @@ const styles = {
     gap: '8px',
   },
   backToResults: {
-    fontFamily: '"EB Garamond", "Garamond", Georgia, serif',
+    fontFamily: '"EB Garamond", Georgia, serif',
     fontSize: '13px',
     color: '#666',
     background: 'none',

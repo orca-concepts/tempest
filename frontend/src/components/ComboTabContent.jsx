@@ -496,7 +496,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
           <div style={styles.ownerSectionTitle}>Transfer ownership</div>
           {transferConfirm ? (
             <div>
-              <div style={{ fontSize: '14px', fontFamily: "'EB Garamond', serif", color: '#333', marginBottom: '10px' }}>
+              <div style={{ fontSize: '14px', fontFamily: "'EB Garamond', Georgia, serif", color: '#333', marginBottom: '10px' }}>
                 Transfer ownership of "{combo?.name}" to {transferConfirm.username}?
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -516,13 +516,13 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
                 style={styles.transferInput}
               />
               {transferFeedback && (
-                <div style={{ fontSize: '13px', fontFamily: "'EB Garamond', serif", color: '#333', marginTop: '6px' }}>{transferFeedback}</div>
+                <div style={{ fontSize: '13px', fontFamily: "'EB Garamond', Georgia, serif", color: '#333', marginTop: '6px' }}>{transferFeedback}</div>
               )}
               {transferInputFocused && transferResults.length > 0 && (
                 <div style={styles.transferDropdown}>
                   {transferResults.map(u => (
                     <div key={u.id} style={styles.transferResultRow}>
-                      <span style={{ fontSize: '14px', fontFamily: "'EB Garamond', serif", color: '#333' }}>
+                      <span style={{ fontSize: '14px', fontFamily: "'EB Garamond', Georgia, serif", color: '#333' }}>
                         {u.username}
                       </span>
                       <OrcidBadge orcidId={u.orcidId} />
@@ -709,7 +709,7 @@ const styles = {
   loadingContainer: {
     padding: '60px',
     textAlign: 'center',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontSize: '15px',
     color: '#888',
   },
@@ -733,20 +733,20 @@ const styles = {
   comboName: {
     margin: '0 0 4px 0',
     fontSize: '22px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontWeight: '600',
     color: '#333',
   },
   comboDescription: {
     margin: '0 0 6px 0',
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#666',
     lineHeight: '1.4',
   },
   metaLine: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
   },
   unsubscribeButton: {
@@ -757,7 +757,7 @@ const styles = {
     color: '#666',
     cursor: 'pointer',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   // Owner section
   ownerSection: {
@@ -773,7 +773,7 @@ const styles = {
   },
   ownerSectionTitle: {
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontWeight: '600',
     color: '#555',
   },
@@ -785,11 +785,11 @@ const styles = {
     color: 'white',
     cursor: 'pointer',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
   emptyHint: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
     padding: '8px 0',
   },
@@ -816,13 +816,13 @@ const styles = {
   },
   subconceptName: {
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontWeight: '600',
     color: '#333',
   },
   subconceptPath: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
   },
   removeButton: {
@@ -832,7 +832,7 @@ const styles = {
     fontSize: '12px',
     color: '#999',
     padding: '2px 4px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     flexShrink: 0,
   },
   // Transfer ownership (Phase 42c)
@@ -847,7 +847,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     backgroundColor: 'white',
     color: '#333',
     boxSizing: 'border-box',
@@ -881,7 +881,7 @@ const styles = {
     color: '#333',
     cursor: 'pointer',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     marginLeft: 'auto',
   },
   // Picker
@@ -898,19 +898,19 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     outline: 'none',
     boxSizing: 'border-box',
   },
   errorText: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#c33',
     marginTop: '4px',
   },
   hint: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
     marginTop: '6px',
   },
@@ -924,7 +924,7 @@ const styles = {
   searchResultItem: {
     padding: '6px 10px',
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     cursor: 'pointer',
     borderBottom: '1px solid #f0f0f0',
     color: '#333',
@@ -934,7 +934,7 @@ const styles = {
   },
   contextPickerHeader: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#555',
     marginBottom: '6px',
     display: 'flex',
@@ -947,7 +947,7 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     padding: 0,
     textDecoration: 'underline',
@@ -960,7 +960,7 @@ const styles = {
   contextItem: {
     padding: '6px 10px',
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     cursor: 'pointer',
     borderRadius: '4px',
     border: '1px solid #eee',
@@ -972,7 +972,7 @@ const styles = {
   },
   attrBadge: {
     fontSize: '11px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     padding: '1px 5px',
     border: '1px solid #ddd',
@@ -991,7 +991,7 @@ const styles = {
   filterBadgeActive: {
     padding: '2px 8px',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     borderRadius: '10px',
     backgroundColor: '#333',
     color: 'white',
@@ -1002,7 +1002,7 @@ const styles = {
   filterBadge: {
     padding: '2px 8px',
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     borderRadius: '10px',
     backgroundColor: 'transparent',
     color: '#999',
@@ -1013,7 +1013,7 @@ const styles = {
   },
   showAllLink: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     cursor: 'pointer',
     textDecoration: 'underline',
@@ -1030,21 +1030,21 @@ const styles = {
   },
   matchLabel: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     marginLeft: '16px',
     paddingRight: '2px',
   },
   matchHelper: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     marginBottom: '12px',
     padding: '0 0 4px 0',
   },
   sortOption: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     cursor: 'pointer',
     padding: '2px 6px',
@@ -1052,7 +1052,7 @@ const styles = {
   },
   sortOptionActive: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#333',
     fontWeight: '600',
     cursor: 'pointer',
@@ -1084,7 +1084,7 @@ const styles = {
   },
   docTitleLink: {
     fontSize: '15px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     fontWeight: '600',
     color: '#333',
     cursor: 'pointer',
@@ -1093,12 +1093,12 @@ const styles = {
   },
   corpusNameLabel: {
     fontSize: '12px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
   },
   quoteBlock: {
     fontSize: '14px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#555',
     paddingLeft: '12px',
     borderLeft: '2px solid #ddd',
@@ -1107,7 +1107,7 @@ const styles = {
   },
   commentBlock: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#666',
     margin: '4px 0',
     lineHeight: '1.4',
@@ -1117,7 +1117,7 @@ const styles = {
   },
   conceptBadge: {
     fontSize: '11px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#666',
     padding: '1px 7px',
     border: '1px solid #ddd',
@@ -1137,7 +1137,7 @@ const styles = {
   },
   voteButton: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     cursor: 'pointer',
     padding: '2px 6px',
@@ -1147,7 +1147,7 @@ const styles = {
   },
   voteButtonActive: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: 'white',
     cursor: 'pointer',
     padding: '2px 6px',
@@ -1157,18 +1157,18 @@ const styles = {
   },
   voteCountReadonly: {
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#888',
     padding: '2px 6px',
   },
   corpusVoteCount: {
     fontSize: '11px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#aaa',
   },
   meta: {
     fontSize: '11px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     color: '#aaa',
   },
   emptyState: {
@@ -1176,7 +1176,7 @@ const styles = {
     padding: '40px',
     fontSize: '15px',
     color: '#888',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
   },
 };
 

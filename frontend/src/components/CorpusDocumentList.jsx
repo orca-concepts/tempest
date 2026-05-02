@@ -487,7 +487,7 @@ const styles = {
     border: '1px solid #ccc',
     borderRadius: '4px',
     fontSize: '13px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     backgroundColor: '#faf9f6',
     outline: 'none',
     width: '150px',
@@ -501,7 +501,7 @@ const styles = {
     fontSize: '11px',
     color: '#999',
     padding: '0 2px',
-    fontFamily: "'EB Garamond', serif",
+    fontFamily: "'EB Garamond', Georgia, serif",
     lineHeight: 1,
   },
   myDocsEmpty: {

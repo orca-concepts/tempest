@@ -155,14 +155,7 @@ const UsingOrcaContent = ({ onImageClick }) => {
         and link the text-only documents in orca to where they are hosted elsewhere.
       </p>
 
-      <p style={usingOrcaStyles.useCase}>
-        Orca is open source (<a
-          href="https://github.com/orca-concepts/orca"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={usingOrcaStyles.subtleLink}
-        >https://github.com/orca-concepts/orca</a>). Educators and organizations can run their own instance for a controlled environment.
-      </p>
+   
 
       {/* Video 1 — link-out to YouTube */}
       <div style={{ margin: '32px 0' }}>

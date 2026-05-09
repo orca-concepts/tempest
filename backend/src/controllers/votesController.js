@@ -1571,15 +1571,6 @@ const votesController = {
         return res.status(400).json({ error: 'Cannot add web links to a hidden concept' });
       }
 
-      // Check for duplicate URL on this edge
-      const dupCheck = await pool.query(
-        'SELECT id FROM concept_links WHERE edge_id = $1 AND url = $2',
-        [edgeId, trimmedUrl]
-      );
-      if (dupCheck.rows.length > 0) {
-        return res.status(409).json({ error: 'This URL has already been added to this concept in this context' });
-      }
-
       // If user didn't supply a title, auto-fetch from OG metadata (up to 5s)
       let resolvedTitle = title ? title.trim().substring(0, 255) : null;
       if (!resolvedTitle) {
@@ -1980,6 +1971,7 @@ const votesController = {
           child_c.name AS concept_name,
           e.parent_id AS parent_concept_id,
           parent_c.name AS parent_concept_name,
+          e.graph_path,
           a.name AS attribute_name,
           cl.title,
           cl.comment,
@@ -1997,14 +1989,28 @@ const votesController = {
         WHERE cl.url = $1
           AND e.is_hidden = false
         GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,
-                 e.parent_id, parent_c.name, a.name,
+                 e.parent_id, parent_c.name, e.graph_path, a.name,
                  cl.title, cl.comment, cl.added_by, u.username, cl.created_at
         ORDER BY COUNT(clv.id) DESC, cl.created_at DESC
         LIMIT 200`,
         [trimmedUrl]
       );
 
-      res.json({ links: result.rows });
+      // Resolve graph_path concept names for path display
+      const allPathIds = new Set();
+      result.rows.forEach(r => {
+        if (r.graph_path) r.graph_path.forEach(id => allPathIds.add(id));
+      });
+      let pathNames = {};
+      if (allPathIds.size > 0) {
+        const namesRes = await pool.query(
+          'SELECT id, name FROM concepts WHERE id = ANY($1::integer[])',
+          [Array.from(allPathIds)]
+        );
+        namesRes.rows.forEach(r => { pathNames[r.id] = r.name; });
+      }
+
+      res.json({ links: result.rows, pathNames });
     } catch (error) {
       console.error('Error fetching web links by URL:', error);
       res.status(500).json({ error: 'Internal server error' });

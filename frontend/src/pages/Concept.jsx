@@ -9,7 +9,7 @@ import FlipView from '../components/FlipView';
 import SearchField from '../components/SearchField';
 import SwapModal from '../components/SwapModal';
 import VoteSetBar from '../components/VoteSetBar';
-import ConceptAnnotationPanel from '../components/ConceptAnnotationPanel';
+import ConceptLinksPanel from '../components/ConceptLinksPanel';
 import DiffModal from '../components/DiffModal';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 
@@ -28,6 +28,8 @@ const Concept = ({
   onNavigateToSuperconcept,
   ownedCombos = [],
   onComboEdgeAdded,
+  pendingScrollLinkId,
+  onPendingScrollLinkConsumed,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -823,7 +825,7 @@ const Concept = ({
           </div>
           {effectiveConceptId && effectiveViewMode !== 'tunnel' && (
             <div style={isNarrow ? styles.rightColumnNarrow : styles.rightColumn}>
-              <ConceptAnnotationPanel
+              <ConceptLinksPanel
                 conceptId={effectiveConceptId}
                 conceptName={concept.name}
                 path={effectivePath}
@@ -832,6 +834,9 @@ const Concept = ({
                 viewMode={effectiveViewMode}
                 onRequestLogin={onRequestLogin}
                 onNavigateToSuperconcept={onNavigateToSuperconcept}
+                onOpenConceptTab={onOpenConceptTab}
+                pendingScrollLinkId={pendingScrollLinkId}
+                onPendingScrollLinkConsumed={onPendingScrollLinkConsumed}
                 collapsible={isNarrow}
               />
             </div>

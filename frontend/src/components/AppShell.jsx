@@ -90,6 +90,9 @@ const AppShell = () => {
   // Phase 39e: Refresh key to signal ComboTabContent to reload after edge added from graph
   const [comboRefreshKey, setComboRefreshKey] = useState(0);
 
+  // Phase 58d: Pending scroll-to-link after cross-concept navigation
+  const [pendingScrollLinkId, setPendingScrollLinkId] = useState(null);
+
   // Phase 12b: Sidebar collapse state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -100,6 +103,8 @@ const AppShell = () => {
   const popstateInProgressRef = useRef(false);
   const activeTabRef = useRef(activeTab);
   useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
+  const graphTabsRef = useRef(graphTabs);
+  useEffect(() => { graphTabsRef.current = graphTabs; }, [graphTabs]);
 
   // Load all tabs + groups on mount (skip for guests)
   useEffect(() => {
@@ -565,10 +570,32 @@ const AppShell = () => {
     }
   }, [isGuest]);
 
-  const handleOpenConceptTab = useCallback(async (conceptId, path, conceptName, attributeName, sourceCorpusTabId, viewMode) => {
+  const handleOpenConceptTab = useCallback(async (conceptId, path, conceptName, attributeName, sourceCorpusTabId, viewMode, scrollToLinkId) => {
     const label = conceptName || 'Concept';
     const tabType = conceptId ? 'concept' : 'root';
     const effectiveViewMode = viewMode || 'children';
+
+    // Set pending scroll if a target link was specified (cross-concept instance navigation)
+    if (scrollToLinkId) setPendingScrollLinkId(scrollToLinkId);
+
+    // Check if a graph tab for this concept already exists — reuse it instead of creating a duplicate.
+    // Uses graphTabsRef to read fresh state (avoids stale closure in useCallback).
+    const currentTabs = graphTabsRef.current;
+    const existingTab = conceptId
+      ? currentTabs.find(t => t.concept_id === conceptId || t.concept_id === Number(conceptId))
+      : null;
+    if (existingTab) {
+      // Navigate the existing tab to the requested path/viewMode
+      const updates = { path: path || [], viewMode: effectiveViewMode };
+      setGraphTabs(prev => prev.map(t =>
+        t.id === existingTab.id ? { ...t, path: updates.path, view_mode: updates.viewMode, label } : t
+      ));
+      setActiveTab({ type: 'graph', id: existingTab.id });
+      if (!isGuest) {
+        votesAPI.updateGraphTab(existingTab.id, { path: updates.path, viewMode: updates.viewMode, label }).catch(() => {});
+      }
+      return;
+    }
 
     if (isGuest) {
       guestTabCounter.current += 1;
@@ -1347,6 +1374,8 @@ const AppShell = () => {
                         onNavigateToSuperconcept={handleNavigateToSuperconcept}
                         ownedCombos={ownedCombos}
                         onComboEdgeAdded={() => setComboRefreshKey(k => k + 1)}
+                        pendingScrollLinkId={isActive ? pendingScrollLinkId : null}
+                        onPendingScrollLinkConsumed={() => setPendingScrollLinkId(null)}
                       />
                     )}
                   </div>

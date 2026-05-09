@@ -67,19 +67,17 @@ const usersController = {
 
       const user = userResult.rows[0];
 
-      // Get counts in parallel
-      const [corpusResult, documentResult] = await Promise.all([
-        pool.query('SELECT COUNT(*) FROM corpuses WHERE created_by = $1', [userId]),
-        pool.query('SELECT COUNT(*) FROM documents WHERE uploaded_by = $1', [userId]),
-      ]);
+      // Get counts
+      const comboResult = await pool.query(
+        'SELECT COUNT(*) FROM combos WHERE created_by = $1', [userId]
+      );
 
       res.json({
         id: user.id,
         username: user.username,
         orcidId: user.orcid_id || null,
         createdAt: user.created_at,
-        corpusCount: Number(corpusResult.rows[0].count),
-        documentCount: Number(documentResult.rows[0].count),
+        comboCount: Number(comboResult.rows[0].count),
       });
     } catch (error) {
       console.error('Get user profile error:', error);
@@ -173,29 +171,11 @@ const usersController = {
 
       // Run all data queries in parallel with .catch fallbacks
       const [
-        annotations, webLinks, pageComments, moderationComments,
-        documentsUploaded, corpusesOwned, superconcepts, coauthorships,
-        graphVotes, swapVotes, linkVotes, annotationVotes,
+        webLinks, pageComments, moderationComments, superconcepts,
+        graphVotes, swapVotes, linkVotes,
         webLinkVotes, flagVotes, tunnelVotes, pageCommentVotes,
-        comboSubs, corpusSubs, savedTabs, graphTabs,
+        comboSubs, graphTabs,
       ] = await Promise.all([
-        // Annotations created by user
-        pool.query(
-          `SELECT da.id, da.document_id, d.title AS document_title, d.version_number AS document_version_number,
-                  array_agg(DISTINCT cor.name) FILTER (WHERE cor.id IS NOT NULL) AS corpus_names,
-                  e.child_id AS concept_id, c.name AS concept_name, e.graph_path AS edge_graph_path,
-                  da.quote_text, da.comment, da.created_at
-           FROM document_annotations da
-           LEFT JOIN documents d ON d.id = da.document_id
-           LEFT JOIN edges e ON e.id = da.edge_id
-           LEFT JOIN concepts c ON c.id = e.child_id
-           LEFT JOIN corpus_documents cd ON cd.document_id = da.document_id
-           LEFT JOIN corpuses cor ON cor.id = da.corpus_id
-           WHERE da.created_by = $1
-           GROUP BY da.id, d.title, d.version_number, e.child_id, c.name, e.graph_path`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: annotations failed:', e.message); return []; }),
-
         // Web links added by user
         pool.query(
           `SELECT cl.id, e.child_id AS concept_id, c.name AS concept_name, cl.url, cl.created_at
@@ -220,27 +200,6 @@ const usersController = {
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: moderation_comments failed:', e.message); return []; }),
 
-        // Documents uploaded
-        pool.query(
-          `SELECT d.id, d.title,
-                  array_agg(DISTINCT cor.name) FILTER (WHERE cor.id IS NOT NULL) AS corpus_names,
-                  d.version_number, d.source_document_id AS lineage_id, d.created_at, d.copyright_confirmed_at
-           FROM documents d
-           LEFT JOIN corpus_documents cd ON cd.document_id = d.id
-           LEFT JOIN corpuses cor ON cor.id = cd.corpus_id
-           WHERE d.uploaded_by = $1
-           GROUP BY d.id`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: documents failed:', e.message); return []; }),
-
-        // Corpuses owned
-        pool.query(
-          `SELECT co.id, co.name, co.created_at,
-                  (SELECT COUNT(*)::int FROM corpus_allowed_users cau WHERE cau.corpus_id = co.id) + 1 AS member_count
-           FROM corpuses co WHERE co.created_by = $1`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: corpuses failed:', e.message); return []; }),
-
         // Superconcepts (combos) owned
         pool.query(
           `SELECT cb.id, cb.name, cb.created_at,
@@ -248,15 +207,6 @@ const usersController = {
            FROM combos cb WHERE cb.created_by = $1`,
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: superconcepts failed:', e.message); return []; }),
-
-        // Document coauthorships
-        pool.query(
-          `SELECT da.document_id, d.title AS document_title, 'coauthor' AS role
-           FROM document_authors da
-           LEFT JOIN documents d ON d.id = da.document_id
-           WHERE da.user_id = $1`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: coauthorships failed:', e.message); return []; }),
 
         // Graph votes (saves)
         pool.query(
@@ -281,13 +231,6 @@ const usersController = {
            FROM similarity_votes sv WHERE sv.user_id = $1`,
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: link_votes failed:', e.message); return []; }),
-
-        // Annotation votes
-        pool.query(
-          `SELECT annotation_id, created_at
-           FROM annotation_votes WHERE user_id = $1`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: annotation_votes failed:', e.message); return []; }),
 
         // Web link votes
         pool.query(
@@ -328,22 +271,6 @@ const usersController = {
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: combo_subs failed:', e.message); return []; }),
 
-        // Corpus subscriptions
-        pool.query(
-          `SELECT cs.corpus_id, cor.name AS corpus_name, cs.created_at
-           FROM corpus_subscriptions cs
-           LEFT JOIN corpuses cor ON cor.id = cs.corpus_id
-           WHERE cs.user_id = $1`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: corpus_subs failed:', e.message); return []; }),
-
-        // Saved tabs
-        pool.query(
-          `SELECT id, name, 'saved_tab' AS type, created_at
-           FROM saved_tabs WHERE user_id = $1`,
-          [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: saved_tabs failed:', e.message); return []; }),
-
         // Graph tabs
         pool.query(
           `SELECT id, label AS name, 'graph_tab' AS type, created_at
@@ -360,7 +287,7 @@ const usersController = {
 
       const exportObj = {
         exported_at: new Date().toISOString(),
-        export_version: '1.0',
+        export_version: '2.0',
         account: {
           username: acct.username,
           email: acct.email,
@@ -371,27 +298,21 @@ const usersController = {
           orcid_id: acct.orcid_id || null,
         },
         contributions: {
-          annotations,
           web_links: webLinks,
           page_comments: pageComments,
           moderation_comments: moderationComments,
-          documents_uploaded: documentsUploaded,
-          corpuses_owned: corpusesOwned,
           superconcepts_owned: superconcepts,
-          document_coauthorships: coauthorships,
         },
         votes_and_subscriptions: {
           graph_votes: graphVotes,
           swap_votes: swapVotes,
           link_votes: linkVotes,
-          annotation_votes: annotationVotes,
           web_link_votes: webLinkVotes,
           flag_votes: flagVotes,
           tunnel_votes: tunnelVotes,
           page_comment_votes: pageCommentVotes,
           combo_subscriptions: comboSubs,
-          corpus_subscriptions: corpusSubs,
-          saved_tabs_and_graph_tabs: [...savedTabs, ...graphTabs],
+          graph_tabs: graphTabs,
         },
       };
 

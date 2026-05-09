@@ -526,6 +526,7 @@ const getComboLinks = async (req, res) => {
         child_c.name AS concept_name,
         e.parent_id AS parent_concept_id,
         parent_c.name AS parent_concept_name,
+        e.graph_path,
         a.name AS attribute_name,
         cl.url,
         cl.title,
@@ -545,7 +546,7 @@ const getComboLinks = async (req, res) => {
       WHERE ce.combo_id = $1
         AND e.is_hidden = false
       GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,
-               e.parent_id, parent_c.name, a.name,
+               e.parent_id, parent_c.name, e.graph_path, a.name,
                cl.url, cl.title, cl.comment, cl.added_by, u.username, cl.created_at
       ${orderClause}
       LIMIT 500`,

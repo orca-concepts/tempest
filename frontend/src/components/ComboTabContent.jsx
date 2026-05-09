@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { combosAPI, conceptsAPI, usersAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
+import LinkCard from './LinkCard';
 
 const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin, onOpenConceptTab, refreshKey }) => {
   const [combo, setCombo] = useState(null);
   const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Aggregated links state (Phase 58d-2)
+  const [comboLinks, setComboLinks] = useState([]);
+  const [comboLinksLoading, setComboLinksLoading] = useState(false);
+  const [comboLinksSort, setComboLinksSort] = useState('top');
 
   // Owner: add subconcept state
   const [showAddPicker, setShowAddPicker] = useState(false);
@@ -70,6 +76,18 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
     })();
     return () => { cancelled = true; };
   }, [comboId, loadCombo, refreshKey]);
+
+  // Load aggregated links for the combo (Phase 58d-2)
+  const loadComboLinks = useCallback(async () => {
+    setComboLinksLoading(true);
+    try {
+      const res = await combosAPI.getComboLinks(comboId, comboLinksSort);
+      setComboLinks(res.data.links || []);
+    } catch { setComboLinks([]); }
+    finally { setComboLinksLoading(false); }
+  }, [comboId, comboLinksSort]);
+
+  useEffect(() => { if (!loading && combo) loadComboLinks(); }, [loading, combo, loadComboLinks]);
 
   // Search debounce
   useEffect(() => {
@@ -444,10 +462,38 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
         </div>
       )}
 
-      {/* TODO 58d-2: replace placeholder with aggregated links view using GET /api/combos/:id/links */}
-      <div style={{ padding: '24px 16px', color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
-        Aggregated links view coming soon.
-      </div>
+      {/* Aggregated links (Phase 58d-2) */}
+      {edges.length > 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <div style={styles.sortBar}>
+            <span style={{ fontSize: '12px', color: '#999', fontFamily: "'EB Garamond', Georgia, serif" }}>Sort:</span>
+            {['top', 'new'].map((key, i) => (
+              <React.Fragment key={key}>
+                {i > 0 && <span style={styles.sortSep}>{'\u00b7'}</span>}
+                <span onClick={() => setComboLinksSort(key)}
+                  style={comboLinksSort === key ? styles.sortOptionActive : styles.sortOption}>
+                  {key === 'top' ? 'Top' : 'New'}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
+          {comboLinksLoading ? (
+            <div style={styles.emptyState}>Loading links...</div>
+          ) : comboLinks.length === 0 ? (
+            <div style={styles.emptyState}>No links in this superconcept yet. Add a link to one of its subconcepts to see it here.</div>
+          ) : (
+            comboLinks.map((link, idx) => (
+              <LinkCard key={link.id} isFirst={idx === 0}
+                link={{ ...link, voteCount: Number(link.vote_count) || 0, addedBy: link.added_by, addedByUsername: link.added_by_username, createdAt: link.created_at }}
+                user={user} isGuest={isGuest}
+                contextLabel={`From ${link.concept_name}`}
+                readOnlyVote={true} clickable={true}
+                onCardClick={(l) => { if (onOpenConceptTab) onOpenConceptTab(l.concept_id || link.concept_id, link.graph_path || [], link.concept_name, link.attribute_name, undefined, 'children', l.id || link.id); }}
+                showInstances={false} onRequestLogin={onRequestLogin} />
+            ))
+          )}
+        </div>
+      )}
 
     </div>
   );

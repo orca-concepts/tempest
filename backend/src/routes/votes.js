@@ -31,6 +31,7 @@ router.post('/web-links/remove', authenticateToken, votesController.removeWebLin
 router.post('/web-links/upvote', authenticateToken, votesController.upvoteWebLink);
 router.post('/web-links/unvote', authenticateToken, votesController.removeWebLinkVote);
 router.put('/web-links/:linkId/comment', authenticateToken, votesController.updateConceptLinkComment);
+router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVotes); // Phase 58d-2
 
 // All remaining vote routes require authentication
 router.use(authenticateToken);

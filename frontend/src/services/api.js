@@ -221,6 +221,9 @@ export const votesAPI = {
 
   updateLinkComment: (linkId, comment) =>
     api.put(`/votes/web-links/${linkId}/comment`, { comment }),
+
+  getMyLinkVotes: () =>
+    api.get('/votes/web-links/votes/me'),
 };
 
 // Moderation endpoints (Phase 16a)

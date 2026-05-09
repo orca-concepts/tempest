@@ -2017,6 +2017,55 @@ const votesController = {
     }
   },
 
+  // Phase 58d-2: Get all concept_links the authenticated user has upvoted
+  getMyLinkVotes: async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const result = await pool.query(
+        `SELECT
+          cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
+          cl.added_by, u.username AS added_by_username,
+          cl.created_at,
+          e.child_id AS concept_id, child_c.name AS concept_name,
+          e.parent_id AS parent_concept_id, parent_c.name AS parent_concept_name,
+          e.graph_path, a.name AS attribute_name,
+          COUNT(clv_all.id)::int AS vote_count,
+          clv_user.created_at AS voted_at
+        FROM concept_link_votes clv_user
+        JOIN concept_links cl ON cl.id = clv_user.concept_link_id
+        JOIN edges e ON e.id = cl.edge_id
+        JOIN concepts child_c ON child_c.id = e.child_id
+        LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
+        JOIN attributes a ON a.id = e.attribute_id
+        LEFT JOIN users u ON u.id = cl.added_by
+        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id
+        WHERE clv_user.user_id = $1
+          AND e.is_hidden = false
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
+                 cl.added_by, u.username, cl.created_at,
+                 e.child_id, child_c.name, e.parent_id, parent_c.name,
+                 e.graph_path, a.name, clv_user.created_at
+        ORDER BY clv_user.created_at DESC
+        LIMIT 500`,
+        [userId]
+      );
+
+      // Resolve graph_path names
+      const allPathIds = new Set();
+      result.rows.forEach(r => { if (r.graph_path) r.graph_path.forEach(id => allPathIds.add(id)); });
+      let pathNames = {};
+      if (allPathIds.size > 0) {
+        const namesRes = await pool.query('SELECT id, name FROM concepts WHERE id = ANY($1::integer[])', [Array.from(allPathIds)]);
+        namesRes.rows.forEach(r => { pathNames[r.id] = r.name; });
+      }
+
+      res.json({ links: result.rows, pathNames });
+    } catch (error) {
+      console.error('Error fetching user link votes:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // Close (delete) a graph tab
   closeGraphTab: async (req, res) => {
     const { tabId } = req.body;

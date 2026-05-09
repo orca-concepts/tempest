@@ -502,10 +502,68 @@ const getCombosByEdge = async (req, res) => {
   }
 };
 
+// Get aggregated concept_links across all member edges of a combo (Phase 58b-2)
+const getComboLinks = async (req, res) => {
+  try {
+    const comboId = req.params.id;
+    const { sort } = req.query; // 'new' or default ('top')
+
+    // Verify combo exists
+    const comboCheck = await pool.query('SELECT id FROM combos WHERE id = $1', [comboId]);
+    if (comboCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Combo not found' });
+    }
+
+    const orderClause = sort === 'new'
+      ? 'ORDER BY cl.created_at DESC'
+      : 'ORDER BY COUNT(clv.id) DESC, cl.created_at DESC';
+
+    const result = await pool.query(
+      `SELECT
+        cl.id,
+        cl.edge_id,
+        e.child_id AS concept_id,
+        child_c.name AS concept_name,
+        e.parent_id AS parent_concept_id,
+        parent_c.name AS parent_concept_name,
+        a.name AS attribute_name,
+        cl.url,
+        cl.title,
+        cl.comment,
+        cl.added_by,
+        u.username AS added_by_username,
+        cl.created_at,
+        COUNT(clv.id)::int AS vote_count
+      FROM combo_edges ce
+      JOIN edges e ON e.id = ce.edge_id
+      JOIN concept_links cl ON cl.edge_id = e.id
+      JOIN concepts child_c ON child_c.id = e.child_id
+      LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
+      JOIN attributes a ON a.id = e.attribute_id
+      LEFT JOIN users u ON u.id = cl.added_by
+      LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
+      WHERE ce.combo_id = $1
+        AND e.is_hidden = false
+      GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,
+               e.parent_id, parent_c.name, a.name,
+               cl.url, cl.title, cl.comment, cl.added_by, u.username, cl.created_at
+      ${orderClause}
+      LIMIT 500`,
+      [comboId]
+    );
+
+    res.json({ links: result.rows });
+  } catch (error) {
+    console.error('Error getting combo links:', error);
+    res.status(500).json({ error: 'Failed to get combo links' });
+  }
+};
+
 module.exports = {
   listCombos,
   getCombo,
   getCombosByEdge,
+  getComboLinks,
   createCombo,
   getMyCombos,
   getComboSubscriptions,

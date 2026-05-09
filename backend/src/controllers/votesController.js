@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
@@ -1480,6 +1481,7 @@ const votesController = {
   // Get all web links for an edge (with vote counts and user's vote status)
   getWebLinks: async (req, res) => {
     const { edgeId } = req.params;
+    const { sort } = req.query; // 'new' or default ('top')
 
     try {
       if (!edgeId) {
@@ -1488,6 +1490,10 @@ const votesController = {
 
       // req.user may be null for guests (optionalAuth)
       const userId = req.user ? req.user.userId : -1;
+
+      const orderClause = sort === 'new'
+        ? 'ORDER BY cl.created_at DESC'
+        : 'ORDER BY COUNT(clv.id) DESC, cl.created_at DESC';
 
       const result = await pool.query(
         `SELECT
@@ -1507,7 +1513,7 @@ const votesController = {
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE cl.edge_id = $1
         GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, cl.created_at, cl.comment, cl.updated_at
-        ORDER BY COUNT(clv.id) DESC, cl.created_at DESC`,
+        ${orderClause}`,
         [edgeId, userId]
       );
 
@@ -1574,14 +1580,19 @@ const votesController = {
         return res.status(409).json({ error: 'This URL has already been added to this concept in this context' });
       }
 
-      const trimmedTitle = title ? title.trim().substring(0, 255) : null;
+      // If user didn't supply a title, auto-fetch from OG metadata (up to 5s)
+      let resolvedTitle = title ? title.trim().substring(0, 255) : null;
+      if (!resolvedTitle) {
+        const ogTitle = await fetchOgTitle(trimmedUrl);
+        resolvedTitle = ogTitle || trimmedUrl.substring(0, 255);
+      }
       const trimmedComment = comment ? comment.trim() : null;
 
       const result = await pool.query(
         `INSERT INTO concept_links (edge_id, url, title, added_by, comment)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, edge_id, url, title, added_by, created_at, comment, updated_at`,
-        [edgeId, trimmedUrl, trimmedTitle, userId, trimmedComment]
+        [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment]
       );
 
       // Auto-upvote the link by the person who added it
@@ -1940,6 +1951,62 @@ const votesController = {
       });
     } catch (error) {
       console.error('Error updating web link comment:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Search concept_links by URL across the entire graph (Phase 58b-2)
+  // Returns all links matching the given URL with concept/edge context for navigation
+  getWebLinksByUrl: async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url || !url.trim()) {
+        return res.status(400).json({ error: 'url query parameter is required' });
+      }
+
+      const trimmedUrl = url.trim();
+      if (!/^https?:\/\/.+/i.test(trimmedUrl)) {
+        return res.status(400).json({ error: 'URL must start with http:// or https://' });
+      }
+      if (trimmedUrl.length > 2048) {
+        return res.status(400).json({ error: 'URL is too long (max 2048 characters)' });
+      }
+
+      const result = await pool.query(
+        `SELECT
+          cl.id,
+          cl.edge_id,
+          e.child_id AS concept_id,
+          child_c.name AS concept_name,
+          e.parent_id AS parent_concept_id,
+          parent_c.name AS parent_concept_name,
+          a.name AS attribute_name,
+          cl.title,
+          cl.comment,
+          cl.added_by,
+          u.username AS added_by_username,
+          cl.created_at,
+          COUNT(clv.id)::int AS vote_count
+        FROM concept_links cl
+        JOIN edges e ON e.id = cl.edge_id
+        JOIN concepts child_c ON child_c.id = e.child_id
+        LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
+        JOIN attributes a ON a.id = e.attribute_id
+        LEFT JOIN users u ON u.id = cl.added_by
+        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
+        WHERE cl.url = $1
+          AND e.is_hidden = false
+        GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,
+                 e.parent_id, parent_c.name, a.name,
+                 cl.title, cl.comment, cl.added_by, u.username, cl.created_at
+        ORDER BY COUNT(clv.id) DESC, cl.created_at DESC
+        LIMIT 200`,
+        [trimmedUrl]
+      );
+
+      res.json({ links: result.rows });
+    } catch (error) {
+      console.error('Error fetching web links by URL:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

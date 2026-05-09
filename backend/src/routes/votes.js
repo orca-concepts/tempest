@@ -23,6 +23,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Web Links (Phase 6) — GET is guest-accessible, write ops require auth
+router.get('/web-links/by-url', optionalAuth, votesController.getWebLinksByUrl); // Phase 58b-2: cross-concept URL search
 router.get('/web-links/all/:conceptId', optionalAuth, votesController.getAllWebLinksForConcept);
 router.get('/web-links/:edgeId', optionalAuth, votesController.getWebLinks);
 router.post('/web-links/add', authenticateToken, webLinkAddLimiter, votesController.addWebLink);

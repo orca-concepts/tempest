@@ -17,6 +17,7 @@ router.get('/', optionalAuth, comboController.listCombos);
 // ---- Parameterized routes ----
 
 router.get('/:id', optionalAuth, comboController.getCombo);
+router.get('/:id/links', optionalAuth, comboController.getComboLinks); // Phase 58b-2: aggregated links across member edges
 router.post('/:id/edges/add', authenticateToken, comboController.addEdgeToCombo);
 router.post('/:id/edges/remove', authenticateToken, comboController.removeEdgeFromCombo);
 router.post('/:id/transfer-ownership', authenticateToken, comboController.transferOwnership);

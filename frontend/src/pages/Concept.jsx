@@ -12,7 +12,7 @@ import VoteSetBar from '../components/VoteSetBar';
 import ConceptAnnotationPanel from '../components/ConceptAnnotationPanel';
 import DiffModal from '../components/DiffModal';
 import HiddenConceptsView from '../components/HiddenConceptsView';
-import AnnotateFromGraphPicker from '../components/AnnotateFromGraphPicker';
+
 import TunnelView from '../components/TunnelView';
 
 const Concept = ({

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { conceptsAPI, votesAPI, corpusAPI, documentsAPI, combosAPI } from '../services/api';
+import { conceptsAPI, votesAPI, combosAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import OrcidBadge from './OrcidBadge';
 

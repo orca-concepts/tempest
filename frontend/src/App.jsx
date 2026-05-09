@@ -2,9 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import AppShell from './components/AppShell';
-import AcceptInvite from './components/AcceptInvite';
-import DocInviteAccept from './components/DocInviteAccept';
-import CitationRedirect from './components/CitationRedirect';
+
 import ProfilePage from './components/ProfilePage';
 import OrcidCallback from './components/OrcidCallback';
 // Legal pages (Terms, Privacy, Copyright Policy, Legal hub) render inside AppShell

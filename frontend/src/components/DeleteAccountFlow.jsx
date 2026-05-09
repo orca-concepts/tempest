@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { authAPI, corpusAPI, combosAPI } from '../services/api';
+import { authAPI, combosAPI } from '../services/api';
 
 const DeleteAccountFlow = ({ onClose }) => {
   const { user, logout } = useAuth();

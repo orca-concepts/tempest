@@ -3,6 +3,42 @@ import { votesAPI, combosAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import OrcidBadge from './OrcidBadge';
 
+// Clamped text with "Show more" / "Show less" toggle — only shows toggle when content overflows
+const ClampedText = ({ text, lines = 3, style = {} }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      setOverflows(ref.current.scrollHeight > ref.current.clientHeight + 1);
+    }
+  }, [text]);
+
+  if (!text || !text.trim()) return null;
+
+  const clampStyle = !expanded ? {
+    display: '-webkit-box',
+    WebkitLineClamp: lines,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+  } : {};
+
+  return (
+    <div>
+      <div ref={ref} style={{ ...style, ...clampStyle }}>{text}</div>
+      {overflows && (
+        <span
+          onClick={(e) => { e.stopPropagation(); setExpanded(prev => !prev); }}
+          style={{ fontSize: '11px', color: '#999', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' }}
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </span>
+      )}
+    </div>
+  );
+};
+
 function relativeTime(dateStr) {
   const now = new Date();
   const then = new Date(dateStr);
@@ -286,7 +322,7 @@ const ConceptLinksPanel = ({
         {link.title && <div style={styles.linkUrl}>{link.url}</div>}
         {link.comment && !isEditing && (
           <div style={styles.linkCommentBlock}>
-            <span style={styles.linkCommentText}>{link.comment}</span>
+            <ClampedText text={link.comment} lines={3} style={styles.linkCommentText} />
             <span style={styles.linkCommentMeta}>{link.addedByUsername}{wasEdited(link) && <span style={styles.editedTag}>(edited)</span>}</span>
           </div>
         )}
@@ -406,10 +442,10 @@ const styles = {
   emptyState: { fontSize: '14px', color: '#999', fontStyle: 'normal', textAlign: 'center', padding: '24px 0', margin: 0 },
   linkCardFirst: { paddingBottom: '12px', borderRadius: '3px', transition: 'background-color 0.5s' },
   linkCard: { paddingTop: '12px', paddingBottom: '12px', borderTop: '1px solid #ece6db', borderRadius: '3px', transition: 'background-color 0.5s' },
-  linkTitle: { fontSize: '14px', color: '#333', textDecoration: 'underline', fontWeight: '500', display: 'block', marginBottom: '2px', wordBreak: 'break-word' },
-  linkUrl: { fontSize: '12px', color: '#aaa', marginBottom: '4px', wordBreak: 'break-all' },
+  linkTitle: { fontSize: '14px', color: '#333', textDecoration: 'underline', fontWeight: '500', display: 'block', marginBottom: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  linkUrl: { fontSize: '12px', color: '#aaa', marginBottom: '4px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
   linkCommentBlock: { fontSize: '12px', color: '#555', marginTop: '4px', marginBottom: '2px', lineHeight: 1.4 },
-  linkCommentText: { display: 'block', marginBottom: '2px' },
+  linkCommentText: { display: 'block', marginBottom: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.4 },
   linkCommentMeta: { fontSize: '11px', color: '#aaa' },
   editedTag: { marginLeft: '4px', fontSize: '11px', color: '#bbb' },
   editCommentBtn: { marginLeft: '8px', fontSize: '12px', color: '#999', cursor: 'pointer', textDecoration: 'underline' },
@@ -430,8 +466,8 @@ const styles = {
   instanceToggle: { fontSize: '12px', color: '#888', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceList: { marginTop: '4px', marginLeft: '8px', borderLeft: '2px solid #e0d9cf', paddingLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' },
   instanceRow: { cursor: 'pointer', padding: '4px 6px', borderRadius: '3px', fontSize: '12px', color: '#555', transition: 'background-color 0.15s' },
-  instancePath: { color: '#555', lineHeight: 1.4, wordBreak: 'break-word' },
-  instanceSnippet: { fontSize: '11px', color: '#999', marginTop: '2px' },
+  instancePath: { color: '#555', lineHeight: 1.4, overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  instanceSnippet: { fontSize: '11px', color: '#999', marginTop: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
   superconceptCard: { padding: '10px 12px', border: '1px solid #e0d9cf', borderRadius: '4px', backgroundColor: '#faf9f6' },
   superconceptName: { fontFamily: '"EB Garamond", Georgia, serif', fontSize: '15px', color: '#333', cursor: 'pointer', background: 'none', border: 'none', padding: 0, textAlign: 'left', display: 'block', fontWeight: 'normal' },
   superconceptOwner: { fontSize: '13px', color: '#888', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' },

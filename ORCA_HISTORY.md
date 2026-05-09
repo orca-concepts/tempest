@@ -4581,3 +4581,73 @@ Three-step flow rendered as a fixed-position overlay (z-index 10000, semi-transp
 ---
 
 **END OF PHASE HISTORY**
+
+---
+
+## Phases 37–56 (Migrated from ORCA_STATUS.md during Phase 58e — May 9, 2026)
+
+These phases were completed between March–May 2026 and cover pre-launch bug fixes, post-launch enhancements, legal compliance, and UI polish. All features described in Phases 37–56 that involve documents, corpuses, annotations, messages, or citations were RETIRED in Phase 58 (link-based pivot, May 2026). The phase history is preserved here for reference.
+
+### Phase 37: Pre-Launch Bug Fixes — COMPLETE
+Six batches (37a–37f): backend controller fixes (swap votes for guests, root concept creation, version permissions, web link context scoping, web link deletion); auth registration (phone uniqueness before OTP); corpus/document UX (guest error handling, file size errors, tag search scope, upload cancellation, duplicate detection); text/style fixes (long names, swap shading, diff modal unicode, search labels); root page/tab groups (root hiding, tab group deletion); flip view/annotation creation (sort controls, confirm step).
+
+### Phase 38: Post-Launch Enhancements — COMPLETE
+Eleven sub-phases (38a–38k): flip view navigation stays on concept; root swap votes; expanded swap votes (later reverted by Phase 44); graph votes page revamp to flat list with corpus badges; color set 10-user threshold; annotation attribute filter; annotation position sort; annotate from graph view; delete any document version; annotation citation links; search badge tooltips.
+
+### Phase 39: Combos (Superconcepts) — COMPLETE
+Five sub-phases: backend infrastructure (combos, combo_edges, combo_subscriptions, combo_annotation_votes tables); Browse Combos overlay; combo persistent tab with annotation list; add to combo from graph view; polish (DnD, tab groups, invite link options).
+
+### Phase 40: Subscribed Sort + Password Login — COMPLETE
+Subscribed sort ranks annotations by votes from corpus-member communities. Password login replaces OTP login; phone OTP retained for registration and password reset only; zxcvbn strength validation; forgot-password flow.
+
+### Phase 41: ORCID Integration + Document External Links + Corpus Invite Enhancements — COMPLETE
+Profile page + ORCID OAuth verification; ORCID display across UI; document external links (multi-link per document via root doc); corpus invite by username/ORCID lookup with direct-add.
+
+### Phase 42: Superconcepts Rename + Coauthor Lookup + Ownership Transfer + Member Document Removal — COMPLETE
+UI rename combos→superconcepts; document coauthor invite by username/ORCID; superconcept ownership transfer; corpus member document removal.
+
+### Phase 43: Tunneling — COMPLETE
+Bidirectional cross-graph/cross-attribute edge links. tunnel_links + tunnel_votes tables. TunnelView with per-attribute columns, search/add, voting. FlipView right-click "Open in new graph tab". Flip view sort label "Links"→"Votes".
+
+### Phase 44: Sibling-Only Swap Votes + Auto-Save — COMPLETE
+Reversed Phase 38c expansion. Swap votes restricted to siblings again. Auto-save destination on swap. New GET /swap/:edgeId response shape with existingSwaps + otherSiblings. SwapModal UI redesign.
+
+### Phase 45: Annotation Creation Warning Modal — COMPLETE
+hide_annotation_warning column on users. AnnotationWarningModal with "Don't show again" checkbox. Per-user DB persistence. (RETIRED in Phase 58 — annotations removed.)
+
+### Phase 46: Responsive Concept Header Layout — COMPLETE
+flexWrap on headerContent, buttonSection, conceptHeader in Concept.jsx. Buttons reflow at narrow widths.
+
+### Phase 47: Superconcepts Tab in Concept Annotation Panel — COMPLETE
+GET /api/combos/by-edge/:edgeId endpoint. Conditional "Superconcepts (N)" tab. Subconcept names clickable for all users.
+
+### Phase 48: Edge Discussions — REVERTED
+Fully implemented then fully reverted. Phase number reused.
+
+### Phase 49: Rate Limiting Hardening — COMPLETE (49a/49b/49d)
+Trust proxy configuration; SMS abuse protection with Postgres-backed store; per-user hourly write-endpoint limiters; global safety net (2000 req/15min, GET-exempt, Postgres-backed).
+
+### Phase 50: Reverse Citations — COMPLETE
+GET /api/annotations/:id/cited-by. cited_by_count on annotation payloads. "Cited by N" badge with lazy-loaded expand-to-list. (RETIRED in Phase 58 — annotations removed.)
+
+### Phase 51: Click-Wrap Consent — COMPLETE
+tos_accepted_at + tos_version_accepted columns. Backend verifyRegister requires tosAccepted. Static /terms and /privacy pages. LoginModal Sign Up checkbox combining ToS/Privacy/age affirmation.
+
+### Phase 52: Data Export + Correction + Privacy Contact — COMPLETE
+GET /api/users/me/export with 2-per-12-months rate limit. data_export_requests audit table. PATCH /api/users/me for email correction. Privacy & Data section on profile page.
+
+### Phase 53: DMCA & Illegal-Content Removal Infrastructure — COMPLETE
+Public intake forms for copyright infringement notices and counter-notifications. Admin legal-removal endpoint with legal_hold flag. dmca_strikes table with repeat-infringer queue. Manual email response workflow. (Copyright reporting forms RETIRED in Phase 58 — only admin removal infrastructure retained.)
+
+### Phase 54: Production Deployment Readiness — COMPLETE
+Backend serves frontend static files in production. Root package.json with build/start scripts. AGPL-3.0-only license. No file storage needed (text extraction in memory).
+
+### Phase 55: Database Config + Seed Fixes + ORCID OAuth Fix — COMPLETE
+DATABASE_URL connection string for managed Postgres. Seed question attribute in migrate.js. ORCID OAuth callback back-button trap fix.
+
+### Phase 56: Informational Page Restructuring + Legal Documents + UI Polish — COMPLETE
+56a: Removed Constitution/Donate pages, added The Storm page. 56b: Using orca page reordered. 56c: YouTube link-out cards. 56d: Counsel-reviewed legal documents installed (ToS, Privacy, Copyright Policy) as static HTML. 56e: Filter button reorder, lowercase "orca" brand styling.
+
+---
+
+**END OF PHASE HISTORY**

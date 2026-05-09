@@ -26,30 +26,17 @@ const ConceptAnnotationPanel = ({
   currentEdgeId,
   isGuest,
   viewMode,
-  onOpenCorpusTab,
   onRequestLogin,
   onNavigateToSuperconcept,
   collapsible = false,
 }) => {
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(collapsible);
-  const [activeTab, setActiveTab] = useState('annotations');
+  const [activeTab, setActiveTab] = useState('weblinks');
 
   // Comment editing state (web links)
   const [editingLinkId, setEditingLinkId] = useState(null);
   const [editingComment, setEditingComment] = useState('');
-
-  // Annotations state
-  const [annotations, setAnnotations] = useState([]);
-  const [annotationsLoading, setAnnotationsLoading] = useState(false);
-  const [annotationSort, setAnnotationSort] = useState('votes');
-
-  // Filter state
-  const [myCorpusesOnly, setMyCorpusesOnly] = useState(false);
-  const [userCorpuses, setUserCorpuses] = useState([]); // [{ id, name }]
-  const [selectedCorpusId, setSelectedCorpusId] = useState(null); // null = all my corpuses
-  const [allTags, setAllTags] = useState([]);
-  const [selectedTagId, setSelectedTagId] = useState(null); // null = all tags
 
   // Web links state
   const [webLinks, setWebLinks] = useState([]);
@@ -64,57 +51,7 @@ const ConceptAnnotationPanel = ({
   // Superconcepts state (Phase 47)
   const [superconcepts, setSuperconcepts] = useState([]);
 
-  // In children view, scope annotations to the current edge only.
   const isChildrenView = viewMode === 'children';
-  const edgeIdFilter = isChildrenView ? currentEdgeId : null;
-
-  // Fetch user corpuses on mount (logged-in only)
-  useEffect(() => {
-    if (isGuest) return;
-    corpusAPI.getMySubscriptions()
-      .then(res => {
-        const subs = (res.data.subscriptions || []).map(s => ({ id: s.corpus_id || s.id, name: s.corpus_name || s.name }));
-        setUserCorpuses(subs);
-      })
-      .catch(() => setUserCorpuses([]));
-  }, [isGuest]);
-
-  // Fetch available tags on mount
-  useEffect(() => {
-    documentsAPI.listTags()
-      .then(res => setAllTags(res.data.tags || []))
-      .catch(() => setAllTags([]));
-  }, []);
-
-  // Compute corpusIds for the API call
-  const getCorpusIdsFilter = () => {
-    if (!myCorpusesOnly) return null;
-    if (selectedCorpusId) return [selectedCorpusId];
-    return userCorpuses.map(c => c.id);
-  };
-
-  // Load annotations
-  useEffect(() => {
-    if (!conceptId) return;
-    let cancelled = false;
-    setAnnotationsLoading(true);
-    const corpusIds = getCorpusIdsFilter();
-    conceptsAPI.getConceptAnnotations(conceptId, {
-      sort: annotationSort,
-      edgeId: edgeIdFilter,
-      tagId: selectedTagId,
-      corpusIds,
-    })
-      .then(res => {
-        if (!cancelled) setAnnotations(res.data.annotations || []);
-      })
-      .catch(err => {
-        console.error('Failed to load annotations:', err);
-        if (!cancelled) setAnnotations([]);
-      })
-      .finally(() => { if (!cancelled) setAnnotationsLoading(false); });
-    return () => { cancelled = true; };
-  }, [conceptId, annotationSort, edgeIdFilter, selectedTagId, myCorpusesOnly, selectedCorpusId]);
 
   // Load web links — edge-specific in children view, cross-context in flip view
   useEffect(() => {
@@ -198,7 +135,7 @@ const ConceptAnnotationPanel = ({
   // Auto-fallback: if superconcepts tab is active but count drops to 0, switch back
   useEffect(() => {
     if (activeTab === 'superconcepts' && superconcepts.length === 0) {
-      setActiveTab('annotations');
+      setActiveTab('weblinks');
     }
   }, [superconcepts.length, activeTab]);
 
@@ -314,177 +251,8 @@ const ConceptAnnotationPanel = ({
     );
   };
 
-  const renderAnnotationsTab = () => {
-    return (
-      <>
-        <div style={styles.sortBar}>
-          <span
-            onClick={() => setAnnotationSort('votes')}
-            style={{ ...styles.sortOption, ...(annotationSort === 'votes' ? styles.sortOptionActive : {}) }}
-          >Top</span>
-          {user && (
-            <>
-              <span style={styles.sortSep}>{'\u00b7'}</span>
-              <span
-                onClick={() => setAnnotationSort('subscribed')}
-                style={{ ...styles.sortOption, ...(annotationSort === 'subscribed' ? styles.sortOptionActive : {}) }}
-              >Subscribed</span>
-            </>
-          )}
-          <span style={styles.sortSep}>{'\u00b7'}</span>
-          <span
-            onClick={() => setAnnotationSort('newest')}
-            style={{ ...styles.sortOption, ...(annotationSort === 'newest' ? styles.sortOptionActive : {}) }}
-          >New</span>
-        </div>
 
-        {renderFilters()}
-
-        {annotationsLoading ? (
-          <p style={styles.placeholder}>Loading...</p>
-        ) : annotations.length === 0 ? (
-          <p style={styles.emptyState}>No annotations yet</p>
-        ) : (
-          annotations.map((a, idx) => (
-            <div
-              key={a.annotationId}
-              style={idx > 0 ? styles.annotationCard : styles.annotationCardFirst}
-              onClick={() => handleAnnotationCardClick(a)}
-            >
-              <div style={styles.docLine}>
-                <span style={styles.docTitleLink}>
-                  {a.documentTitle}
-                </span>
-                <span style={styles.corpusName}>({a.corpusName})</span>
-                {a.tagName && <span style={styles.tagBadge}>{a.tagName}</span>}
-              </div>
-              {renderContextPath(a.context)}
-              {a.quoteText && (
-                <div style={styles.quoteBlock}>
-                  &ldquo;{a.quoteText.length > 150 ? a.quoteText.slice(0, 150) + '...' : a.quoteText}&rdquo;
-                </div>
-              )}
-              {a.comment && (
-                <div style={styles.commentBlock}>{a.comment}</div>
-              )}
-              <div style={styles.bottomRow}>
-                <span style={styles.voteCount}>
-                  &uarr; {a.voteCount}
-                  {a.citedByCount > 0 && (
-                    <span style={styles.citedByInline}> &middot; Cited by {a.citedByCount}</span>
-                  )}
-                </span>
-                <span style={styles.meta}>
-                  {a.creatorUsername}<OrcidBadge orcidId={a.creatorOrcidId} /> &middot; {relativeTime(a.createdAt)}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </>
-    );
-  };
-
-  const handleToggleLinkVote = async (link) => {
-    if (isGuest) {
-      if (onRequestLogin) onRequestLogin();
-      return;
-    }
-    const wasVoted = link.userVoted;
-    const sortLinks = (arr) => [...arr].sort((a, b) => b.voteCount - a.voteCount || new Date(b.createdAt) - new Date(a.createdAt));
-    // Optimistic update
-    setWebLinks(links => sortLinks(links.map(l =>
-      l.id === link.id
-        ? { ...l, userVoted: !wasVoted, voteCount: wasVoted ? l.voteCount - 1 : l.voteCount + 1 }
-        : l
-    )));
-    try {
-      if (wasVoted) {
-        await votesAPI.removeWebLinkVote(link.id);
-      } else {
-        await votesAPI.upvoteWebLink(link.id);
-      }
-    } catch (err) {
-      console.error('Failed to toggle link vote:', err);
-      // Revert
-      setWebLinks(links => sortLinks(links.map(l =>
-        l.id === link.id
-          ? { ...l, userVoted: wasVoted, voteCount: wasVoted ? l.voteCount + 1 : l.voteCount - 1 }
-          : l
-      )));
-    }
-  };
-
-  const handleStartEditComment = (link) => {
-    setEditingLinkId(link.id);
-    setEditingComment(link.comment || '');
-  };
-
-  const handleCancelEditComment = () => {
-    setEditingLinkId(null);
-    setEditingComment('');
-  };
-
-  const handleSaveComment = async (linkId) => {
-    const prev = webLinks.find(l => l.id === linkId);
-    // Optimistic update
-    setWebLinks(links => links.map(l =>
-      l.id === linkId
-        ? { ...l, comment: editingComment.trim() || null, updatedAt: new Date().toISOString() }
-        : l
-    ));
-    setEditingLinkId(null);
-    setEditingComment('');
-    try {
-      await votesAPI.updateLinkComment(linkId, editingComment.trim() || null);
-    } catch (err) {
-      console.error('Failed to update comment:', err);
-      // Revert on error
-      if (prev) {
-        setWebLinks(links => links.map(l =>
-          l.id === linkId ? { ...l, comment: prev.comment, updatedAt: prev.updatedAt } : l
-        ));
-      }
-    }
-  };
-
-  const handleRemoveLink = async (linkId) => {
-    setWebLinks(links => links.filter(l => l.id !== linkId));
-    try {
-      await votesAPI.removeWebLink(linkId);
-    } catch (err) {
-      console.error('Failed to remove web link:', err);
-      // Reload links on error to restore state
-      setWebLinksLoading(true);
-      if (isChildrenView && currentEdgeId) {
-        votesAPI.getWebLinks(currentEdgeId).then(res => {
-          setWebLinks((res.data.webLinks || []).map(link => ({
-            ...link, edgeId: currentEdgeId, parentId: null, parentName: null,
-            graphPath: path || [], attributeName: null,
-          })));
-        }).catch(() => {}).finally(() => setWebLinksLoading(false));
-      } else {
-        const pathParam = (path || []).join(',');
-        votesAPI.getAllWebLinksForConcept(conceptId, pathParam || undefined).then(res => {
-          const flat = [];
-          for (const group of (res.data.groups || [])) {
-            for (const link of group.links) {
-              flat.push({ ...link, edgeId: group.edgeId, parentId: group.parentId, parentName: group.parentName, graphPath: group.graphPath, attributeName: group.attributeName });
-            }
-          }
-          setWebLinks(flat);
-        }).catch(() => {}).finally(() => setWebLinksLoading(false));
-      }
-    }
-  };
-
-  const wasEdited = (link) => {
-    if (!link.updatedAt || !link.createdAt) return false;
-    const created = new Date(link.createdAt).getTime();
-    const updated = new Date(link.updatedAt).getTime();
-    // Allow 2 seconds tolerance for DB default
-    return Math.abs(updated - created) > 2000;
-  };
+  // --- Web Link helpers (restored from pre-58c) ---
 
   const handleAddLink = async () => {
     const trimmed = newLinkUrl.trim();
@@ -513,6 +281,63 @@ const ConceptAnnotationPanel = ({
     } catch (err) {
       setAddLinkError(err.response?.data?.error || 'Failed to add link');
     }
+  };
+
+  const handleSaveComment = async (linkId) => {
+    const prev = webLinks.find(l => l.id === linkId);
+    setWebLinks(links => links.map(l =>
+      l.id === linkId
+        ? { ...l, comment: editingComment.trim() || null, updatedAt: new Date().toISOString() }
+        : l
+    ));
+    setEditingLinkId(null);
+    setEditingComment('');
+    try {
+      await votesAPI.updateLinkComment(linkId, editingComment.trim() || null);
+    } catch (err) {
+      console.error('Failed to update comment:', err);
+      if (prev) {
+        setWebLinks(links => links.map(l =>
+          l.id === linkId ? { ...l, comment: prev.comment, updatedAt: prev.updatedAt } : l
+        ));
+      }
+    }
+  };
+
+  const handleRemoveLink = async (linkId) => {
+    setWebLinks(links => links.filter(l => l.id !== linkId));
+    try {
+      await votesAPI.removeWebLink(linkId);
+    } catch (err) {
+      console.error('Failed to remove web link:', err);
+      setWebLinksLoading(true);
+      if (isChildrenView && currentEdgeId) {
+        votesAPI.getWebLinks(currentEdgeId).then(res => {
+          setWebLinks((res.data.webLinks || []).map(link => ({
+            ...link, edgeId: currentEdgeId, parentId: null, parentName: null,
+            graphPath: path || [], attributeName: null,
+          })));
+        }).catch(() => {}).finally(() => setWebLinksLoading(false));
+      } else {
+        const pathParam = (path || []).join(',');
+        votesAPI.getAllWebLinksForConcept(conceptId, pathParam || undefined).then(res => {
+          const flat = [];
+          for (const group of (res.data.groups || [])) {
+            for (const link of group.links) {
+              flat.push({ ...link, edgeId: group.edgeId, parentId: group.parentId, parentName: group.parentName, graphPath: group.graphPath, attributeName: group.attributeName });
+            }
+          }
+          setWebLinks(flat);
+        }).catch(() => {}).finally(() => setWebLinksLoading(false));
+      }
+    }
+  };
+
+  const wasEdited = (link) => {
+    if (!link.updatedAt || !link.createdAt) return false;
+    const created = new Date(link.createdAt).getTime();
+    const updated = new Date(link.updatedAt).getTime();
+    return Math.abs(updated - created) > 2000;
   };
 
   const renderAddLinkForm = () => {
@@ -712,23 +537,13 @@ const ConceptAnnotationPanel = ({
         <>
           <div style={styles.tabBar}>
             <span
-              onClick={() => setActiveTab('annotations')}
-              style={{
-                ...styles.tab,
-                ...(activeTab === 'annotations' ? styles.tabActive : {}),
-              }}
-            >
-              Annotations
-            </span>
-            <span style={styles.tabSeparator}>|</span>
-            <span
               onClick={() => setActiveTab('weblinks')}
               style={{
                 ...styles.tab,
                 ...(activeTab === 'weblinks' ? styles.tabActive : {}),
               }}
             >
-              Web Links
+              Links
             </span>
             {superconcepts.length > 0 && (
               <>
@@ -746,7 +561,6 @@ const ConceptAnnotationPanel = ({
             )}
           </div>
           <div style={styles.content}>
-            {activeTab === 'annotations' && renderAnnotationsTab()}
             {activeTab === 'weblinks' && renderWebLinksTab()}
             {activeTab === 'superconcepts' && renderSuperconceptsTab()}
           </div>

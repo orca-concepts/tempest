@@ -4,50 +4,27 @@ import { authAPI, combosAPI } from '../services/api';
 
 const DeleteAccountFlow = ({ onClose }) => {
   const { user, logout } = useAuth();
-  const [step, setStep] = useState(null); // null = loading, 1, 2, 3
-  const [ownedCorpuses, setOwnedCorpuses] = useState([]);
-  const [ownedCombos, setOwnedCombos] = useState([]); // Phase 42c
-  const [corpusMembers, setCorpusMembers] = useState({}); // { corpusId: [users] }
-  const [selectedTransfer, setSelectedTransfer] = useState({}); // { corpusId: userId }
-  const [resolvedCorpuses, setResolvedCorpuses] = useState(new Set());
-  const [resolvedCombos, setResolvedCombos] = useState(new Set()); // Phase 42c
+  const [step, setStep] = useState(null); // null = loading, 1, 2
+  const [ownedCombos, setOwnedCombos] = useState([]);
+  const [resolvedCombos, setResolvedCombos] = useState(new Set());
   const [confirmUsername, setConfirmUsername] = useState('');
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [transferring, setTransferring] = useState({}); // { corpusId: true }
 
-  // Load owned corpuses and combos on mount
+  // Load owned combos on mount
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const [corpusRes, comboRes] = await Promise.all([
-          corpusAPI.listMine().catch(() => ({ data: { corpuses: [] } })),
-          combosAPI.getMyCombos().catch(() => ({ data: { combos: [] } })),
-        ]);
-        const corpuses = corpusRes.data.corpuses || corpusRes.data || [];
+        const comboRes = await combosAPI.getMyCombos().catch(() => ({ data: { combos: [] } }));
         const combos = comboRes.data.combos || comboRes.data || [];
         if (cancelled) return;
-        if (corpuses.length === 0 && combos.length === 0) {
-          setOwnedCorpuses([]);
+        if (combos.length === 0) {
           setOwnedCombos([]);
           setStep(2);
           return;
         }
-        setOwnedCorpuses(corpuses);
         setOwnedCombos(combos);
-        // Fetch members for each corpus
-        const membersMap = {};
-        for (const c of corpuses) {
-          try {
-            const mRes = await corpusAPI.listAllowedUsers(c.id);
-            membersMap[c.id] = mRes.data.members || [];
-          } catch {
-            membersMap[c.id] = [];
-          }
-        }
-        if (cancelled) return;
-        setCorpusMembers(membersMap);
         setStep(1);
       } catch {
         if (!cancelled) {
@@ -60,37 +37,7 @@ const DeleteAccountFlow = ({ onClose }) => {
     return () => { cancelled = true; };
   }, []);
 
-  const handleTransfer = useCallback(async (corpusId) => {
-    const newOwnerId = selectedTransfer[corpusId];
-    if (!newOwnerId) return;
-    setTransferring(prev => ({ ...prev, [corpusId]: true }));
-    setError('');
-    try {
-      await corpusAPI.transferOwnership(corpusId, newOwnerId);
-      setResolvedCorpuses(prev => new Set([...prev, corpusId]));
-    } catch (err) {
-      setError(err.response?.data?.error || 'Transfer failed');
-    } finally {
-      setTransferring(prev => ({ ...prev, [corpusId]: false }));
-    }
-  }, [selectedTransfer]);
-
-  const handleDeleteCorpus = useCallback(async (corpusId) => {
-    setTransferring(prev => ({ ...prev, [corpusId]: true }));
-    setError('');
-    try {
-      await corpusAPI.deleteCorpus(corpusId);
-      setResolvedCorpuses(prev => new Set([...prev, corpusId]));
-    } catch (err) {
-      setError(err.response?.data?.error || 'Delete failed');
-    } finally {
-      setTransferring(prev => ({ ...prev, [corpusId]: false }));
-    }
-  }, []);
-
-  const allCorpusesResolved = ownedCorpuses.length === 0 || ownedCorpuses.every(c => resolvedCorpuses.has(c.id));
-  const allCombosResolved = ownedCombos.length === 0 || ownedCombos.every(c => resolvedCombos.has(c.id));
-  const allResolved = allCorpusesResolved && allCombosResolved;
+  const allResolved = ownedCombos.length === 0 || ownedCombos.every(c => resolvedCombos.has(c.id));
 
   const handleDeleteAccount = useCallback(async () => {
     setDeleting(true);
@@ -103,30 +50,13 @@ const DeleteAccountFlow = ({ onClose }) => {
     } catch (err) {
       const status = err.response?.status;
       const data = err.response?.data;
-      if (status === 400 && (data?.corpuses || data?.ownedCombos)) {
-        // Still owns corpuses or superconcepts — reload and go back to step 1
-        if (data.corpuses) {
-          setOwnedCorpuses(data.corpuses);
-          setResolvedCorpuses(new Set());
-          const membersMap = {};
-          for (const c of data.corpuses) {
-            try {
-              const mRes = await corpusAPI.listAllowedUsers(c.id);
-              membersMap[c.id] = mRes.data.members || [];
-            } catch {
-              membersMap[c.id] = [];
-            }
-          }
-          setCorpusMembers(membersMap);
-        }
-        if (data.ownedCombos) {
-          setOwnedCombos(data.ownedCombos);
-          setResolvedCombos(new Set());
-        }
+      if (status === 400 && data?.ownedCombos) {
+        setOwnedCombos(data.ownedCombos);
+        setResolvedCombos(new Set());
         setStep(1);
         setError(data.error);
       } else {
-        setError('Something went wrong. Please try again.');
+        setError(data?.error || 'Something went wrong. Please try again.');
       }
       setDeleting(false);
     }
@@ -156,112 +86,39 @@ const DeleteAccountFlow = ({ onClose }) => {
       <div style={styles.container}>
         <div style={styles.header}>
           <h2 style={styles.heading}>
-            {step === 1 ? 'Transfer Ownership' : step === 2 ? 'Document Notice' : 'Delete Your Account'}
+            {step === 1 ? 'Transfer Ownership' : 'Delete Your Account'}
           </h2>
-          <button onClick={onClose} style={styles.closeButton}>✕</button>
+          <button onClick={onClose} style={styles.closeButton}>{'\u2715'}</button>
         </div>
 
         {error && <p style={styles.error}>{error}</p>}
 
-        {/* Step 1: Corpus and superconcept ownership */}
+        {/* Step 1: Superconcept ownership */}
         {step === 1 && (
           <div>
             <p style={styles.text}>
-              Transfer ownership or delete the items below before deleting your account.
+              Transfer ownership of the superconcepts below before deleting your account.
+              Use each superconcept's tab in the sidebar to transfer ownership.
             </p>
 
-            {/* Corpuses */}
-            {ownedCorpuses.length > 0 && (
-              <>
-                <p style={{ ...styles.text, fontWeight: '600', marginBottom: '8px' }}>
-                  Corpuses ({ownedCorpuses.length})
-                </p>
-                <div style={styles.corpusList}>
-                  {ownedCorpuses.map(corpus => {
-                    const resolved = resolvedCorpuses.has(corpus.id);
-                    const members = corpusMembers[corpus.id] || [];
-                    const busy = transferring[corpus.id];
-                    return (
-                      <div key={corpus.id} style={{ ...styles.corpusRow, opacity: resolved ? 0.5 : 1 }}>
-                        <span style={{ ...styles.corpusName, textDecoration: resolved ? 'line-through' : 'none' }}>
-                          {corpus.name}
-                        </span>
-                        {resolved ? (
-                          <span style={styles.resolvedLabel}>Done</span>
-                        ) : members.length > 0 ? (
-                          <div style={styles.corpusActions}>
-                            <select
-                              style={styles.select}
-                              value={selectedTransfer[corpus.id] || ''}
-                              onChange={e => setSelectedTransfer(prev => ({ ...prev, [corpus.id]: Number(e.target.value) }))}
-                              disabled={busy}
-                            >
-                              <option value="">Select member...</option>
-                              {members.map(m => (
-                                <option key={m.user_id} value={m.user_id}>{m.username}</option>
-                              ))}
-                            </select>
-                            <button
-                              style={styles.actionButton}
-                              onClick={() => handleTransfer(corpus.id)}
-                              disabled={!selectedTransfer[corpus.id] || busy}
-                            >
-                              {busy ? 'Transferring...' : 'Transfer'}
-                            </button>
-                            <button
-                              style={styles.actionButton}
-                              onClick={() => handleDeleteCorpus(corpus.id)}
-                              disabled={busy}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={styles.corpusActions}>
-                            <span style={styles.noMembersNote}>No members to transfer to</span>
-                            <button
-                              style={styles.actionButton}
-                              onClick={() => handleDeleteCorpus(corpus.id)}
-                              disabled={busy}
-                            >
-                              {busy ? 'Deleting...' : 'Delete Corpus'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            {/* Superconcepts (Phase 42c) */}
             {ownedCombos.length > 0 && (
-              <>
-                <p style={{ ...styles.text, fontWeight: '600', marginBottom: '8px', marginTop: '16px' }}>
-                  Superconcepts ({ownedCombos.length})
-                </p>
-                <p style={{ ...styles.text, fontSize: '13px', marginBottom: '8px' }}>
-                  Transfer ownership from each superconcept's tab in the sidebar.
-                </p>
-                <div style={styles.corpusList}>
-                  {ownedCombos.map(combo => {
-                    const resolved = resolvedCombos.has(combo.id);
-                    return (
-                      <div key={combo.id} style={{ ...styles.corpusRow, opacity: resolved ? 0.5 : 1 }}>
-                        <span style={{ ...styles.corpusName, textDecoration: resolved ? 'line-through' : 'none' }}>
-                          {combo.name}
-                        </span>
-                        {resolved ? (
-                          <span style={styles.resolvedLabel}>Done</span>
-                        ) : (
-                          <span style={styles.noMembersNote}>Transfer via superconcept tab</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
+              <div style={styles.corpusList}>
+                {ownedCombos.map(combo => {
+                  const resolved = resolvedCombos.has(combo.id);
+                  return (
+                    <div key={combo.id} style={{ ...styles.corpusRow, opacity: resolved ? 0.5 : 1 }}>
+                      <span style={{ ...styles.corpusName, textDecoration: resolved ? 'line-through' : 'none' }}>
+                        {combo.name}
+                      </span>
+                      {resolved ? (
+                        <span style={styles.resolvedLabel}>Done</span>
+                      ) : (
+                        <span style={styles.noMembersNote}>Transfer via superconcept tab</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
 
             <div style={styles.buttonRow}>
@@ -277,24 +134,12 @@ const DeleteAccountFlow = ({ onClose }) => {
           </div>
         )}
 
-        {/* Step 2: Document notice */}
+        {/* Step 2: Final confirmation */}
         {step === 2 && (
           <div>
             <p style={styles.text}>
-              Documents you've uploaded will remain in their corpuses but will no longer be associated with your account. If you'd like to delete any documents before closing your account, you can do so from within their corpuses.
-            </p>
-            <div style={styles.buttonRow}>
-              <button onClick={onClose} style={styles.actionButton}>Cancel</button>
-              <button onClick={() => { setError(''); setStep(3); }} style={styles.actionButton}>Continue</button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Final confirmation */}
-        {step === 3 && (
-          <div>
-            <p style={styles.text}>
-              This will permanently delete your account. Your votes, subscriptions, saved items, and messages will be removed. Concepts, annotations, and documents you created will remain but will no longer be attributed to you. This cannot be undone.
+              This will permanently delete your account. Your votes, subscriptions, and saved items will be removed.
+              Concepts and links you created will remain but will no longer be attributed to you. This cannot be undone.
             </p>
             <label style={styles.label}>Type your username to confirm:</label>
             <input
@@ -325,10 +170,7 @@ const DeleteAccountFlow = ({ onClose }) => {
 const styles = {
   overlay: {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     display: 'flex',
     alignItems: 'center',
@@ -409,25 +251,10 @@ const styles = {
     fontFamily: '"EB Garamond", Georgia, serif',
     color: '#999',
   },
-  corpusActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-  },
   noMembersNote: {
     fontSize: '13px',
     fontFamily: '"EB Garamond", Georgia, serif',
     color: '#999',
-  },
-  select: {
-    padding: '4px 8px',
-    fontSize: '13px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    backgroundColor: 'white',
-    color: '#333',
   },
   actionButton: {
     padding: '6px 14px',

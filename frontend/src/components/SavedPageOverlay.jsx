@@ -3,11 +3,7 @@ import { votesAPI } from '../services/api';
 import SavedTabContent from '../pages/SavedTabContent';
 
 /**
- * SavedPageOverlay — Phase 38d: Flat Graph Votes Page with Corpus Badges
- *
- * Shows ALL user's graph votes in a single flat list (no corpus tabs).
- * Each tree card shows corpus badges if any concept in the tree appears
- * as an annotation in a subscribed corpus.
+ * SavedPageOverlay — Graph Votes Page (flat list, no corpus badges)
  *
  * Props:
  *   - onBack: callback to close the overlay and return to normal tab content
@@ -16,7 +12,6 @@ import SavedTabContent from '../pages/SavedTabContent';
 const SavedPageOverlay = ({ onBack, onOpenConceptTab }) => {
   const [saves, setSaves] = useState([]);
   const [conceptNames, setConceptNames] = useState({});
-  const [conceptCorpusBadges, setConceptCorpusBadges] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,12 +24,11 @@ const SavedPageOverlay = ({ onBack, onOpenConceptTab }) => {
       setLoading(true);
       setError(null);
 
-      const savesResponse = await votesAPI.getUserSavesByCorpus();
-      const { saves: allSaves, conceptNames: names, conceptCorpusBadges: badges } = savesResponse.data;
+      const savesResponse = await votesAPI.getUserSaves();
+      const { edges, conceptNames: names } = savesResponse.data;
 
-      setSaves(allSaves || []);
+      setSaves(edges || []);
       setConceptNames(names || {});
-      setConceptCorpusBadges(badges || {});
     } catch (err) {
       setError('Failed to load graph votes');
       console.error('Failed to load saves:', err);
@@ -47,7 +41,7 @@ const SavedPageOverlay = ({ onBack, onOpenConceptTab }) => {
     return (
       <div style={styles.container}>
         <div style={styles.headerBar}>
-          <button onClick={onBack} style={styles.backButton}>← Back</button>
+          <button onClick={onBack} style={styles.backButton}>{'\u2190'} Back</button>
           <h2 style={styles.heading}>Graph Votes</h2>
         </div>
         <div style={styles.loading}>Loading graph votes...</div>
@@ -59,7 +53,7 @@ const SavedPageOverlay = ({ onBack, onOpenConceptTab }) => {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.headerBar}>
-        <button onClick={onBack} style={styles.backButton}>← Back</button>
+        <button onClick={onBack} style={styles.backButton}>{'\u2190'} Back</button>
         <h2 style={styles.heading}>Graph Votes</h2>
       </div>
 
@@ -69,14 +63,14 @@ const SavedPageOverlay = ({ onBack, onOpenConceptTab }) => {
         <div style={styles.emptyState}>
           <p style={styles.emptyText}>No graph votes yet.</p>
           <p style={styles.emptySubtext}>
-            Vote on concepts by clicking the ▲ button on any concept in the graph.
+            Vote on concepts by clicking the {'\u25B2'} button on any concept in the graph.
           </p>
         </div>
       ) : (
         <SavedTabContent
           edges={saves}
           conceptNames={conceptNames}
-          conceptCorpusBadges={conceptCorpusBadges}
+          conceptCorpusBadges={{}}
           corpusId={null}
           onReload={loadData}
           onOpenConceptTab={(conceptId, path, conceptName, attributeName) => {

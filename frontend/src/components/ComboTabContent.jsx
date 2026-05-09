@@ -2,15 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { combosAPI, conceptsAPI, usersAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
 
-const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDocument, onRequestLogin, onOpenConceptTab, refreshKey }) => {
+const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin, onOpenConceptTab, refreshKey }) => {
   const [combo, setCombo] = useState(null);
   const [edges, setEdges] = useState([]);
-  const [annotations, setAnnotations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [annotationsLoading, setAnnotationsLoading] = useState(false);
-  const [sortOption, setSortOption] = useState('combo_votes');
-  const [matchMode, setMatchMode] = useState('any'); // Phase 48: 'any' | 'all'
-  const [activeEdgeIds, setActiveEdgeIds] = useState(null); // null = all active
   const [error, setError] = useState(null);
 
   // Owner: add subconcept state
@@ -65,20 +60,6 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
     }
   }, [comboId]);
 
-  // Load annotations
-  const loadAnnotations = useCallback(async () => {
-    try {
-      setAnnotationsLoading(true);
-      const edgeIds = activeEdgeIds ? activeEdgeIds.join(',') : undefined;
-      const res = await combosAPI.getComboAnnotations(comboId, sortOption, edgeIds, matchMode);
-      setAnnotations(res.data.annotations || []);
-    } catch (err) {
-      console.error('Failed to load annotations:', err);
-    } finally {
-      setAnnotationsLoading(false);
-    }
-  }, [comboId, sortOption, activeEdgeIds, matchMode]);
-
   // Initial load (and reload when refreshKey changes — e.g., after edge added from graph view)
   useEffect(() => {
     let cancelled = false;
@@ -89,16 +70,6 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
     })();
     return () => { cancelled = true; };
   }, [comboId, loadCombo, refreshKey]);
-
-  // Load annotations when sort, filter, or match mode changes
-  useEffect(() => {
-    if (!loading) loadAnnotations();
-  }, [sortOption, activeEdgeIds, matchMode, loadAnnotations, loading]);
-
-  // Initial annotation load after combo loads
-  useEffect(() => {
-    if (!loading && combo) loadAnnotations();
-  }, [loading, combo]);
 
   // Search debounce
   useEffect(() => {
@@ -194,7 +165,6 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
       setConceptContexts([]);
       // Reload data
       await loadCombo();
-      await loadAnnotations();
     } catch (err) {
       if (err.response?.status === 409) {
         setAddError('This concept in this context is already in the superconcept');
@@ -208,45 +178,8 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
     try {
       await combosAPI.removeEdge(comboId, edgeId);
       await loadCombo();
-      await loadAnnotations();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to remove concept');
-    }
-  };
-
-  const handleVote = async (annotationId) => {
-    // Optimistic update
-    setAnnotations(prev => prev.map(a =>
-      a.annotation_id === annotationId
-        ? { ...a, user_combo_voted: true, combo_vote_count: (Number(a.combo_vote_count) || 0) + 1 }
-        : a
-    ));
-    try {
-      await combosAPI.voteAnnotation(comboId, annotationId);
-    } catch (err) {
-      // Revert
-      setAnnotations(prev => prev.map(a =>
-        a.annotation_id === annotationId
-          ? { ...a, user_combo_voted: false, combo_vote_count: Math.max(0, (Number(a.combo_vote_count) || 1) - 1) }
-          : a
-      ));
-    }
-  };
-
-  const handleUnvote = async (annotationId) => {
-    setAnnotations(prev => prev.map(a =>
-      a.annotation_id === annotationId
-        ? { ...a, user_combo_voted: false, combo_vote_count: Math.max(0, (Number(a.combo_vote_count) || 1) - 1) }
-        : a
-    ));
-    try {
-      await combosAPI.unvoteAnnotation(comboId, annotationId);
-    } catch (err) {
-      setAnnotations(prev => prev.map(a =>
-        a.annotation_id === annotationId
-          ? { ...a, user_combo_voted: true, combo_vote_count: (Number(a.combo_vote_count) || 0) + 1 }
-          : a
-      ));
     }
   };
 
@@ -290,42 +223,6 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
       setTransferConfirm(null);
     }
   };
-
-  const handleAnnotationClick = (annotation) => {
-    if (isGuest) {
-      if (onRequestLogin) onRequestLogin();
-      return;
-    }
-    if (onNavigateToDocument) {
-      onNavigateToDocument(annotation.corpus_id, annotation.corpus_name, annotation.document_id, annotation.annotation_id);
-    }
-  };
-
-  // Toggle edge filter
-  const handleToggleEdge = (edgeId) => {
-    if (activeEdgeIds === null) {
-      // All were active — deactivate this one
-      const remaining = edges.filter(e => e.edge_id !== edgeId).map(e => e.edge_id);
-      setActiveEdgeIds(remaining.length > 0 ? remaining : []);
-    } else if (activeEdgeIds.includes(edgeId)) {
-      // Remove it
-      const remaining = activeEdgeIds.filter(id => id !== edgeId);
-      setActiveEdgeIds(remaining.length > 0 ? remaining : []);
-    } else {
-      // Add it back
-      const updated = [...activeEdgeIds, edgeId];
-      // If all are now active, reset to null
-      if (updated.length === edges.length) {
-        setActiveEdgeIds(null);
-      } else {
-        setActiveEdgeIds(updated);
-      }
-    }
-  };
-
-  const handleShowAll = () => setActiveEdgeIds(null);
-
-  const isEdgeActive = (edgeId) => activeEdgeIds === null || activeEdgeIds.includes(edgeId);
 
   // Build path string for an edge
   const buildPathString = (edge) => {
@@ -547,155 +444,11 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onNavigateToDo
         </div>
       )}
 
-      {/* Subconcept filter bar */}
-      {edges.length > 0 && (
-        <div style={styles.filterBar}>
-          {edges.map(edge => {
-            const active = isEdgeActive(edge.edge_id);
-            return (
-              <span
-                key={edge.edge_id}
-                onClick={() => handleToggleEdge(edge.edge_id)}
-                style={active ? styles.filterBadgeActive : styles.filterBadge}
-              >
-                {edge.concept_name} [{edge.attribute_name}]
-              </span>
-            );
-          })}
-          {activeEdgeIds !== null && (
-            <span onClick={handleShowAll} style={styles.showAllLink}>Show All</span>
-          )}
-        </div>
-      )}
+      {/* TODO 58d-2: replace placeholder with aggregated links view using GET /api/combos/:id/links */}
+      <div style={{ padding: '24px 16px', color: '#666', fontStyle: 'italic', textAlign: 'center' }}>
+        Aggregated links view coming soon.
+      </div>
 
-      {/* Sort toggle + Match toggle (Phase 48) */}
-      {edges.length > 0 && (
-        <>
-          <div style={styles.sortBar}>
-            {[
-              { key: 'combo_votes', label: 'Superconcept Votes' },
-              ...(user ? [{ key: 'subscribed', label: 'Subscribed' }] : []),
-              { key: 'new', label: 'New' },
-              { key: 'annotation_votes', label: 'Annotation Votes' },
-            ].map((opt, i) => (
-              <React.Fragment key={opt.key}>
-                {i > 0 && <span style={styles.sortSep}>{'\u00B7'}</span>}
-                <span
-                  onClick={() => setSortOption(opt.key)}
-                  style={sortOption === opt.key ? styles.sortOptionActive : styles.sortOption}
-                >
-                  {opt.label}
-                </span>
-              </React.Fragment>
-            ))}
-            <span style={styles.matchLabel}>Match:</span>
-            {[
-              { key: 'any', label: 'Any' },
-              { key: 'all', label: 'All' },
-            ].map((opt, i) => (
-              <React.Fragment key={opt.key}>
-                {i > 0 && <span style={styles.sortSep}>{'\u00B7'}</span>}
-                <span
-                  onClick={() => setMatchMode(opt.key)}
-                  style={matchMode === opt.key ? styles.sortOptionActive : styles.sortOption}
-                >
-                  {opt.label}
-                </span>
-              </React.Fragment>
-            ))}
-          </div>
-          <div style={styles.matchHelper}>
-            {matchMode === 'any'
-              ? 'Showing annotations from documents with any selected subconcept'
-              : 'Showing only annotations from documents that cover every selected subconcept'}
-          </div>
-        </>
-      )}
-
-      {/* Annotations list */}
-      {edges.length === 0 ? (
-        <div style={styles.emptyState}>
-          This superconcept has no concepts yet.
-          {isOwner && ' Add concepts using the controls above.'}
-        </div>
-      ) : annotationsLoading ? (
-        <div style={styles.emptyState}>Loading annotations...</div>
-      ) : annotations.length === 0 ? (
-        <div style={styles.emptyState}>
-          {matchMode === 'all'
-            ? 'No documents cover all of the selected subconcepts. Try Any mode or narrowing the subconcept filter.'
-            : activeEdgeIds !== null && activeEdgeIds.length === 0
-              ? 'No annotations match the selected filters.'
-              : "The concepts in this superconcept don't have any annotations yet."}
-        </div>
-      ) : (
-        <div style={styles.annotationList}>
-          {annotations.map((a, idx) => (
-            <div key={a.annotation_id} style={idx === 0 ? styles.annotationCardFirst : styles.annotationCard}>
-              {/* Document title + corpus */}
-              <div style={styles.docLine}>
-                <span
-                  style={styles.docTitleLink}
-                  onClick={() => handleAnnotationClick(a)}
-                  title="Open document in corpus"
-                >
-                  {a.document_title}
-                </span>
-                <span style={styles.corpusNameLabel}>({a.corpus_name})</span>
-              </div>
-
-              {/* Quote */}
-              {a.quote_text && (
-                <div style={styles.quoteBlock}>"{a.quote_text}"</div>
-              )}
-
-              {/* Comment */}
-              {a.comment && (
-                <div style={styles.commentBlock}>{a.comment}</div>
-              )}
-
-              {/* Concept badge */}
-              <div style={styles.conceptBadgeLine}>
-                <span style={styles.conceptBadge}>
-                  {a.concept_name} [{a.attribute_name}]
-                </span>
-              </div>
-
-              {/* Bottom row: votes + meta */}
-              <div style={styles.bottomRow}>
-                <div style={styles.voteArea}>
-                  {/* Combo vote — interactive */}
-                  {!isGuest && (
-                    <span
-                      style={a.user_combo_voted ? styles.voteButtonActive : styles.voteButton}
-                      onClick={() => a.user_combo_voted ? handleUnvote(a.annotation_id) : handleVote(a.annotation_id)}
-                      title={a.user_combo_voted ? 'Remove superconcept vote' : 'Vote in this superconcept'}
-                    >
-                      {'\u25B2'} {Number(a.combo_vote_count) || 0}
-                    </span>
-                  )}
-                  {isGuest && (
-                    <span style={styles.voteCountReadonly}>{'\u25B2'} {Number(a.combo_vote_count) || 0}</span>
-                  )}
-                  {/* Corpus vote — read-only */}
-                  <span style={styles.corpusVoteCount}>
-                    {Number(a.annotation_vote_count) || 0} corpus vote{Number(a.annotation_vote_count) != 1 ? 's' : ''}
-                  </span>
-                  {/* Phase 50b: Reverse citation count (read-only) */}
-                  {Number(a.cited_by_count) > 0 && (
-                    <span style={styles.corpusVoteCount}>
-                      Cited by {Number(a.cited_by_count)}
-                    </span>
-                  )}
-                </div>
-                <span style={styles.meta}>
-                  by {a.creator_username || '[deleted user]'}<OrcidBadge orcidId={a.creator_orcid_id} /> {'\u00B7'} {relativeTime(a.created_at)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

@@ -28,24 +28,12 @@ const AppShell = () => {
 
   // Phase 30g: Info page detection and header nav
   const INFO_SLUGS = ['using-orca', 'the-storm'];
-  const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'report-infringement', 'counter-notice', 'admin/legal'];
+  const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'admin/legal'];
   const infoSlug = INFO_SLUGS.find(s => location.pathname === `/${s}`);
   const isLegalPage = LEGAL_SLUGS.some(s => location.pathname === `/${s}`);
 
   // Graph tabs (new Phase 5c — persistent navigation panes)
   const [graphTabs, setGraphTabs] = useState([]);
-
-  // Corpus tabs (Phase 7c — subscription-based persistent tabs)
-  const [corpusTabs, setCorpusTabs] = useState([]);
-
-  // Pending document to open after switching to a corpus tab (Phase 7d-4)
-  const [pendingCorpusDocumentId, setPendingCorpusDocumentId] = useState(null);
-
-  // Phase 27c: Pending annotation to highlight after navigating to a document
-  const [pendingAnnotationId, setPendingAnnotationId] = useState(null);
-
-  // Phase 38h: Pending annotation from graph — pre-fill annotation creation panel
-  const [pendingAnnotationFromGraph, setPendingAnnotationFromGraph] = useState(null);
 
   // Tab groups (Phase 5d)
   const [tabGroups, setTabGroups] = useState([]);
@@ -69,7 +57,7 @@ const AppShell = () => {
 
   const handleRequestLogin = useCallback(() => {
     setLoginModalTab('login');
-    setLoginModalNotice('Log in to view documents and annotations');
+    setLoginModalNotice('');
     setShowLoginModal(true);
   }, []);
 
@@ -87,9 +75,6 @@ const AppShell = () => {
   // Loading
   const [loading, setLoading] = useState(true);
 
-  // Corpus view state: null (not showing), or { view: 'list' | 'detail' | 'document', corpusId?, documentId? }
-  const [corpusView, setCorpusView] = useState(null);
-
   // Saved Page overlay state (Phase 7c-3)
   const [savedPageOpen, setSavedPageOpen] = useState(false);
 
@@ -105,18 +90,6 @@ const AppShell = () => {
   // Phase 39e: Refresh key to signal ComboTabContent to reload after edge added from graph
   const [comboRefreshKey, setComboRefreshKey] = useState(0);
 
-  // Phase 51a: Annotation Votes overlay state
-  const [annotationVotesOpen, setAnnotationVotesOpen] = useState(false);
-
-  // Phase 31b: Messages page state
-  const [messagesPageOpen, setMessagesPageOpen] = useState(false);
-  const [messagesUnreadCount, setMessagesUnreadCount] = useState(0);
-  const [messagesInitialAnnotationId, setMessagesInitialAnnotationId] = useState(null);
-  const [messagesInitialAnnotationIds, setMessagesInitialAnnotationIds] = useState(null); // equivalent annotation IDs for version-aware deep-linking
-
-  // Phase 9b: Orphan rescue modal state
-  const [showOrphanModal, setShowOrphanModal] = useState(false);
-  const [orphanCount, setOrphanCount] = useState(0);
   // Phase 12b: Sidebar collapse state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -228,43 +201,6 @@ const AppShell = () => {
     window.history.replaceState(state, '', url);
   }, [loading, activeTab, graphTabs]);
 
-  // Phase 31b: Fetch unread message count on mount and periodically
-  const refreshUnreadCount = useCallback(async () => {
-    if (isGuest || authLoading) return;
-    try {
-      const res = await messagesAPI.getUnreadCount();
-      setMessagesUnreadCount(res.data.unread_count || 0);
-    } catch (err) {
-      // Non-critical — don't break the app
-    }
-  }, [isGuest, authLoading]);
-
-  useEffect(() => {
-    if (isGuest || authLoading) return;
-    refreshUnreadCount();
-    const interval = setInterval(refreshUnreadCount, 60000);
-    return () => clearInterval(interval);
-  }, [isGuest, authLoading, refreshUnreadCount]);
-
-  // Phase 9b: Check for orphaned documents on mount (logged-in users only)
-  useEffect(() => {
-    if (isGuest || authLoading) return;
-    const checkOrphans = async () => {
-      try {
-        const res = await corpusAPI.getOrphanedDocuments();
-        const count = (res.data.orphanedDocuments || []).length;
-        setOrphanCount(count);
-        if (count > 0) {
-          setShowOrphanModal(true);
-        }
-      } catch (err) {
-        // Silently fail — orphan check is non-critical
-        console.error('Orphan check failed:', err);
-      }
-    };
-    checkOrphans();
-  }, [isGuest, authLoading]);
-
   useEffect(() => {
     if (renamingGroupId && groupRenameInputRef.current) {
       groupRenameInputRef.current.focus();
@@ -281,18 +217,6 @@ const AppShell = () => {
     }
   }, [contextMenu]);
 
-  // Phase 38j: Handle pending citation from CitationRedirect route
-  useEffect(() => {
-    const state = location.state;
-    if (state?.pendingCitation && !isGuest) {
-      const { corpusId, corpusName, documentId, annotationId } = state.pendingCitation;
-      // Clear the state to prevent re-triggering
-      navigate(location.pathname, { replace: true, state: {} });
-      // Use the existing subscribe-and-navigate pattern
-      handleSubscribeToCorpus(corpusId, corpusName || '', documentId, annotationId);
-    }
-  }, [location.state, isGuest]);
-
   // Close account menu on click outside
   useEffect(() => {
     if (!showAccountMenu) return;
@@ -308,10 +232,9 @@ const AppShell = () => {
   const loadAllTabs = async () => {
     try {
       setLoading(true);
-      const [graphRes, groupsRes, subsRes, sidebarRes, comboSubsRes, myCombosRes] = await Promise.all([
+      const [graphRes, groupsRes, sidebarRes, comboSubsRes, myCombosRes] = await Promise.all([
         votesAPI.getGraphTabs().catch(() => ({ data: { graphTabs: [] } })),
         votesAPI.getTabGroups().catch(() => ({ data: { tabGroups: [] } })),
-        corpusAPI.getMySubscriptions().catch(() => ({ data: { subscriptions: [] } })),
         votesAPI.getSidebarItems().catch(err => {
           console.warn('getSidebarItems failed, sidebar order will be default:', err);
           return { data: { items: [] } };
@@ -321,13 +244,6 @@ const AppShell = () => {
       ]);
       const loadedGraph = graphRes.data.graphTabs;
       const loadedGroups = groupsRes.data.tabGroups;
-      const loadedCorpusTabs = (subsRes.data.subscriptions || []).map(sub => ({
-        id: sub.id, // corpus ID
-        corpus_id: sub.id, // explicit alias
-        name: sub.name,
-        subscriber_count: sub.subscriber_count,
-        group_id: null,
-      }));
       const loadedComboSubs = (comboSubsRes.data.subscriptions || []).map(sub => ({
         id: sub.id, // combo ID
         combo_id: sub.id,
@@ -337,7 +253,6 @@ const AppShell = () => {
       }));
       setGraphTabs(loadedGraph);
       setTabGroups(loadedGroups);
-      setCorpusTabs(loadedCorpusTabs);
       setComboSubscriptions(loadedComboSubs);
       setOwnedCombos(myCombosRes.data.combos || []);
       setSidebarItems(sidebarRes.data.items || []);
@@ -345,8 +260,6 @@ const AppShell = () => {
       // Set active tab: prefer first graph tab, then first corpus tab
       if (loadedGraph.length > 0) {
         setActiveTab({ type: 'graph', id: loadedGraph[0].id });
-      } else if (loadedCorpusTabs.length > 0) {
-        setActiveTab({ type: 'corpus', id: loadedCorpusTabs[0].id });
       } else {
         // No tabs at all — will auto-create a default graph tab
         createDefaultGraphTab();
@@ -575,9 +488,6 @@ const AppShell = () => {
       await refreshSidebarItems();
     } catch (err) {
       console.error('Failed to auto-create graph tab:', err);
-      if (corpusTabs.length > 0) {
-        setActiveTab({ type: 'corpus', id: corpusTabs[0].id });
-      }
     }
   };
 
@@ -686,127 +596,7 @@ const AppShell = () => {
     } catch (err) {
       console.error('Failed to open concept tab:', err);
     }
-  }, [isGuest, corpusTabs, tabGroups]);
-
-  // ─── Corpus Tab Actions (Phase 7c) ──────────────────────
-
-  const handleSubscribeToCorpus = useCallback(async (corpusId, corpusName, documentId, annotationId) => {
-    if (isGuest) {
-      handleRequestLogin();
-      return;
-    }
-    // Short-circuit: if we already have a tab for this corpus, the user is
-    // already subscribed. Skip the API call (which would 409) and just navigate.
-    // This keeps the browser console clean during normal annotation/citation
-    // click-through where the user typically already subscribes to corpuses
-    // they're exploring.
-    const alreadySubscribed = corpusTabs.some(t => t.id === corpusId);
-    if (alreadySubscribed) {
-      if (documentId) setPendingCorpusDocumentId(documentId);
-      if (annotationId) setPendingAnnotationId(annotationId);
-      setActiveTab({ type: 'corpus', id: corpusId });
-      return;
-    }
-    try {
-      await corpusAPI.subscribe(corpusId);
-      const newTab = {
-        id: corpusId,
-        corpus_id: corpusId,
-        name: corpusName,
-        group_id: null,
-      };
-      setCorpusTabs(prev => [...prev, newTab]);
-      if (documentId) setPendingCorpusDocumentId(documentId);
-      if (annotationId) setPendingAnnotationId(annotationId);
-      setActiveTab({ type: 'corpus', id: corpusId });
-      await refreshSidebarItems();
-    } catch (err) {
-      if (err.response?.status === 409) {
-        // Backstop: the local corpusTabs check above missed (race condition
-        // between two pending subscribe calls, or stale local state). Recover
-        // gracefully — same handling as the success path.
-        setCorpusTabs(prev => {
-          if (prev.some(t => t.id === corpusId)) return prev;
-          return [...prev, { id: corpusId, corpus_id: corpusId, name: corpusName, group_id: null }];
-        });
-        if (documentId) setPendingCorpusDocumentId(documentId);
-        if (annotationId) setPendingAnnotationId(annotationId);
-        setActiveTab({ type: 'corpus', id: corpusId });
-        await refreshSidebarItems();
-      } else if (err.response?.status === 401) {
-        handleRequestLogin();
-      } else {
-        alert(err.response?.data?.error || 'Failed to subscribe');
-      }
-    }
-  }, [isGuest, handleRequestLogin, corpusTabs]);
-
-  // Phase 38h: Navigate to a corpus tab doc viewer with annotation creation pre-filled
-  const handleAnnotateFromGraph = useCallback(async (corpusId, documentId, annotationInfo) => {
-    if (isGuest) {
-      handleRequestLogin();
-      return;
-    }
-    // Short-circuit when we already have a tab for this corpus — same console-cleanup
-    // rationale as handleSubscribeToCorpus.
-    const alreadySubscribed = corpusTabs.some(t => t.id === corpusId);
-    if (!alreadySubscribed) {
-      try {
-        await corpusAPI.subscribe(corpusId);
-        setCorpusTabs(prev => {
-          if (prev.some(t => t.id === corpusId)) return prev;
-          return [...prev, { id: corpusId, corpus_id: corpusId, name: '', group_id: null }];
-        });
-        await refreshSidebarItems();
-      } catch (err) {
-        if (err.response?.status === 409) {
-          // Race-condition backstop (local state was stale).
-          setCorpusTabs(prev => {
-            if (prev.some(t => t.id === corpusId)) return prev;
-            return [...prev, { id: corpusId, corpus_id: corpusId, name: '', group_id: null }];
-          });
-        } else if (err.response?.status === 401) {
-          handleRequestLogin();
-          return;
-        } else {
-          alert(err.response?.data?.error || 'Failed to subscribe');
-          return;
-        }
-      }
-    }
-    // Set pending states and switch to corpus tab
-    setPendingCorpusDocumentId(documentId);
-    setPendingAnnotationFromGraph(annotationInfo);
-    setActiveTab({ type: 'corpus', id: corpusId });
-    setSavedPageOpen(false);
-    setCorpusView(null);
-    setComboView(null);
-    setMessagesPageOpen(false);
-    setAnnotationVotesOpen(false);
-  }, [isGuest, handleRequestLogin, corpusTabs]);
-
-  const handleUnsubscribeFromCorpus = useCallback(async (corpusId) => {
-    try {
-      await corpusAPI.unsubscribe(corpusId);
-      setCorpusTabs(prev => {
-        const remaining = prev.filter(t => t.id !== corpusId);
-        // If we just removed the active tab, switch to first graph tab or first remaining corpus tab
-        if (activeTab?.type === 'corpus' && activeTab?.id === corpusId) {
-          if (graphTabs.length > 0) {
-            setActiveTab({ type: 'graph', id: graphTabs[0].id });
-          } else if (remaining.length > 0) {
-            setActiveTab({ type: 'corpus', id: remaining[0].id });
-          } else {
-            createDefaultGraphTab();
-          }
-        }
-        return remaining;
-      });
-      await refreshSidebarItems();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to unsubscribe');
-    }
-  }, [activeTab, graphTabs]);
+  }, [isGuest, tabGroups]);
 
   // ─── Combo Subscribe/Unsubscribe (Phase 39b) ──────────────
 
@@ -841,20 +631,20 @@ const AppShell = () => {
       setComboSubscriptions(prev => [...prev, newSub]);
       setActiveTab({ type: 'combo', id: comboId });
       setComboView(null);
-      setCorpusView(null);
+     
       setSavedPageOpen(false);
-      setMessagesPageOpen(false);
-      setAnnotationVotesOpen(false);
+     
+     
       await refreshSidebarItems();
     } catch (err) {
       if (err.response?.status === 409) {
         // Already subscribed — just switch to the tab
         setActiveTab({ type: 'combo', id: comboId });
         setComboView(null);
-        setCorpusView(null);
+       
         setSavedPageOpen(false);
-        setMessagesPageOpen(false);
-        setAnnotationVotesOpen(false);
+       
+       
       } else if (err.response?.status === 401) {
         handleRequestLogin();
       } else {
@@ -876,8 +666,6 @@ const AppShell = () => {
         if (activeTab?.type === 'combo' && activeTab?.id === comboId) {
           if (graphTabs.length > 0) {
             setActiveTab({ type: 'graph', id: graphTabs[0].id });
-          } else if (corpusTabs.length > 0) {
-            setActiveTab({ type: 'corpus', id: corpusTabs[0].id });
           } else if (remaining.length > 0) {
             setActiveTab({ type: 'combo', id: remaining[0].id });
           } else {
@@ -890,7 +678,7 @@ const AppShell = () => {
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to unsubscribe');
     }
-  }, [activeTab, graphTabs, corpusTabs]);
+  }, [activeTab, graphTabs]);
 
   // ─── Tab Group Actions (Phase 5d) ─────────────────────────
 
@@ -1091,9 +879,6 @@ const AppShell = () => {
     if (activeTab.type === 'graph') {
       return graphTabs.some(t => t.id === activeTab.id && t.group_id === group.id);
     }
-    if (activeTab.type === 'corpus') {
-      return corpusTabs.some(t => t.id === activeTab.id && t.group_id === group.id);
-    }
     if (activeTab.type === 'combo') {
       return comboSubscriptions.some(c => c.id === activeTab.id && c.group_id === group.id);
     }
@@ -1131,8 +916,7 @@ const AppShell = () => {
   // Drag overlay ghost
   const activeDragItem = activeDragId != null ? sidebarItems.find(i => i.id === activeDragId) : null;
   const activeDragLabel = activeDragItem
-    ? activeDragItem.item_type === 'corpus' ? corpusTabs.find(t => t.id === activeDragItem.item_id)?.name
-    : activeDragItem.item_type === 'combo' ? comboSubscriptions.find(c => c.id === activeDragItem.item_id)?.name
+    ? activeDragItem.item_type === 'combo' ? comboSubscriptions.find(c => c.id === activeDragItem.item_id)?.name
     : activeDragItem.item_type === 'group' ? tabGroups.find(g => g.id === activeDragItem.item_id)?.name
     : activeDragItem.item_type === 'graph_tab' ? graphTabs.find(t => t.id === activeDragItem.item_id)?.label
     : null
@@ -1140,34 +924,6 @@ const AppShell = () => {
   const activeDragOverlay = activeDragLabel ? (
     <div style={styles.dragOverlay}>{activeDragLabel}</div>
   ) : null;
-
-  // Render a sidebar item for a subscribed corpus tab
-  const renderSidebarCorpusItem = (tab) => {
-    const isActive = isActiveTab('corpus', tab.id);
-
-    return (
-      <div
-        key={`corpus-${tab.id}`}
-        style={{
-          ...styles.sidebarItem,
-          ...(isActive ? styles.sidebarItemActive : {}),
-        }}
-        onClick={() => {
-          setActiveTab({ type: 'corpus', id: tab.id });
-          setCorpusView(null);
-          setComboView(null);
-          setSavedPageOpen(false);
-          setMessagesPageOpen(false);
-          setAnnotationVotesOpen(false);
-        }}
-        onContextMenu={(e) => handleTabContextMenu(e, 'corpus', tab.id)}
-        title={`${tab.name} — right-click for options`}
-      >
-        <span style={styles.sidebarArrowPlaceholder} />
-        <span style={styles.sidebarItemLabel}>{tab.name}</span>
-      </div>
-    );
-  };
 
   // Render a sidebar item for a combo tab (Phase 39b)
   const renderSidebarComboItem = (combo) => {
@@ -1182,11 +938,11 @@ const AppShell = () => {
         }}
         onClick={() => {
           setActiveTab({ type: 'combo', id: combo.id });
-          setCorpusView(null);
+         
           setComboView(null);
           setSavedPageOpen(false);
-          setMessagesPageOpen(false);
-          setAnnotationVotesOpen(false);
+         
+         
         }}
         onContextMenu={(e) => handleTabContextMenu(e, 'combo', combo.id)}
         title={`${combo.name} — right-click for options`}
@@ -1209,7 +965,7 @@ const AppShell = () => {
           paddingLeft: `${12 + depth * 16}px`,
           ...(isActive ? styles.sidebarItemActive : {}),
         }}
-        onClick={() => { setActiveTab({ type: 'graph', id: tab.id }); setCorpusView(null); setComboView(null); setSavedPageOpen(false); setMessagesPageOpen(false); setAnnotationVotesOpen(false); }}
+        onClick={() => { setActiveTab({ type: 'graph', id: tab.id }); setComboView(null); setSavedPageOpen(false); }}
         onContextMenu={(e) => handleTabContextMenu(e, 'graph', tab.id)}
         title={`${tab.label} — right-click for options`}
       >
@@ -1399,8 +1155,7 @@ const AppShell = () => {
             {location.pathname === '/privacy' && <PrivacyPage />}
             {location.pathname === '/copyright' && <CopyrightPage />}
             {location.pathname === '/copyright-policy' && <CopyrightPolicyPage />}
-            {location.pathname === '/report-infringement' && <InfringementNoticePage />}
-            {location.pathname === '/counter-notice' && <CounterNoticePage />}
+
             {location.pathname === '/admin/legal' && <AdminLegalRemovalsPanel />}
           </div>
         </div>
@@ -1414,36 +1169,16 @@ const AppShell = () => {
             <div style={styles.sidebarActions}>
               {!isGuest && (
                 <button
-                  onClick={() => { setCorpusView(null); setComboView(null); setSavedPageOpen(true); setMessagesPageOpen(false); setAnnotationVotesOpen(false); }}
+                  onClick={() => { setComboView(null); setSavedPageOpen(true); }}
                   style={styles.sidebarActionButton}
                   title="View your graph votes"
                 >Graph Votes</button>
               )}
-              {!isGuest && (
-                <button
-                  onClick={() => { setCorpusView(null); setComboView(null); setSavedPageOpen(false); setMessagesPageOpen(false); setAnnotationVotesOpen(true); }}
-                  style={styles.sidebarActionButton}
-                  title="View annotations you have voted for"
-                >Annotation Votes</button>
-              )}
               <button
-                onClick={() => { setSavedPageOpen(false); setMessagesPageOpen(false); setComboView(null); setAnnotationVotesOpen(false); setCorpusView({ view: 'list' }); }}
-                style={styles.sidebarActionButton}
-                title="Browse and manage corpuses"
-              >Browse Corpuses</button>
-              <button
-                onClick={() => { setSavedPageOpen(false); setMessagesPageOpen(false); setCorpusView(null); setAnnotationVotesOpen(false); setComboView({ view: 'list' }); }}
+                onClick={() => { setSavedPageOpen(false); setComboView({ view: 'list' }); }}
                 style={styles.sidebarActionButton}
                 title="Browse and manage superconcepts"
               >Browse Superconcepts</button>
-              {!isGuest && (
-                <button
-                  data-messages-btn
-                  onClick={() => { setSavedPageOpen(false); setCorpusView(null); setComboView(null); setAnnotationVotesOpen(false); setMessagesPageOpen(true); }}
-                  style={styles.sidebarActionButton}
-                  title="View your message threads"
-                >Messages{messagesUnreadCount > 0 ? ` (${messagesUnreadCount})` : ''}</button>
-              )}
             </div>
 
             <div style={styles.sidebarDivider} />
@@ -1463,15 +1198,6 @@ const AppShell = () => {
                   overlayContent={activeDragOverlay}
                 >
                   {topLevelSidebarItems.map(item => {
-                    if (item.item_type === 'corpus') {
-                      const tab = corpusTabs.find(t => t.id === item.item_id);
-                      if (!tab || tab.group_id) return null;
-                      return (
-                        <SortableItem key={item.id} id={item.id}>
-                          {renderSidebarCorpusItem(tab)}
-                        </SortableItem>
-                      );
-                    }
                     if (item.item_type === 'group') {
                       const group = tabGroups.find(g => g.id === item.item_id);
                       if (!group) return null;
@@ -1501,12 +1227,10 @@ const AppShell = () => {
               ) : (
                 // Fallback: sidebar order not loaded, render without DnD
                 [
-                  ...corpusTabs.filter(t => !t.group_id).map(t => ({ item_type: 'corpus', item_id: t.id, _key: `c-${t.id}` })),
                   ...comboSubscriptions.map(c => ({ item_type: 'combo', item_id: c.id, _key: `cb-${c.id}` })),
                   ...tabGroups.map(g => ({ item_type: 'group', item_id: g.id, _key: `g-${g.id}` })),
                   ...graphTabs.filter(t => !t.group_id).map(t => ({ item_type: 'graph_tab', item_id: t.id, _key: `gt-${t.id}` })),
                 ].map(item => {
-                  if (item.item_type === 'corpus') return renderSidebarCorpusItem(corpusTabs.find(t => t.id === item.item_id));
                   if (item.item_type === 'combo') return renderSidebarComboItem(comboSubscriptions.find(c => c.id === item.item_id));
                   if (item.item_type === 'group') return renderSidebarGroup(tabGroups.find(g => g.id === item.item_id));
                   if (item.item_type === 'graph_tab') return renderSidebarGraphItem(graphTabs.find(t => t.id === item.item_id));
@@ -1554,66 +1278,8 @@ const AppShell = () => {
             />
           )}
 
-          {/* Phase 51a: Annotation Votes overlay */}
-          {annotationVotesOpen && (
-            <AnnotationVotesOverlay
-              onBack={() => setAnnotationVotesOpen(false)}
-              onOpenAnnotation={(corpusId, corpusName, documentId, annotationId) => {
-                setAnnotationVotesOpen(false);
-                handleSubscribeToCorpus(corpusId, corpusName, documentId, annotationId);
-              }}
-            />
-          )}
-
-          {/* Phase 31b: Messages page overlay */}
-          {messagesPageOpen && (
-            <MessagesPage
-              onBack={() => { setMessagesPageOpen(false); setMessagesInitialAnnotationId(null); setMessagesInitialAnnotationIds(null); }}
-              initialAnnotationId={messagesInitialAnnotationId}
-              initialAnnotationIds={messagesInitialAnnotationIds}
-              onInitialAnnotationConsumed={() => { setMessagesInitialAnnotationId(null); setMessagesInitialAnnotationIds(null); }}
-              onRefreshUnread={refreshUnreadCount}
-            />
-          )}
-
-          {/* Corpus views — overlay normal content when active */}
-          {!savedPageOpen && !messagesPageOpen && !annotationVotesOpen && corpusView && corpusView.view === 'list' && (
-            <CorpusListView
-              onSelectCorpus={(id) => setCorpusView({ view: 'detail', corpusId: id })}
-              onBack={() => setCorpusView(null)}
-              isGuest={isGuest}
-              onSubscribe={handleSubscribeToCorpus}
-              corpusTabs={corpusTabs}
-            />
-          )}
-          {!savedPageOpen && !messagesPageOpen && !annotationVotesOpen && corpusView && corpusView.view === 'detail' && (
-            <CorpusDetailView
-              corpusId={corpusView.corpusId}
-              onBack={() => setCorpusView({ view: 'list' })}
-              onSelectCorpus={(id) => setCorpusView({ view: 'detail', corpusId: id })}
-              onOpenDocument={async (docId, corpusName) => {
-                const targetCorpusId = corpusView.corpusId;
-                const targetCorpusName = corpusTabs.find(t => t.id === targetCorpusId)?.name || corpusName || `Corpus ${targetCorpusId}`;
-                handleSubscribeToCorpus(targetCorpusId, targetCorpusName, docId);
-                setCorpusView(null);
-              }}
-              isGuest={isGuest}
-              onSubscribe={handleSubscribeToCorpus}
-              onUnsubscribe={handleUnsubscribeFromCorpus}
-              isSubscribed={corpusTabs.some(t => t.id === corpusView.corpusId)}
-              currentUserId={user?.id}
-            />
-          )}
-          {!savedPageOpen && !messagesPageOpen && !annotationVotesOpen && corpusView && corpusView.view === 'document' && (
-            <DocumentView
-              documentId={corpusView.documentId}
-              onBack={() => setCorpusView({ view: 'detail', corpusId: corpusView.corpusId })}
-              onOpenCorpus={(id) => setCorpusView({ view: 'detail', corpusId: id })}
-            />
-          )}
-
           {/* Phase 39b: Browse Combos overlay */}
-          {!savedPageOpen && !messagesPageOpen && !annotationVotesOpen && !corpusView && comboView && comboView.view === 'list' && (
+          {!savedPageOpen && comboView && comboView.view === 'list' && (
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
@@ -1632,7 +1298,7 @@ const AppShell = () => {
           )}
 
           {/* Normal tab content — hidden when overlays are active */}
-          {!savedPageOpen && !messagesPageOpen && !annotationVotesOpen && !corpusView && !comboView && (
+          {!savedPageOpen && !comboView && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {
@@ -1647,47 +1313,9 @@ const AppShell = () => {
                       user={user}
                       isGuest={isGuest}
                       onUnsubscribe={handleUnsubscribeFromCombo}
-                      onNavigateToDocument={(corpusId, corpusName, documentId, annotationId) => {
-                        handleSubscribeToCorpus(corpusId, corpusName, documentId, annotationId);
-                        setComboView(null);
-                      }}
                       onRequestLogin={handleRequestLogin}
                       onOpenConceptTab={handleOpenConceptTab}
                       refreshKey={comboRefreshKey}
-                    />
-                  </div>
-                );
-              })}
-              {/* Corpus tab content — render all, hide inactive to preserve document state */}
-              {!isGuest && corpusTabs.map(ct => {
-                const isActive = activeTab?.type === 'corpus' && activeTab?.id === ct.id;
-                return (
-                  <div
-                    key={`corpus-${ct.id}`}
-                    style={isActive ? styles.tabPane : styles.tabPaneHidden}
-                  >
-                    <CorpusTabContent
-                      corpusId={ct.id}
-                      isGuest={isGuest}
-                      onUnsubscribe={handleUnsubscribeFromCorpus}
-                      onOpenConceptTab={(conceptId, path, conceptName, attributeName, _sourceId, viewMode) =>
-                        handleOpenConceptTab(conceptId, path, conceptName, attributeName, ct.id, viewMode)
-                      }
-                      onOpenCorpusTab={handleSubscribeToCorpus}
-                      onViewThreads={(annotationId, equivalentIds) => {
-                        setMessagesInitialAnnotationId(annotationId);
-                        setMessagesInitialAnnotationIds(equivalentIds || null);
-                        setSavedPageOpen(false);
-                        setCorpusView(null);
-                        setComboView(null);
-                        setMessagesPageOpen(true);
-                      }}
-                      pendingDocumentId={activeTab?.type === 'corpus' && activeTab?.id === ct.id ? pendingCorpusDocumentId : null}
-                      onPendingDocumentConsumed={() => setPendingCorpusDocumentId(null)}
-                      pendingAnnotationId={activeTab?.type === 'corpus' && activeTab?.id === ct.id ? pendingAnnotationId : null}
-                      onPendingAnnotationConsumed={() => setPendingAnnotationId(null)}
-                      pendingAnnotationFromGraph={activeTab?.type === 'corpus' && activeTab?.id === ct.id ? pendingAnnotationFromGraph : null}
-                      onPendingAnnotationFromGraphConsumed={() => setPendingAnnotationFromGraph(null)}
                     />
                   </div>
                 );
@@ -1714,10 +1342,8 @@ const AppShell = () => {
                         initialViewMode={tab.view_mode || 'children'}
                         onNavigate={handleGraphTabNavigate}
                         isGuest={isGuest}
-                        onOpenCorpusTab={handleSubscribeToCorpus}
                         onOpenConceptTab={handleOpenConceptTab}
                         onRequestLogin={handleRequestLogin}
-                        onAnnotateFromGraph={handleAnnotateFromGraph}
                         onNavigateToSuperconcept={handleNavigateToSuperconcept}
                         ownedCombos={ownedCombos}
                         onComboEdgeAdded={() => setComboRefreshKey(k => k + 1)}
@@ -1773,16 +1399,6 @@ const AppShell = () => {
             </>
           )}
 
-          {/* Corpus tab context menu — unsubscribe only (no group management for corpuses in Phase 12) */}
-          {contextMenu.tabType === 'corpus' && (
-            <>
-              <button
-                style={{ ...styles.contextMenuItem, color: '#555' }}
-                onClick={() => { handleUnsubscribeFromCorpus(contextMenu.tabId); setContextMenu(null); }}
-              >Unsubscribe</button>
-            </>
-          )}
-
           {/* Combo tab context menu — unsubscribe + group management */}
           {contextMenu.tabType === 'combo' && (
             <>
@@ -1820,18 +1436,6 @@ const AppShell = () => {
             </>
           )}
         </div>
-      )}
-
-      {/* Phase 9b: Orphan Rescue Modal */}
-      {showOrphanModal && (
-        <OrphanRescueModal
-          onClose={() => setShowOrphanModal(false)}
-          onRescued={() => {
-            corpusAPI.getOrphanedDocuments().then(res => {
-              setOrphanCount((res.data.orphanedDocuments || []).length);
-            }).catch(() => {});
-          }}
-        />
       )}
 
       {/* Phase 28f: Login/Signup Modal */}

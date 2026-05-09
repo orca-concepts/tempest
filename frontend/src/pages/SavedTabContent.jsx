@@ -25,14 +25,8 @@ const SavedTabContent = ({ edges, conceptNames, conceptCorpusBadges, corpusId, o
   }, []);
 
   const loadTreeOrder = async () => {
-    try {
-      // Always use corpusId = null for flat model ordering
-      const response = await votesAPI.getTreeOrderV2(null);
-      setTreeOrder(response.data.treeOrder || []);
-    } catch (err) {
-      console.error('Failed to load tree order:', err);
-      setTreeOrder([]);
-    }
+    // Tree ordering tables were retired in Phase 58a — default to no custom order
+    setTreeOrder([]);
   };
 
   const buildTrees = () => {
@@ -170,13 +164,7 @@ const SavedTabContent = ({ edges, conceptNames, conceptCorpusBadges, corpusId, o
       display_order: o.displayOrder,
     })));
 
-    // Persist to backend — always use corpusId=null for flat model
-    try {
-      await votesAPI.updateTreeOrderV2(null, order);
-    } catch (err) {
-      console.error('Failed to save tree order:', err);
-      loadTreeOrder();
-    }
+    // Tree ordering persistence retired in Phase 58a — order is session-local only
   };
 
   const renderNode = (node, depth = 0) => {

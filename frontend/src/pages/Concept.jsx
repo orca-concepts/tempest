@@ -23,10 +23,8 @@ const Concept = ({
   initialViewMode,
   onNavigate,
   isGuest = false,
-  onOpenCorpusTab,
   onOpenConceptTab,
   onRequestLogin,
-  onAnnotateFromGraph,
   onNavigateToSuperconcept,
   ownedCombos = [],
   onComboEdgeAdded,
@@ -93,9 +91,6 @@ const Concept = ({
   const [hiddenCount, setHiddenCount] = useState(0);
   const [showHiddenPanel, setShowHiddenPanel] = useState(false);
   
-  // Phase 38h: Annotate from graph picker
-  const [showAnnotatePicker, setShowAnnotatePicker] = useState(false);
-
   // Phase 39d: Add to Combo picker
   const [showComboPicker, setShowComboPicker] = useState(false);
   const [comboFeedback, setComboFeedback] = useState(null); // null, 'added', 'duplicate', or error string
@@ -668,15 +663,6 @@ const Concept = ({
                 Tunnel
               </button>
             )}
-            {user && !isGuest && effectiveViewMode === 'children' && parentEdgeId && onAnnotateFromGraph && (
-              <button
-                onClick={() => setShowAnnotatePicker(true)}
-                style={styles.annotateButton}
-                title="Add this concept as an annotation on a document"
-              >
-                Add as Annotation
-              </button>
-            )}
             {user && !isGuest && parentEdgeId && ownedCombos.length > 0 && (
               <div style={{ position: 'relative' }} ref={comboPickerRef}>
                 <button
@@ -844,7 +830,6 @@ const Concept = ({
                 currentEdgeId={parentEdgeId}
                 isGuest={isGuest}
                 viewMode={effectiveViewMode}
-                onOpenCorpusTab={onOpenCorpusTab}
                 onRequestLogin={onRequestLogin}
                 onNavigateToSuperconcept={onNavigateToSuperconcept}
                 collapsible={isNarrow}
@@ -898,25 +883,6 @@ const Concept = ({
         />
       )}
 
-      {/* Phase 38h: Annotate from graph picker */}
-      <AnnotateFromGraphPicker
-        isOpen={showAnnotatePicker}
-        onClose={() => setShowAnnotatePicker(false)}
-        onSelectDocument={(corpusId, documentId) => {
-          setShowAnnotatePicker(false);
-          if (onAnnotateFromGraph) {
-            onAnnotateFromGraph(corpusId, documentId, {
-              conceptId: Number(effectiveConceptId),
-              conceptName: concept?.name,
-              edgeId: parentEdgeId,
-              attributeName: currentAttribute?.name,
-            });
-          }
-        }}
-        conceptId={Number(effectiveConceptId)}
-        conceptName={concept?.name || ''}
-        edgeId={parentEdgeId}
-      />
     </div>
   );
 };

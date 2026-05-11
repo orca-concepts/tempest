@@ -27,7 +27,7 @@ router.get('/web-links/by-url', optionalAuth, votesController.getWebLinksByUrl);
 router.get('/web-links/all/:conceptId', optionalAuth, votesController.getAllWebLinksForConcept);
 router.get('/web-links/:edgeId', optionalAuth, votesController.getWebLinks);
 router.post('/web-links/add', authenticateToken, webLinkAddLimiter, votesController.addWebLink);
-router.post('/web-links/remove', authenticateToken, votesController.removeWebLink);
+router.post('/web-links/copy', authenticateToken, votesController.copyWebLink);
 router.post('/web-links/upvote', authenticateToken, votesController.upvoteWebLink);
 router.post('/web-links/unvote', authenticateToken, votesController.removeWebLinkVote);
 router.put('/web-links/:linkId/comment', authenticateToken, votesController.updateConceptLinkComment);

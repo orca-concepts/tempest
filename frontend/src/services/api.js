@@ -90,6 +90,9 @@ export const conceptsAPI = {
   getVoteSets: (id, path) =>
     api.get(`/concepts/${id}/votesets`, { params: { path } }),
 
+  getSubtree: (conceptId, path) =>
+    api.get(`/concepts/${conceptId}/subtree`, { params: path ? { path } : {} }),
+
   createRootConcept: (name, attributeId) =>
     api.post('/concepts/root', { name, attributeId }),
 
@@ -210,8 +213,8 @@ export const votesAPI = {
   addWebLink: (edgeId, url, title, comment) =>
     api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined }),
 
-  removeWebLink: (linkId) =>
-    api.post('/votes/web-links/remove', { linkId }),
+  copyWebLink: (sourceLinkId, destEdgeId) =>
+    api.post('/votes/web-links/copy', { sourceLinkId, destEdgeId }),
 
   upvoteWebLink: (linkId) =>
     api.post('/votes/web-links/upvote', { linkId }),

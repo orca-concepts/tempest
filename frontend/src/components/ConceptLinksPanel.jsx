@@ -163,10 +163,7 @@ const ConceptLinksPanel = ({
     try { await votesAPI.updateLinkComment(linkId, editingComment.trim() || null); }
     catch { if (prev) setWebLinks(links => links.map(l => l.id === linkId ? { ...l, comment: prev.comment, updatedAt: prev.updatedAt } : l)); }
   };
-  const handleRemoveLink = async (linkId) => {
-    setWebLinks(links => links.filter(l => l.id !== linkId));
-    try { await votesAPI.removeWebLink(linkId); } catch { loadLinks(); }
-  };
+
 
   const handleInstanceClick = (inst) => {
     if (inst.concept_id === conceptId) {
@@ -231,12 +228,13 @@ const ConceptLinksPanel = ({
         {addButton}{renderAddLinkForm()}{sortToggle}
         {webLinks.map((link, idx) => (
           <LinkCard key={link.id} link={link} user={user} isGuest={isGuest} isFirst={idx === 0}
-            onVoteToggle={handleToggleLinkVote} onStartEdit={handleStartEditComment} onRemove={handleRemoveLink}
+            onVoteToggle={handleToggleLinkVote} onStartEdit={handleStartEditComment}
             editingLinkId={editingLinkId} editingComment={editingComment}
             onEditChange={setEditingComment} onSaveComment={handleSaveComment} onCancelEdit={handleCancelEditComment}
             showInstances={true} instanceData={instanceData[link.id]} onToggleInstance={toggleInstanceExpansion}
             renderInstanceSnippet={renderInstanceSnippet}
-            cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin} />
+            cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
+            conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()} />
         ))}
       </>
     );

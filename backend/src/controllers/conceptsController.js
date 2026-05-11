@@ -851,6 +851,66 @@ const conceptsController = {
       res.status(500).json({ error: 'Failed to get batch children for diff' });
     }
   },
+
+  getSubtree: async (req, res) => {
+    const { id } = req.params;
+    const { path } = req.query;
+    const SUBTREE_LIMIT = 500;
+
+    try {
+      if (!id) return res.status(400).json({ error: 'Concept ID is required' });
+
+      // Build the graph_path context for direct children of this concept.
+      // Children's edges have graph_path = [...parentPath, conceptId].
+      const pathIds = path ? path.split(',').filter(Boolean).map(Number) : [];
+      const childGraphPath = [...pathIds, parseInt(id)];
+      const childGraphPathLiteral = '{' + childGraphPath.join(',') + '}';
+
+      const result = await pool.query(
+        `WITH RECURSIVE subtree AS (
+          SELECT e.id AS edge_id, e.child_id, e.parent_id, e.graph_path, e.attribute_id,
+                 c.name AS concept_name, a.name AS attribute_name, 1 AS depth
+          FROM edges e
+          JOIN concepts c ON c.id = e.child_id
+          LEFT JOIN attributes a ON a.id = e.attribute_id
+          WHERE e.parent_id = $1
+            AND e.graph_path = $3::integer[]
+            AND e.is_hidden = false
+          UNION ALL
+          SELECT e.id, e.child_id, e.parent_id, e.graph_path, e.attribute_id,
+                 c.name, a.name, st.depth + 1
+          FROM edges e
+          JOIN concepts c ON c.id = e.child_id
+          LEFT JOIN attributes a ON a.id = e.attribute_id
+          JOIN subtree st ON e.parent_id = st.child_id
+            AND e.graph_path = st.graph_path || st.child_id
+          WHERE e.is_hidden = false
+            AND st.depth < 50
+        )
+        SELECT edge_id, child_id, parent_id, concept_name, graph_path, attribute_name, depth
+        FROM subtree
+        ORDER BY depth, concept_name
+        LIMIT $2`,
+        [id, SUBTREE_LIMIT + 1, childGraphPathLiteral]
+      );
+
+      const truncated = result.rows.length > SUBTREE_LIMIT;
+      const edges = (truncated ? result.rows.slice(0, SUBTREE_LIMIT) : result.rows).map(row => ({
+        edge_id: row.edge_id,
+        child_id: row.child_id,
+        parent_id: row.parent_id,
+        concept_name: row.concept_name,
+        graph_path: row.graph_path,
+        attribute_name: row.attribute_name,
+        depth: row.depth,
+      }));
+
+      res.json({ edges, truncated });
+    } catch (error) {
+      console.error('Error fetching subtree:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
 };
 
 module.exports = conceptsController;

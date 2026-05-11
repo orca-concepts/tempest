@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import CopyLinkPicker from './CopyLinkPicker';
 
 // Clamped text with "Show more" / "Show less" toggle
 const ClampedText = ({ text, lines = 3, style = {} }) => {
@@ -29,7 +30,7 @@ const wasEdited = (link) => {
  *
  * Props:
  *   link, user, isGuest, isFirst, contextLabel,
- *   onVoteToggle, onStartEdit, onRemove,
+ *   onVoteToggle, onStartEdit,
  *   editingLinkId, editingComment, onEditChange, onSaveComment, onCancelEdit,
  *   showInstances, instanceData, onToggleInstance, renderInstanceSnippet,
  *   cardRef, onRequestLogin,
@@ -40,15 +41,17 @@ const wasEdited = (link) => {
 const LinkCard = ({
   link, user, isGuest, isFirst = false,
   contextLabel,
-  onVoteToggle, onStartEdit, onRemove,
+  onVoteToggle, onStartEdit,
   editingLinkId, editingComment, onEditChange, onSaveComment, onCancelEdit,
   showInstances = false, instanceData, onToggleInstance, renderInstanceSnippet,
   cardRef, onRequestLogin,
   clickable = false, onCardClick,
   readOnlyVote = false,
+  conceptId, conceptPath, onCopySuccess,
 }) => {
   const isCreator = user && link.addedBy === user.id;
   const isEditing = editingLinkId === link.id;
+  const [showCopyPicker, setShowCopyPicker] = useState(false);
   const iData = instanceData || {};
   const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
@@ -107,9 +110,18 @@ const LinkCard = ({
         <span style={s.meta}>
           {link.addedByUsername}
           {!readOnlyVote && isCreator && !isEditing && onStartEdit && <span onClick={e => { e.stopPropagation(); onStartEdit(link); }} style={s.editBtn}>{link.comment ? 'Edit' : 'Add comment'}</span>}
-          {!readOnlyVote && isCreator && !isEditing && onRemove && <span onClick={e => { e.stopPropagation(); onRemove(link.id); }} style={{ ...s.editBtn, color: '#999' }}>Remove</span>}
+          {!readOnlyVote && isCreator && !isEditing && conceptId && <span onClick={e => { e.stopPropagation(); setShowCopyPicker(true); }} style={s.editBtn}>Copy</span>}
         </span>
       </div>
+      {showCopyPicker && (
+        <CopyLinkPicker
+          link={link}
+          conceptId={conceptId}
+          conceptPath={conceptPath}
+          onClose={() => setShowCopyPicker(false)}
+          onCopySuccess={(destName) => { setShowCopyPicker(false); if (onCopySuccess) onCopySuccess(destName); }}
+        />
+      )}
       {showInstances && hasFetched && (
         <div style={s.instanceRow}>
           <div style={s.instanceColumn}>

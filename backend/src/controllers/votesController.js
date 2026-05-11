@@ -1615,35 +1615,85 @@ const votesController = {
     }
   },
 
-  // Remove a web link (only the user who added it can remove it)
-  removeWebLink: async (req, res) => {
-    const { linkId } = req.body;
+  copyWebLink: async (req, res) => {
+    const { sourceLinkId, destEdgeId } = req.body;
 
     try {
-      if (!linkId) {
-        return res.status(400).json({ error: 'linkId is required' });
+      if (!sourceLinkId || !destEdgeId) {
+        return res.status(400).json({ error: 'sourceLinkId and destEdgeId are required' });
       }
 
       const userId = req.user.userId;
 
-      // Verify the link exists and was added by this user
-      const linkCheck = await pool.query(
-        'SELECT id, added_by FROM concept_links WHERE id = $1',
-        [linkId]
+      // Load source link
+      const sourceResult = await pool.query(
+        'SELECT id, edge_id, url, title, comment, added_by FROM concept_links WHERE id = $1',
+        [sourceLinkId]
       );
-      if (linkCheck.rows.length === 0) {
-        return res.status(404).json({ error: 'Web link not found' });
+      if (sourceResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Source link not found' });
       }
-      if (linkCheck.rows[0].added_by !== userId) {
-        return res.status(403).json({ error: 'You can only remove links you added' });
+      const source = sourceResult.rows[0];
+
+      // Verify ownership
+      if (source.added_by !== userId) {
+        return res.status(403).json({ error: 'You can only copy links you added' });
       }
 
-      // Delete the link (concept_link_votes cascade automatically)
-      await pool.query('DELETE FROM concept_links WHERE id = $1', [linkId]);
+      // Load source edge to get its child_id and graph_path[0] (root graph)
+      const sourceEdgeResult = await pool.query(
+        'SELECT child_id, graph_path FROM edges WHERE id = $1',
+        [source.edge_id]
+      );
+      if (sourceEdgeResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Source edge not found' });
+      }
+      const sourceEdge = sourceEdgeResult.rows[0];
 
-      res.json({ message: 'Web link removed' });
+      // Load dest edge and verify it's a descendant in the same graph
+      const destEdgeResult = await pool.query(
+        'SELECT id, child_id, graph_path FROM edges WHERE id = $1 AND is_hidden = false',
+        [destEdgeId]
+      );
+      if (destEdgeResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Destination edge not found or hidden' });
+      }
+      const destEdge = destEdgeResult.rows[0];
+
+      // Descendant check: dest's graph_path must contain source's child_id
+      const destPath = destEdge.graph_path || [];
+      if (!destPath.includes(sourceEdge.child_id)) {
+        return res.status(400).json({ error: 'Destination must be a descendant of the source concept' });
+      }
+
+      // Same root graph check
+      const sourceRoot = (sourceEdge.graph_path || []).length > 0 ? sourceEdge.graph_path[0] : sourceEdge.child_id;
+      const destRoot = destPath.length > 0 ? destPath[0] : destEdge.child_id;
+      if (sourceRoot !== destRoot) {
+        return res.status(400).json({ error: 'Destination must be in the same root graph' });
+      }
+
+      // Insert the copy
+      const result = await pool.query(
+        `INSERT INTO concept_links (edge_id, url, title, comment, added_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, edge_id, url, title, comment, added_by, created_at, updated_at`,
+        [destEdgeId, source.url, source.title, source.comment, userId]
+      );
+
+      // Auto-upvote
+      await pool.query(
+        `INSERT INTO concept_link_votes (user_id, concept_link_id)
+         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [userId, result.rows[0].id]
+      );
+
+      res.status(201).json({
+        message: 'Link copied',
+        link: result.rows[0],
+      });
     } catch (error) {
-      console.error('Error removing web link:', error);
+      console.error('Error copying web link:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

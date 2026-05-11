@@ -143,6 +143,7 @@ const Concept = ({
   const loadConcept = async () => {
     try {
       setLoading(true);
+      setParentEdgeId(null);
       const pathParam = effectivePath.join(',');
       const sortParam = sortMode === 'saves' ? undefined : sortMode;
       const response = await conceptsAPI.getConceptWithChildren(
@@ -165,7 +166,7 @@ const Concept = ({
 
       // Load vote sets for children view
       if (effectiveViewMode !== 'flip') {
-        loadVoteSets(pathParam);
+        await loadVoteSets(pathParam);
         // Phase 16c: Load hidden children count
         loadHiddenCount();
       }

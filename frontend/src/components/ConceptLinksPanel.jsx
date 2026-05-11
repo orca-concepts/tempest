@@ -30,25 +30,33 @@ const ConceptLinksPanel = ({
   const [instancePathNames, setInstancePathNames] = useState({});
   const [superconcepts, setSuperconcepts] = useState([]);
   const linkRefs = useRef({});
+  const linksRequestIdRef = useRef(0);
   const isChildrenView = viewMode === 'children';
 
   // Load web links
   const loadLinks = useCallback(() => {
+    const myRequestId = ++linksRequestIdRef.current;
     if (!conceptId) return;
+    if (isChildrenView && !currentEdgeId) {
+      setWebLinks([]);
+      return;
+    }
     setWebLinksLoading(true);
     if (isChildrenView && currentEdgeId) {
       votesAPI.getWebLinks(currentEdgeId, linksSort)
         .then(res => {
+          if (myRequestId !== linksRequestIdRef.current) return;
           setWebLinks((res.data.webLinks || []).map(link => ({
             ...link, edgeId: currentEdgeId, parentId: null, parentName: null, graphPath: path || [], attributeName: null,
           })));
         })
-        .catch(() => setWebLinks([]))
-        .finally(() => setWebLinksLoading(false));
+        .catch(() => { if (myRequestId !== linksRequestIdRef.current) return; setWebLinks([]); })
+        .finally(() => { if (myRequestId === linksRequestIdRef.current) setWebLinksLoading(false); });
     } else {
       const pathParam = (path || []).join(',');
       votesAPI.getAllWebLinksForConcept(conceptId, pathParam || undefined)
         .then(res => {
+          if (myRequestId !== linksRequestIdRef.current) return;
           const flat = [];
           for (const group of (res.data.groups || [])) {
             for (const link of group.links) {
@@ -57,8 +65,8 @@ const ConceptLinksPanel = ({
           }
           setWebLinks(flat);
         })
-        .catch(() => setWebLinks([]))
-        .finally(() => setWebLinksLoading(false));
+        .catch(() => { if (myRequestId !== linksRequestIdRef.current) return; setWebLinks([]); })
+        .finally(() => { if (myRequestId === linksRequestIdRef.current) setWebLinksLoading(false); });
     }
   }, [conceptId, currentEdgeId, isChildrenView, linksSort, path?.join(',')]);
 

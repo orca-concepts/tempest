@@ -120,7 +120,7 @@ const ConceptLinksPanel = ({
       const newData = {};
       webLinks.forEach(link => {
         const all = (urlMap[link.url] || []).filter(r => r.id !== link.id);
-        newData[link.id] = { loading: false, sameConceptInstances: all.filter(r => r.concept_id === conceptId), otherConceptInstances: all.filter(r => r.concept_id !== conceptId), expanded: null };
+        newData[link.id] = { loading: false, sameConceptInstances: all.filter(r => r.concept_id === conceptId), otherConceptInstances: all.filter(r => r.concept_id !== conceptId), expanded: {} };
       });
       setInstanceData(newData);
     });
@@ -128,7 +128,10 @@ const ConceptLinksPanel = ({
   }, [webLinks, conceptId]);
 
   const toggleInstanceExpansion = (linkId, type) => {
-    setInstanceData(prev => ({ ...prev, [linkId]: { ...prev[linkId], expanded: prev[linkId]?.expanded === type ? null : type } }));
+    setInstanceData(prev => {
+      const cur = prev[linkId]?.expanded || {};
+      return { ...prev, [linkId]: { ...prev[linkId], expanded: { ...cur, [type]: !cur[type] } } };
+    });
   };
 
   // Handlers

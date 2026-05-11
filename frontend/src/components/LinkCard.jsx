@@ -98,11 +98,11 @@ const LinkCard = ({
       )}
       <div style={s.bottomRow}>
         {readOnlyVote ? (
-          <span style={{ ...s.vote, color: '#888' }}>{'\u2191'} {link.voteCount}</span>
+          <span style={{ ...s.vote, color: '#888' }}>{'\u25b2'} {link.voteCount}</span>
         ) : (
           <span onClick={handleVote}
             style={{ ...s.vote, cursor: 'pointer', color: link.userVoted ? '#333' : '#888', fontWeight: link.userVoted ? '600' : 'normal' }}
-            title={link.userVoted ? 'Remove vote' : 'Upvote'}>{'\u2191'} {link.voteCount}</span>
+            title={link.userVoted ? 'Remove vote' : 'Upvote'}>{'\u25b2'} {link.voteCount}</span>
         )}
         <span style={s.meta}>
           {link.addedByUsername}
@@ -110,20 +110,26 @@ const LinkCard = ({
           {!readOnlyVote && isCreator && !isEditing && onRemove && <span onClick={e => { e.stopPropagation(); onRemove(link.id); }} style={{ ...s.editBtn, color: '#999' }}>Remove</span>}
         </span>
       </div>
-      {showInstances && hasFetched && (sameCount > 0 || otherCount > 0) && (
-        <div style={s.instanceButtons}>
-          {sameCount > 0 && (
-            <span style={s.instanceToggle} onClick={() => onToggleInstance && onToggleInstance(link.id, 'same')}>
-              {iData.expanded === 'same' ? 'Hide' : 'Show'} {sameCount} other instance{sameCount !== 1 ? 's' : ''} on this concept
+      {showInstances && hasFetched && (
+        <div style={s.instanceRow}>
+          <div style={s.instanceColumn}>
+            <span
+              style={sameCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
+              onClick={sameCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'same') : undefined}
+            >
+              This concept ({sameCount}) {sameCount > 0 ? (iData.expanded?.same ? '\u25be' : '\u25b8') : ''}
             </span>
-          )}
-          {iData.expanded === 'same' && sameCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.sameConceptInstances.map(renderInstanceSnippet)}</div>}
-          {otherCount > 0 && (
-            <span style={s.instanceToggle} onClick={() => onToggleInstance && onToggleInstance(link.id, 'other')}>
-              {iData.expanded === 'other' ? 'Hide' : 'Show'} {otherCount} instance{otherCount !== 1 ? 's' : ''} across all concepts
+            {iData.expanded?.same && sameCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.sameConceptInstances.map(renderInstanceSnippet)}</div>}
+          </div>
+          <div style={s.instanceColumn}>
+            <span
+              style={otherCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
+              onClick={otherCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'other') : undefined}
+            >
+              All concepts ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
             </span>
-          )}
-          {iData.expanded === 'other' && otherCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.otherConceptInstances.map(renderInstanceSnippet)}</div>}
+            {iData.expanded?.other && otherCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.otherConceptInstances.map(renderInstanceSnippet)}</div>}
+          </div>
         </div>
       )}
     </div>
@@ -150,8 +156,10 @@ const s = {
   vote: { fontSize: '12px', fontFamily: '"EB Garamond", Georgia, serif' },
   meta: { fontSize: '12px', color: '#aaa' },
   toggleLink: { fontSize: '11px', color: '#999', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },
-  instanceButtons: { marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  instanceRow: { marginTop: '6px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-start' },
+  instanceColumn: { display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 },
   instanceToggle: { fontSize: '12px', color: '#888', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },
+  instanceToggleDisabled: { fontSize: '12px', color: '#ccc', cursor: 'default', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceList: { marginTop: '4px', marginLeft: '8px', borderLeft: '2px solid #e0d9cf', paddingLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' },
 };
 

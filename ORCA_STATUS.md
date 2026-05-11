@@ -1,6 +1,6 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 9, 2026
+**Last Updated:** May 11, 2026
 **Current Status:** Phase 58 link-based pivot COMPLETE. Site offline pending Lane Rideout legal disclosure of pivot scope and revised legal documents. Railway not yet reattached.
 
 ---
@@ -283,6 +283,14 @@ Every member must have `.catch()` fallback.
 ### Legal Hold (AD Phase 53b)
 `legal_hold` flag on concepts, edges, concept_links prevents community unhide.
 
+### Stale-State Guard on Navigation (commit `3089bbf`, May 2026)
+Async fetches keyed on a route param (such as `edgeId`) must:
+1. Clear the parent-held param state to `null` at the START of navigation, not after the new fetch completes. Otherwise the child component renders one frame with the previous param value and fetches stale data.
+2. Capture a request generation ID (a `useRef` counter incremented per call) at the start of every async fetch, and bail out of all state setters in that fetch if the ID no longer matches the current generation. Without this, a slow response from the previous edge can land after a fast response from the new edge and overwrite the correct data.
+3. Await any setter functions that the child depends on (e.g., `loadVoteSets` setting `parentEdgeId`) before marking the page as loaded. Fire-and-forget setters open a window where downstream components render with stale or missing values.
+
+Tab reuse via `graphTabsRef` means `Concept` components are keyed by tab ID, not concept ID, so they do not remount on navigation — stale state persists across navigations until explicitly cleared. This pattern applies anywhere an edge-keyed child fetch lives below a navigable parent.
+
 ---
 
 ## Phase 58 Completion Narrative
@@ -307,6 +315,7 @@ Phase 58 pivoted orca from a document/annotation platform to a link-based refere
 - ClampedText duplicated in LinkCard and ConceptLinksPanel
 - AppShell tab management complexity warrants refactor
 - Tree ordering persistence retired (session-local only)
+- **Stale-state audit results (May 2026):** `FlipView`, `TunnelView`, and `LinkVotesOverlay` were audited and found safe today — but `TunnelView`'s safety is STRUCTURAL (it unmounts on every navigation, so its state resets naturally), not DEFENSIVE (explicit state clearing in code). If `TunnelView` is ever changed to persist across navigations the way `ConceptLinksPanel` does, it will immediately exhibit the Failure 1 pattern (stale `tunnelData` visible during the load window). Same caveat applies to `FlipView`. `ComboTabContent.loadComboLinks` race guard added in a follow-up commit. Any new edge-keyed fetch below a navigable parent must follow the Stale-State Guard on Navigation AD from day one — do not rely on unmount behavior as protection.
 
 ### Forward Roadmap
 - Lane Rideout legal disclosure of Phase 58 pivot
@@ -321,6 +330,8 @@ Phase 58 pivoted orca from a document/annotation platform to a link-based refere
 ## Recent Commits (Phase 58)
 
 ```
+<HASH> fix: race guard on ComboTabContent.loadComboLinks + audit results in ORCA_STATUS.md
+3089bbf fix: navigation stale links (clear parentEdgeId on nav + request-gen race protection on link fetch)
 c143810 fix: 58d-2, combo card clickability + readonly votes + restore Graph Votes sidebar
 6b6966c fix: 58d-1 polish, comment clamp + expand toggle + long-string line breaking
 4d4dd09 feat: 58d-1 patches, dedup removed + count buttons + tab reuse + cross-concept scroll/highlight

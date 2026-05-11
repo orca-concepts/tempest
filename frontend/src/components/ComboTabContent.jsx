@@ -24,6 +24,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
   const [contextsLoading, setContextsLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const searchTimerRef = useRef(null);
+  const comboLinksRequestIdRef = useRef(0);
 
   // Transfer ownership state (Phase 42c)
   const [transferSearch, setTransferSearch] = useState('');
@@ -79,12 +80,18 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
 
   // Load aggregated links for the combo (Phase 58d-2)
   const loadComboLinks = useCallback(async () => {
+    const myRequestId = ++comboLinksRequestIdRef.current;
     setComboLinksLoading(true);
     try {
       const res = await combosAPI.getComboLinks(comboId, comboLinksSort);
+      if (myRequestId !== comboLinksRequestIdRef.current) return;
       setComboLinks(res.data.links || []);
-    } catch { setComboLinks([]); }
-    finally { setComboLinksLoading(false); }
+    } catch {
+      if (myRequestId !== comboLinksRequestIdRef.current) return;
+      setComboLinks([]);
+    } finally {
+      if (myRequestId === comboLinksRequestIdRef.current) setComboLinksLoading(false);
+    }
   }, [comboId, comboLinksSort]);
 
   useEffect(() => { if (!loading && combo) loadComboLinks(); }, [loading, combo, loadComboLinks]);

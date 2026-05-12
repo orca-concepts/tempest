@@ -21,6 +21,9 @@ import AdminLegalRemovalsPanel from '../components/AdminLegalRemovalsPanel';
 import TheStormPage from '../components/TheStormPage';
 import CopyrightPage from '../components/CopyrightPage';
 import LinkVotesOverlay from '../components/LinkVotesOverlay';
+import OutreachLanding from '../components/OutreachLanding';
+
+const isOutreachMode = import.meta.env.VITE_OUTREACH_MODE === 'true';
 
 const AppShell = () => {
   const { logout, logoutEverywhere, user, isGuest, loading: authLoading } = useAuth();
@@ -1118,9 +1121,9 @@ const AppShell = () => {
             <h1 style={styles.title} onClick={() => navigate('/')} role="button" tabIndex={0}>orca</h1>
             <button style={{ ...styles.navLink, ...(infoSlug === 'the-storm' ? styles.navLinkActive : {}) }} onClick={() => navigate('/the-storm')}>The Storm</button>
             <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>Using orca</button>
-            <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>
+            {!isOutreachMode && <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>}
           </div>
-          {isGuest ? (
+          {isOutreachMode ? null : isGuest ? (
             <div style={styles.userSection}>
               <button onClick={() => { setLoginModalTab('login'); setLoginModalNotice(''); setShowLoginModal(true); }} style={styles.loginButton}>Log in</button>
               <button onClick={() => { setLoginModalTab('signup'); setLoginModalNotice(''); setShowLoginModal(true); }} style={styles.signupButton}>Sign up</button>
@@ -1188,6 +1191,12 @@ const AppShell = () => {
             {location.pathname === '/admin/legal' && <AdminLegalRemovalsPanel />}
           </div>
         </div>
+      ) : isOutreachMode ? (
+      <div style={styles.mainLayout}>
+        <div style={styles.contentArea}>
+          <OutreachLanding />
+        </div>
+      </div>
       ) : (
       /* Main layout: Sidebar + Content */
       <div style={styles.mainLayout}>

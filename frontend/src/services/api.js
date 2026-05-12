@@ -320,8 +320,8 @@ export const tunnelsAPI = {
   getTunnelLinks: (edgeId, sort = 'votes') =>
     api.get(`/tunnels/${edgeId}?sort=${sort}`),
 
-  createTunnelLink: (originEdgeId, linkedEdgeId) =>
-    api.post('/tunnels/create', { originEdgeId, linkedEdgeId }),
+  createTunnelLink: (originEdgeId, linkedEdgeId, comment) =>
+    api.post('/tunnels/create', { originEdgeId, linkedEdgeId, comment: comment || '' }),
 
   toggleTunnelVote: (tunnelLinkId) =>
     api.post('/tunnels/vote', { tunnelLinkId }),

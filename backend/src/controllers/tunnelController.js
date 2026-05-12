@@ -17,6 +17,7 @@ const tunnelController = {
         SELECT
           tl.id AS tunnel_link_id,
           tl.linked_edge_id,
+          tl.comment,
           tl.created_at,
           e.child_id AS concept_id,
           e.parent_id,
@@ -95,6 +96,7 @@ const tunnelController = {
           tunnelVoteCount: Number(row.tunnel_vote_count),
           userVoted: row.user_voted === true,
           saveVoteCount: Number(row.save_vote_count),
+          comment: row.comment || null,
           createdBy: row.created_by || '[deleted user]',
           createdAt: row.created_at,
         });
@@ -118,10 +120,13 @@ const tunnelController = {
   },
 
   // POST /api/tunnels/create — create a bidirectional tunnel link
+  // AD: Duplicate tunnel links between the same edge pair are allowed.
+  //     Different comments are distinct contributions, exactly like concept_links.
   createTunnelLink: async (req, res) => {
     const client = await pool.connect();
     try {
       const { originEdgeId, linkedEdgeId } = req.body;
+      let { comment } = req.body;
       const userId = req.user.userId;
 
       if (!originEdgeId || !linkedEdgeId) {
@@ -130,6 +135,14 @@ const tunnelController = {
 
       if (originEdgeId === linkedEdgeId) {
         return res.status(400).json({ error: 'Cannot create a tunnel link to the same edge' });
+      }
+
+      // Normalize comment: trim, store empty as NULL
+      if (comment != null) {
+        comment = String(comment).trim();
+        if (comment.length === 0) comment = null;
+      } else {
+        comment = null;
       }
 
       // Validate both edges exist and are not hidden
@@ -151,38 +164,20 @@ const tunnelController = {
       await client.query('BEGIN');
 
       // Insert forward direction (origin → linked)
-      let forwardRow;
-      try {
-        const forwardResult = await client.query(
-          `INSERT INTO tunnel_links (origin_edge_id, linked_edge_id, created_by)
-           VALUES ($1, $2, $3) RETURNING id`,
-          [originEdgeId, linkedEdgeId, userId]
-        );
-        forwardRow = forwardResult.rows[0];
-      } catch (err) {
-        if (err.code === '23505') { // unique_violation
-          await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Tunnel link already exists' });
-        }
-        throw err;
-      }
+      const forwardResult = await client.query(
+        `INSERT INTO tunnel_links (origin_edge_id, linked_edge_id, created_by, comment)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [originEdgeId, linkedEdgeId, userId, comment]
+      );
+      const forwardRow = forwardResult.rows[0];
 
       // Insert reverse direction (linked → origin)
-      let reverseRow;
-      try {
-        const reverseResult = await client.query(
-          `INSERT INTO tunnel_links (origin_edge_id, linked_edge_id, created_by)
-           VALUES ($1, $2, $3) RETURNING id`,
-          [linkedEdgeId, originEdgeId, userId]
-        );
-        reverseRow = reverseResult.rows[0];
-      } catch (err) {
-        if (err.code === '23505') {
-          await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Tunnel link already exists' });
-        }
-        throw err;
-      }
+      const reverseResult = await client.query(
+        `INSERT INTO tunnel_links (origin_edge_id, linked_edge_id, created_by, comment)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [linkedEdgeId, originEdgeId, userId, comment]
+      );
+      const reverseRow = reverseResult.rows[0];
 
       // Auto-vote both directions for the creator
       await client.query(

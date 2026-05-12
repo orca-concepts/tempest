@@ -1,24 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
-
-// Clamped text with "Show more" / "Show less" toggle
-const ClampedText = ({ text, lines = 3, style = {} }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [overflows, setOverflows] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => { if (ref.current) setOverflows(ref.current.scrollHeight > ref.current.clientHeight + 1); }, [text]);
-  if (!text || !text.trim()) return null;
-  const clampStyle = !expanded ? { display: '-webkit-box', WebkitLineClamp: lines, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {};
-  return (
-    <div>
-      <div ref={ref} style={{ ...style, ...clampStyle }}>{text}</div>
-      {overflows && (
-        <span onClick={e => { e.stopPropagation(); setExpanded(p => !p); }}
-          style={s.toggleLink}>{expanded ? 'Show less' : 'Show more'}</span>
-      )}
-    </div>
-  );
-};
+import ClampedText from './ClampedText';
 
 const wasEdited = (link) => {
   if (!link.updatedAt || !link.createdAt) return false;

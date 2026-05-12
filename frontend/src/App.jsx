@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import AppShell from './components/AppShell';
 import ProfilePage from './components/ProfilePage';
 import OrcidCallback from './components/OrcidCallback';
-
 function App() {
   return (
     <Router>

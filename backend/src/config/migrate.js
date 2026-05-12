@@ -957,6 +957,40 @@ const createTables = async () => {
     `);
 
     // ============================================================
+    // Phase 59a: Tunnel link comments + allow duplicate tunnels
+    // AD: Tunnel links allow duplicates between the same edge pair.
+    //     Different comments are distinct contributions, exactly like
+    //     concept_links. UNIQUE(origin_edge_id, linked_edge_id) dropped.
+    // AD: tunnel_votes.UNIQUE(user_id, tunnel_link_id) unchanged —
+    //     votes are per-row, each commented tunnel is its own row.
+    // ============================================================
+    await client.query(`
+      ALTER TABLE tunnel_links ADD COLUMN IF NOT EXISTS comment TEXT
+    `);
+
+    // Drop UNIQUE(origin_edge_id, linked_edge_id) if it still exists
+    await client.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conrelid = 'tunnel_links'::regclass
+            AND contype = 'u'
+            AND conname = 'tunnel_links_origin_edge_id_linked_edge_id_key'
+        ) THEN
+          ALTER TABLE tunnel_links
+            DROP CONSTRAINT tunnel_links_origin_edge_id_linked_edge_id_key;
+        END IF;
+      END $$
+    `);
+
+    // Non-unique index to keep lookups fast after dropping the UNIQUE
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_tunnel_links_origin_linked
+        ON tunnel_links(origin_edge_id, linked_edge_id)
+    `);
+
+    // ============================================================
     // Phase 44: Cleanup cross-context swap votes
     // ============================================================
     const crossContextSwaps = await client.query(`

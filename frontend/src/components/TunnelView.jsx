@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { conceptsAPI, tunnelsAPI } from '../services/api';
+import ClampedText from './ClampedText';
 
 const TunnelView = ({
   conceptId,
@@ -18,8 +19,9 @@ const TunnelView = ({
   const [columnSearchTerms, setColumnSearchTerms] = useState({});
   const [columnSearchResults, setColumnSearchResults] = useState({});
   const [columnSearchLoading, setColumnSearchLoading] = useState({});
-  const [contextPickerData, setContextPickerData] = useState(null); // { attributeId, conceptId, conceptName, parents }
+  const [contextPickerData, setContextPickerData] = useState(null); // { attributeId, conceptId, conceptName, parents, nameMap, selectedEdgeId }
   const [columnFeedback, setColumnFeedback] = useState({}); // attributeId -> message
+  const [tunnelComment, setTunnelComment] = useState(''); // comment for the confirmation box
   const searchTimers = useRef({});
 
   // Right-click context menu
@@ -142,12 +144,6 @@ const TunnelView = ({
         return;
       }
 
-      if (allContexts.length === 1) {
-        // Single context — create tunnel directly
-        await createTunnel(attrId, allContexts[0].edge_id);
-        return;
-      }
-
       // Resolve path names for display
       const allIds = new Set();
       allContexts.forEach(p => (p.graph_path || []).forEach(id => allIds.add(id)));
@@ -163,12 +159,15 @@ const TunnelView = ({
         } catch (e) { /* ignore */ }
       }
 
+      // Always show confirmation box; auto-select if single context
+      setTunnelComment('');
       setContextPickerData({
         attributeId: attrId,
         conceptId: result.id,
         conceptName: result.name,
         parents: allContexts,
         nameMap,
+        selectedEdgeId: allContexts.length === 1 ? allContexts[0].edge_id : null,
       });
     } catch (err) {
       console.error('Error loading concept parents:', err);
@@ -177,17 +176,14 @@ const TunnelView = ({
 
   const createTunnel = async (attrId, linkedEdgeId) => {
     try {
-      await tunnelsAPI.createTunnelLink(edgeId, linkedEdgeId);
+      await tunnelsAPI.createTunnelLink(edgeId, linkedEdgeId, tunnelComment);
       setColumnSearchTerms(prev => ({ ...prev, [attrId]: '' }));
       setColumnSearchResults(prev => ({ ...prev, [attrId]: [] }));
+      setTunnelComment('');
       setContextPickerData(null);
       await loadData();
     } catch (err) {
-      if (err.response?.status === 409) {
-        setColumnFeedback(prev => ({ ...prev, [attrId]: 'Already linked' }));
-      } else {
-        setColumnFeedback(prev => ({ ...prev, [attrId]: err.response?.data?.error || 'Failed' }));
-      }
+      setColumnFeedback(prev => ({ ...prev, [attrId]: err.response?.data?.error || 'Failed' }));
       setTimeout(() => setColumnFeedback(prev => ({ ...prev, [attrId]: null })), 2000);
     }
   };
@@ -261,61 +257,112 @@ const TunnelView = ({
               {/* Search/add field (logged-in only) */}
               {!isGuest && (
                 <div style={styles.searchSection}>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => handleSearchInput(attrId, e.target.value)}
-                    placeholder={`Search ${attr.name}...`}
-                    style={styles.searchInput}
-                  />
-                  {feedback && (
-                    <div style={styles.feedback}>{feedback}</div>
-                  )}
-                  {searchTerm && searchResults.length > 0 && !contextPickerData && (
-                    <div style={styles.searchDropdown}>
-                      {searchResults.map(result => (
-                        <div
-                          key={result.id}
-                          style={styles.searchResultItem}
-                          onClick={() => handleSearchResultClick(attrId, result)}
-                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f4f0'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                        >
-                          <span style={styles.searchResultName}>{result.name}</span>
-                          {result.savedTabs && result.savedTabs.length > 0 && (
-                            <span style={styles.searchBadge}>Voted</span>
-                          )}
+                  {/* Search input — hidden when confirmation box is open */}
+                  {!(contextPickerData && contextPickerData.attributeId === attrId) && (
+                    <>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => handleSearchInput(attrId, e.target.value)}
+                        placeholder={`Search ${attr.name}...`}
+                        style={styles.searchInput}
+                      />
+                      {feedback && (
+                        <div style={styles.feedback}>{feedback}</div>
+                      )}
+                      {searchTerm && searchResults.length > 0 && (
+                        <div style={styles.searchDropdown}>
+                          {searchResults.map(result => (
+                            <div
+                              key={result.id}
+                              style={styles.searchResultItem}
+                              onClick={() => handleSearchResultClick(attrId, result)}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f4f0'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
+                            >
+                              <span style={styles.searchResultName}>{result.name}</span>
+                              {result.savedTabs && result.savedTabs.length > 0 && (
+                                <span style={styles.searchBadge}>Voted</span>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      )}
+                      {searchTerm && searchResults.length === 0 && !isSearching && searchTerm.trim().length > 0 && (
+                        <div style={styles.searchDropdown}>
+                          <div style={styles.searchNoResults}>No results</div>
+                        </div>
+                      )}
+                    </>
                   )}
-                  {searchTerm && searchResults.length === 0 && !isSearching && searchTerm.trim().length > 0 && (
-                    <div style={styles.searchDropdown}>
-                      <div style={styles.searchNoResults}>No results</div>
-                    </div>
-                  )}
-                  {/* Context picker */}
+                  {/* Confirmation box — concept + context picker + comment + Create */}
                   {contextPickerData && contextPickerData.attributeId === attrId && (
-                    <div style={styles.searchDropdown}>
-                      <div style={styles.contextPickerHeader}>
-                        Select context for "{contextPickerData.conceptName}":
+                    <div style={styles.confirmBox}>
+                      <div style={styles.confirmHeader}>
+                        Tunnel to "{contextPickerData.conceptName}"
                       </div>
-                      {contextPickerData.parents.map(parent => {
-                        const pathDisplay = (parent.graph_path || [])
-                          .map(id => contextPickerData.nameMap[id] || `[${id}]`)
-                          .join(' \u2192 ');
-                        return (
-                          <div
-                            key={parent.edge_id}
-                            style={styles.contextPickerItem}
-                            onClick={() => createTunnel(attrId, parent.edge_id)}
-                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5f4f0'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
-                          >
-                            {pathDisplay ? `${pathDisplay} \u2192 ${parent.name}` : parent.name}
-                          </div>
-                        );
-                      })}
+                      {/* Context selection (only shown when multiple) */}
+                      {contextPickerData.parents.length > 1 && (
+                        <div style={styles.contextList}>
+                          <div style={styles.contextListLabel}>Select context:</div>
+                          {contextPickerData.parents.map(parent => {
+                            const pathDisplay = (parent.graph_path || [])
+                              .map(id => contextPickerData.nameMap[id] || `[${id}]`)
+                              .join(' \u2192 ');
+                            const isSelected = contextPickerData.selectedEdgeId === parent.edge_id;
+                            return (
+                              <div
+                                key={parent.edge_id}
+                                style={{
+                                  ...styles.contextOption,
+                                  ...(isSelected ? styles.contextOptionSelected : {}),
+                                }}
+                                onClick={() => setContextPickerData(prev => ({ ...prev, selectedEdgeId: parent.edge_id }))}
+                                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f5f4f0'; }}
+                                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'white'; }}
+                              >
+                                {pathDisplay ? `${pathDisplay} \u2192 ${parent.name}` : parent.name}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {/* Comment */}
+                      <textarea
+                        value={tunnelComment}
+                        onChange={(e) => setTunnelComment(e.target.value)}
+                        placeholder="Comment (optional)"
+                        style={styles.commentTextarea}
+                        rows={2}
+                      />
+                      {/* Action buttons */}
+                      <div style={styles.confirmButtons}>
+                        <span
+                          onClick={() => {
+                            if (contextPickerData.selectedEdgeId) {
+                              createTunnel(attrId, contextPickerData.selectedEdgeId);
+                            }
+                          }}
+                          style={{
+                            ...styles.confirmBtn,
+                            ...(contextPickerData.selectedEdgeId ? {} : styles.confirmBtnDisabled),
+                          }}
+                        >
+                          Create
+                        </span>
+                        <span
+                          onClick={() => {
+                            setContextPickerData(null);
+                            setTunnelComment('');
+                          }}
+                          style={styles.cancelBtn}
+                        >
+                          Cancel
+                        </span>
+                      </div>
+                      {feedback && (
+                        <div style={styles.feedback}>{feedback}</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -422,6 +469,10 @@ const TunnelCard = ({ card, attrId, isGuest, onVote, onClick, onRightClick }) =>
       >
         {card.conceptName}
       </div>
+      {/* Comment */}
+      {card.comment && (
+        <ClampedText text={card.comment} lines={3} style={styles.cardComment} />
+      )}
       {/* Vote row */}
       <div style={styles.cardVoteRow}>
         <button
@@ -493,6 +544,81 @@ const styles = {
     boxSizing: 'border-box',
     outline: 'none',
   },
+  confirmBox: {
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    backgroundColor: 'white',
+    padding: '10px',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+  },
+  confirmHeader: {
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: '8px',
+  },
+  contextList: {
+    marginBottom: '8px',
+  },
+  contextListLabel: {
+    fontSize: '12px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#666',
+    marginBottom: '4px',
+  },
+  contextOption: {
+    padding: '6px 8px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#333',
+    backgroundColor: 'white',
+    borderRadius: '3px',
+    border: '1px solid transparent',
+  },
+  contextOptionSelected: {
+    backgroundColor: '#f0ece4',
+    border: '1px solid #d5cfc5',
+  },
+  commentTextarea: {
+    width: '100%',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontSize: '13px',
+    color: '#333',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #e0d9cf',
+    borderRadius: '3px',
+    padding: '6px 8px',
+    resize: 'vertical',
+    outline: 'none',
+    boxSizing: 'border-box',
+    marginBottom: '8px',
+  },
+  confirmButtons: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+  },
+  confirmBtn: {
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    cursor: 'pointer',
+    color: '#333',
+    textDecoration: 'underline',
+  },
+  confirmBtnDisabled: {
+    color: '#bbb',
+    cursor: 'default',
+    textDecoration: 'none',
+  },
+  cancelBtn: {
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    cursor: 'pointer',
+    color: '#999',
+    textDecoration: 'underline',
+  },
   feedback: {
     fontSize: '12px',
     color: '#888',
@@ -540,21 +666,6 @@ const styles = {
     fontSize: '13px',
     fontFamily: '"EB Garamond", Georgia, serif',
     color: '#999',
-  },
-  contextPickerHeader: {
-    padding: '8px 10px',
-    fontSize: '13px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#666',
-    borderBottom: '1px solid #eee',
-  },
-  contextPickerItem: {
-    padding: '8px 10px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#333',
-    backgroundColor: 'white',
   },
   sortRow: {
     display: 'flex',
@@ -607,6 +718,14 @@ const styles = {
     color: '#222',
     cursor: 'pointer',
     marginBottom: '6px',
+  },
+  cardComment: {
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#555',
+    marginBottom: '6px',
+    lineHeight: '1.4',
+    wordBreak: 'break-word',
   },
   cardVoteRow: {
     display: 'flex',

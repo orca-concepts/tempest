@@ -6,111 +6,11 @@ const PAGE_TITLES = {
   'using-orca': 'Using orca',
 };
 
-// ── Carousel data (using-orca only) ──────────────────────────
-const MESSAGE_SLIDES = [
-  { image: '/images/using-orca/message1.png' },
-  { image: '/images/using-orca/message2.png' },
-  { image: '/images/using-orca/message3.png' },
-  { image: '/images/using-orca/message4.png' },
-];
-
-const MESSAGES_CAPTION = 'Send and receive messages attached to specific annotations, organized by document, annotation, and sender/recipient.';
-
-const MESSAGES_LIGHTBOX = MESSAGE_SLIDES.map((s, i) => ({
-  image: s.image,
-  caption: `Messages (${i + 1} of ${MESSAGE_SLIDES.length}): ${MESSAGES_CAPTION}`,
-}));
-
-const MessagesCarousel = ({ onImageClick }) => {
-  const [slideIndex, setSlideIndex] = useState(0);
-  const slide = MESSAGE_SLIDES[slideIndex];
-
-  return (
-    <div>
-      <img
-        src={slide.image}
-        alt={`Messages screenshot ${slideIndex + 1}`}
-        style={{ ...carouselStyles.image, cursor: 'pointer' }}
-        onClick={() => onImageClick({ slides: MESSAGES_LIGHTBOX, index: slideIndex })}
-      />
-      <div style={carouselStyles.controls}>
-        <button
-          style={{
-            ...carouselStyles.arrowButton,
-            opacity: slideIndex === 0 ? 0.3 : 1,
-          }}
-          onClick={() => setSlideIndex(i => Math.max(0, i - 1))}
-          disabled={slideIndex === 0}
-        >
-          {'\u2190'}
-        </button>
-        <span style={carouselStyles.indicator}>
-          {slideIndex + 1} of {MESSAGE_SLIDES.length}
-        </span>
-        <button
-          style={{
-            ...carouselStyles.arrowButton,
-            opacity: slideIndex === MESSAGE_SLIDES.length - 1 ? 0.3 : 1,
-          }}
-          onClick={() => setSlideIndex(i => Math.min(MESSAGE_SLIDES.length - 1, i + 1))}
-          disabled={slideIndex === MESSAGE_SLIDES.length - 1}
-        >
-          {'\u2192'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const carouselStyles = {
-  wrapper: {
-    marginTop: '36px',
-    borderTop: '1px solid #e8e6e2',
-    paddingTop: '28px',
-  },
-  stepTitle: {
-    fontSize: '16px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: '12px',
-  },
-  image: {
-    maxWidth: '100%',
-    border: '1px solid #e0e0e0',
-    display: 'block',
-    marginBottom: '12px',
-  },
-  controls: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '16px',
-    marginTop: '4px',
-  },
-  arrowButton: {
-    background: 'none',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '18px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#333',
-    padding: '4px 12px',
-    lineHeight: 1,
-  },
-  indicator: {
-    fontSize: '14px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#666',
-  },
-};
-
 // ── Use case data ────────────────────────────────────────────
 const USE_CASES = [
   {
     label: 'Use Case: Research.',
-    text: ' Researchers can develop value hierarchy graphs (as well as those for actions, tools, and research questions) to navigate research documents of different kinds and message document authors.',
+    text: ' Researchers can develop value hierarchy graphs (as well as those for actions, tools, and research questions) to navigate research documents of different kinds.',
   },
   {
     label: 'Use Case: Product Development.',
@@ -150,157 +50,26 @@ const UsingOrcaContent = ({ onImageClick }) => {
   return (
     <div>
       <p style={usingOrcaStyles.intro}>
-        Using orca is building shared value hierarchies, ontologies of the principles that matter most in research,
-        and using them as annotations to navigate between research documents. You can also message document authors about a specific annotation/document, cite annotations from other documents,
-        and link the text-only documents in orca to where they are hosted elsewhere.
+        Use orca to build shared value hierarchies, ontologies of the principles that matter most in research,
+        and use them to navigate between and discover research documents.
       </p>
 
-   
-
-      {/* Video 1 — link-out to YouTube */}
-      <div style={{ margin: '32px 0' }}>
-        <a
-          href="https://www.youtube.com/watch?v=lkjSEi64DFs"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'block',
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '16 / 9',
-            backgroundImage: 'url(https://img.youtube.com/vi/lkjSEi64DFs/maxresdefault.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundColor: '#000',
-            border: '1px solid #ccc',
-            textDecoration: 'none',
-            cursor: 'pointer',
-          }}
-          aria-label="Watch video 1 on YouTube (opens in a new tab)"
-        >
-          {/* Play triangle overlay */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              width: 0,
-              height: 0,
-              borderTop: '14px solid transparent',
-              borderBottom: '14px solid transparent',
-              borderLeft: '22px solid #fff',
-              marginLeft: '6px',
-            }} />
-          </div>
-        </a>
-        {/* PHASE 56C-CAPTION: Miles will revise this caption text */}
-        <p style={{
-          fontFamily: "'EB Garamond', Georgia, serif",
-          fontSize: '0.95rem',
-          fontStyle: 'normal',
-          color: '#555',
-          marginTop: '8px',
-          textAlign: 'center',
-        }}>
-          This video shows the navigation between documents via concept graphs.
-        </p>
-      </div>
-
-      {/* Video 2 — link-out to YouTube */}
-      <div style={{ margin: '32px 0' }}>
-        <a
-          href="https://www.youtube.com/watch?v=o9JuDZjSiGw"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'block',
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '16 / 9',
-            backgroundImage: 'url(https://img.youtube.com/vi/o9JuDZjSiGw/maxresdefault.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundColor: '#000',
-            border: '1px solid #ccc',
-            textDecoration: 'none',
-            cursor: 'pointer',
-          }}
-          aria-label="Watch video 2 on YouTube (opens in a new tab)"
-        >
-          {/* Play triangle overlay */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              width: 0,
-              height: 0,
-              borderTop: '14px solid transparent',
-              borderBottom: '14px solid transparent',
-              borderLeft: '22px solid #fff',
-              marginLeft: '6px',
-            }} />
-          </div>
-        </a>
-        {/* PHASE 56C-CAPTION: Miles will revise this caption text */}
-        <p style={{
-          fontFamily: "'EB Garamond', Georgia, serif",
-          fontSize: '0.95rem',
-          fontStyle: 'normal',
-          color: '#555',
-          marginTop: '8px',
-          textAlign: 'center',
-        }}>
-          This video shows using Flip View to compare a single concept and its children across different parent contexts.
-        </p>
-      </div>
-
       <div style={usingOrcaStyles.heroTitle}>
-        Build collaborative value ontologies, then use them to annotate research documents
+        Build collaborative value ontologies, then use them to link to research documents
       </div>
-      <div style={usingOrcaStyles.heroRow}>
-        <div style={usingOrcaStyles.heroCell}>
-          <img
-            src="/images/using-orca/children_view.png"
-            alt="Children view showing a value hierarchy"
-            style={usingOrcaStyles.heroImage}
-            onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/children_view.png', caption: 'Build collaborative value ontologies to organize the principles central to research.' }],
-              index: 0,
-            })}
-          />
-        </div>
-        <div style={usingOrcaStyles.heroCell}>
-          <img
-            src="/images/using-orca/highlighted_annotation_in_doc.png"
-            alt="Annotation highlighted in a research document"
-            style={usingOrcaStyles.heroImage}
-            onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/highlighted_annotation_in_doc.png', caption: 'Annotate research documents with concepts from your ontologies to navigate between documents through shared meaning.' }],
-              index: 0,
-            })}
-          />
-        </div>
+      <div style={{ marginBottom: '28px' }}>
+        <img
+          src="/images/using-orca/children_view.png"
+          alt="Children view showing a value hierarchy"
+          style={usingOrcaStyles.heroImage}
+          onClick={() => onImageClick({
+            slides: [{ image: '/images/using-orca/children_view.png', caption: 'Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values.' }],
+            index: 0,
+          })}
+        />
+        <p style={usingOrcaStyles.caption}>
+          Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values.
+        </p>
       </div>
 
       <div style={gridStyle}>
@@ -318,15 +87,6 @@ const UsingOrcaContent = ({ onImageClick }) => {
           <p style={usingOrcaStyles.caption}>
             "Flip View" shows you the alternative parents a given concept has; the concept might have
             different child paths to explore for different parent contexts.
-          </p>
-        </div>
-
-        <div style={cellStyle}>
-          <div style={usingOrcaStyles.sectionTitle}>Messages</div>
-          <MessagesCarousel onImageClick={onImageClick} />
-          <p style={usingOrcaStyles.caption}>
-            Send and receive messages attached to specific annotations, organized by document,
-            annotation, and sender/recipient.
           </p>
         </div>
 
@@ -408,16 +168,6 @@ const usingOrcaStyles = {
     color: '#333',
     marginTop: '28px',
     marginBottom: '10px',
-  },
-  heroRow: {
-    display: 'flex',
-    gap: '16px',
-    marginBottom: '28px',
-    width: '100%',
-  },
-  heroCell: {
-    flex: '1 1 0',
-    minWidth: 0,
   },
   heroImage: {
     width: '100%',
@@ -688,9 +438,6 @@ const InfoPage = ({ slug, onRequestLogin }) => {
             <h1 style={styles.pageTitle}>{title}</h1>
             {isUsingOrca && <UsingOrcaContent onImageClick={setLightbox} />}
           </div>
-          <div style={styles.rightCol}>
-            {renderCommentsSection()}
-          </div>
         </div>
 
         {lightbox && (() => {
@@ -846,25 +593,13 @@ const styles = {
     margin: '0 auto',
     padding: '40px 20px',
   },
-  // ── Two-column (using-orca) ────────────────────────────
+  // ── Using-orca layout ────────────────────────────
   twoColWrapper: {
-    display: 'flex',
-    maxWidth: '1400px',
+    maxWidth: '900px',
     margin: '0 auto',
-    padding: '40px 12px',
-    gap: '32px',
-    alignItems: 'flex-start',
+    padding: '40px 20px',
   },
   leftCol: {
-    flex: '1 1 0',
-    minWidth: 0,
-  },
-  rightCol: {
-    width: '340px',
-    flexShrink: 0,
-    position: 'sticky',
-    top: '20px',
-    alignSelf: 'flex-start',
   },
   // ── Lightbox ────────────────────────────────────────────
   lightboxOverlay: {

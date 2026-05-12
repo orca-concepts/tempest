@@ -62,6 +62,7 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 - `id`, `edge_id` (FK edges, CASCADE), `url` (TEXT, NOT NULL), `title` (VARCHAR 255), `comment` (TEXT), `added_by` (FK users, SET NULL), `legal_hold`, `created_at`, `updated_at`
 - No UNIQUE constraint on (edge_id, url) — duplicate URLs allowed per Phase 58d-1
 - Server auto-fetches OG title when title is empty (Phase 58b-2)
+- User delete capability removed in commit `0b382c4`. Rows are immutable from the user's perspective — only hidden via moderation or removed via admin legal removal.
 
 **concept_link_votes** — Simple upvotes on links. UNIQUE(user_id, concept_link_id).
 
@@ -135,6 +136,7 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | GET | `/:id` | Guest | Concept with children |
 | GET | `/:id/parents` | Guest | Flip view parents |
 | GET | `/:id/votesets` | Guest | Vote set analysis |
+| GET | `/:id/subtree` | Guest | Path-scoped descendant tree (?path=1,2,3); used by CopyLinkPicker. Recursive CTE, 500-edge cap, depth 50, filters `is_hidden = false`. |
 | POST | `/root` | Yes | Create root concept |
 | POST | `/child` | Yes | Create child concept |
 | POST | `/batch-children-for-diff` | Guest | Diff modal data |
@@ -147,7 +149,7 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new) |
 | GET | `/web-links/votes/me` | Yes | User's upvoted links |
 | POST | `/web-links/add` | Yes | Add link (OG title auto-fetch) |
-| POST | `/web-links/remove` | Yes | Remove own link |
+| POST | `/web-links/copy` | Yes | Copy link to a descendant edge (adder only, same root graph, descendant edge required). Returns new row; original untouched. |
 | POST | `/web-links/upvote` | Yes | Upvote link |
 | POST | `/web-links/unvote` | Yes | Remove upvote |
 | PUT | `/web-links/:linkId/comment` | Yes | Edit link comment |
@@ -159,6 +161,8 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | GET/POST | `/graph-tabs/*` | Yes | Graph tab CRUD |
 | GET/POST | `/tab-groups/*` | Yes | Tab group CRUD |
 | GET/POST | `/sidebar-items/*` | Yes | Sidebar ordering |
+
+Removed in commit `0b382c4`: `POST /web-links/remove` — user delete capability eliminated to enforce append-only AD.
 
 ### Superconcepts (`/api/combos`)
 | Method | Path | Auth | Description |
@@ -203,9 +207,10 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 
 ### Core Components (`frontend/src/components/`)
 - **AppShell.jsx** — Main layout: header, sidebar, tab management, overlays
-- **ConceptLinksPanel.jsx** — Right panel on concept page (Links tab + Superconcepts tab)
-- **LinkCard.jsx** — Reusable link card with comment clamping, vote button, clickable/readOnlyVote modes
-- **ComboTabContent.jsx** — Superconcept tab: header, edge management, aggregated links view
+- **ConceptLinksPanel.jsx** — Right panel on concept page (Links tab + Superconcepts tab). Passes `conceptId` and `conceptPath` to LinkCard for copy-to-descendant flow.
+- **LinkCard.jsx** — Reusable link card. Always-visible "Other instances on this concept (N)" / "Other instances across all concepts (N)" dropdowns (disabled when N=0). Prominent up-arrow vote icon. "Copy" button next to "Edit" visible only when the current user is the link's adder. No user-facing remove button (append-only enforcement).
+- **CopyLinkPicker.jsx** — Modal overlay for copying a link to a descendant edge. Expandable tree picker with path-scoped subtree fetch, request-generation race guard, Escape-to-close. Calls `POST /api/votes/web-links/copy` on confirm.
+- **ComboTabContent.jsx** — Superconcept tab: header, edge management, aggregated links view. Has request-generation race guard on `loadComboLinks`.
 - **ComboListView.jsx** — Browse Superconcepts overlay
 - **SavedPageOverlay.jsx** — Graph Votes overlay: flat list of saved trees
 - **LinkVotesOverlay.jsx** — Link Votes overlay: user's upvoted links with navigation
@@ -241,11 +246,18 @@ A concept's contextual identity is determined by graph_path + attribute. Same co
 ### Single-Attribute Graphs
 Every graph has one attribute from the root edge. Descendants inherit. Backend enforces via `graph_path[0]` lookup.
 
-### Append-Only for Graph Content
-Concepts, edges, and concept_links are never deleted by users — only hidden via moderation or legally removed. Quality curated through voting.
+### Append-Only for Graph Content (strengthened, commit `0b382c4`)
+Concepts, edges, and concept_links are never deleted by users — only hidden via moderation or legally removed. Quality curated through voting. The `POST /web-links/remove` endpoint was eliminated to enforce this; users have no path to delete their own links. Editing comments on one's own links is still allowed (correction is different from removal). Link mobility is provided by the copy-to-descendant flow, not by move-with-delete.
 
 ### Links Live on Edges (Not Concepts)
-`concept_links.edge_id` ties each link to a specific parent context. Duplicate URLs allowed — different comments are valuable contributions.
+`concept_links.edge_id` ties each link to a specific parent context. Duplicate URLs allowed — different comments are valuable contributions. The copy-to-descendant flow does not block duplicates at the destination, consistent with this AD.
+
+### Copy-to-Descendant for Links (new, commit `0b382c4`)
+A link's original adder may copy it to any descendant edge within the same root graph. Semantics:
+- A new `concept_links` row is INSERTed at the destination edge with the same url, title, comment, and `added_by = current user`.
+- The source row is untouched. Votes do not transfer (the destination starts at zero votes — votes are tied to the (edge, link) pair, not the URL).
+- Permission: backend verifies `concept_links.added_by = req.user.userId`. Frontend hides the Copy button when the current user isn't the adder, but this is UX only — the backend check is the security boundary.
+- Destination scope: descendants only, within the same root graph (same `graph_path[0]`). Cross-graph copy is rejected by the backend.
 
 ### OG Title Auto-Fetch
 Server-side fetching with SSRF protections (DNS resolve + private IP block). 5s timeout. Falls back to URL-as-title.
@@ -289,7 +301,30 @@ Async fetches keyed on a route param (such as `edgeId`) must:
 2. Capture a request generation ID (a `useRef` counter incremented per call) at the start of every async fetch, and bail out of all state setters in that fetch if the ID no longer matches the current generation. Without this, a slow response from the previous edge can land after a fast response from the new edge and overwrite the correct data.
 3. Await any setter functions that the child depends on (e.g., `loadVoteSets` setting `parentEdgeId`) before marking the page as loaded. Fire-and-forget setters open a window where downstream components render with stale or missing values.
 
-Tab reuse via `graphTabsRef` means `Concept` components are keyed by tab ID, not concept ID, so they do not remount on navigation — stale state persists across navigations until explicitly cleared. This pattern applies anywhere an edge-keyed child fetch lives below a navigable parent.
+Tab reuse via `graphTabsRef` means `Concept` components are keyed by tab ID, not concept ID, so they do not remount on navigation — stale state persists across navigations until explicitly cleared. This pattern applies anywhere an edge-keyed child fetch lives below a navigable parent. `CopyLinkPicker` and `ComboTabContent` both apply this guard to their async fetches.
+
+### Path-Scoped Recursive Subtree Queries (new, commit `0b382c4`)
+Any recursive CTE that walks descendants in the concept graph MUST scope by full `graph_path`, not by `parent_id` alone or by `graph_path[last] = parent.child_id` alone. Both partial filters allow cross-context leakage because the same concept can appear under multiple paths.
+
+Correct pattern (PostgreSQL):
+```
+WITH RECURSIVE subtree AS (
+  -- Base case: children of the starting edge in THIS path context
+  SELECT e.id AS edge_id, e.child_id, e.graph_path, ...
+  FROM edges e
+  WHERE e.parent_id = $1
+    AND e.graph_path = $3::integer[]   -- $3 = [...parentPath, conceptId]
+    AND e.is_hidden = false
+  UNION ALL
+  -- Recursive step: full graph_path must equal parent's path with parent's child_id appended
+  SELECT e.id, e.child_id, e.graph_path, ...
+  FROM edges e
+  JOIN subtree st ON e.parent_id = st.child_id
+    AND e.graph_path = st.graph_path || st.child_id   -- array concatenation, not just last-element check
+  WHERE e.is_hidden = false AND st.depth < 50
+)
+```
+This was discovered when the CopyLinkPicker initially showed children from other graph paths. Two separate bugs in the same query — one in the base case, one in the recursive step — both stemming from "filter by concept identity, not contextual identity." If you write a subtree query and you find yourself filtering only by IDs, stop and add the path check.
 
 ---
 
@@ -316,6 +351,8 @@ Phase 58 pivoted orca from a document/annotation platform to a link-based refere
 - AppShell tab management complexity warrants refactor
 - Tree ordering persistence retired (session-local only)
 - **Stale-state audit results (May 2026):** `FlipView`, `TunnelView`, and `LinkVotesOverlay` were audited and found safe today — but `TunnelView`'s safety is STRUCTURAL (it unmounts on every navigation, so its state resets naturally), not DEFENSIVE (explicit state clearing in code). If `TunnelView` is ever changed to persist across navigations the way `ConceptLinksPanel` does, it will immediately exhibit the Failure 1 pattern (stale `tunnelData` visible during the load window). Same caveat applies to `FlipView`. `ComboTabContent.loadComboLinks` race guard added in a follow-up commit. Any new edge-keyed fetch below a navigable parent must follow the Stale-State Guard on Navigation AD from day one — do not rely on unmount behavior as protection.
+- **Copy-link UX:** After a successful copy, the UI refreshes the source view but does not auto-navigate to the destination. Consider adding a "View at destination" link in the success toast (would reuse the existing `pendingScrollLinkId` cross-concept scroll infrastructure).
+- **Copy-link subtree depth limit:** Hardcoded at 50 in the recursive CTE. If real-world graphs grow deeper, this will silently truncate the picker — should be made configurable or removed in favor of relying solely on the 500-edge row cap.
 
 ### Forward Roadmap
 - Lane Rideout legal disclosure of Phase 58 pivot
@@ -330,7 +367,7 @@ Phase 58 pivoted orca from a document/annotation platform to a link-based refere
 ## Recent Commits (Phase 58)
 
 ```
-<HASH> fix: race guard on ComboTabContent.loadComboLinks + audit results in ORCA_STATUS.md
+0b382c4 feat: remove remove button and add copy to descendents option (append-only enforcement; path-scoped subtree CTE; CopyLinkPicker)
 3089bbf fix: navigation stale links (clear parentEdgeId on nav + request-gen race protection on link fetch)
 c143810 fix: 58d-2, combo card clickability + readonly votes + restore Graph Votes sidebar
 6b6966c fix: 58d-1 polish, comment clamp + expand toggle + long-string line breaking
@@ -343,6 +380,8 @@ f3649ae feat: 58b-2, add OG title fetcher and cross-concept/superconcept link en
 475d463 docs: Phase 58 plan + deletion inventory for link-based pivot
 dfff99d status doc update phase 58
 ```
+
+Note: the previous LinkCard UI work (prominent vote icon + always-visible instance dropdowns + race guard on ComboTabContent) was bundled into intermediate commits not all reflected in this list. The current state above describes the live behavior.
 
 ---
 

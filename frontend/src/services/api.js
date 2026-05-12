@@ -106,6 +106,10 @@ export const conceptsAPI = {
 
 // Votes endpoints
 export const votesAPI = {
+  // Phase 59b: Unified votes endpoint
+  getAllVotes: () =>
+    api.get('/votes/me/all'),
+
   // Get user's saved edges (for Saved Page) — optionally filtered by tabId
   getUserSaves: (tabId) =>
     api.get('/votes/saved', { params: tabId ? { tabId } : {} }),

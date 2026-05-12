@@ -36,6 +36,9 @@ router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVo
 // All remaining vote routes require authentication
 router.use(authenticateToken);
 
+// Phase 59b: Unified votes endpoint (saved edges + link votes + ancestors)
+router.get('/me/all', votesController.getAllVotes);
+
 // Get user's saved edges (for Saved Page)
 router.get('/saved', votesController.getUserSaves);
 

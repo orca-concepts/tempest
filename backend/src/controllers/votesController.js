@@ -2225,6 +2225,227 @@ const votesController = {
     res.status(410).json({ error: 'Vote set drift has been retired' });
   },
 
+  // Phase 59b: Unified votes endpoint — savedEdges + linkVotes + contextEdges + ancestorEdges
+  // AD: Votes pages are display-only. No remove affordance. Click-to-navigate only.
+  // AD: Link-voted edges without a save vote appear with full ancestry as context rows.
+  getAllVotes: async (req, res) => {
+    try {
+      const userId = req.user.userId;
+
+      // 1. Saved edges (same query as getUserSaves, no tab filter)
+      const savedResult = await pool.query(
+        `SELECT
+          e.id AS edge_id, e.parent_id, e.child_id, e.graph_path,
+          e.created_at AS edge_created_at,
+          c.name AS child_name, a.id AS attribute_id, a.name AS attribute_name,
+          COUNT(DISTINCT all_v.user_id) AS vote_count,
+          (SELECT COUNT(DISTINCT rv.user_id) FROM replace_votes rv WHERE rv.edge_id = e.id) AS swap_count
+        FROM votes v
+        JOIN edges e ON v.edge_id = e.id
+        JOIN concepts c ON e.child_id = c.id
+        JOIN attributes a ON e.attribute_id = a.id
+        LEFT JOIN votes all_v ON all_v.edge_id = e.id
+        WHERE v.user_id = $1
+        GROUP BY e.id, e.parent_id, e.child_id, e.graph_path, e.created_at,
+                 c.name, a.id, a.name
+        ORDER BY e.graph_path, c.name`,
+        [userId]
+      );
+
+      const savedEdges = savedResult.rows.map(row => ({
+        edgeId: row.edge_id,
+        parentId: row.parent_id,
+        childId: row.child_id,
+        childName: row.child_name,
+        graphPath: row.graph_path || [],
+        attributeId: row.attribute_id,
+        attributeName: row.attribute_name,
+        voteCount: parseInt(row.vote_count),
+        swapCount: parseInt(row.swap_count),
+        isContextOnly: false,
+      }));
+
+      // 2. Link votes (same query as getMyLinkVotes)
+      const linkResult = await pool.query(
+        `SELECT
+          cl.id AS concept_link_id, cl.edge_id, cl.url, cl.title, cl.comment,
+          cl.added_by, u.username AS added_by_username, cl.created_at,
+          e.child_id AS concept_id, child_c.name AS concept_name,
+          e.parent_id, e.graph_path, e.attribute_id,
+          a.name AS attribute_name,
+          COUNT(clv_all.id)::int AS vote_count
+        FROM concept_link_votes clv_user
+        JOIN concept_links cl ON cl.id = clv_user.concept_link_id
+        JOIN edges e ON e.id = cl.edge_id
+        JOIN concepts child_c ON child_c.id = e.child_id
+        JOIN attributes a ON a.id = e.attribute_id
+        LEFT JOIN users u ON u.id = cl.added_by
+        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id
+        WHERE clv_user.user_id = $1 AND e.is_hidden = false
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
+                 cl.added_by, u.username, cl.created_at,
+                 e.child_id, child_c.name, e.parent_id, e.graph_path,
+                 e.attribute_id, a.name
+        ORDER BY cl.created_at DESC
+        LIMIT 500`,
+        [userId]
+      );
+
+      const linkVotes = linkResult.rows.map(row => ({
+        conceptLinkId: row.concept_link_id,
+        edgeId: row.edge_id,
+        url: row.url,
+        title: row.title,
+        comment: row.comment,
+        addedBy: row.added_by,
+        addedByUsername: row.added_by_username,
+        createdAt: row.created_at,
+        edgeConceptId: row.concept_id,
+        edgeConceptName: row.concept_name,
+        edgePath: row.graph_path || [],
+        edgeParentId: row.parent_id,
+        edgeAttributeId: row.attribute_id,
+        edgeAttributeName: row.attribute_name,
+        voteCount: row.vote_count,
+      }));
+
+      // 3. Context edges — edges referenced by linkVotes not in savedEdges
+      const savedEdgeIds = new Set(savedEdges.map(e => e.edgeId));
+      const contextEdgeIds = new Set();
+      for (const lv of linkVotes) {
+        if (!savedEdgeIds.has(lv.edgeId)) contextEdgeIds.add(lv.edgeId);
+      }
+
+      let contextEdges = [];
+      if (contextEdgeIds.size > 0) {
+        const ctxResult = await pool.query(
+          `SELECT
+            e.id AS edge_id, e.parent_id, e.child_id, e.graph_path,
+            e.created_at AS edge_created_at,
+            c.name AS child_name, a.id AS attribute_id, a.name AS attribute_name,
+            COUNT(DISTINCT all_v.user_id) AS vote_count,
+            (SELECT COUNT(DISTINCT rv.user_id) FROM replace_votes rv WHERE rv.edge_id = e.id) AS swap_count
+          FROM edges e
+          JOIN concepts c ON e.child_id = c.id
+          JOIN attributes a ON e.attribute_id = a.id
+          LEFT JOIN votes all_v ON all_v.edge_id = e.id
+          WHERE e.id = ANY($1::integer[])
+          GROUP BY e.id, e.parent_id, e.child_id, e.graph_path, e.created_at,
+                   c.name, a.id, a.name`,
+          [Array.from(contextEdgeIds)]
+        );
+        contextEdges = ctxResult.rows.map(row => ({
+          edgeId: row.edge_id,
+          parentId: row.parent_id,
+          childId: row.child_id,
+          childName: row.child_name,
+          graphPath: row.graph_path || [],
+          attributeId: row.attribute_id,
+          attributeName: row.attribute_name,
+          voteCount: parseInt(row.vote_count),
+          swapCount: parseInt(row.swap_count),
+          isContextOnly: true,
+        }));
+      }
+
+      // 4. Ancestor edges — walk up the graph_path of all saved + context edges
+      //    to fill in tree scaffolding the user doesn't directly have.
+      //    Use a single batch query: collect all (parent_id, child_id, graph_path)
+      //    combos from graph_path arrays and fetch them in one query.
+      const allEdges = [...savedEdges, ...contextEdges];
+      const allEdgeKeys = new Set(allEdges.map(e =>
+        `${e.parentId}|${e.childId}|${JSON.stringify(e.graphPath)}`
+      ));
+
+      // For each edge, its graph_path = [root, ..., parent].
+      // The ancestor chain is: root edge (parent_id=NULL, graph_path='{}'),
+      // then each subsequent child with graph_path = prefix up to that point.
+      // We need edges where child_id = graph_path[i] and graph_path = graph_path.slice(0, i)
+      // with parent_id = graph_path[i-1] (or NULL for root).
+      // Collect the needed ancestor concept IDs from all graph paths.
+      const neededAncestorLookups = []; // [{childId, parentId, graphPath}]
+      for (const edge of allEdges) {
+        const gp = edge.graphPath;
+        for (let i = 0; i < gp.length; i++) {
+          const ancestorChildId = gp[i];
+          const ancestorParentId = i === 0 ? null : gp[i - 1];
+          const ancestorGraphPath = gp.slice(0, i);
+          const key = `${ancestorParentId}|${ancestorChildId}|${JSON.stringify(ancestorGraphPath)}`;
+          if (!allEdgeKeys.has(key)) {
+            allEdgeKeys.add(key);
+            neededAncestorLookups.push({ childId: ancestorChildId, parentId: ancestorParentId, graphPath: ancestorGraphPath });
+          }
+        }
+      }
+
+      let ancestorEdges = [];
+      if (neededAncestorLookups.length > 0) {
+        // Batch fetch: find edges matching any of these (child_id, parent_id, graph_path) combos
+        // Build a WHERE clause with OR conditions grouped by graph_path length for efficiency
+        const ancestorChildIds = [...new Set(neededAncestorLookups.map(a => a.childId))];
+        const ancestorResult = await pool.query(
+          `SELECT
+            e.id AS edge_id, e.parent_id, e.child_id, e.graph_path,
+            e.created_at AS edge_created_at,
+            c.name AS child_name, a.id AS attribute_id, a.name AS attribute_name,
+            COUNT(DISTINCT all_v.user_id) AS vote_count,
+            (SELECT COUNT(DISTINCT rv.user_id) FROM replace_votes rv WHERE rv.edge_id = e.id) AS swap_count
+          FROM edges e
+          JOIN concepts c ON e.child_id = c.id
+          JOIN attributes a ON e.attribute_id = a.id
+          LEFT JOIN votes all_v ON all_v.edge_id = e.id
+          WHERE e.child_id = ANY($1::integer[]) AND e.is_hidden = false
+          GROUP BY e.id, e.parent_id, e.child_id, e.graph_path, e.created_at,
+                   c.name, a.id, a.name`,
+          [ancestorChildIds]
+        );
+
+        // Filter to only the specific (child_id, parent_id, graph_path) combos we need
+        const lookupKeys = new Set(neededAncestorLookups.map(a =>
+          `${a.parentId}|${a.childId}|${JSON.stringify(a.graphPath)}`
+        ));
+        ancestorEdges = ancestorResult.rows
+          .filter(row => {
+            const key = `${row.parent_id}|${row.child_id}|${JSON.stringify(row.graph_path || [])}`;
+            return lookupKeys.has(key);
+          })
+          .map(row => ({
+            edgeId: row.edge_id,
+            parentId: row.parent_id,
+            childId: row.child_id,
+            childName: row.child_name,
+            graphPath: row.graph_path || [],
+            attributeId: row.attribute_id,
+            attributeName: row.attribute_name,
+            voteCount: parseInt(row.vote_count),
+            swapCount: parseInt(row.swap_count),
+            isContextOnly: true,
+          }));
+      }
+
+      // 5. Concept names for path display
+      const conceptIds = new Set();
+      for (const e of [...savedEdges, ...contextEdges, ...ancestorEdges]) {
+        (e.graphPath || []).forEach(id => conceptIds.add(id));
+        if (e.parentId) conceptIds.add(e.parentId);
+        conceptIds.add(e.childId);
+      }
+      let conceptNames = {};
+      if (conceptIds.size > 0) {
+        const namesResult = await pool.query(
+          'SELECT id, name FROM concepts WHERE id = ANY($1::integer[])',
+          [Array.from(conceptIds)]
+        );
+        namesResult.rows.forEach(row => { conceptNames[row.id] = row.name; });
+      }
+
+      res.json({ savedEdges, linkVotes, contextEdges, ancestorEdges, conceptNames });
+    } catch (error) {
+      console.error('Error fetching all votes:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
 };
 
 module.exports = votesController;

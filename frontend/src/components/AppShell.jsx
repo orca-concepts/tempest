@@ -5,8 +5,7 @@ import { votesAPI, combosAPI } from '../services/api';
 import { arrayMove } from '@dnd-kit/sortable';
 import Root from '../pages/Root';
 import Concept from '../pages/Concept';
-import SavedTabContent from '../pages/SavedTabContent';
-import SavedPageOverlay from '../components/SavedPageOverlay';
+import VotesOverlay from '../components/VotesOverlay';
 import LoginModal from '../components/LoginModal';
 import DeleteAccountFlow from '../components/DeleteAccountFlow';
 import SidebarDndContext, { SortableItem, SortableGroupWrapper, GroupMemberContext } from '../components/SidebarDndContext';
@@ -20,7 +19,6 @@ import CopyrightPolicyPage from '../components/CopyrightPolicyPage';
 import AdminLegalRemovalsPanel from '../components/AdminLegalRemovalsPanel';
 import TheStormPage from '../components/TheStormPage';
 import CopyrightPage from '../components/CopyrightPage';
-import LinkVotesOverlay from '../components/LinkVotesOverlay';
 import OutreachLanding from '../components/OutreachLanding';
 
 const isOutreachMode = import.meta.env.VITE_OUTREACH_MODE === 'true';
@@ -79,9 +77,8 @@ const AppShell = () => {
   // Loading
   const [loading, setLoading] = useState(true);
 
-  // Saved Page overlay state (Phase 7c-3)
-  const [savedPageOpen, setSavedPageOpen] = useState(false);
-  const [linkVotesOpen, setLinkVotesOpen] = useState(false);
+  // Phase 59b: Unified Votes overlay
+  const [votesOpen, setVotesOpen] = useState(false);
 
   // Phase 39b: Combo browse overlay state
   const [comboView, setComboView] = useState(null); // null | { view: 'list' }
@@ -1207,20 +1204,13 @@ const AppShell = () => {
             <div style={styles.sidebarActions}>
               {!isGuest && (
                 <button
-                  onClick={() => { setComboView(null); setLinkVotesOpen(false); setSavedPageOpen(true); }}
+                  onClick={() => { setComboView(null); setVotesOpen(true); }}
                   style={styles.sidebarActionButton}
-                  title="View your graph votes (saves, swaps, links)"
-                >Graph Votes</button>
-              )}
-              {!isGuest && (
-                <button
-                  onClick={() => { setComboView(null); setSavedPageOpen(false); setLinkVotesOpen(true); }}
-                  style={styles.sidebarActionButton}
-                  title="View links you have upvoted"
-                >Link Votes</button>
+                  title="View your saved concepts and upvoted links"
+                >Votes</button>
               )}
               <button
-                onClick={() => { setSavedPageOpen(false); setLinkVotesOpen(false); setComboView({ view: 'list' }); }}
+                onClick={() => { setVotesOpen(false); setComboView({ view: 'list' }); }}
                 style={styles.sidebarActionButton}
                 title="Browse and manage superconcepts"
               >Browse Superconcepts</button>
@@ -1315,27 +1305,20 @@ const AppShell = () => {
 
         {/* ─── Content Area ─── */}
         <div style={styles.contentArea}>
-          {/* Saved Page overlay (Phase 7c-3) */}
-          {savedPageOpen && (
-            <SavedPageOverlay
-              onBack={() => setSavedPageOpen(false)}
+          {/* Phase 59b: Unified Votes overlay */}
+          {votesOpen && (
+            <VotesOverlay
+              onBack={() => setVotesOpen(false)}
               onOpenConceptTab={handleOpenConceptTab}
-            />
-          )}
-
-          {/* Link Votes overlay (Phase 58d-2) */}
-          {linkVotesOpen && (
-            <LinkVotesOverlay
-              onBack={() => setLinkVotesOpen(false)}
               onNavigateToLink={(conceptId, path, conceptName, attributeName, scrollToLinkId) => {
-                setLinkVotesOpen(false);
+                setVotesOpen(false);
                 handleOpenConceptTab(conceptId, path, conceptName, attributeName, undefined, 'children', scrollToLinkId);
               }}
             />
           )}
 
           {/* Phase 39b: Browse Combos overlay */}
-          {!savedPageOpen && !linkVotesOpen && comboView && comboView.view === 'list' && (
+          {!votesOpen && comboView && comboView.view === 'list' && (
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
@@ -1354,7 +1337,7 @@ const AppShell = () => {
           )}
 
           {/* Normal tab content — hidden when overlays are active */}
-          {!savedPageOpen && !linkVotesOpen && !comboView && (
+          {!votesOpen && !comboView && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {

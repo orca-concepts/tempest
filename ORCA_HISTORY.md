@@ -6,6 +6,23 @@
 
 ---
 
+
+## Phase 58 Completion Narrative
+
+Phase 58 pivoted Orca from a document/annotation platform to a link-based reference system.
+
+**Removed:** 30+ database tables; 13 backend files; 19 frontend components; 6 API module exports.
+
+**Added:** OG title fetcher with SSRF protections; cross-concept URL search; combo aggregated links; user link votes endpoint; sort toggles; cross-instance navigation with scroll/highlight; LinkCard component; LinkVotesOverlay; comment line clamping.
+
+**Sub-phases:** 58.0 (inventory), 58a (DB migration), 58b-1 (backend removal), 58b-2 (new endpoints), 58c-1 (frontend deletion), 58c-2 (surgical edits), 58d-1 (concept page links), 58d-2 (combo view + link votes + sidebar), 58e (documentation).
+
+**Lessons:** Build success does not mean runtime success with Vite/React — undefined JSX references only surface at runtime. Multiple patch passes were needed for cascading dead-reference cleanup. Future pivots should instrument runtime error detection earlier.
+
+
+
+
+
 ## Completed Phase Narratives (Phases 1–30)
 
 ## Current Feature Status

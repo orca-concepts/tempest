@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
 import ClampedText from './ClampedText';
+import { votesAPI } from '../services/api';
 
 const wasEdited = (link) => {
   if (!link.updatedAt || !link.createdAt) return false;
@@ -19,6 +20,7 @@ const wasEdited = (link) => {
  *   clickable      — if true, clicking the card body (except the title link) triggers onCardClick
  *   onCardClick    — (link) => void, called when clickable=true and card is clicked
  *   readOnlyVote   — if true, vote count is shown as plain text with no click handler
+ *   onRemoveSuccess — callback after successful removal
  */
 const LinkCard = ({
   link, user, isGuest, isFirst = false,
@@ -30,10 +32,14 @@ const LinkCard = ({
   clickable = false, onCardClick,
   readOnlyVote = false,
   conceptId, conceptPath, onCopySuccess,
+  onRemoveSuccess,
 }) => {
   const isCreator = user && link.addedBy === user.id;
   const isEditing = editingLinkId === link.id;
   const [showCopyPicker, setShowCopyPicker] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [removeError, setRemoveError] = useState(null);
+  const [removing, setRemoving] = useState(false);
   const iData = instanceData || {};
   const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
@@ -51,6 +57,32 @@ const LinkCard = ({
     if (e.target.tagName === 'A' || e.target.closest('a')) return;
     onCardClick(link);
   };
+
+  const handleRemove = async () => {
+    setRemoving(true);
+    setRemoveError(null);
+    try {
+      await votesAPI.removeWebLink(link.id);
+      setShowRemoveModal(false);
+      if (onRemoveSuccess) onRemoveSuccess();
+    } catch (err) {
+      setRemoveError("Couldn't remove this link. It may have been placed on legal hold.");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  // Escape key closes remove modal
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') setShowRemoveModal(false);
+  }, []);
+
+  useEffect(() => {
+    if (showRemoveModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showRemoveModal, handleKeyDown]);
 
   const cardStyle = {
     ...(isFirst ? s.cardFirst : s.card),
@@ -93,6 +125,7 @@ const LinkCard = ({
           {link.addedByUsername}
           {!readOnlyVote && isCreator && !isEditing && onStartEdit && <span onClick={e => { e.stopPropagation(); onStartEdit(link); }} style={s.editBtn}>{link.comment ? 'Edit' : 'Add comment'}</span>}
           {!readOnlyVote && isCreator && !isEditing && conceptId && <span onClick={e => { e.stopPropagation(); setShowCopyPicker(true); }} style={s.editBtn}>Copy</span>}
+          {!readOnlyVote && isCreator && !isEditing && <span onClick={e => { e.stopPropagation(); setShowRemoveModal(true); setRemoveError(null); }} style={s.editBtn}>Remove</span>}
         </span>
       </div>
       {showCopyPicker && (
@@ -103,6 +136,27 @@ const LinkCard = ({
           onClose={() => setShowCopyPicker(false)}
           onCopySuccess={(destName) => { setShowCopyPicker(false); if (onCopySuccess) onCopySuccess(destName); }}
         />
+      )}
+      {showRemoveModal && (
+        <div style={s.modalOverlay} onClick={e => { e.stopPropagation(); if (!removeError) setShowRemoveModal(false); }}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Permanently remove this link?</div>
+            <div style={s.modalBody}>Other users' votes on it will be lost. This cannot be undone.</div>
+            {removeError && <div style={s.modalError}>{removeError}</div>}
+            <div style={s.modalButtons}>
+              {removeError ? (
+                <span onClick={() => setShowRemoveModal(false)} style={s.modalCancelBtn}>Close</span>
+              ) : (
+                <>
+                  <span onClick={() => setShowRemoveModal(false)} style={s.modalCancelBtn}>Cancel</span>
+                  <span onClick={handleRemove} style={removing ? { ...s.modalRemoveBtn, opacity: 0.5 } : s.modalRemoveBtn}>
+                    {removing ? 'Removing...' : 'Remove permanently'}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
       {showInstances && hasFetched && (
         <div style={s.instanceRow}>
@@ -155,6 +209,15 @@ const s = {
   instanceToggle: { fontSize: '12px', color: '#888', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceToggleDisabled: { fontSize: '12px', color: '#ccc', cursor: 'default', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceList: { marginTop: '4px', marginLeft: '8px', borderLeft: '2px solid #e0d9cf', paddingLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' },
+  // Remove confirmation modal
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 },
+  modalBox: { backgroundColor: '#faf9f6', border: '1px solid #d4d0c8', borderRadius: '6px', padding: '24px', maxWidth: '400px', width: '90%', fontFamily: '"EB Garamond", Georgia, serif' },
+  modalTitle: { fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '10px' },
+  modalBody: { fontSize: '14px', color: '#555', lineHeight: 1.5, marginBottom: '16px' },
+  modalError: { fontSize: '13px', color: '#c44', marginBottom: '12px', lineHeight: 1.4 },
+  modalButtons: { display: 'flex', gap: '10px', justifyContent: 'flex-end' },
+  modalCancelBtn: { fontSize: '13px', color: '#888', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', padding: '4px 14px', border: '1px solid #ccc', borderRadius: '3px', backgroundColor: 'transparent' },
+  modalRemoveBtn: { fontSize: '13px', color: '#333', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', padding: '4px 14px', border: '1px solid #999', borderRadius: '3px', backgroundColor: 'transparent' },
 };
 
 export default LinkCard;

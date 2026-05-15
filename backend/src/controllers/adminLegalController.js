@@ -124,6 +124,48 @@ const adminLegalController = {
     }
   },
 
+  getNotices: async (req, res) => {
+    try {
+      const adminUserId = parseInt(process.env.ADMIN_USER_ID);
+      if (!adminUserId || req.user.userId !== adminUserId) {
+        return res.status(403).json({ error: 'Only administrators can view legal notices' });
+      }
+
+      const result = await pool.query(
+        `SELECT cin.*,
+           EXISTS (
+             SELECT 1 FROM legal_removals lr
+             WHERE lr.notice_reference LIKE 'copyright_infringement_notices.id=' || cin.id || '%'
+           ) AS acted_on
+         FROM copyright_infringement_notices cin
+         ORDER BY cin.created_at DESC`
+      );
+
+      res.json({ notices: result.rows });
+    } catch (error) {
+      console.error('Error fetching infringement notices:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  getCounterNotices: async (req, res) => {
+    try {
+      const adminUserId = parseInt(process.env.ADMIN_USER_ID);
+      if (!adminUserId || req.user.userId !== adminUserId) {
+        return res.status(403).json({ error: 'Only administrators can view counter-notices' });
+      }
+
+      const result = await pool.query(
+        `SELECT * FROM copyright_counter_notices ORDER BY created_at DESC`
+      );
+
+      res.json({ counterNotices: result.rows });
+    } catch (error) {
+      console.error('Error fetching counter-notices:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   getRemovals: async (req, res) => {
     try {
       const adminUserId = parseInt(process.env.ADMIN_USER_ID);

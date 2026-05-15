@@ -11,6 +11,7 @@ const pageRoutes = require('./routes/pages');
 const comboRoutes = require('./routes/combos');
 const tunnelRoutes = require('./routes/tunnels');
 const userRoutes = require('./routes/users');
+const legalRoutes = require('./routes/legal');
 const adminLegalRoutes = require('./routes/adminLegal');
 
 const pool = require('./config/database');
@@ -94,6 +95,7 @@ app.use('/api/pages', pageRoutes);
 app.use('/api/combos', comboRoutes);
 app.use('/api/tunnels', tunnelRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/legal', legalRoutes);
 app.use('/api/admin', adminLegalRoutes);
 
 // Health check endpoint

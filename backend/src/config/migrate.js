@@ -48,8 +48,7 @@ const createTables = async () => {
     await client.query(`DROP TABLE IF EXISTS documents CASCADE`);
     await client.query(`DROP TABLE IF EXISTS corpuses CASCADE`);
     await client.query(`DROP TABLE IF EXISTS document_subscriptions CASCADE`);
-    await client.query(`DROP TABLE IF EXISTS copyright_counter_notices CASCADE`);
-    await client.query(`DROP TABLE IF EXISTS copyright_infringement_notices CASCADE`);
+    // copyright tables are still active — do NOT drop
     // Legacy retired tables (already non-functional)
     await client.query(`DROP TABLE IF EXISTS saved_tree_order CASCADE`);
     await client.query(`DROP TABLE IF EXISTS vote_tab_links CASCADE`);
@@ -584,6 +583,49 @@ const createTables = async () => {
     `);
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_dmca_strikes_user_active ON dmca_strikes(user_id) WHERE cleared_at IS NULL;
+    `);
+
+    // ============================================================
+    // Copyright Notice Submission Tables (public forms, no auth)
+    // ============================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS copyright_infringement_notices (
+        id SERIAL PRIMARY KEY,
+        submitter_name VARCHAR(255) NOT NULL,
+        submitter_email VARCHAR(255) NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS copyright_counter_notices (
+        id SERIAL PRIMARY KEY,
+        submitter_name VARCHAR(255) NOT NULL,
+        submitter_email VARCHAR(255) NOT NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // ============================================================
+    // Phase 60a: Link Removal Audit Log
+    // ============================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS link_removal_log (
+        id SERIAL PRIMARY KEY,
+        removed_link_id INTEGER NOT NULL,
+        removed_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        original_edge_id INTEGER,
+        original_url_hash CHAR(64) NOT NULL,
+        removed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_link_removal_log_user ON link_removal_log(removed_by_user_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_link_removal_log_url_hash ON link_removal_log(original_url_hash);
     `);
 
     await client.query('COMMIT');

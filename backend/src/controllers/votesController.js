@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 
 const votesController = {
@@ -2443,6 +2444,77 @@ const votesController = {
     } catch (error) {
       console.error('Error fetching all votes:', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 60a: Hard delete a self-authored link
+  removeWebLink: async (req, res) => {
+    const { linkId } = req.body;
+    const userId = req.user.userId;
+
+    if (!linkId) {
+      return res.status(400).json({ error: 'linkId is required' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const result = await client.query(
+        `DELETE FROM concept_links
+         WHERE id = $1 AND added_by = $2 AND legal_hold = false
+         RETURNING id, edge_id, url, added_by`,
+        [linkId, userId]
+      );
+
+      if (result.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Cannot remove this link' });
+      }
+
+      const deleted = result.rows[0];
+      const urlHash = crypto.createHash('sha256').update(deleted.url.toLowerCase()).digest('hex');
+
+      await client.query(
+        `INSERT INTO link_removal_log (removed_link_id, removed_by_user_id, original_edge_id, original_url_hash)
+         VALUES ($1, $2, $3, $4)`,
+        [deleted.id, userId, deleted.edge_id, urlHash]
+      );
+
+      await client.query('COMMIT');
+
+      res.json({ success: true, removedLinkId: deleted.id });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error removing web link:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Phase 60a: Preview OG title for a URL
+  previewTitle: async (req, res) => {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'url query parameter is required' });
+    }
+
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return res.status(400).json({ error: 'URL must use http or https protocol' });
+      }
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    try {
+      const title = await fetchOgTitle(url);
+      res.json({ title: title || '' });
+    } catch {
+      res.status(502).json({ error: 'fetch_failed' });
     }
   },
 

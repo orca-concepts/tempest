@@ -25,13 +25,15 @@ const optionalAuth = (req, res, next) => {
 // Web Links (Phase 6) — GET is guest-accessible, write ops require auth
 router.get('/web-links/by-url', optionalAuth, votesController.getWebLinksByUrl); // Phase 58b-2: cross-concept URL search
 router.get('/web-links/all/:conceptId', optionalAuth, votesController.getAllWebLinksForConcept);
+router.get('/web-links/preview-title', authenticateToken, votesController.previewTitle); // Phase 60a — must be before :edgeId
+router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVotes); // Phase 58d-2 — must be before :edgeId
 router.get('/web-links/:edgeId', optionalAuth, votesController.getWebLinks);
 router.post('/web-links/add', authenticateToken, webLinkAddLimiter, votesController.addWebLink);
 router.post('/web-links/copy', authenticateToken, votesController.copyWebLink);
+router.post('/web-links/remove', authenticateToken, votesController.removeWebLink); // Phase 60a
 router.post('/web-links/upvote', authenticateToken, votesController.upvoteWebLink);
 router.post('/web-links/unvote', authenticateToken, votesController.removeWebLinkVote);
 router.put('/web-links/:linkId/comment', authenticateToken, votesController.updateConceptLinkComment);
-router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVotes); // Phase 58d-2
 
 // All remaining vote routes require authentication
 router.use(authenticateToken);

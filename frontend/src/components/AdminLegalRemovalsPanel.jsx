@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
 
-const VALID_TARGET_TYPES = ['document_version', 'annotation', 'concept', 'edge', 'web_link', 'page_comment', 'moderation_comment'];
+const VALID_TARGET_TYPES = ['concept', 'edge', 'web_link'];
 
 const AdminLegalRemovalsPanel = () => {
   const [infringers, setInfringers] = useState([]);
@@ -24,7 +24,7 @@ const AdminLegalRemovalsPanel = () => {
 
   // Inline removal form state per notice
   const [activeForm, setActiveForm] = useState(null); // notice id
-  const [formData, setFormData] = useState({ target_type: 'document_version', target_id: '', internal_notes: '' });
+  const [formData, setFormData] = useState({ target_type: 'web_link', target_id: '', internal_notes: '' });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
 
@@ -81,7 +81,7 @@ const AdminLegalRemovalsPanel = () => {
         removalId: res.data.legal_removal_id,
       });
       setActiveForm(null);
-      setFormData({ target_type: 'document_version', target_id: '', internal_notes: '' });
+      setFormData({ target_type: 'web_link', target_id: '', internal_notes: '' });
       await loadData();
     } catch (err) {
       setFormError(err.response?.data?.error || 'Removal failed');

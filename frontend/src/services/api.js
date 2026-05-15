@@ -226,6 +226,12 @@ export const votesAPI = {
   removeWebLinkVote: (linkId) =>
     api.post('/votes/web-links/unvote', { linkId }),
 
+  removeWebLink: (linkId) =>
+    api.post('/votes/web-links/remove', { linkId }),
+
+  previewTitle: (url) =>
+    api.get('/votes/web-links/preview-title', { params: { url } }),
+
   updateLinkComment: (linkId, comment) =>
     api.put(`/votes/web-links/${linkId}/comment`, { comment }),
 
@@ -346,7 +352,18 @@ export const usersAPI = {
     api.patch('/users/me', updates),
 };
 
+export const legalAPI = {
+  submitInfringement: (data) =>
+    api.post('/legal/infringement', data),
+  submitCounterNotice: (data) =>
+    api.post('/legal/counter-notice', data),
+};
+
 export const adminAPI = {
+  getNotices: () =>
+    api.get('/admin/legal/notices'),
+  getCounterNotices: () =>
+    api.get('/admin/legal/counter-notices'),
   getRemovals: () =>
     api.get('/admin/legal/removals'),
   legalRemove: (data) =>

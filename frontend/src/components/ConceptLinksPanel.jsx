@@ -25,6 +25,14 @@ const ConceptLinksPanel = ({
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkComment, setNewLinkComment] = useState('');
   const [addLinkError, setAddLinkError] = useState(null);
+  const [affirmed, setAffirmed] = useState(false);
+
+  // Title preview state
+  const [titlePreviewLoading, setTitlePreviewLoading] = useState(false);
+  const [titlePreviewError, setTitlePreviewError] = useState(false);
+  const [titlePreviewResult, setTitlePreviewResult] = useState(null);
+  const lastFetchedUrlRef = useRef('');
+  const abortControllerRef = useRef(null);
 
   const [instanceData, setInstanceData] = useState({});
   const [instancePathNames, setInstancePathNames] = useState({});
@@ -134,6 +142,40 @@ const ConceptLinksPanel = ({
     });
   };
 
+  // Title preview fetch
+  const fetchTitlePreview = useCallback((url) => {
+    const trimmed = url.trim();
+    if (trimmed === lastFetchedUrlRef.current) return;
+    if (!trimmed) return;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return;
+    } catch { return; }
+
+    lastFetchedUrlRef.current = trimmed;
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    setTitlePreviewLoading(true);
+    setTitlePreviewError(false);
+    setTitlePreviewResult(null);
+
+    votesAPI.previewTitle(trimmed)
+      .then(res => {
+        if (controller.signal.aborted) return;
+        const title = res.data.title || '';
+        setTitlePreviewResult(title);
+        if (title) setNewLinkTitle(title);
+        setTitlePreviewLoading(false);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setTitlePreviewError(true);
+        setTitlePreviewLoading(false);
+      });
+  }, []);
+
   // Handlers
   const handleToggleLinkVote = async (link) => {
     if (isGuest) { if (onRequestLogin) onRequestLogin(); return; }
@@ -153,7 +195,9 @@ const ConceptLinksPanel = ({
       const res = await votesAPI.addWebLink(currentEdgeId, trimmed, newLinkTitle.trim() || undefined, newLinkComment.trim() || undefined);
       const newLink = res.data.webLink;
       setWebLinks(prev => [{ ...newLink, edgeId: newLink.edgeId, parentId: null, parentName: null, graphPath: path || [], attributeName: null, addedByUsername: user?.username }, ...prev]);
-      setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment(''); setShowAddLinkForm(false);
+      setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment(''); setShowAddLinkForm(false); setAffirmed(false);
+      setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
+      lastFetchedUrlRef.current = '';
     } catch (err) { setAddLinkError(err.response?.data?.error || 'Failed to add link'); }
   };
   const handleSaveComment = async (linkId) => {
@@ -164,6 +208,12 @@ const ConceptLinksPanel = ({
     catch { if (prev) setWebLinks(links => links.map(l => l.id === linkId ? { ...l, comment: prev.comment, updatedAt: prev.updatedAt } : l)); }
   };
 
+  const handleCloseAddForm = () => {
+    setShowAddLinkForm(false); setAddLinkError(null); setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment('');
+    setAffirmed(false); setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
+    lastFetchedUrlRef.current = '';
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+  };
 
   const handleInstanceClick = (inst) => {
     if (inst.concept_id === conceptId) {
@@ -194,13 +244,42 @@ const ConceptLinksPanel = ({
     if (!showAddLinkForm) return null;
     return (
       <div style={styles.addLinkForm}>
-        <input type="text" value={newLinkUrl} onChange={e => { setNewLinkUrl(e.target.value); setAddLinkError(null); }} placeholder="https://..." style={styles.addLinkInput} autoFocus />
+        <input
+          type="text"
+          value={newLinkUrl}
+          onChange={e => { setNewLinkUrl(e.target.value); setAddLinkError(null); }}
+          onBlur={() => fetchTitlePreview(newLinkUrl)}
+          onPaste={e => {
+            const pasted = e.clipboardData.getData('text');
+            // The paste event fires before onChange updates the value,
+            // so use the pasted text directly
+            setTimeout(() => fetchTitlePreview(pasted), 0);
+          }}
+          placeholder="https://..."
+          style={styles.addLinkInput}
+          autoFocus
+        />
+        {titlePreviewLoading && (
+          <div style={styles.titlePreviewStatus}>Fetching title...</div>
+        )}
+        {titlePreviewError && (
+          <div style={styles.titlePreviewStatus}>Couldn't fetch title — you can enter one manually</div>
+        )}
+        {titlePreviewResult && !titlePreviewLoading && (
+          <div style={styles.titlePreviewBox}>{titlePreviewResult}</div>
+        )}
         <input type="text" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="Title (optional — auto-fetched if empty)" style={styles.addLinkInput} />
         <textarea value={newLinkComment} onChange={e => setNewLinkComment(e.target.value)} placeholder="Comment (optional)" style={styles.commentTextarea} rows={2} />
         {addLinkError && <div style={styles.addLinkError}>{addLinkError}</div>}
+        <label style={styles.affirmLabel}>
+          <input type="checkbox" checked={affirmed} onChange={e => setAffirmed(e.target.checked)} style={styles.affirmCheckbox} />
+          <span style={styles.affirmText}>
+            I affirm this URL points to content that is publicly available through legitimate means (e.g., open access publication, the publisher's website, an institutional or preprint repository), and that posting this link does not violate any agreement, embargo, or known prohibition.
+          </span>
+        </label>
         <div style={styles.commentEditButtons}>
-          <span onClick={handleAddLink} style={styles.commentSaveBtn}>Add</span>
-          <span onClick={() => { setShowAddLinkForm(false); setAddLinkError(null); setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment(''); }} style={styles.commentCancelBtn}>Cancel</span>
+          <span onClick={affirmed ? handleAddLink : undefined} style={affirmed ? styles.commentSaveBtn : { ...styles.commentSaveBtn, opacity: 0.4, cursor: 'default' }}>Add</span>
+          <span onClick={handleCloseAddForm} style={styles.commentCancelBtn}>Cancel</span>
         </div>
       </div>
     );
@@ -234,7 +313,8 @@ const ConceptLinksPanel = ({
             showInstances={true} instanceData={instanceData[link.id]} onToggleInstance={toggleInstanceExpansion}
             renderInstanceSnippet={renderInstanceSnippet}
             cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
-            conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()} />
+            conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()}
+            onRemoveSuccess={() => loadLinks()} />
         ))}
       </>
     );
@@ -303,6 +383,11 @@ const styles = {
   commentEditButtons: { display: 'flex', gap: '10px', marginTop: '4px' },
   commentSaveBtn: { fontSize: '12px', color: '#333', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', border: '1px solid #e0d9cf', padding: '2px 10px', borderRadius: '3px', backgroundColor: '#faf9f6' },
   commentCancelBtn: { fontSize: '12px', color: '#999', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif' },
+  titlePreviewStatus: { fontSize: '11px', color: '#999', fontFamily: '"EB Garamond", Georgia, serif' },
+  titlePreviewBox: { fontSize: '12px', color: '#555', fontFamily: '"EB Garamond", Georgia, serif', backgroundColor: '#f0ede8', padding: '6px 8px', borderRadius: '3px', lineHeight: 1.4, overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  affirmLabel: { display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', marginTop: '4px' },
+  affirmCheckbox: { marginTop: '3px', flexShrink: 0 },
+  affirmText: { fontSize: '11px', color: '#666', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.4 },
   instanceRow: { cursor: 'pointer', padding: '4px 6px', borderRadius: '3px', fontSize: '12px', color: '#555', transition: 'background-color 0.15s' },
   instancePath: { color: '#555', lineHeight: 1.4, overflowWrap: 'anywhere', wordBreak: 'break-word' },
   instanceSnippet: { fontSize: '11px', color: '#999', marginTop: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },

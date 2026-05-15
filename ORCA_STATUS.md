@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 12, 2026
-**Current Status:** Phase 59 COMPLETE (tunnel link comments + combined votes page). Site still offline pending Lane Rideout legal disclosure of Phase 58 pivot scope and revised legal documents. Railway not yet reattached.
+**Last Updated:** May 15, 2026
+**Current Status:** Phase 60a COMPLETE (user-removable links + affirmation checkbox + title preview on blur/paste). Site still offline pending Lane Rideout legal disclosure of Phase 58 pivot scope and revised legal documents. Railway not yet reattached.
 
 ---
 
@@ -12,6 +12,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 **Phase 58 pivot (May 2026):** Removed the entire document/corpus/annotation/message layer. The platform now uses a simpler link-based reference system: users paste URLs, the server auto-fetches Open Graph titles, and the community upvotes/discusses links. Cross-instance navigation lets users see where the same URL appears across different concepts. Full Phase 58 narrative archived in `ORCA_HISTORY.md`.
 
 **Phase 59 (May 2026):** Tunnel links gained optional comments and now allow duplicates between the same edge pair (different comments = different rows = independent vote tallies). Graph Votes and Link Votes overlays merged into a single display-only Votes overlay with full root-to-edge ancestry rendering for link-voted edges.
+
+**Phase 60a (May 2026):** Self-authored links may now be hard-deleted by their adder (carve-out from append-only AD — see "Append-Only" section for the reframed principle). New `link_removal_log` table preserves a sparse audit trail (sha256 of URL, no plaintext content). Add-link form gained a required affirmation checkbox and on-paste/on-blur title preview via new `GET /web-links/preview-title` endpoint reusing the existing OG-fetch utility.
 
 **Current state:** Site is offline. All code changes are complete. Pending: Lane Rideout legal disclosure, revised legal documents (ToS, Privacy Policy, Copyright Policy), Railway reattachment, and relaunch of orcaconcepts.org. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
 
@@ -58,7 +60,7 @@ A frontend build flag that gates the live application behind an explanatory land
 
 ---
 
-## Database Schema (Post-Phase 59)
+## Database Schema (Post-Phase 60a)
 
 All tables below are created/maintained in `backend/src/config/migrate.js`. Tables dropped in Phase 58a (documents, corpuses, annotations, messages, citations, etc.) are documented in `ORCA_HISTORY.md`.
 
@@ -92,7 +94,7 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 - `id`, `edge_id` (FK edges, CASCADE), `url` (TEXT, NOT NULL), `title` (VARCHAR 255), `comment` (TEXT), `added_by` (FK users, SET NULL), `legal_hold`, `created_at`, `updated_at`
 - No UNIQUE constraint on (edge_id, url) — duplicate URLs allowed per Phase 58d-1
 - Server auto-fetches OG title when title is empty (Phase 58b-2)
-- User delete capability removed in commit `0b382c4`. Rows are immutable from the user's perspective — only hidden via moderation or removed via admin legal removal.
+- Hard-deletable by `added_by` user via `POST /web-links/remove` when `legal_hold = false` (Phase 60a). Deletion cascades to `concept_link_votes` rows. A sparse audit record is written to `link_removal_log` (URL sha256 only, no plaintext). Moderation hide and legal removal pathways remain separate and unaffected.
 
 **concept_link_votes** — Simple upvotes on links. UNIQUE(user_id, concept_link_id).
 
@@ -134,6 +136,7 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 **legal_removals** — Admin legal removal audit log. Supports target_type: concept, edge, web_link.
 **dmca_strikes** — Per-user DMCA strike record. Partial index on active (uncleared) strikes.
+**link_removal_log** — Sparse audit trail for user-initiated link removals (Phase 60a). Records `removed_link_id` (no FK, the link is gone), `removed_by_user_id` (FK users, SET NULL), `original_edge_id` (no FK), `original_url_hash` (sha256 of lowercased URL, CHAR(64)), `removed_at`. No plaintext URL, title, or comment is preserved — this is intentional. Indexed on `removed_by_user_id` and `original_url_hash` for forensic lookup ("did user X ever post URL Y?").
 
 ### Infrastructure Tables
 
@@ -142,7 +145,7 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 ---
 
-## API Surface (Post-Phase 59)
+## API Surface (Post-Phase 60a)
 
 All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = required JWT; `optionalAuth` = guest-accessible.
 
@@ -181,9 +184,11 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 |--------|------|------|-------------|
 | GET | `/web-links/by-url` | Guest | Cross-concept URL search |
 | GET | `/web-links/all/:conceptId` | Guest | All links across contexts |
-| GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new) |
+| GET | `/web-links/preview-title` | Yes | **NEW Phase 60a.** Title preview for the add-link form. Query: `?url=...`. Validates well-formed http(s) URL (400 on malformed). Reuses the same OG-fetch utility as `POST /web-links/add` with SSRF protection (DNS resolve + private IP block) + 5s timeout. Returns `{ title: string }` (may be empty if no OG title found; SSRF-blocked URLs also return empty title — see "OG Title Auto-Fetch" AD for the rationale). |
 | GET | `/web-links/votes/me` | Yes | User's upvoted links (legacy, retained for rollback safety post-59b) |
+| GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new) |
 | POST | `/web-links/add` | Yes | Add link (OG title auto-fetch) |
+| POST | `/web-links/remove` | Yes | **RESTORED Phase 60a.** Hard-delete a self-authored link. Body: `{ linkId }`. Single SQL statement checks `added_by = req.user.userId AND legal_hold = false` to close the race against admin legal-hold-set. 403 with generic error on any failure (no information leakage). On success: row deleted, votes cascade, sparse record written to `link_removal_log`. This is the new-semantics version distinct from the version eliminated in commit `0b382c4`. |
 | POST | `/web-links/copy` | Yes | Copy link to a descendant edge (adder only, same root graph, descendant edge required). Returns new row; original untouched. |
 | POST | `/web-links/upvote` | Yes | Upvote link |
 | POST | `/web-links/unvote` | Yes | Remove upvote |
@@ -198,7 +203,7 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | GET/POST | `/tab-groups/*` | Yes | Tab group CRUD |
 | GET/POST | `/sidebar-items/*` | Yes | Sidebar ordering |
 
-Removed in commit `0b382c4`: `POST /web-links/remove` — user delete capability eliminated to enforce append-only AD.
+**Route ordering gotcha (Phase 60a):** Literal-path routes under `/web-links/*` (e.g., `/web-links/preview-title`, `/web-links/votes/me`, `/web-links/by-url`, `/web-links/all/:conceptId`) MUST be registered in `routes/votes.js` BEFORE the `/web-links/:edgeId` catch-all, or Express will interpret the literal segment as an `edgeId` and shadow the literal route. Any new endpoint added in this namespace must follow the same ordering.
 
 ### Superconcepts (`/api/combos`)
 | Method | Path | Auth | Description |
@@ -235,7 +240,7 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 
 ---
 
-## Frontend Component Map (Post-Phase 59)
+## Frontend Component Map (Post-Phase 60a)
 
 ### Pages (`frontend/src/pages/`)
 - **Root.jsx** — Root concepts page with attribute filter
@@ -244,8 +249,8 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 ### Core Components (`frontend/src/components/`)
 - **AppShell.jsx** — Main layout: header, sidebar, tab management, overlays. Single "Votes" sidebar item replaces the former "Graph Votes" and "Link Votes" entries (Phase 59b). Reads `VITE_OUTREACH_MODE` into `isOutreachMode` (~line 24, Phase 59a) — when ON, hides Legal nav + login/signup, renders `<OutreachLanding />` in place of the sidebar/content area.
 - **OutreachLanding.jsx** — **NEW Phase 59a.** Landing page shown when `VITE_OUTREACH_MODE=true`. Replaces the entire app surface with an explanation that the platform is not yet live. See "Operational Modes" section.
-- **ConceptLinksPanel.jsx** — Right panel on concept page (Links tab + Superconcepts tab). Passes `conceptId` and `conceptPath` to LinkCard for copy-to-descendant flow. Uses shared `ClampedText`.
-- **LinkCard.jsx** — Reusable link card. Always-visible "Other instances on this concept (N)" / "Other instances across all concepts (N)" dropdowns (disabled when N=0). Prominent up-arrow vote icon. "Copy" button next to "Edit" visible only when the current user is the link's adder. No user-facing remove button (append-only enforcement). Uses shared `ClampedText`.
+- **ConceptLinksPanel.jsx** — Right panel on concept page (Links tab + Superconcepts tab). Passes `conceptId` and `conceptPath` to LinkCard for copy-to-descendant flow. Uses shared `ClampedText`. **Phase 60a:** add-link form gained (a) a required affirmation checkbox ("I affirm this URL points to content that is publicly available through legitimate means...") — Submit disabled until checked, state NOT persisted across modal close/reopen; (b) title preview triggered by URL field `onPaste` or `onBlur` (whichever fires first) calling `GET /web-links/preview-title` with `AbortController` cancellation on URL change; pre-fills title field on success with inline edit allowed.
+- **LinkCard.jsx** — Reusable link card. Always-visible "Other instances on this concept (N)" / "Other instances across all concepts (N)" dropdowns (disabled when N=0). Prominent up-arrow vote icon. "Copy" button next to "Edit" visible only when the current user is the link's adder. **Phase 60a:** "Remove" button restored, visible only when `currentUser?.id === link.added_by` (UX-only gate; backend check is the security boundary). Opens an inline confirmation modal with Escape-to-close. On confirm, calls `POST /web-links/remove` and triggers parent refresh via `onRemoveSuccess` callback. Error path keeps the modal open with inline error ("Couldn't remove this link. It may have been placed on legal hold."). Uses shared `ClampedText`.
 - **ClampedText.jsx** — **NEW Phase 59a.** Shared line-clamp component with expand toggle. Extracted from duplicated copies in LinkCard and ConceptLinksPanel; also consumed by TunnelView for tunnel comments.
 - **CopyLinkPicker.jsx** — Modal overlay for copying a link to a descendant edge. Expandable tree picker with path-scoped subtree fetch, request-generation race guard, Escape-to-close. Calls `POST /api/votes/web-links/copy` on confirm.
 - **ComboTabContent.jsx** — Superconcept tab: header, edge management, aggregated links view. Has request-generation race guard on `loadComboLinks`.
@@ -285,8 +290,35 @@ A concept's contextual identity is determined by graph_path + attribute. Same co
 ### Single-Attribute Graphs
 Every graph has one attribute from the root edge. Descendants inherit. Backend enforces via `graph_path[0]` lookup.
 
-### Append-Only for Graph Content (strengthened, commit `0b382c4`)
-Concepts, edges, and concept_links are never deleted by users — only hidden via moderation or legally removed. Quality curated through voting. The `POST /web-links/remove` endpoint was eliminated to enforce this; users have no path to delete their own links. Editing comments on one's own links is still allowed (correction is different from removal). Link mobility is provided by the copy-to-descendant flow, not by move-with-delete.
+### Append-Only for Shared Graph Structure (reframed Phase 60a)
+Append-only applies to **shared graph structure** — content that becomes part of other users' experience and that other users vote on or build atop. **Concepts and edges are never user-deletable** (only hidden via moderation or legally removed). Votes on shared structure persist as history.
+
+**Carve-out for self-authored, self-contained content (Phase 60a):** A user may hard-delete their own `concept_links` rows via `POST /web-links/remove` when `legal_hold = false`. The rationale: a link is sufficiently self-contained that its removal does not collapse other users' graph structure — only the URL, title, comment, and vote count disappear; the edge itself, the concept structure, and other links remain. Compare to a concept or edge whose deletion would orphan every downstream contribution. Editing one's own link comment is still allowed (correction is different from removal). Link mobility is still provided by the copy-to-descendant flow.
+
+This is a narrower statement of the original append-only principle. The previous version (commit `0b382c4`) generalized "append-only" beyond shared structure because annotations — the pre-Phase-58 feature it was written for — *seemed* self-contained but actually weren't (threading + anchoring made them load-bearing for others). Now that annotations are gone, the principle can be sharpened to its actual target: shared structure.
+
+### User Removal of Self-Authored Links (Phase 60a)
+A self-authored `concept_links` row may be hard-deleted by its `added_by` user via `POST /web-links/remove`. Specifics:
+- **Permission check is atomic with the delete.** The query is a single DELETE with both `added_by = req.user.userId` AND `legal_hold = false` in the WHERE clause. This closes the race window where an admin sets `legal_hold` between a permission check and a delete.
+- **Failure mode is opaque.** Both "not the adder" and "under legal hold" return identical 403 responses ("Cannot remove this link"). Distinguishing them would leak information about which links are under legal review.
+- **Hard delete, not soft.** No `is_removed` flag, no tombstone row in `concept_links`. The row is physically removed. Cascading FK on `concept_link_votes.concept_link_id` removes vote rows. Other users who had upvoted lose their vote silently — this is the cost of the "gone means gone" semantic.
+- **Sparse audit trail.** A row is INSERTed into `link_removal_log` inside the same transaction: `removed_link_id`, `removed_by_user_id`, `original_edge_id`, `original_url_hash` (sha256 of lowercased URL), `removed_at`. No plaintext URL, title, or comment is preserved. This is sufficient to answer "did user X ever post URL Y?" for legal/moderation questions without retaining the content the user wanted removed.
+- **Three distinct removal pathways now exist, each with its own audit table:** user-removal (`link_removal_log`, sparse hash-only), moderation-hide (`is_hidden = true` on the edge, content retained), legal-removal (`legal_removals`, content retained for takedown record). They are not interchangeable — admins should NOT use the user-removal endpoint to hide content for moderation reasons, because that pathway destroys the content.
+- **Tunnel links are out of scope.** `tunnel_links` remains append-only — its row is shared graph structure across two graphs, and the symmetric "carve-out" reasoning is weaker for cross-graph artifacts.
+
+### Link Affirmation at Posting (Phase 60a)
+The add-link form requires the user to tick an affirmation checkbox before Submit is enabled:
+
+> I affirm this URL points to content that is publicly available through legitimate means (e.g., open access publication, the publisher's website, an institutional or preprint repository), and that posting this link does not violate any agreement, embargo, or known prohibition.
+
+The affirmation is a UI-layer commitment, not a per-link database field. It exists for the user's moment-of-decision before posting, not as a stored record. State is not persisted across modal close/reopen — every link is a fresh affirmation. This pairs with the DMCA agent registration and Copyright Policy as the platform's layered approach to user-generated link content (cf. the upcoming Phase 60-cluster legal hardening work).
+
+### Title Preview on Blur or Paste (Phase 60a)
+The add-link form fetches the OG title via `GET /web-links/preview-title` when the user pastes a URL or blurs the URL field, whichever fires first. Implementation notes:
+- Validation before fetch: non-empty + `URL.canParse(value)` + http(s) protocol. Silent failure if invalid (user may still be typing).
+- `AbortController` cancels the in-flight fetch when the URL changes, so only the most recent URL drives the displayed title.
+- The fetched title pre-fills the title field but remains user-editable. On submit, the field's current value is sent — the existing `POST /web-links/add` OG-fetch fallback handles empty titles regardless.
+- Failure path shows "Couldn't fetch title — you can enter one manually" and ensures the title field is visible. The user can submit anyway with a manually entered title.
 
 ### Links Live on Edges (Not Concepts)
 `concept_links.edge_id` ties each link to a specific parent context. Duplicate URLs allowed — different comments are valuable contributions. The copy-to-descendant flow does not block duplicates at the destination, consistent with this AD.
@@ -312,6 +344,8 @@ The Votes overlay shows the user's current votes and provides click-to-navigate,
 
 ### OG Title Auto-Fetch
 Server-side fetching with SSRF protections (DNS resolve + private IP block). 5s timeout. Falls back to URL-as-title.
+
+The OG-fetch utility (`fetchOgTitle`) is designed to **never throw** — it returns `null` (or empty string at the endpoint layer) on any failure, including SSRF blocks, timeouts, no-OG-tag pages, and network errors. This is intentional because both call sites (`POST /web-links/add` and `GET /web-links/preview-title`, Phase 60a) need to handle "no title available" gracefully without distinguishing the cause. The consequence: a user attempting to preview a private-IP URL will see "Couldn't fetch title — you can enter one manually" instead of a specific SSRF error. The SSRF protection IS still active (no request leaves the server); the user-facing message is just less specific. Acceptable because the threat model does not include accidental private-IP URLs from researchers, and distinguishing failure modes would either (a) change the utility's contract in a way that affects `addWebLink`, or (b) require duplicating SSRF checks at the controller layer.
 
 ### Save/Swap Mutual Exclusivity
 Saving removes existing swap; swapping removes existing save with cascading unsave.
@@ -397,6 +431,27 @@ Phase 59 added tunnel comments and unified the votes overlays.
 
 ---
 
+## Phase 60a Completion Narrative
+
+Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/copyright thinking.
+
+**The trigger:** considering whether to limit Orca link sources to arXiv-only as a copyright mitigation. That specific restriction was rejected as too narrow (arXiv is mostly STEM; humanities, law, medicine all need other sources). But the conversation surfaced three real changes worth making before launch: (1) the append-only AD's blanket "no user removal" was a holdover from the annotation era and no longer fit a link-only platform, (2) some moment-of-friction at posting time would do real work alongside DMCA registration and the Copyright Policy, (3) the existing add-link UX revealed the auto-fetched title only after submission, which was confusing.
+
+**The reframing of append-only** was the conceptually significant part. The original principle was written when annotations existed and the append-only-ness of annotations was load-bearing for thread integrity and span anchoring. With annotations gone, the principle had been over-generalized — concept_links don't have the same downstream-coupling properties. Narrowing the principle to "shared graph structure" (concepts, edges, votes on shared structure) and explicitly carving out self-authored self-contained content (links, link comments) is a more accurate statement of what the principle was always trying to protect. Tunnel links remain append-only as a deliberate distinction — they're cross-graph artifacts and the symmetric reasoning is weaker.
+
+**Implementation notes:**
+- The `link_removal_log` design (sha256 hash, no plaintext) is the explicit "minimum forensic trail consistent with user-initiated hard delete" — preserves the ability to answer "did user X ever post URL Y?" without preserving the content the user wanted removed.
+- Combining the permission check and `legal_hold` check into a single atomic DELETE statement closes a real race window: an admin setting `legal_hold` between a separate SELECT-for-check and a DELETE could otherwise let a user delete a row that was just placed under hold.
+- The deliberate opaqueness of the 403 response ("Cannot remove this link" regardless of cause) avoids leaking which links are under legal review.
+- The title preview reuses the existing OG-fetch utility rather than duplicating SSRF logic — the price is that SSRF-blocked URLs appear identically to "no OG tag" URLs in the preview. Acceptable for the threat model.
+- A route-ordering issue surfaced during implementation: the new `GET /web-links/preview-title` route would have been swallowed by the existing `GET /web-links/:edgeId` catch-all if registered after it. Fixed by moving literal-path routes above the catch-all. Documented as an architectural note in the API surface section.
+
+**Lessons:**
+- Architectural decisions written for a deleted feature need explicit re-evaluation after the feature is removed. The append-only AD was technically still in force after Phase 58 but was protecting a smaller surface than its language implied. Worth doing a sweep for similar over-generalized ADs from earlier phases — anywhere ORCA_STATUS.md references annotations, citations, or document spans as the rationale for a still-active principle, the rationale may now be stale even if the principle is still useful.
+- The "is this principle protecting shared structure or self-authored self-contained content?" distinction is a useful lens. Likely re-applicable when thinking about future features (e.g., should user-authored superconcepts be deletable? Probably yes if no one else has subscribed; what about after subscriptions exist? Different question).
+
+---
+
 ## Known Tech Debt and Forward Roadmap
 
 ### Tech Debt
@@ -413,18 +468,27 @@ Phase 59 added tunnel comments and unified the votes overlays.
 
 ### Forward Roadmap
 - Lane Rideout legal disclosure of Phase 58 pivot
-- Revised legal documents
-- DMCA agent registration
+- Revised legal documents (ToS, Privacy Policy, Copyright Policy) — Copyright Policy in particular needs review for any remaining references to documents/annotations from the pre-Phase-58 era, and should now reflect the user-removal pathway alongside DMCA and moderation
+- DMCA agent registration (unblocked; LLC formed)
 - Re-attach Railway and relaunch
 - Public data API
 - Federated ontologies (sketched in ORCA_HISTORY)
-- Phase 60 candidate: retire legacy votes endpoints (`GET /api/votes/saved`, `GET /api/votes/web-links/votes/me`) once `VotesOverlay` is proven stable in production
+- Retire legacy votes endpoints (`GET /api/votes/saved`, `GET /api/votes/web-links/votes/me`) once `VotesOverlay` is proven stable in production
+- Sweep for other over-generalized ADs written before Phase 58 that may now protect a smaller surface than their language implies (cf. Phase 60a "Lessons")
 
 ---
 
-## Recent Commits (Phase 59)
+## Recent Commits (Phase 59 + 60a)
 
 ```
+{PHASE_60A_COMMIT_HASH} phase 60a: user-removable links + affirmation checkbox + title preview
+        — Restored POST /web-links/remove with atomic added_by + legal_hold
+          check; new link_removal_log table (sha256 hashes only, no plaintext);
+          new GET /web-links/preview-title endpoint sharing OG-fetch utility;
+          LinkCard Remove button + confirmation modal; affirmation checkbox
+          required on add-link form; on-paste/on-blur title preview with
+          AbortController; append-only AD reframed to "shared graph structure"
+          with carve-out for self-authored self-contained content.
 4f1d507 phase 59b: combine graph and link votes pages
         — Unified VotesOverlay replacing SavedPageOverlay + LinkVotesOverlay;
           new GET /votes/me/all endpoint; display-only votes pages AD.

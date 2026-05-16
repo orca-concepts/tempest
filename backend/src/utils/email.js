@@ -55,7 +55,7 @@ async function sendVerificationEmail(email, username, token) {
 
   try {
     const template = loadTemplate('verify-email.html');
-    const verifyUrl = `${FRONTEND_BASE_URL}/verify-email?token=${token}`;
+    const verifyUrl = `${FRONTEND_BASE_URL}/api/auth/verify-email?token=${token}`;
     const html = renderTemplate(template, { username, verifyUrl });
 
     await resend.emails.send({

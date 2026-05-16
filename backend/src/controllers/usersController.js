@@ -158,7 +158,7 @@ const usersController = {
         });
       }
 
-      // Fetch account info (never include password_hash, phone_hash, phone_lookup)
+      // Fetch account info (never include password_hash)
       const accountResult = await pool.query(
         `SELECT username, email, created_at, age_verified_at, tos_accepted_at, tos_version_accepted, orcid_id
          FROM users WHERE id = $1`,

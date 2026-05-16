@@ -715,11 +715,6 @@ const createTables = async () => {
       END $$;
     `);
 
-    // ── Phase 32a: Phone OTP Authentication — add phone_hash to users ──
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_hash VARCHAR(255);
-    `);
-
     // ── Phase 32b: Make email/password_hash nullable, add token_issued_after ──
     await client.query(`
       ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
@@ -730,79 +725,6 @@ const createTables = async () => {
     await client.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS token_issued_after TIMESTAMP;
     `);
-
-    // ── Phase 32d: Assign phone hashes to existing test users ──
-    const testUsers = [
-      { username: 'alice', phone: '+15005550001' },
-      { username: 'bob', phone: '+15005550002' },
-      { username: 'carol', phone: '+15005550003' },
-      { username: 'dave', phone: '+15005550004' },
-      { username: 'eve', phone: '+15005550005' },
-      { username: 'frank', phone: '+15005550006' },
-    ];
-    for (const { username, phone } of testUsers) {
-      try {
-        const exists = await client.query(
-          'SELECT id FROM users WHERE username = $1 AND phone_hash IS NULL',
-          [username]
-        );
-        if (exists.rows.length > 0) {
-          const phoneHash = await bcrypt.hash(phone, 10);
-          await client.query(
-            'UPDATE users SET phone_hash = $1 WHERE username = $2',
-            [phoneHash, username]
-          );
-          console.log(`  Assigned phone hash to ${username}`);
-        }
-      } catch (err) {
-        console.error(`  Failed to assign phone hash to ${username}:`, err.message);
-      }
-    }
-
-    // ── Phase 33e: O(1) phone lookup via HMAC-SHA256 ──
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_lookup VARCHAR(64);
-    `);
-    // Add UNIQUE constraint if not already present
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM information_schema.table_constraints
-          WHERE table_name = 'users'
-            AND constraint_type = 'UNIQUE'
-            AND constraint_name = 'users_phone_lookup_key'
-        ) THEN
-          ALTER TABLE users ADD CONSTRAINT users_phone_lookup_key UNIQUE (phone_lookup);
-        END IF;
-      END $$;
-    `);
-    // Backfill phone_lookup for the 6 test users (we know their plain phone numbers)
-    if (process.env.PHONE_LOOKUP_KEY) {
-      const testPhones = [
-        { username: 'alice', phone: '+15005550001' },
-        { username: 'bob', phone: '+15005550002' },
-        { username: 'carol', phone: '+15005550003' },
-        { username: 'dave', phone: '+15005550004' },
-        { username: 'eve', phone: '+15005550005' },
-        { username: 'frank', phone: '+15005550006' },
-      ];
-      for (const { username, phone } of testPhones) {
-        try {
-          const lookup = crypto.createHmac('sha256', process.env.PHONE_LOOKUP_KEY)
-            .update(phone).digest('hex');
-          const updated = await client.query(
-            'UPDATE users SET phone_lookup = $1 WHERE username = $2 AND phone_lookup IS NULL',
-            [lookup, username]
-          );
-          if (updated.rowCount > 0) {
-            console.log(`  Assigned phone_lookup to ${username}`);
-          }
-        } catch (err) {
-          console.error(`  Failed to assign phone_lookup to ${username}:`, err.message);
-        }
-      }
-    }
 
     // ============================================================
     // Phase 35c: Fix Foreign Key Constraints for Account Deletion
@@ -1105,6 +1027,28 @@ const createTables = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_users_password_reset_token
         ON users(password_reset_token) WHERE password_reset_token IS NOT NULL;
+    `);
+
+    // ============================================================
+    // Phase 61d/e: Enforce ORCID required, drop Twilio-era columns
+    // ============================================================
+    await client.query(`
+      ALTER TABLE users DROP COLUMN IF EXISTS phone_hash;
+    `);
+    await client.query(`
+      ALTER TABLE users DROP COLUMN IF EXISTS phone_lookup;
+    `);
+    // Make orcid_id NOT NULL (all existing accounts must already have one)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'orcid_id' AND is_nullable = 'YES'
+        ) THEN
+          ALTER TABLE users ALTER COLUMN orcid_id SET NOT NULL;
+        END IF;
+      END $$;
     `);
 
     console.log('Database tables created/migrated successfully!');

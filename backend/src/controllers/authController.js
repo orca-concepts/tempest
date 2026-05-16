@@ -3,80 +3,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const zxcvbn = require('zxcvbn');
 const pool = require('../config/database');
-const { normalizePhone, sendVerificationCode, checkVerificationCode, computePhoneLookup } = require('../utils/phoneAuth');
-const rateLimitStore = require('../utils/pgRateLimitStore');
 const { exchangeOrcidCode, fetchOrcidEmails, verifyOrcidExists } = require('../utils/orcid');
 const { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 require('dotenv').config();
-
-// Phase 49a — SMS abuse limits (per-phone + global daily cap).
-// Checked BEFORE calling Twilio in both send-code endpoints, after we've
-// already computed the phone_lookup HMAC. Uses the Postgres-backed store so
-// counters survive deploys and restarts. Returns { ok: true } to proceed,
-// or { ok: false, status, error, retryAfterSeconds } to short-circuit with
-// a 429/503 response.
-const SMS_PER_PHONE_HOURLY_LIMIT = 2;
-const SMS_PER_PHONE_DAILY_LIMIT = 5;
-const SMS_GLOBAL_DAILY_LIMIT = 200;
-const ONE_HOUR_MS = 60 * 60 * 1000;
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-async function checkSmsRateLimits(phoneLookup) {
-  // Global daily cap — if this is already at the limit, fail hard (503).
-  try {
-    const globalCount = await rateLimitStore.getCountSince('sms:global', ONE_DAY_MS);
-    if (globalCount >= SMS_GLOBAL_DAILY_LIMIT) {
-      console.error('[SMS CAP] Daily SMS limit reached');
-      return {
-        ok: false,
-        status: 503,
-        error: 'Verification is temporarily unavailable. Please try again later.',
-        retryAfterSeconds: Math.ceil(ONE_DAY_MS / 1000),
-      };
-    }
-
-    // Per-phone hourly and daily limits.
-    const phoneHourKey = `sms:phone:${phoneLookup}:h`;
-    const phoneDayKey = `sms:phone:${phoneLookup}:d`;
-    const hourlyCount = await rateLimitStore.getCountSince(phoneHourKey, ONE_HOUR_MS);
-    if (hourlyCount >= SMS_PER_PHONE_HOURLY_LIMIT) {
-      return {
-        ok: false,
-        status: 429,
-        error: 'Too many verification attempts to this phone number. Please wait before requesting another code.',
-        retryAfterSeconds: Math.ceil(ONE_HOUR_MS / 1000),
-      };
-    }
-    const dailyCount = await rateLimitStore.getCountSince(phoneDayKey, ONE_DAY_MS);
-    if (dailyCount >= SMS_PER_PHONE_DAILY_LIMIT) {
-      return {
-        ok: false,
-        status: 429,
-        error: 'Too many verification attempts to this phone number today. Please try again tomorrow.',
-        retryAfterSeconds: Math.ceil(ONE_DAY_MS / 1000),
-      };
-    }
-
-    return { ok: true, phoneHourKey, phoneDayKey };
-  } catch (err) {
-    console.error('[SMS rate limit] store error:', err);
-    // Fail open on store errors rather than blocking legit users — SMS
-    // spending is still backstopped by the Twilio console spend cap.
-    return { ok: true, phoneHourKey: `sms:phone:${phoneLookup}:h`, phoneDayKey: `sms:phone:${phoneLookup}:d` };
-  }
-}
-
-// After a successful Twilio send, record the consumption in all three
-// buckets. Non-fatal — log and continue if the store errors.
-async function recordSmsSend(phoneHourKey, phoneDayKey) {
-  try {
-    await rateLimitStore.increment(phoneHourKey, ONE_HOUR_MS);
-    await rateLimitStore.increment(phoneDayKey, ONE_DAY_MS);
-    await rateLimitStore.increment('sms:global', ONE_DAY_MS);
-  } catch (err) {
-    console.error('[SMS rate limit] record error:', err);
-  }
-}
 
 // Password validation helper (NIST SP 800-63B)
 function validatePassword(password, userInputs = []) {
@@ -133,13 +62,13 @@ const authController = {
       let user;
       if (isEmail) {
         const result = await pool.query(
-          'SELECT id, username, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+          'SELECT id, username, password_hash, orcid_id FROM users WHERE LOWER(email) = LOWER($1)',
           [identifier.trim()]
         );
         user = result.rows[0];
       } else {
         const result = await pool.query(
-          'SELECT id, username, password_hash FROM users WHERE LOWER(username) = LOWER($1)',
+          'SELECT id, username, password_hash, orcid_id FROM users WHERE LOWER(username) = LOWER($1)',
           [identifier.trim()]
         );
         user = result.rows[0];
@@ -154,6 +83,11 @@ const authController = {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
+      // Defensive: all accounts must have ORCID linked (Phase 61d/e)
+      if (!user.orcid_id) {
+        return res.status(403).json({ error: 'account_missing_orcid', message: 'Your account is missing required ORCID linkage. Contact support.' });
+      }
+
       const token = jwt.sign(
         { userId: user.id, username: user.username },
         process.env.JWT_SECRET,
@@ -163,274 +97,6 @@ const authController = {
       res.json({ token, user: { id: user.id, username: user.username } });
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Send OTP code via Twilio (used for registration and forgot-password)
-  sendCode: async (req, res) => {
-    const { phoneNumber, intent } = req.body;
-
-    if (!phoneNumber) {
-      return res.status(400).json({ error: 'Phone number is required' });
-    }
-
-    // Pre-check phone uniqueness/existence before calling Twilio
-    let phoneLookup;
-    try {
-      const normalized = normalizePhone(phoneNumber);
-      phoneLookup = computePhoneLookup(normalized);
-
-      if (intent === 'register') {
-        // Registration: reject if phone already exists
-        const existing = await pool.query(
-          'SELECT id FROM users WHERE phone_lookup = $1',
-          [phoneLookup]
-        );
-        if (existing.rows.length > 0) {
-          return res.status(400).json({ error: 'An account with this phone number already exists' });
-        }
-      }
-      // intent=login no longer used (OTP login removed in Phase 40b)
-    } catch (error) {
-      console.error('Phone pre-check error:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-
-    // Phase 49a — per-phone and global SMS rate limits (checked before Twilio).
-    const limitCheck = await checkSmsRateLimits(phoneLookup);
-    if (!limitCheck.ok) {
-      res.set('Retry-After', String(limitCheck.retryAfterSeconds));
-      return res.status(limitCheck.status).json({ error: limitCheck.error });
-    }
-
-    try {
-      const result = await sendVerificationCode(phoneNumber);
-      if (result.success) {
-        // Record consumption only on successful send so failed Twilio calls
-        // do not eat into the user's quota.
-        await recordSmsSend(limitCheck.phoneHourKey, limitCheck.phoneDayKey);
-        return res.json({ message: 'Verification code sent' });
-      }
-      return res.status(500).json({ error: result.error });
-    } catch (error) {
-      console.error('Twilio sendCode error:', error);
-      return res.status(500).json({ error: 'Failed to send verification code' });
-    }
-  },
-
-  // Verify OTP and register new user (Phase 40b: now requires password)
-  verifyRegister: async (req, res) => {
-    const { phoneNumber, code, username, email, password, ageVerified, tosAccepted, tosVersion } = req.body;
-
-    if (!phoneNumber || !code || !username) {
-      return res.status(400).json({ error: 'Phone number, code, and username are required' });
-    }
-
-    // Password validation (before Twilio call)
-    const passwordValidation = validatePassword(password, [username, email].filter(Boolean));
-    if (!passwordValidation.valid) {
-      return res.status(400).json({ error: passwordValidation.error });
-    }
-
-    // Email validation (before Twilio call)
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      return res.status(400).json({ error: 'Valid email address is required' });
-    }
-    const atIndex = email.indexOf('@');
-    if (atIndex < 1 || email.indexOf('.', atIndex) === -1) {
-      return res.status(400).json({ error: 'Valid email address is required' });
-    }
-
-    // Age verification validation (before Twilio call)
-    if (ageVerified !== true) {
-      return res.status(400).json({ error: 'Age verification is required (must be 18 or older)' });
-    }
-
-    // ToS consent validation (Phase 51a — before Twilio call)
-    if (tosAccepted !== true) {
-      return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy.' });
-    }
-    if (!tosVersion || typeof tosVersion !== 'string' || !tosVersion.trim()) {
-      return res.status(400).json({ error: 'Invalid Terms of Service version.' });
-    }
-
-    // Username format validation (before Twilio call)
-    if (!/^[a-zA-Z0-9_]{1,30}$/.test(username)) {
-      return res.status(400).json({ error: 'Username must be 1-30 characters, alphanumeric and underscores only' });
-    }
-
-    // Username uniqueness check (before Twilio call)
-    try {
-      const existing = await pool.query(
-        'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
-        [username]
-      );
-      if (existing.rows.length > 0) {
-        return res.status(409).json({ error: 'Username already taken' });
-      }
-    } catch (error) {
-      console.error('Username check error:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-
-    // Verify OTP with Twilio
-    let verifyResult;
-    try {
-      verifyResult = await checkVerificationCode(phoneNumber, code);
-    } catch (error) {
-      console.error('Twilio verifyRegister error:', error);
-      return res.status(500).json({ error: 'Failed to send verification code' });
-    }
-    if (!verifyResult.success) {
-      return res.status(400).json({ error: verifyResult.error });
-    }
-
-    try {
-      const normalized = normalizePhone(phoneNumber);
-      const phoneLookup = computePhoneLookup(normalized);
-
-      // Phone uniqueness check — O(1) via HMAC lookup
-      const existingPhone = await pool.query(
-        'SELECT id FROM users WHERE phone_lookup = $1',
-        [phoneLookup]
-      );
-      if (existingPhone.rows.length > 0) {
-        return res.status(409).json({ error: 'An account with this phone number already exists' });
-      }
-
-      // Hash phone and password
-      const phoneHash = await bcrypt.hash(normalized, 10);
-      const passwordHash = await bcrypt.hash(password, 10);
-
-      const result = await pool.query(
-        'INSERT INTO users (username, phone_hash, phone_lookup, password_hash, email, age_verified_at, tos_accepted_at, tos_version_accepted) VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6) RETURNING id, username',
-        [username, phoneHash, phoneLookup, passwordHash, email.trim(), tosVersion.trim()]
-      );
-      const user = result.rows[0];
-
-      // Sign JWT (outside transaction — no DB needed)
-      const token = jwt.sign(
-        { userId: user.id, username: user.username },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '90d' }
-      );
-
-      res.status(201).json({
-        token,
-        user: { id: user.id, username: user.username }
-      });
-    } catch (error) {
-      console.error('Phone registration error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Forgot password: send OTP to phone number (Phase 40b)
-  forgotPasswordSendCode: async (req, res) => {
-    const { phoneNumber } = req.body;
-
-    if (!phoneNumber) {
-      return res.status(400).json({ error: 'Phone number is required' });
-    }
-
-    try {
-      const normalized = normalizePhone(phoneNumber);
-      const lookupHash = computePhoneLookup(normalized);
-
-      // Check user exists
-      const result = await pool.query(
-        'SELECT id FROM users WHERE phone_lookup = $1',
-        [lookupHash]
-      );
-
-      if (!result.rows[0]) {
-        // Generic response — don't reveal whether account exists.
-        // Also skip SMS rate-limit consumption (no SMS will be sent).
-        return res.json({ message: 'If an account exists with this phone number, a verification code has been sent' });
-      }
-
-      // Phase 49a — per-phone and global SMS rate limits (checked before Twilio).
-      const limitCheck = await checkSmsRateLimits(lookupHash);
-      if (!limitCheck.ok) {
-        res.set('Retry-After', String(limitCheck.retryAfterSeconds));
-        return res.status(limitCheck.status).json({ error: limitCheck.error });
-      }
-
-      // Send OTP via Twilio
-      const sendResult = await sendVerificationCode(phoneNumber);
-      if (!sendResult.success) {
-        return res.status(500).json({ error: 'Failed to send verification code' });
-      }
-
-      // Record consumption only on successful send
-      await recordSmsSend(limitCheck.phoneHourKey, limitCheck.phoneDayKey);
-
-      res.json({ message: 'If an account exists with this phone number, a verification code has been sent' });
-    } catch (error) {
-      console.error('Forgot password send code error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Forgot password: verify OTP and reset password (Phase 40b)
-  forgotPasswordReset: async (req, res) => {
-    const { phoneNumber, code, newPassword } = req.body;
-
-    if (!phoneNumber || !code || !newPassword) {
-      return res.status(400).json({ error: 'Phone number, verification code, and new password are required' });
-    }
-
-    // Verify OTP via Twilio
-    let verifyResult;
-    try {
-      const normalizedPhone = normalizePhone(phoneNumber);
-      verifyResult = await checkVerificationCode(normalizedPhone, code);
-    } catch (error) {
-      console.error('Twilio forgot password verify error:', error);
-      return res.status(500).json({ error: 'Failed to verify code' });
-    }
-    if (!verifyResult.success) {
-      return res.status(400).json({ error: verifyResult.error });
-    }
-
-    try {
-      const normalized = normalizePhone(phoneNumber);
-      const lookupHash = computePhoneLookup(normalized);
-
-      const userResult = await pool.query(
-        'SELECT id, username, email FROM users WHERE phone_lookup = $1',
-        [lookupHash]
-      );
-      const user = userResult.rows[0];
-
-      if (!user) {
-        return res.status(400).json({ error: 'No account found with this phone number' });
-      }
-
-      // Validate new password
-      const validation = validatePassword(newPassword, [user.username, user.email].filter(Boolean));
-      if (!validation.valid) {
-        return res.status(400).json({ error: validation.error });
-      }
-
-      // Hash and store
-      const passwordHash = await bcrypt.hash(newPassword, 10);
-      await pool.query(
-        'UPDATE users SET password_hash = $1 WHERE id = $2',
-        [passwordHash, user.id]
-      );
-
-      // Auto-login: generate JWT
-      const token = jwt.sign(
-        { userId: user.id, username: user.username },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '90d' }
-      );
-
-      res.json({ token, user: { id: user.id, username: user.username } });
-    } catch (error) {
-      console.error('Forgot password reset error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

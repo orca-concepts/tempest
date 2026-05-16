@@ -1,9 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const zxcvbn = require('zxcvbn');
 const pool = require('../config/database');
 const { normalizePhone, sendVerificationCode, checkVerificationCode, computePhoneLookup } = require('../utils/phoneAuth');
 const rateLimitStore = require('../utils/pgRateLimitStore');
+const { exchangeOrcidCode, fetchOrcidEmails, verifyOrcidExists } = require('../utils/orcid');
+const { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 require('dotenv').config();
 
 // Phase 49a — SMS abuse limits (per-phone + global daily cap).
@@ -506,46 +509,17 @@ const authController = {
     }
 
     try {
-      const clientId = process.env.ORCID_CLIENT_ID;
-      const clientSecret = process.env.ORCID_CLIENT_SECRET;
       const redirectUri = process.env.ORCID_REDIRECT_URI;
-      const baseUrl = process.env.ORCID_BASE_URL || 'https://orcid.org';
-
-      if (!clientId || !clientSecret || !redirectUri) {
+      if (!redirectUri) {
         return res.status(500).json({ error: 'ORCID OAuth is not configured' });
       }
 
-      // Server-to-server token exchange with ORCID
-      const tokenUrl = `${baseUrl}/oauth/token`;
-      const body = new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: redirectUri,
-      });
-
-      const tokenResponse = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        },
-        body: body.toString(),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('ORCID token exchange failed:', tokenResponse.status, errorText);
+      const result = await exchangeOrcidCode(code, redirectUri);
+      if (!result.success) {
         return res.status(400).json({ error: 'Failed to verify ORCID authorization code' });
       }
 
-      const tokenData = await tokenResponse.json();
-      const orcidId = tokenData.orcid;
-
-      if (!orcidId) {
-        return res.status(400).json({ error: 'No ORCID iD returned from ORCID' });
-      }
+      const { orcidId } = result;
 
       // Check uniqueness — another user may already have this ORCID
       const existing = await pool.query(
@@ -617,6 +591,351 @@ const authController = {
       res.json({ success: true, orcidId });
     } catch (error) {
       console.error('Dev ORCID connect error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // ============================================================
+  // Phase 61b: ORCID-first registration and email-based auth
+  // ============================================================
+
+  // Step 1 of ORCID-first registration: exchange code, return ORCID info
+  beginOrcidRegistration: async (req, res) => {
+    const { code, redirectUri } = req.body;
+
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ error: 'Authorization code is required' });
+    }
+    if (!redirectUri || typeof redirectUri !== 'string') {
+      return res.status(400).json({ error: 'Redirect URI is required' });
+    }
+    try {
+      new URL(redirectUri);
+    } catch {
+      return res.status(400).json({ error: 'Invalid redirect URI' });
+    }
+
+    try {
+      const result = await exchangeOrcidCode(code, redirectUri);
+      if (!result.success) {
+        return res.status(400).json({
+          error: 'orcid_exchange_failed',
+          message: "Couldn't verify your ORCID iD. Please try again.",
+        });
+      }
+
+      const { orcidId, accessToken, name } = result;
+
+      // Check if already registered
+      const existing = await pool.query(
+        'SELECT id FROM users WHERE orcid_id = $1',
+        [orcidId]
+      );
+      if (existing.rows.length > 0) {
+        return res.status(409).json({
+          error: 'already_registered',
+          message: 'An account is already linked to this ORCID iD. Please log in instead.',
+        });
+      }
+
+      // Fetch emails from ORCID
+      const emails = await fetchOrcidEmails(orcidId, accessToken);
+
+      res.json({
+        orcidId,
+        name,
+        verifiedEmails: emails.verified,
+        unverifiedEmails: emails.unverified,
+      });
+    } catch (error) {
+      console.error('Begin ORCID registration error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Step 2: Create account with ORCID + email + password
+  registerWithOrcid: async (req, res) => {
+    const { orcidId, email, password, username, tosAccepted, tosVersion, verifiedEmailsFromOrcid } = req.body;
+
+    // Validate required fields
+    if (!orcidId || !email || !password || !username) {
+      return res.status(400).json({ error: 'All fields are required (orcidId, email, password, username)' });
+    }
+
+    // Validate ORCID format
+    if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcidId)) {
+      return res.status(400).json({ error: 'Invalid ORCID format' });
+    }
+
+    // ToS validation
+    if (tosAccepted !== true) {
+      return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy.' });
+    }
+    if (!tosVersion || typeof tosVersion !== 'string' || !tosVersion.trim()) {
+      return res.status(400).json({ error: 'Invalid Terms of Service version.' });
+    }
+
+    // Username format validation
+    if (!/^[a-zA-Z0-9_]{1,30}$/.test(username)) {
+      return res.status(400).json({ error: 'Username must be 1-30 characters, alphanumeric and underscores only' });
+    }
+
+    // Email validation
+    if (typeof email !== 'string' || !email.trim()) {
+      return res.status(400).json({ error: 'Valid email address is required' });
+    }
+    const atIndex = email.indexOf('@');
+    if (atIndex < 1 || email.indexOf('.', atIndex) === -1) {
+      return res.status(400).json({ error: 'Valid email address is required' });
+    }
+
+    // Password validation
+    const passwordValidation = validatePassword(password, [username, email].filter(Boolean));
+    if (!passwordValidation.valid) {
+      return res.status(400).json({ error: passwordValidation.error });
+    }
+
+    try {
+      // Re-verify ORCID iD exists via public API
+      const orcidExists = await verifyOrcidExists(orcidId);
+      if (!orcidExists) {
+        return res.status(400).json({ error: 'Could not verify ORCID iD. Please try again.' });
+      }
+
+      // Check username availability
+      const existingUser = await pool.query(
+        'SELECT id FROM users WHERE LOWER(username) = LOWER($1)',
+        [username]
+      );
+      if (existingUser.rows.length > 0) {
+        return res.status(409).json({ error: 'Username already taken' });
+      }
+
+      // Check email availability
+      const existingEmail = await pool.query(
+        'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+        [email.trim()]
+      );
+      if (existingEmail.rows.length > 0) {
+        return res.status(409).json({ error: 'An account with this email already exists' });
+      }
+
+      // Check ORCID availability
+      const existingOrcid = await pool.query(
+        'SELECT id FROM users WHERE orcid_id = $1',
+        [orcidId]
+      );
+      if (existingOrcid.rows.length > 0) {
+        return res.status(409).json({ error: 'An account is already linked to this ORCID iD' });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // Determine email verification status
+      const verifiedList = Array.isArray(verifiedEmailsFromOrcid)
+        ? verifiedEmailsFromOrcid.map(e => e.toLowerCase())
+        : [];
+      const emailIsVerified = verifiedList.includes(email.trim().toLowerCase());
+
+      let emailVerificationToken = null;
+      let emailVerificationExpiresAt = null;
+
+      if (!emailIsVerified) {
+        emailVerificationToken = crypto.randomBytes(32).toString('hex');
+        // 24 hours from now
+        emailVerificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      }
+
+      // INSERT user
+      const insertResult = await pool.query(
+        `INSERT INTO users (
+          username, email, password_hash, orcid_id,
+          tos_accepted_at, tos_version_accepted, age_verified_at,
+          email_verified_at, email_verification_token, email_verification_expires_at
+        ) VALUES ($1, $2, $3, $4, NOW(), $5, NOW(), $6, $7, $8)
+        RETURNING id, username`,
+        [
+          username,
+          email.trim(),
+          passwordHash,
+          orcidId,
+          tosVersion.trim(),
+          emailIsVerified ? new Date() : null,
+          emailVerificationToken,
+          emailVerificationExpiresAt,
+        ]
+      );
+
+      const user = insertResult.rows[0];
+
+      // Send appropriate email (fire-and-forget)
+      if (emailIsVerified) {
+        sendWelcomeEmail(email.trim(), username, { orcidLinked: true }).catch(err => {
+          console.error('Failed to send welcome email:', err);
+        });
+      } else {
+        sendVerificationEmail(email.trim(), username, emailVerificationToken).catch(err => {
+          console.error('Failed to send verification email:', err);
+        });
+      }
+
+      // Generate JWT
+      const token = jwt.sign(
+        { userId: user.id, username: user.username },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '90d' }
+      );
+
+      res.status(201).json({
+        token,
+        user: { id: user.id, username: user.username },
+        emailVerificationStatus: emailIsVerified ? 'verified' : 'pending',
+      });
+    } catch (error) {
+      // Handle unique constraint violations (race condition)
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'Username, email, or ORCID already in use' });
+      }
+      console.error('Register with ORCID error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Verify email via token (GET — redirects to frontend)
+  verifyEmail: async (req, res) => {
+    const { token } = req.query;
+    const frontendBase = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+
+    if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+      return res.redirect(`${frontendBase}/email-verification?status=error&reason=invalid_token`);
+    }
+
+    try {
+      const result = await pool.query(
+        `UPDATE users
+         SET email_verified_at = NOW(),
+             email_verification_token = NULL,
+             email_verification_expires_at = NULL
+         WHERE email_verification_token = $1
+           AND email_verification_expires_at > NOW()
+         RETURNING id, username, email`,
+        [token]
+      );
+
+      if (result.rows.length === 0) {
+        return res.redirect(`${frontendBase}/email-verification?status=error&reason=expired_or_used`);
+      }
+
+      const user = result.rows[0];
+
+      // Send welcome email (best effort)
+      sendWelcomeEmail(user.email, user.username, { orcidLinked: false }).catch(err => {
+        console.error('Failed to send welcome email after verification:', err);
+      });
+
+      return res.redirect(`${frontendBase}/email-verification?status=success`);
+    } catch (error) {
+      console.error('Verify email error:', error);
+      return res.redirect(`${frontendBase}/email-verification?status=error&reason=server_error`);
+    }
+  },
+
+  // Forgot password (email-based, Phase 61b)
+  forgotPassword: async (req, res) => {
+    const { identifier } = req.body;
+
+    if (!identifier || typeof identifier !== 'string' || !identifier.trim()) {
+      return res.status(400).json({ error: 'Username or email is required' });
+    }
+
+    // Always return 200 to prevent account enumeration
+    const genericResponse = { message: 'If an account exists, a password reset email has been sent.' };
+
+    try {
+      const userResult = await pool.query(
+        'SELECT id, username, email FROM users WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)',
+        [identifier.trim()]
+      );
+
+      const user = userResult.rows[0];
+
+      if (!user) {
+        return res.json(genericResponse);
+      }
+
+      if (!user.email) {
+        console.warn(`[forgot-password] User ${user.id} has no email — cannot send reset`);
+        return res.json(genericResponse);
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await pool.query(
+        'UPDATE users SET password_reset_token = $1, password_reset_expires_at = $2 WHERE id = $3',
+        [resetToken, expiresAt, user.id]
+      );
+
+      // Send email (fire-and-forget — response already sent)
+      sendPasswordResetEmail(user.email, user.username, resetToken).catch(err => {
+        console.error('Failed to send password reset email:', err);
+      });
+
+      return res.json(genericResponse);
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      // Still return 200 to avoid timing leaks on errors
+      return res.json(genericResponse);
+    }
+  },
+
+  // Reset password via email token (Phase 61b)
+  resetPassword: async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+      return res.status(400).json({ error: 'invalid_or_expired_token' });
+    }
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password is required' });
+    }
+
+    try {
+      // Find user with valid reset token
+      const userResult = await pool.query(
+        'SELECT id, username, email FROM users WHERE password_reset_token = $1 AND password_reset_expires_at > NOW()',
+        [token]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(400).json({ error: 'invalid_or_expired_token' });
+      }
+
+      const user = userResult.rows[0];
+
+      // Validate password strength
+      const validation = validatePassword(newPassword, [user.username, user.email].filter(Boolean));
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error });
+      }
+
+      // Hash and update — also invalidate all existing sessions
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await pool.query(
+        `UPDATE users
+         SET password_hash = $1,
+             password_reset_token = NULL,
+             password_reset_expires_at = NULL,
+             token_issued_after = NOW()
+         WHERE id = $2`,
+        [passwordHash, user.id]
+      );
+
+      res.json({ message: 'Password reset successful. Please log in with your new password.' });
+    } catch (error) {
+      console.error('Reset password error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

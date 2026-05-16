@@ -41,10 +41,25 @@ router.get('/me', authenticateToken, authController.getCurrentUser);
 router.post('/logout-everywhere', authenticateToken, authController.logoutEverywhere);
 router.post('/delete-account', authenticateToken, authController.deleteAccount);
 
-// Phase 41a: ORCID OAuth
+// Phase 41a: ORCID OAuth (existing — link/unlink for logged-in users)
 router.get('/orcid/authorize-url', authenticateToken, authController.getOrcidAuthorizeUrl);
 router.post('/orcid/callback', authenticateToken, authController.orcidCallback);
 router.post('/orcid/disconnect', authenticateToken, authController.disconnectOrcid);
 router.post('/orcid/dev-connect', authenticateToken, authController.devConnectOrcid);
+
+// Phase 61b: ORCID-first registration + email-based auth
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many password reset requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+router.post('/orcid/begin-registration', authController.beginOrcidRegistration);
+router.post('/register-with-orcid', authController.registerWithOrcid);
+router.get('/verify-email', authController.verifyEmail);
+router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
+router.post('/reset-password', verifyCodeLimiter, authController.resetPassword);
 
 module.exports = router;

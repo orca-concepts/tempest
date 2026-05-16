@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
 **Last Updated:** May 16, 2026
-**Current Status:** Phase 61c COMPLETE plus follow-up fix. Site is live at orcaconcepts.org. ORCID-first registration with email+password is the active signup flow. Twilio code remains in the codebase (dependency, env vars, four endpoints in `routes/auth.js`) but is no longer called by the frontend; full removal is Phase 61e. One existing test user was manually verified via SQL after a pre-fix verification email left them with a NULL `email_verified_at`.
+**Current Status:** Phase 61 COMPLETE (all sub-phases through 61e). Site live at orcaconcepts.org. ORCID-first email+password authentication is the only signup flow. All Twilio code, env vars, dependencies, and database columns are gone. `orcid_id` is NOT NULL at the database level.
 
 ---
 
@@ -27,7 +27,7 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 
 - **Backend:** Node.js v24 / Express.js / PostgreSQL v16+ with pg_trgm
 - **Frontend:** React 18 / Vite / React Router v6 / Axios
-- **Auth:** JWT (jsonwebtoken) + ORCID OAuth for registration + Email/Password (bcryptjs/zxcvbn) + Resend for transactional email. Twilio dependency and four Twilio-based endpoints remain in the codebase for now; removal scheduled for Phase 61e.
+- **Auth:** JWT (jsonwebtoken) + ORCID OAuth (required) for registration + Email/Password (bcryptjs/zxcvbn) + Resend for transactional email. ORCID is enforced at the database level (`orcid_id` is NOT NULL).
 - **Transactional email:** Resend, sending from `noreply@orcaconcepts.org` (domain verified via Cloudflare DNS auto-configuration).
 - **Styling:** Inline styles only (no CSS files), EB Garamond serif font
 - **License:** AGPL-3.0-only
@@ -70,9 +70,8 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 ### Core Tables
 
 **users** — User accounts
-- `id`, `username` (unique), `email`, `password_hash`, `token_issued_after`, `age_verified_at`, `orcid_id` (partial unique index), `tos_accepted_at`, `tos_version_accepted`, `created_at`
-- **Phase 61a additions:** `email_verified_at`, `email_verification_token` (VARCHAR(64), partial index WHERE NOT NULL), `email_verification_expires_at`, `password_reset_token` (VARCHAR(64), partial index WHERE NOT NULL), `password_reset_expires_at`. Tokens are single-use random hex; consuming a token clears it.
-- **Twilio-era columns (scheduled for removal in 61e):** `phone_hash`, `phone_lookup` (HMAC, unique). No longer written by any active code path. Existing rows that had these populated still have them.
+- `id`, `username` (unique), `email`, `password_hash`, `token_issued_after`, `age_verified_at`, `orcid_id` (NOT NULL, partial unique index), `tos_accepted_at`, `tos_version_accepted`, `created_at`
+- **Email verification and password reset columns (Phase 61a):** `email_verified_at`, `email_verification_token` (VARCHAR(64), partial index WHERE NOT NULL), `email_verification_expires_at`, `password_reset_token` (VARCHAR(64), partial index WHERE NOT NULL), `password_reset_expires_at`. Tokens are single-use random hex; consuming a token clears it.
 
 **concepts** — Individual concept nodes
 - `id`, `name` (VARCHAR 255), `created_by` (FK users, SET NULL), `legal_hold` (Phase 53b), `created_at`
@@ -169,10 +168,6 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | GET | `/orcid/authorize-url` | Optional | ORCID OAuth URL (with optional `state` param to distinguish register vs link flows) |
 | POST | `/orcid/callback` | Yes | Exchange ORCID code for existing-account linking |
 | POST | `/orcid/disconnect` | Yes | Remove ORCID link |
-| POST | `/send-code` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
-| POST | `/verify-register` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
-| POST | `/forgot-password/send-code` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
-| POST | `/forgot-password/reset` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
 
 ### Concepts (`/api/concepts`)
 | Method | Path | Auth | Description |
@@ -410,6 +405,14 @@ The asymmetry exists because verification needs no user input (just clicking the
 
 **AD:** Any email-triggered flow that mutates state without user input goes to the backend first. Any email-triggered flow that needs the user to enter something goes to the frontend first. New auth-adjacent email flows should follow this split.
 
+### ORCID is Required at the Database Level (Phase 61d/e, May 2026)
+`users.orcid_id` is NOT NULL. Every user account must have an ORCID iD linked. This is enforced at three layers:
+1. **Database constraint** — any INSERT or UPDATE leaving `orcid_id` NULL is rejected by Postgres.
+2. **Registration flow** — `POST /api/auth/register-with-orcid` requires an ORCID iD that the backend re-verifies via ORCID's public API before creating the row.
+3. **Login defensive check** — `POST /api/auth/login` rejects with `account_missing_orcid` if it ever loads a user row with NULL `orcid_id` (defends against future migration mistakes).
+
+This is a soft validation mechanism, not identity verification — anyone can create an ORCID. The friction filters casual abuse and signals that the platform is researcher-oriented. If persistent abuse emerges, the next layer of defense is "ORCID must have at least N works" or "ORCID must be older than N days" — both are additional checks at registration time, not architectural changes.
+
 ### Stale-State Guard on Navigation (commit `3089bbf`, May 2026)
 Async fetches keyed on a route param (such as `edgeId`) must:
 1. Clear the parent-held param state to `null` at the START of navigation, not after the new fetch completes. Otherwise the child component renders one frame with the previous param value and fetches stale data.
@@ -471,8 +474,7 @@ Phase 61 replaced Twilio phone OTP authentication with ORCID-first email+passwor
 - **61a (commit `8f5837e`)** added the Resend integration, the email-sending utility, three HTML email templates, five new `users` columns for email verification and password reset tokens, and a manual test script. No auth logic changed.
 - **61b (commit `34a23f8`)** added five new backend endpoints (`orcid/begin-registration`, `register-with-orcid`, `verify-email`, `forgot-password`, `reset-password`), extracted ORCID logic to a shared `utils/orcid.js`, and left the four Twilio-based endpoints in place untouched.
 - **61c (commit `6a1bbbb`)** reworked `LoginModal.jsx` and `OrcidCallback.jsx` for ORCID-first signup, added standalone `/reset-password` and `/email-verification` pages, and stopped the frontend from calling any of the Twilio endpoints. The backend Twilio endpoints stayed alive as zombie code.
-- **61d (planned, not yet started)** will handle existing accounts without ORCID linked. Production database is essentially empty of real users at the time of this writing, so 61d may collapse into a SQL migration that links the admin's ORCID + drops the requirement to handle legacy phone-only accounts.
-- **61e (planned)** will remove the `twilio` npm dependency, the Twilio env vars, the four legacy auth endpoints, and the `phone_hash` / `phone_lookup` columns.
+- **61d/e (combined, shipped May 16, 2026)** combined into a single cleanup commit because the production database had no real users requiring migration — manual SQL linked the admin's ORCID and deleted the test user, after which `orcid_id` could be made NOT NULL safely. The combined phase: dropped `phone_hash` and `phone_lookup` columns, added the NOT NULL constraint on `orcid_id`, deleted four legacy auth endpoints and their controller methods, deleted `backend/src/utils/phoneAuth.js`, uninstalled the `twilio` npm package, removed four Twilio env vars from `.env.example` and from Railway, and added a defensive ORCID-present check at login. The Twilio account itself remains active externally (user's choice whether to cancel it) but nothing in the codebase or Railway references it.
 
 **The verify-URL bug:** Phase 61a's prompt to Claude Code (written by the chat-side Claude) included a specific example URL pattern (`${FRONTEND_BASE_URL}/verify-email?token=...`) that omitted the `/api/auth` prefix. Claude Code followed the example, so the verification email's link pointed at the frontend route instead of the backend endpoint. The frontend route happily rendered "success" regardless of whether the backend had run, so the bug was invisible until manual database inspection showed `email_verified_at` was still NULL for a "verified" user. Fixed in commit `6af90ce`. Documented as an Architecture Decision (see "Verification URLs Point at Backend, Reset URLs Point at Frontend"). One affected test user was manually verified via SQL.
 
@@ -519,13 +521,11 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Copy-link subtree depth limit:** Hardcoded at 50 in the recursive CTE. If real-world graphs grow deeper, this will silently truncate the picker — should be made configurable or removed in favor of relying solely on the 500-edge row cap.
 - **Legacy votes endpoints (Phase 59b):** `GET /api/votes/saved` and `GET /api/votes/web-links/votes/me` are retained for rollback safety. Once `VotesOverlay` is proven stable in production, these endpoints and any remaining call sites should be removed.
 - **TunnelView pre-59a duplicate handling:** The component now expects duplicate rows. Any production data created before 59a will still be unique-per-pair. Worth confirming after launch that the rendering also handles the "single row" case cleanly (it should, but the test scenarios used during 59a development all had duplicates).
-- **Twilio zombie code (Phase 61):** The `twilio` npm dependency, four env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `PHONE_LOOKUP_KEY`), four legacy auth endpoints (`send-code`, `verify-register`, `forgot-password/send-code`, `forgot-password/reset`), and two `users` columns (`phone_hash`, `phone_lookup`) remain in the codebase but are no longer called or written. Removal scheduled for Phase 61e.
 - **Email verification frontend trust (Phase 61c):** `VerifyEmailPage.jsx` reports success/error based on the `status` query param set by the backend redirect, without independently verifying. This hid the URL bug fixed mid-Phase-61. Defensive improvement: have the page call a backend `GET /api/auth/verify-email-status?token=...` to confirm the user's actual `email_verified_at` state. Low priority — the bug is fixed, the page is now reliable in practice.
 - **`FRONTEND_BASE_URL` naming (Phase 61):** The env var is used as the base URL for both frontend pages and backend API paths (since they're served from the same domain on Railway). Name implies "frontend only," but it's actually "the public base URL of the deployed app." Consider renaming to `PUBLIC_BASE_URL` in a future cleanup.
 
 ### Forward Roadmap
-- Phase 61d: handle legacy accounts (collapse into SQL migration if production users are essentially admin + test only)
-- Phase 61e: remove Twilio dependency, env vars, legacy endpoints, and phone columns
+- ~~Phase 61d/e: ORCID enforcement and Twilio removal~~ **completed May 16, 2026**
 - Welcome banner / verification reminder for unverified users (future)
 - ~~Domain verification for Resend on `orcaconcepts.org`~~ **completed Phase 61**
 - DMCA agent registration (unblocked; LLC formed)
@@ -541,6 +541,7 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 ## Recent Commits (Phase 59 through 61)
 
 ```
+08ae45e phase 61d/e: enforce ORCID required, remove Twilio entirely
 6af90ce fix(61): email verification URL pointed at frontend instead of backend endpoint
 6a1bbbb phase 61c: frontend ORCID-first registration + email-based password reset UI
 34a23f8 phase 61b: ORCID-first registration and email-based auth endpoints

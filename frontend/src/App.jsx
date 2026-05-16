@@ -4,6 +4,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import AppShell from './components/AppShell';
 import ProfilePage from './components/ProfilePage';
 import OrcidCallback from './components/OrcidCallback';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 function App() {
   return (
     <Router>
@@ -17,6 +19,10 @@ function App() {
 
           {/* Phase 41a: ORCID OAuth callback */}
           <Route path="/orcid/callback" element={<OrcidCallback />} />
+
+          {/* Phase 61c: Email verification and password reset standalone pages */}
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/email-verification" element={<VerifyEmailPage />} />
 
           {/* AppShell handles both authenticated and guest users */}
           <Route

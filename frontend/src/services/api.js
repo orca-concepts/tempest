@@ -65,6 +65,19 @@ export const authAPI = {
 
   devConnectOrcid: (orcidId) =>
     api.post('/auth/orcid/dev-connect', { orcidId }),
+
+  // Phase 61b: ORCID-first registration + email-based auth
+  beginOrcidRegistration: (code, redirectUri) =>
+    api.post('/auth/orcid/begin-registration', { code, redirectUri }),
+
+  registerWithOrcid: (data) =>
+    api.post('/auth/register-with-orcid', data),
+
+  forgotPassword: (identifier) =>
+    api.post('/auth/forgot-password', { identifier }),
+
+  resetPassword: (token, newPassword) =>
+    api.post('/auth/reset-password', { token, newPassword }),
 };
 
 // Concepts endpoints

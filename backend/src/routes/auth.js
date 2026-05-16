@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const authenticateToken = require('../middleware/auth');
+const optionalAuth = authenticateToken.optionalAuth;
 const rateLimit = require('express-rate-limit');
 
 // Phase 49a — The old IP-keyed sendCodeLimiter was removed. SMS abuse
@@ -42,7 +43,7 @@ router.post('/logout-everywhere', authenticateToken, authController.logoutEveryw
 router.post('/delete-account', authenticateToken, authController.deleteAccount);
 
 // Phase 41a: ORCID OAuth (existing — link/unlink for logged-in users)
-router.get('/orcid/authorize-url', authenticateToken, authController.getOrcidAuthorizeUrl);
+router.get('/orcid/authorize-url', optionalAuth, authController.getOrcidAuthorizeUrl);
 router.post('/orcid/callback', authenticateToken, authController.orcidCallback);
 router.post('/orcid/disconnect', authenticateToken, authController.disconnectOrcid);
 router.post('/orcid/dev-connect', authenticateToken, authController.devConnectOrcid);

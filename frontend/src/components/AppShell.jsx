@@ -53,6 +53,7 @@ const AppShell = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalTab, setLoginModalTab] = useState('login');
   const [loginModalNotice, setLoginModalNotice] = useState('');
+  const [pendingOrcidData, setPendingOrcidData] = useState(null);
 
   // Phase 35d: Account dropdown menu and delete flow
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -64,6 +65,24 @@ const AppShell = () => {
     setLoginModalNotice('');
     setShowLoginModal(true);
   }, []);
+
+  // Phase 61c: Detect ORCID registration callback and open signup step 2
+  useEffect(() => {
+    if (location.state?.openSignupStep2) {
+      try {
+        const stored = sessionStorage.getItem('orca_pending_orcid_registration');
+        if (stored) {
+          const data = JSON.parse(stored);
+          setPendingOrcidData(data);
+          setLoginModalTab('signup');
+          setLoginModalNotice('');
+          setShowLoginModal(true);
+        }
+      } catch {}
+      // Clear the navigation state so refresh doesn't re-trigger
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   // Active tab: { type: 'corpus', id: N } or { type: 'graph', id: N }
   const [activeTab, setActiveTab] = useState(null);
@@ -1486,9 +1505,11 @@ const AppShell = () => {
       {/* Phase 28f: Login/Signup Modal */}
       <LoginModal
         isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => { setShowLoginModal(false); setPendingOrcidData(null); }}
         initialTab={loginModalTab}
         notice={loginModalNotice}
+        pendingOrcidData={pendingOrcidData}
+        onClearPendingOrcid={() => setPendingOrcidData(null)}
       />
 
       {/* Phase 35d: Delete Account Flow */}

@@ -126,6 +126,33 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Phase 61b: ORCID-first registration
+  const registerWithOrcid = async (data) => {
+    try {
+      setError(null);
+      const response = await authAPI.registerWithOrcid(data);
+      const { token, user, emailVerificationStatus } = response.data;
+      localStorage.setItem('token', token);
+      setUser(user);
+      return { success: true, emailVerificationStatus };
+    } catch (error) {
+      const message = error.response?.data?.error || 'Registration failed';
+      setError(message);
+      return { success: false, error: message };
+    }
+  };
+
+  // Phase 61b: Email-based forgot password
+  const forgotPassword = async (identifier) => {
+    try {
+      const response = await authAPI.forgotPassword(identifier);
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      const message = error.response?.data?.error || 'Request failed';
+      return { success: false, error: message };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -136,6 +163,8 @@ export const AuthProvider = ({ children }) => {
     phoneRegister,
     forgotPasswordSendCode,
     forgotPasswordReset,
+    registerWithOrcid,
+    forgotPassword,
     logoutEverywhere,
     refreshUser,
     isAuthenticated: !!user,

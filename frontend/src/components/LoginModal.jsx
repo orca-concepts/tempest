@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { authAPI } from '../services/api';
 import { CURRENT_TOS_VERSION } from '../config/constants';
 
 /**
- * LoginModal — inline modal overlay for password login, phone OTP registration, and forgot password.
+ * LoginModal — inline modal overlay for password login, ORCID-first registration, and forgot password.
  * Props:
  *   - isOpen: boolean
- *   - onClose: () => void  (dismiss, return to guest browsing)
+ *   - onClose: () => void
  *   - initialTab: 'login' | 'signup' (default 'login')
- *   - notice: optional string shown above the form (e.g. pending invite message)
+ *   - notice: optional string shown above the form
+ *   - pendingOrcidData: optional object from OrcidCallback for step 2 of registration
+ *   - onClearPendingOrcid: callback to clear the pending data after use
  */
-const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
-  const { login, sendCode, phoneRegister, forgotPasswordSendCode, forgotPasswordReset } = useAuth();
+const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrcidData, onClearPendingOrcid }) => {
+  const { login, registerWithOrcid, forgotPassword } = useAuth();
 
   // 'login' | 'signup' | 'forgot'
   const [mode, setMode] = useState(initialTab === 'signup' ? 'signup' : 'login');
@@ -21,10 +24,9 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Signup state
-  const [signupStep, setSignupStep] = useState(1); // 1=phone, 2=OTP, 3=details
-  const [phoneDigits, setPhoneDigits] = useState('');
-  const [code, setCode] = useState('');
+  // Signup state (ORCID-first, Phase 61c)
+  const [signupStep, setSignupStep] = useState(1); // 1=ORCID prompt, 2=details form
+  const [orcidData, setOrcidData] = useState(null); // { orcidId, name, verifiedEmails, unverifiedEmails }
   const [username, setUsername] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
@@ -32,41 +34,33 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
 
-  // Forgot state
-  const [forgotStep, setForgotStep] = useState(1); // 1=phone, 2=OTP, 3=new password
-  const [forgotPhone, setForgotPhone] = useState('');
-  const [forgotCode, setForgotCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  // Forgot state (email-based, Phase 61c)
+  const [forgotStep, setForgotStep] = useState(1); // 1=identifier, 2=confirmation
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
 
   // Shared state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Reset when opened or initialTab changes
   useEffect(() => {
     if (isOpen) {
       setMode(initialTab === 'signup' ? 'signup' : 'login');
       resetAll();
-    }
-  }, [isOpen, initialTab]);
-
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const interval = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
+      // If opened with pending ORCID data from callback, jump to step 2
+      if (pendingOrcidData) {
+        setMode('signup');
+        setSignupStep(2);
+        setOrcidData(pendingOrcidData);
+        // Pre-fill email from ORCID
+        const emails = pendingOrcidData.verifiedEmails || pendingOrcidData.unverifiedEmails || [];
+        if (emails.length > 0) {
+          setSignUpEmail(emails[0]);
         }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [resendCooldown]);
+      }
+    }
+  }, [isOpen, initialTab, pendingOrcidData]);
 
   // Escape key to close
   const handleKeyDown = useCallback((e) => {
@@ -85,8 +79,7 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
     setPassword('');
     setShowPassword(false);
     setSignupStep(1);
-    setPhoneDigits('');
-    setCode('');
+    setOrcidData(null);
     setUsername('');
     setSignUpEmail('');
     setSignUpPassword('');
@@ -94,27 +87,15 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
     setShowSignUpPassword(false);
     setTosAccepted(false);
     setForgotStep(1);
-    setForgotPhone('');
-    setForgotCode('');
-    setNewPassword('');
-    setNewPasswordConfirm('');
-    setShowNewPassword(false);
+    setForgotIdentifier('');
     setError('');
     setLoading(false);
-    setResendCooldown(0);
+    setSuccessMessage('');
   };
 
   const switchMode = (newMode) => {
     setMode(newMode);
     resetAll();
-  };
-
-  const handlePhoneChange = (value, setter) => {
-    setter(value.replace(/\D/g, '').slice(0, 10));
-  };
-
-  const handleCodeChange = (value, setter) => {
-    setter(value.replace(/\D/g, '').slice(0, 6));
   };
 
   const handleBackdropClick = (e) => {
@@ -139,40 +120,31 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
     setLoading(false);
   };
 
-  // ── SIGNUP Step 1: Send code ──
-  const handleSignupSendCode = async () => {
+  // ── SIGNUP Step 1: Initiate ORCID OAuth ──
+  const handleOrcidSignup = async () => {
     setError('');
-    if (phoneDigits.length !== 10) {
-      setError('Enter a 10-digit phone number');
-      return;
-    }
     setLoading(true);
     try {
-      await sendCode('+1' + phoneDigits, 'register');
-      setSignupStep(2);
-      setResendCooldown(30);
+      const response = await authAPI.getOrcidAuthorizeUrl();
+      const authorizeUrl = response.data.url;
+      // Add state=register so the callback knows this is registration
+      const separator = authorizeUrl.includes('?') ? '&' : '?';
+      window.location.href = `${authorizeUrl}${separator}state=register`;
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send code');
+      setError('Could not connect to ORCID. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // ── SIGNUP Step 2: Verify code ──
-  const handleSignupVerifyCode = async () => {
-    setError('');
-    if (code.length !== 6) {
-      setError('Enter the 6-digit code');
-      return;
-    }
-    // Move to step 3 (details) — code verification happens on final submit
-    setSignupStep(3);
-  };
-
-  // ── SIGNUP Step 3: Create account ──
+  // ── SIGNUP Step 2: Create account ──
   const handleSignupCreate = async () => {
     setError('');
     if (!username.trim()) {
       setError('Username is required');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]{1,30}$/.test(username.trim())) {
+      setError('Username must be 1-30 characters, alphanumeric and underscores only');
       return;
     }
     if (!signUpEmail.trim()) {
@@ -201,92 +173,44 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
       return;
     }
     setLoading(true);
-    const result = await phoneRegister('+1' + phoneDigits, code, username.trim(), signUpEmail.trim(), signUpPassword, tosAccepted, CURRENT_TOS_VERSION);
+    const result = await registerWithOrcid({
+      orcidId: orcidData.orcidId,
+      email: signUpEmail.trim(),
+      password: signUpPassword,
+      username: username.trim(),
+      tosAccepted: true,
+      tosVersion: CURRENT_TOS_VERSION,
+      verifiedEmailsFromOrcid: orcidData.verifiedEmails || [],
+    });
     if (result.success) {
-      onClose();
+      if (onClearPendingOrcid) onClearPendingOrcid();
+      // Clear sessionStorage
+      try { sessionStorage.removeItem('orca_pending_orcid_registration'); } catch {}
+      if (result.emailVerificationStatus === 'pending') {
+        setSuccessMessage('Account created! Please check your email to verify your address.');
+        setTimeout(() => onClose(), 2500);
+      } else {
+        onClose();
+      }
     } else {
       setError(result.error);
     }
     setLoading(false);
   };
 
-  // ── SIGNUP resend ──
-  const handleSignupResend = async () => {
-    if (resendCooldown > 0) return;
+  // ── FORGOT PASSWORD ──
+  const handleForgotSubmit = async () => {
     setError('');
-    setLoading(true);
-    try {
-      await sendCode('+1' + phoneDigits, 'register');
-      setResendCooldown(30);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to resend code');
-    }
-    setLoading(false);
-  };
-
-  // ── FORGOT Step 1: Send code ──
-  const handleForgotSendCode = async () => {
-    setError('');
-    if (forgotPhone.length !== 10) {
-      setError('Enter a 10-digit phone number');
+    if (!forgotIdentifier.trim()) {
+      setError('Please enter your username or email');
       return;
     }
     setLoading(true);
-    try {
-      await forgotPasswordSendCode('+1' + forgotPhone);
+    const result = await forgotPassword(forgotIdentifier.trim());
+    if (result.success) {
       setForgotStep(2);
-      setResendCooldown(30);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send code');
-    }
-    setLoading(false);
-  };
-
-  // ── FORGOT Step 2: Verify code ──
-  const handleForgotVerifyCode = async () => {
-    setError('');
-    if (forgotCode.length !== 6) {
-      setError('Enter the 6-digit code');
-      return;
-    }
-    setForgotStep(3);
-  };
-
-  // ── FORGOT Step 3: Reset password ──
-  const handleForgotReset = async () => {
-    setError('');
-    if (!newPassword) {
-      setError('New password is required');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-    if (newPassword !== newPasswordConfirm) {
-      setError('Passwords do not match');
-      return;
-    }
-    setLoading(true);
-    const result = await forgotPasswordReset('+1' + forgotPhone, forgotCode, newPassword);
-    if (result.success) {
-      onClose();
     } else {
       setError(result.error);
-    }
-    setLoading(false);
-  };
-
-  // ── FORGOT resend ──
-  const handleForgotResend = async () => {
-    if (resendCooldown > 0) return;
-    setError('');
-    setLoading(true);
-    try {
-      await forgotPasswordSendCode('+1' + forgotPhone);
-      setResendCooldown(30);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to resend code');
     }
     setLoading(false);
   };
@@ -351,33 +275,26 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
     </div>
   );
 
-  // ── RENDER: Signup Step 1 (phone) ──
+  // ── RENDER: Signup Step 1 (ORCID prompt) ──
   const renderSignupStep1 = () => (
     <div style={styles.form}>
       {error && <div style={styles.error}>{error}</div>}
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Phone number</label>
-        <div style={styles.phoneRow}>
-          <span style={styles.phonePrefix}>+1</span>
-          <input
-            type="text"
-            value={phoneDigits}
-            onChange={(e) => handlePhoneChange(e.target.value, setPhoneDigits)}
-            placeholder="Phone number"
-            style={styles.phoneInput}
-            disabled={loading}
-            autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && handleSignupSendCode()}
-          />
-        </div>
+      <div style={styles.orcidExplanation}>
+        Orca uses ORCID to verify researcher identity. You'll authenticate with ORCID first, then create your account.
       </div>
       <button
-        onClick={handleSignupSendCode}
+        onClick={handleOrcidSignup}
         style={loading ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
         disabled={loading}
       >
-        {loading ? 'Sending...' : 'Send Code'}
+        {loading ? 'Connecting...' : 'Sign up with ORCID'}
       </button>
+      <div style={styles.orcidNote}>
+        Don't have an ORCID iD?{' '}
+        <a href="https://orcid.org/register" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+          Register at orcid.org
+        </a>
+      </div>
       <div style={styles.switchRow}>
         <span style={styles.switchText}>Already have an account? </span>
         <span onClick={() => switchMode('login')} style={styles.link}>Log in</span>
@@ -385,252 +302,154 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
     </div>
   );
 
-  // ── RENDER: Signup Step 2 (OTP code) ──
-  const renderSignupStep2 = () => (
-    <div style={styles.form}>
-      <div style={styles.confirmText}>Code sent to +1 {phoneDigits}</div>
-      {error && <div style={styles.error}>{error}</div>}
-      <div style={styles.inputGroup}>
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => handleCodeChange(e.target.value, setCode)}
-          placeholder="6-digit code"
-          maxLength={6}
-          style={styles.input}
-          disabled={loading}
-          autoFocus
-          onKeyDown={(e) => e.key === 'Enter' && handleSignupVerifyCode()}
-        />
-      </div>
-      <button
-        onClick={handleSignupVerifyCode}
-        style={code.length !== 6 ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
-        disabled={code.length !== 6}
-      >
-        Next
-      </button>
-      <div style={styles.linksRow}>
-        <span
-          onClick={resendCooldown > 0 ? undefined : handleSignupResend}
-          style={resendCooldown > 0 ? { ...styles.link, ...styles.disabledLink } : styles.link}
-        >
-          {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
-        </span>
-        <span
-          onClick={() => { setSignupStep(1); setCode(''); setError(''); setResendCooldown(0); }}
-          style={styles.link}
-        >
-          Back
-        </span>
-      </div>
-    </div>
-  );
+  // ── RENDER: Signup Step 2 (details form) ──
+  const renderSignupStep2 = () => {
+    const emailIsVerified = orcidData?.verifiedEmails?.map(e => e.toLowerCase()).includes(signUpEmail.trim().toLowerCase());
+    let emailNote = '';
+    if (signUpEmail.trim()) {
+      if (emailIsVerified) {
+        emailNote = 'ORCID has verified this email — no email verification needed.';
+      } else {
+        emailNote = "We'll send you a verification email after sign-up.";
+      }
+    }
 
-  // ── RENDER: Signup Step 3 (details + password) ──
-  const renderSignupStep3 = () => (
-    <div style={styles.form}>
-      {error && <div style={styles.error}>{error}</div>}
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Username</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value.slice(0, 30))}
-          placeholder="Username"
-          maxLength={30}
-          style={styles.input}
-          disabled={loading}
-          autoFocus
-        />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Email address</label>
-        <input
-          type="email"
-          value={signUpEmail}
-          onChange={(e) => setSignUpEmail(e.target.value)}
-          placeholder="Email address"
-          style={styles.input}
-          disabled={loading}
-        />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Password</label>
-        <div style={styles.passwordRow}>
+    return (
+      <div style={styles.form}>
+        {successMessage && <div style={styles.success}>{successMessage}</div>}
+        {error && <div style={styles.error}>{error}</div>}
+        <div style={styles.orcidBadge}>
+          Registering with ORCID {orcidData?.orcidId}
+          {orcidData?.name ? ` (${orcidData.name})` : ''}
+        </div>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Email address</label>
           <input
-            type={showSignUpPassword ? 'text' : 'password'}
-            value={signUpPassword}
-            onChange={(e) => setSignUpPassword(e.target.value)}
-            placeholder="Password (8+ characters)"
-            style={{ ...styles.input, flex: 1 }}
+            type="email"
+            value={signUpEmail}
+            onChange={(e) => setSignUpEmail(e.target.value)}
+            placeholder="Email address"
+            style={styles.input}
             disabled={loading}
           />
-          {passwordToggle(showSignUpPassword, setShowSignUpPassword)}
+          {emailNote && <div style={styles.fieldNote}>{emailNote}</div>}
         </div>
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Confirm password</label>
-        <input
-          type={showSignUpPassword ? 'text' : 'password'}
-          value={signUpConfirm}
-          onChange={(e) => setSignUpConfirm(e.target.value)}
-          placeholder="Confirm password"
-          style={styles.input}
-          disabled={loading}
-        />
-      </div>
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.4, cursor: 'pointer' }}>
-        <input
-          type="checkbox"
-          checked={tosAccepted}
-          onChange={(e) => setTosAccepted(e.target.checked)}
-          disabled={loading}
-          style={{ marginTop: '3px', flexShrink: 0 }}
-        />
-        <span>
-          I have read and agree to the{' '}
-          <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a>,{' '}
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a>, and{' '}
-          <a href="/copyright-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Copyright Policy</a>.
-          I confirm I am at least 18 years old.
-        </span>
-      </label>
-      <button
-        onClick={handleSignupCreate}
-        style={(loading || !tosAccepted) ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
-        disabled={loading || !tosAccepted}
-      >
-        {loading ? 'Creating account...' : 'Create Account'}
-      </button>
-      <div style={styles.linksRow}>
-        <span
-          onClick={() => { setSignupStep(2); setError(''); }}
-          style={styles.link}
-        >
-          Back
-        </span>
-      </div>
-    </div>
-  );
-
-  // ── RENDER: Forgot Step 1 (phone) ──
-  const renderForgotStep1 = () => (
-    <div style={styles.form}>
-      <div style={styles.confirmText}>Enter the phone number associated with your account</div>
-      {error && <div style={styles.error}>{error}</div>}
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Phone number</label>
-        <div style={styles.phoneRow}>
-          <span style={styles.phonePrefix}>+1</span>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Username</label>
           <input
             type="text"
-            value={forgotPhone}
-            onChange={(e) => handlePhoneChange(e.target.value, setForgotPhone)}
-            placeholder="Phone number"
-            style={styles.phoneInput}
+            value={username}
+            onChange={(e) => setUsername(e.target.value.slice(0, 30))}
+            placeholder="Username"
+            maxLength={30}
+            style={styles.input}
             disabled={loading}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && handleForgotSendCode()}
           />
         </div>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Password</label>
+          <div style={styles.passwordRow}>
+            <input
+              type={showSignUpPassword ? 'text' : 'password'}
+              value={signUpPassword}
+              onChange={(e) => setSignUpPassword(e.target.value)}
+              placeholder="Password (8+ characters)"
+              style={{ ...styles.input, flex: 1 }}
+              disabled={loading}
+            />
+            {passwordToggle(showSignUpPassword, setShowSignUpPassword)}
+          </div>
+        </div>
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Confirm password</label>
+          <input
+            type={showSignUpPassword ? 'text' : 'password'}
+            value={signUpConfirm}
+            onChange={(e) => setSignUpConfirm(e.target.value)}
+            placeholder="Confirm password"
+            style={styles.input}
+            disabled={loading}
+          />
+        </div>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.4, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={tosAccepted}
+            onChange={(e) => setTosAccepted(e.target.checked)}
+            disabled={loading}
+            style={{ marginTop: '3px', flexShrink: 0 }}
+          />
+          <span>
+            I have read and agree to the{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a>,{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a>, and{' '}
+            <a href="/copyright-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Copyright Policy</a>.
+            I confirm I am at least 18 years old.
+          </span>
+        </label>
+        <button
+          onClick={handleSignupCreate}
+          style={(loading || !tosAccepted) ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
+          disabled={loading || !tosAccepted}
+        >
+          {loading ? 'Creating account...' : 'Create Account'}
+        </button>
+        <div style={styles.linksRow}>
+          <span
+            onClick={() => { setSignupStep(1); setOrcidData(null); setError(''); }}
+            style={styles.link}
+          >
+            Back
+          </span>
+        </div>
       </div>
-      <button
-        onClick={handleForgotSendCode}
-        style={loading ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
-        disabled={loading}
-      >
-        {loading ? 'Sending...' : 'Send Code'}
-      </button>
-      <div style={styles.linksRow}>
-        <span onClick={() => switchMode('login')} style={styles.link}>Back to log in</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
-  // ── RENDER: Forgot Step 2 (OTP code) ──
-  const renderForgotStep2 = () => (
+  // ── RENDER: Forgot Step 1 (identifier) ──
+  const renderForgotStep1 = () => (
     <div style={styles.form}>
-      <div style={styles.confirmText}>Code sent to +1 {forgotPhone}</div>
+      <div style={styles.confirmText}>Enter your username or email to receive a password reset link.</div>
       {error && <div style={styles.error}>{error}</div>}
       <div style={styles.inputGroup}>
+        <label style={styles.label}>Username or email</label>
         <input
           type="text"
-          value={forgotCode}
-          onChange={(e) => handleCodeChange(e.target.value, setForgotCode)}
-          placeholder="6-digit code"
-          maxLength={6}
+          value={forgotIdentifier}
+          onChange={(e) => setForgotIdentifier(e.target.value)}
+          placeholder="Username or email"
           style={styles.input}
           disabled={loading}
           autoFocus
-          onKeyDown={(e) => e.key === 'Enter' && handleForgotVerifyCode()}
+          onKeyDown={(e) => e.key === 'Enter' && handleForgotSubmit()}
         />
       </div>
       <button
-        onClick={handleForgotVerifyCode}
-        style={forgotCode.length !== 6 ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
-        disabled={forgotCode.length !== 6}
-      >
-        Next
-      </button>
-      <div style={styles.linksRow}>
-        <span
-          onClick={resendCooldown > 0 ? undefined : handleForgotResend}
-          style={resendCooldown > 0 ? { ...styles.link, ...styles.disabledLink } : styles.link}
-        >
-          {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
-        </span>
-        <span
-          onClick={() => { setForgotStep(1); setForgotCode(''); setError(''); setResendCooldown(0); }}
-          style={styles.link}
-        >
-          Back
-        </span>
-      </div>
-    </div>
-  );
-
-  // ── RENDER: Forgot Step 3 (new password) ──
-  const renderForgotStep3 = () => (
-    <div style={styles.form}>
-      {error && <div style={styles.error}>{error}</div>}
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>New password</label>
-        <div style={styles.passwordRow}>
-          <input
-            type={showNewPassword ? 'text' : 'password'}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="New password (8+ characters)"
-            style={{ ...styles.input, flex: 1 }}
-            disabled={loading}
-            autoFocus
-          />
-          {passwordToggle(showNewPassword, setShowNewPassword)}
-        </div>
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Confirm new password</label>
-        <input
-          type={showNewPassword ? 'text' : 'password'}
-          value={newPasswordConfirm}
-          onChange={(e) => setNewPasswordConfirm(e.target.value)}
-          placeholder="Confirm new password"
-          style={styles.input}
-          disabled={loading}
-          onKeyDown={(e) => e.key === 'Enter' && handleForgotReset()}
-        />
-      </div>
-      <button
-        onClick={handleForgotReset}
+        onClick={handleForgotSubmit}
         style={loading ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
         disabled={loading}
       >
-        {loading ? 'Resetting...' : 'Reset Password'}
+        {loading ? 'Sending...' : 'Send Reset Link'}
       </button>
       <div style={styles.linksRow}>
         <span onClick={() => switchMode('login')} style={styles.link}>Back to log in</span>
       </div>
+    </div>
+  );
+
+  // ── RENDER: Forgot Step 2 (confirmation) ──
+  const renderForgotStep2 = () => (
+    <div style={styles.form}>
+      <div style={styles.success}>
+        If an account exists with that username or email, we've sent a password reset email. Check your inbox.
+      </div>
+      <button
+        onClick={() => switchMode('login')}
+        style={styles.submitBtn}
+      >
+        Back to Log In
+      </button>
     </div>
   );
 
@@ -652,12 +471,10 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice }) => {
         {/* Signup */}
         {mode === 'signup' && signupStep === 1 && renderSignupStep1()}
         {mode === 'signup' && signupStep === 2 && renderSignupStep2()}
-        {mode === 'signup' && signupStep === 3 && renderSignupStep3()}
 
         {/* Forgot Password */}
         {mode === 'forgot' && forgotStep === 1 && renderForgotStep1()}
         {mode === 'forgot' && forgotStep === 2 && renderForgotStep2()}
-        {mode === 'forgot' && forgotStep === 3 && renderForgotStep3()}
       </div>
     </div>
   );
@@ -746,29 +563,6 @@ const styles = {
     userSelect: 'none',
     whiteSpace: 'nowrap',
   },
-  phoneRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  phonePrefix: {
-    fontSize: '16px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#333',
-    fontWeight: '500',
-    userSelect: 'none',
-  },
-  phoneInput: {
-    flex: 1,
-    padding: '8px 12px',
-    fontSize: '16px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    outline: 'none',
-    backgroundColor: '#fff',
-    color: '#333',
-  },
   submitBtn: {
     padding: '10px',
     fontSize: '15px',
@@ -793,6 +587,15 @@ const styles = {
     fontSize: '14px',
     fontFamily: '"EB Garamond", Georgia, serif',
   },
+  success: {
+    padding: '9px 12px',
+    backgroundColor: '#f0fef4',
+    color: '#080',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    lineHeight: '1.4',
+  },
   confirmText: {
     fontSize: '15px',
     fontFamily: '"EB Garamond", Georgia, serif',
@@ -811,11 +614,6 @@ const styles = {
     cursor: 'pointer',
     textDecoration: 'underline',
   },
-  disabledLink: {
-    color: '#aaa',
-    cursor: 'default',
-    textDecoration: 'none',
-  },
   switchRow: {
     textAlign: 'center',
     marginTop: '4px',
@@ -825,17 +623,34 @@ const styles = {
     fontFamily: '"EB Garamond", Georgia, serif',
     color: '#888',
   },
-  checkboxRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    cursor: 'pointer',
-    fontFamily: '"EB Garamond", Georgia, serif',
-  },
-  checkboxLabel: {
+  orcidExplanation: {
     fontSize: '14px',
     fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#333',
+    color: '#555',
+    lineHeight: '1.5',
+    textAlign: 'center',
+  },
+  orcidNote: {
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#888',
+    textAlign: 'center',
+  },
+  orcidBadge: {
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#555',
+    padding: '8px 12px',
+    backgroundColor: '#f5f5f0',
+    border: '1px solid #e0ddd8',
+    borderRadius: '4px',
+    textAlign: 'center',
+  },
+  fieldNote: {
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#888',
+    lineHeight: '1.3',
   },
 };
 

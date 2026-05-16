@@ -15,14 +15,9 @@ const OrcidCallback = () => {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!user) {
-      setStatus('error');
-      setErrorMessage('You must be logged in to connect an ORCID');
-      return;
-    }
-
     const code = searchParams.get('code');
     const error = searchParams.get('error');
+    const state = searchParams.get('state');
 
     if (error) {
       setStatus('error');
@@ -36,10 +31,43 @@ const OrcidCallback = () => {
       return;
     }
 
-    // If ORCID is already connected, this is a back-button loop:
-    // user hit Back from profile → landed on orcid.org/authorize →
-    // ORCID auto-redirected here with a fresh code. Go back 2 entries
-    // to skip past both this callback and the orcid.org authorize page.
+    // ── Registration flow (state=register) ──
+    if (state === 'register') {
+      if (exchangedRef.current) return;
+      exchangedRef.current = true;
+
+      const handleRegistration = async () => {
+        try {
+          const redirectUri = `${window.location.origin}/orcid/callback`;
+          const response = await authAPI.beginOrcidRegistration(code, redirectUri);
+          // Store in sessionStorage so LoginModal can pick it up
+          sessionStorage.setItem('orca_pending_orcid_registration', JSON.stringify(response.data));
+          navigate('/', { replace: true, state: { openSignupStep2: true } });
+        } catch (err) {
+          exchangedRef.current = false;
+          const errorData = err.response?.data;
+          if (errorData?.error === 'already_registered') {
+            setStatus('error');
+            setErrorMessage('This ORCID iD is already linked to an account. Please log in instead.');
+          } else {
+            setStatus('error');
+            setErrorMessage(errorData?.message || "Couldn't verify your ORCID iD. Please try again.");
+          }
+        }
+      };
+
+      handleRegistration();
+      return;
+    }
+
+    // ── Existing link-to-account flow (state=link or no state) ──
+    if (!user) {
+      setStatus('error');
+      setErrorMessage('You must be logged in to connect an ORCID');
+      return;
+    }
+
+    // If ORCID is already connected, this is a back-button loop
     if (user.orcidId) {
       window.history.go(-2);
       return;

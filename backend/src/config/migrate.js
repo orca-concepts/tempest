@@ -1079,6 +1079,34 @@ const createTables = async () => {
       `DELETE FROM page_comments WHERE page_slug IN ('constitution', 'donate')`
     );
 
+    // ============================================================
+    // Phase 61a: Email verification and password reset token columns
+    // ============================================================
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP;
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(64);
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMP;
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(64);
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP;
+    `);
+    // Partial indexes — only index non-NULL tokens (cheap on common NULL case)
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_email_verification_token
+        ON users(email_verification_token) WHERE email_verification_token IS NOT NULL;
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_password_reset_token
+        ON users(password_reset_token) WHERE password_reset_token IS NOT NULL;
+    `);
+
     console.log('Database tables created/migrated successfully!');
   } catch (error) {
     await client.query('ROLLBACK');

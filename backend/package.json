@@ -19,6 +19,7 @@
     "express-rate-limit": "^8.3.1",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
+    "resend": "^6.12.3",
     "twilio": "^5.13.0",
     "zxcvbn": "^4.4.2"
   },

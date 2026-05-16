@@ -300,30 +300,11 @@ const authController = {
       const phoneHash = await bcrypt.hash(normalized, 10);
       const passwordHash = await bcrypt.hash(password, 10);
 
-      const client = await pool.connect();
-      let user;
-      try {
-        await client.query('BEGIN');
-
-        const result = await client.query(
-          'INSERT INTO users (username, phone_hash, phone_lookup, password_hash, email, age_verified_at, tos_accepted_at, tos_version_accepted) VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6) RETURNING id, username',
-          [username, phoneHash, phoneLookup, passwordHash, email.trim(), tosVersion.trim()]
-        );
-        user = result.rows[0];
-
-        // Auto-create the default "Saved" tab
-        await client.query(
-          'INSERT INTO saved_tabs (user_id, name, display_order) VALUES ($1, $2, 0)',
-          [user.id, 'Saved']
-        );
-
-        await client.query('COMMIT');
-      } catch (txError) {
-        await client.query('ROLLBACK');
-        throw txError;
-      } finally {
-        client.release();
-      }
+      const result = await pool.query(
+        'INSERT INTO users (username, phone_hash, phone_lookup, password_hash, email, age_verified_at, tos_accepted_at, tos_version_accepted) VALUES ($1, $2, $3, $4, $5, NOW(), NOW(), $6) RETURNING id, username',
+        [username, phoneHash, phoneLookup, passwordHash, email.trim(), tosVersion.trim()]
+      );
+      const user = result.rows[0];
 
       // Sign JWT (outside transaction — no DB needed)
       const token = jwt.sign(

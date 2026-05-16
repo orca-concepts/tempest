@@ -57,7 +57,7 @@ const usersController = {
       }
 
       const userResult = await pool.query(
-        'SELECT id, username, orcid_id, created_at FROM users WHERE id = $1',
+        'SELECT id, username, email, orcid_id, created_at FROM users WHERE id = $1',
         [userId]
       );
 
@@ -75,6 +75,7 @@ const usersController = {
       res.json({
         id: user.id,
         username: user.username,
+        email: user.email || null,
         orcidId: user.orcid_id || null,
         createdAt: user.created_at,
         comboCount: Number(comboResult.rows[0].count),

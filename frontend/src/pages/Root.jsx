@@ -15,7 +15,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortMode, setSortMode] = useState('saves'); // 'saves' | 'new' | 'annotations' | 'top_annotation'
+  const [sortMode, setSortMode] = useState('saves'); // 'saves' | 'new'
 
   const { user } = useAuth();
 
@@ -212,8 +212,6 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
                 {[
                   { value: 'saves', label: 'Graph Votes' },
                   { value: 'new', label: 'Newest' },
-                  { value: 'annotations', label: 'Annotations' },
-                  { value: 'top_annotation', label: 'Top Annotation' },
                 ].map((opt, i) => (
                   <button
                     key={opt.value}

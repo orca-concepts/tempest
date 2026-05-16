@@ -265,16 +265,12 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
 
           {/* Search results */}
           {results.map((result, idx) => {
-            // Determine if this result has context (saved tabs or corpus annotations)
-            const hasContext = (result.savedTabs && result.savedTabs.length > 0) ||
-                              (result.corpusAnnotations && result.corpusAnnotations.length > 0);
+            // Determine if this result has context (saved tabs)
+            const hasContext = (result.savedTabs && result.savedTabs.length > 0);
             const prevResult = idx > 0 ? results[idx - 1] : null;
-            const prevHasContext = prevResult && (
-              (prevResult.savedTabs && prevResult.savedTabs.length > 0) ||
-              (prevResult.corpusAnnotations && prevResult.corpusAnnotations.length > 0)
-            );
+            const prevHasContext = prevResult && (prevResult.savedTabs && prevResult.savedTabs.length > 0);
 
-            // Show "In your votes / corpuses" header before first contextual result
+            // Show "In your votes" header before first contextual result
             const isFirstContextResult = idx === 0 && hasContext;
             // Show divider between contextual and non-contextual results
             const isFirstNonContextAfterContext = prevHasContext && !hasContext;
@@ -282,7 +278,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
             return (
               <React.Fragment key={result.id}>
                 {isFirstContextResult && (
-                  <div style={styles.savedSectionHeader}>In your votes / corpuses</div>
+                  <div style={styles.savedSectionHeader}>In your votes</div>
                 )}
                 {isFirstNonContextAfterContext && (
                   <div style={styles.divider} />
@@ -303,29 +299,6 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
                   <div style={styles.resultBadges}>
                     {result.savedTabs && result.savedTabs.length > 0 && (
                       <span style={styles.savedTabBadge}>Voted</span>
-                    )}
-                    {result.corpusAnnotations && result.corpusAnnotations.length > 0 && (
-                      <div style={styles.corpusBadgeColumn}>
-                        {result.corpusAnnotations.map((c, i) => {
-                          const titles = c.documentTitles || [];
-                          const tooltipText = titles.length > 0
-                            ? (titles.length > 4
-                              ? `Annotated in: ${titles.slice(0, 4).join(', ')} and ${titles.length - 4} more`
-                              : `Annotated in: ${titles.join(', ')}`)
-                            : null;
-                          return (
-                            <span
-                              key={i}
-                              style={styles.corpusBadge}
-                              onMouseEnter={tooltipText ? (e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setTooltip({ text: tooltipText, x: rect.left + rect.width / 2, y: rect.top });
-                              } : undefined}
-                              onMouseLeave={tooltipText ? () => setTooltip(null) : undefined}
-                            >{c.corpusName}</span>
-                          );
-                        })}
-                      </div>
                     )}
                     {result.isChild && (
                       <span style={styles.childBadge}>child</span>

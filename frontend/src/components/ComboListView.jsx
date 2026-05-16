@@ -166,7 +166,7 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
       )}
 
       <div style={{ padding: '8px 20px 0 20px', fontSize: '14px', color: '#666', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.5 }}>
-        Create collections of concepts to see all their annotations in one place.
+        Create collections of concepts to see all their links in one place.
       </div>
 
       {/* Search and sort controls */}

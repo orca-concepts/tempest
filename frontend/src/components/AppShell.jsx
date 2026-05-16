@@ -703,7 +703,6 @@ const AppShell = () => {
     }
   }, [isGuest, handleRequestLogin]);
 
-  // Phase 47: Navigate to superconcept from annotation panel
   const handleNavigateToSuperconcept = useCallback((comboId, comboName) => {
     handleSubscribeToCombo(comboId, comboName || '');
   }, [handleSubscribeToCombo]);

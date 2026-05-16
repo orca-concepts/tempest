@@ -869,18 +869,6 @@ const styles = {
     color: '#ccc',
     fontSize: '13px',
   },
-  // Annotation list
-  annotationList: {
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  annotationCard: {
-    padding: '12px 0',
-    borderTop: '1px solid #f0f0f0',
-  },
-  annotationCardFirst: {
-    padding: '12px 0',
-  },
   docLine: {
     display: 'flex',
     alignItems: 'baseline',

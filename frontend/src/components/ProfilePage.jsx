@@ -211,11 +211,6 @@ const ProfilePage = () => {
         )}
 
         <p style={styles.mutedText}>Member since {formatDate(profile.createdAt)}</p>
-        <p style={styles.mutedText}>
-          {profile.corpusCount} {profile.corpusCount === 1 ? 'corpus' : 'corpuses'} created
-          {' · '}
-          {profile.documentCount} {profile.documentCount === 1 ? 'document' : 'documents'} uploaded
-        </p>
 
         {isOwnProfile && (
           <div style={styles.orcidSection}>
@@ -278,9 +273,9 @@ const ProfilePage = () => {
               {emailError && <p style={styles.errorText}>{emailError}</p>}
               {!editingEmail ? (
                 <div style={styles.emailReadRow}>
-                  <span style={styles.emailValue}>{user?.email || 'Not set'}</span>
+                  <span style={styles.emailValue}>{profile.email || 'Not set'}</span>
                   <button
-                    onClick={() => { setEmailDraft(user?.email || ''); setEditingEmail(true); setEmailError(null); }}
+                    onClick={() => { setEmailDraft(profile.email || ''); setEditingEmail(true); setEmailError(null); }}
                     style={styles.editLink}
                   >
                     Edit

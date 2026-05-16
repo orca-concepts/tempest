@@ -395,7 +395,6 @@ const conceptsController = {
         isChild: !!childInfo[row.id],
         childAttributes: childInfo[row.id] || [],
         savedTabs: savedTabInfo[row.id] || [],
-        corpusAnnotations: [],
       }));
 
       // Sort: results with saved votes first

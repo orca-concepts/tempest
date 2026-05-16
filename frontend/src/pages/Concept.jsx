@@ -65,7 +65,7 @@ const Concept = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [sortMode, setSortMode] = useState('saves'); // 'saves' | 'new' | 'annotations' | 'top_annotation'
+  const [sortMode, setSortMode] = useState('saves'); // 'saves' | 'new'
   
   // Vote set state
   const [voteSets, setVoteSets] = useState([]);
@@ -725,8 +725,6 @@ const Concept = ({
                     {[
                       { value: 'saves', label: 'Graph Votes' },
                       { value: 'new', label: 'Newest' },
-                      { value: 'annotations', label: 'Annotations' },
-                      { value: 'top_annotation', label: 'Top Annotation' },
                     ].map((opt, i) => (
                       <button
                         key={opt.value}

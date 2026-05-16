@@ -4,8 +4,6 @@ const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
-  // Tab picker removed in Phase 7c Saved Page Overhaul — saves are automatically
-  // grouped by corpus on the Saved Page based on annotation membership.
   addVote: async (req, res) => {
     const { edgeId, path } = req.body;
 

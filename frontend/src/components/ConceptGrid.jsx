@@ -94,11 +94,6 @@ const ConceptGrid = ({
                     {concept.flag_count} {Number(concept.flag_count) === 1 ? 'user has' : 'users have'} flagged this as spam
                   </div>
                 )}
-                {concept.top_annotation_votes != null && Number(concept.top_annotation_votes) > 0 && (
-                  <div style={styles.topAnnotationIndicator}>
-                    Top annotation: {concept.top_annotation_votes} {Number(concept.top_annotation_votes) === 1 ? 'vote' : 'votes'}
-                  </div>
-                )}
               </div>
               
               {showVotes && (
@@ -287,12 +282,6 @@ const styles = {
   flagCount: {
     fontSize: '12px',
     color: '#c33',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    marginTop: '4px',
-  },
-  topAnnotationIndicator: {
-    fontSize: '12px',
-    color: '#999',
     fontFamily: '"EB Garamond", Georgia, serif',
     marginTop: '4px',
   },

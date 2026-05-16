@@ -13,10 +13,6 @@ const USE_CASES = [
     text: ' Researchers can develop value hierarchy graphs (as well as those for actions, tools, and research questions) to navigate research documents of different kinds.',
   },
   {
-    label: 'Use Case: Product Development.',
-    text: ' Developers can publish documents related to the functionality of their products and users can apply value, tool, and action hierarchy graphs to help others best utilize tools and signal evolving demand for product capabilities. Orca itself is a platform for researchers, so please respect that audience and only include research-related tools here.',
-  },
-  {
     label: 'Use Case: Education.',
     text: ' Students and educators can create hierarchy graphs and apply them to material for self-directed exploration of core concepts.',
   },
@@ -49,10 +45,6 @@ const UsingOrcaContent = ({ onImageClick }) => {
 
   return (
     <div>
-      <p style={usingOrcaStyles.intro}>
-        Use orca to build shared value hierarchies, ontologies of the principles that matter most in research,
-        and use them to navigate between and discover research documents.
-      </p>
 
       <div style={usingOrcaStyles.heroTitle}>
         Build collaborative value ontologies, then use them to link to research documents
@@ -113,12 +105,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Superconcept page showing a curated reading list"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create superconcepts to build reading lists based on certain annotations.' }],
+              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create superconcepts to build reading lists based on certain concepts.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Create superconcepts to build reading lists based on certain annotations.
+            Create superconcepts to build reading lists based on certain concepts.
           </p>
         </div>
       </div>
@@ -128,6 +120,11 @@ const UsingOrcaContent = ({ onImageClick }) => {
           <span style={{ fontWeight: 'bold' }}>{uc.label}</span>{uc.text}
         </p>
       ))}
+      <p style={{ ...usingOrcaStyles.useCase, marginTop: '24px' }}>
+        This is a free, open-source project for use by researchers. You can create your own version using the same code at{' '}
+        <a href="https://github.com/orca-concepts/tempest" target="_blank" rel="noopener noreferrer" style={usingOrcaStyles.subtleLink}>https://github.com/orca-concepts/tempest</a>.
+        {' '}Just decide the domains of concept graphs you want to build and the kind of source material to which they should link.
+      </p>
     </div>
   );
 };

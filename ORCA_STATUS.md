@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 15, 2026
-**Current Status:** Phase 60a COMPLETE (user-removable links + affirmation checkbox + title preview on blur/paste). Site still offline pending Lane Rideout legal disclosure of Phase 58 pivot scope and revised legal documents. Railway not yet reattached.
+**Last Updated:** May 16, 2026
+**Current Status:** Phase 61c COMPLETE plus follow-up fix. Site is live at orcaconcepts.org. ORCID-first registration with email+password is the active signup flow. Twilio code remains in the codebase (dependency, env vars, four endpoints in `routes/auth.js`) but is no longer called by the frontend; full removal is Phase 61e. One existing test user was manually verified via SQL after a pre-fix verification email left them with a NULL `email_verified_at`.
 
 ---
 
@@ -15,7 +15,9 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 
 **Phase 60a (May 2026):** Self-authored links may now be hard-deleted by their adder (carve-out from append-only AD — see "Append-Only" section for the reframed principle). New `link_removal_log` table preserves a sparse audit trail (sha256 of URL, no plaintext content). Add-link form gained a required affirmation checkbox and on-paste/on-blur title preview via new `GET /web-links/preview-title` endpoint reusing the existing OG-fetch utility.
 
-**Current state:** Site is offline. All code changes are complete. Pending: Lane Rideout legal disclosure, revised legal documents (ToS, Privacy Policy, Copyright Policy), Railway reattachment, and relaunch of orcaconcepts.org. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
+**Phase 61 pivot (May 2026):** Replaced Twilio phone OTP authentication with ORCID-first email+password registration. New signup flow: (1) ORCID OAuth proves the user owns an ORCID iD, (2) the user submits username, email, password, and ToS acceptance. If the submitted email matches an ORCID-verified email returned by `/v3.0/{orcid}/email`, the account is created with `email_verified_at = NOW()` and a welcome email is sent. Otherwise a verification email with a 24-hour single-use token is sent, and the welcome email follows after the user clicks the verify link. Password reset uses a similar email-token flow. Phase 61a added the schema + Resend integration. 61b added five new backend endpoints. 61c reworked `LoginModal.jsx` and added standalone `/reset-password` and `/email-verification` pages. A follow-up fix corrected the verification email's URL (it pointed at the frontend route instead of the backend endpoint, so verification appeared to succeed but didn't actually update the database).
+
+**Current state:** Site is live at orcaconcepts.org. Railway attached, domain connected. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
 
 **Key files:** This file (`ORCA_STATUS.md`) is the canonical technical reference. `ORCA_HISTORY.md` has completed phase narratives through Phase 58. `CLAUDE.md` has conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
 
@@ -25,7 +27,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 
 - **Backend:** Node.js v24 / Express.js / PostgreSQL v16+ with pg_trgm
 - **Frontend:** React 18 / Vite / React Router v6 / Axios
-- **Auth:** JWT (jsonwebtoken) + Phone OTP (Twilio) for registration + Password (bcryptjs/zxcvbn)
+- **Auth:** JWT (jsonwebtoken) + ORCID OAuth for registration + Email/Password (bcryptjs/zxcvbn) + Resend for transactional email. Twilio dependency and four Twilio-based endpoints remain in the codebase for now; removal scheduled for Phase 61e.
+- **Transactional email:** Resend, sending from `noreply@orcaconcepts.org` (domain verified via Cloudflare DNS auto-configuration).
 - **Styling:** Inline styles only (no CSS files), EB Garamond serif font
 - **License:** AGPL-3.0-only
 - **Repository:** github.com/orca-concepts/orca (public)
@@ -60,14 +63,16 @@ A frontend build flag that gates the live application behind an explanatory land
 
 ---
 
-## Database Schema (Post-Phase 60a)
+## Database Schema (Post-Phase 61a)
 
 All tables below are created/maintained in `backend/src/config/migrate.js`. Tables dropped in Phase 58a (documents, corpuses, annotations, messages, citations, etc.) are documented in `ORCA_HISTORY.md`.
 
 ### Core Tables
 
 **users** — User accounts
-- `id`, `username` (unique), `email`, `password_hash`, `phone_hash`, `phone_lookup` (HMAC, unique), `token_issued_after`, `age_verified_at`, `orcid_id` (partial unique index), `tos_accepted_at`, `tos_version_accepted`, `created_at`
+- `id`, `username` (unique), `email`, `password_hash`, `token_issued_after`, `age_verified_at`, `orcid_id` (partial unique index), `tos_accepted_at`, `tos_version_accepted`, `created_at`
+- **Phase 61a additions:** `email_verified_at`, `email_verification_token` (VARCHAR(64), partial index WHERE NOT NULL), `email_verification_expires_at`, `password_reset_token` (VARCHAR(64), partial index WHERE NOT NULL), `password_reset_expires_at`. Tokens are single-use random hex; consuming a token clears it.
+- **Twilio-era columns (scheduled for removal in 61e):** `phone_hash`, `phone_lookup` (HMAC, unique). No longer written by any active code path. Existing rows that had these populated still have them.
 
 **concepts** — Individual concept nodes
 - `id`, `name` (VARCHAR 255), `created_by` (FK users, SET NULL), `legal_hold` (Phase 53b), `created_at`
@@ -145,7 +150,7 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 ---
 
-## API Surface (Post-Phase 60a)
+## API Surface (Post-Phase 61b)
 
 All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = required JWT; `optionalAuth` = guest-accessible.
 
@@ -153,16 +158,21 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/login` | No | Password login (username or email) |
-| POST | `/send-code` | No | Send OTP for registration |
-| POST | `/verify-register` | No | Verify OTP + create account |
-| POST | `/forgot-password/send-code` | No | Send OTP for password reset |
-| POST | `/forgot-password/reset` | No | Reset password via OTP |
+| POST | `/orcid/begin-registration` | No | **NEW Phase 61b.** Step 1 of ORCID-first registration. Exchanges ORCID OAuth code, returns ORCID iD + verified/unverified emails for form prefill. Does not create an account. 409 if an account already exists with that ORCID iD. |
+| POST | `/register-with-orcid` | No | **NEW Phase 61b.** Step 2 of registration. Creates the user account. If submitted email is in `verifiedEmailsFromOrcid`, sets `email_verified_at = NOW()` and sends welcome email; otherwise sends verification email. Returns JWT + user + `emailVerificationStatus`. |
+| GET | `/verify-email` | No | **NEW Phase 61b.** Token-based email verification. Redirects to `${FRONTEND_BASE_URL}/email-verification?status=...`. Single-use token; consuming it clears the row's verification token columns. Sends welcome email on success. |
+| POST | `/forgot-password` | No | **NEW Phase 61b.** Email-based password reset initiation. Always returns 200 with the same message regardless of whether the user exists (timing-safe). Rate-limited (5/hour/IP). Generates a 64-char hex token with a 1-hour expiry. |
+| POST | `/reset-password` | No | **NEW Phase 61b.** Token-based password reset completion. Validates token + new password strength, updates `password_hash`, advances `token_issued_after` (invalidates all existing JWTs for this user), clears reset token. |
 | GET | `/me` | Yes | Get current user info |
-| POST | `/logout-everywhere` | Yes | Invalidate all JWTs |
+| POST | `/logout-everywhere` | Yes | Invalidate all JWTs (advances `token_issued_after`) |
 | POST | `/delete-account` | Yes | Delete account (requires zero owned combos) |
-| GET | `/orcid/authorize-url` | Yes | ORCID OAuth URL |
-| POST | `/orcid/callback` | Yes | Exchange ORCID code |
+| GET | `/orcid/authorize-url` | Optional | ORCID OAuth URL (with optional `state` param to distinguish register vs link flows) |
+| POST | `/orcid/callback` | Yes | Exchange ORCID code for existing-account linking |
 | POST | `/orcid/disconnect` | Yes | Remove ORCID link |
+| POST | `/send-code` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
+| POST | `/verify-register` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
+| POST | `/forgot-password/send-code` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
+| POST | `/forgot-password/reset` | No | **LEGACY Twilio.** No longer called by frontend. Scheduled for removal in 61e. |
 
 ### Concepts (`/api/concepts`)
 | Method | Path | Auth | Description |
@@ -240,11 +250,22 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 
 ---
 
-## Frontend Component Map (Post-Phase 60a)
+## Backend Utilities
+
+- **`backend/src/utils/email.js`** (Phase 61a) — Resend wrapper. Exports `sendVerificationEmail`, `sendWelcomeEmail`, `sendPasswordResetEmail`. Each function NEVER throws — returns `{ success, error }`. Fails loudly at module load if `RESEND_API_KEY` is missing in production; warns in dev. Templates live in `backend/src/email-templates/{verify-email,welcome,reset-password}.html`.
+- **`backend/src/utils/orcid.js`** (Phase 61b) — Shared ORCID API utility. Exports `exchangeOrcidCode`, `fetchOrcidEmails`, `verifyOrcidExists`. Used by both `POST /api/auth/orcid/callback` (existing-account linking) and `POST /api/auth/orcid/begin-registration` (new-account registration). All calls have 5-second timeouts.
+- **`backend/scripts/test-email.js`** (Phase 61a) — CLI script for manually testing Resend integration. Usage: `node scripts/test-email.js <email-address>`.
+- **`backend/scripts/manual-verify-email.js`** (Phase 61 follow-up fix) — CLI admin tool to manually mark a user's `email_verified_at` and send their welcome email. Created during the verify-URL bug postmortem; useful for any future case where email delivery leaves a user in a stuck state. Usage: `node scripts/manual-verify-email.js <user-id>`.
+
+---
+
+## Frontend Component Map (Post-Phase 61c)
 
 ### Pages (`frontend/src/pages/`)
 - **Root.jsx** — Root concepts page with attribute filter
 - **Concept.jsx** — Concept page with children, Flip View, Tunnel View, links panel
+- **ResetPasswordPage.jsx** — **NEW Phase 61c.** Standalone page at `/reset-password`. Reads `token` from query params, shows new-password form, POSTs to `/api/auth/reset-password`. On success, brief message then `navigate('/')` after 2 seconds. Accessible without auth.
+- **VerifyEmailPage.jsx** — **NEW Phase 61c.** Standalone page at `/email-verification`. Reads `status` and `reason` query params (set by the backend `/api/auth/verify-email` redirect). Shows success (auto-redirects home after 2s) or error (with "Return to home" link). Accessible without auth.
 
 ### Core Components (`frontend/src/components/`)
 - **AppShell.jsx** — Main layout: header, sidebar, tab management, overlays. Single "Votes" sidebar item replaces the former "Graph Votes" and "Link Votes" entries (Phase 59b). Reads `VITE_OUTREACH_MODE` into `isOutreachMode` (~line 24, Phase 59a) — when ON, hides Legal nav + login/signup, renders `<OutreachLanding />` in place of the sidebar/content area.
@@ -264,7 +285,7 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 - **SwapModal.jsx** — Swap vote picker (sibling-only)
 - **VoteSetBar.jsx** — Vote set color swatches and filtering
 - **HiddenConceptsView.jsx** — Moderation review panel
-- **LoginModal.jsx** — Login/Register/Forgot password modal
+- **LoginModal.jsx** — Login/Register/Forgot password modal. **Phase 61c:** registration tab now shows "Sign up with ORCID" as Step 1 (no email/password fields until ORCID auth succeeds), then a Step 2 form with email (prefilled from ORCID-verified email if available), username, password, and ToS checkbox. The Twilio-based phone OTP signup was removed. Forgot-password sub-view replaced with email-based reset request (calls `/api/auth/forgot-password`, shows timing-safe confirmation message).
 - **ProfilePage.jsx** — User profile with ORCID, Privacy and Data section
 - **DeleteAccountFlow.jsx** — Account deletion with superconcept transfer pre-check
 - **SidebarDndContext.jsx** — Drag-and-drop for sidebar reordering
@@ -273,7 +294,7 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 - **LegalPage.jsx** — Legal hub
 - **TermsPage.jsx**, **PrivacyPage.jsx**, **CopyrightPage.jsx**, **CopyrightPolicyPage.jsx** — Static legal pages
 - **AdminLegalRemovalsPanel.jsx** — Admin legal removal panel
-- **OrcidBadge.jsx**, **OrcidCallback.jsx** — ORCID integration
+- **OrcidBadge.jsx**, **OrcidCallback.jsx** — ORCID integration. **Phase 61c:** `OrcidCallback.jsx` extended to handle a `state` query param distinguishing `register` (new account flow) from `link` (existing account flow). For `state=register`, calls `/api/auth/orcid/begin-registration` and routes the user to the Step 2 registration form with ORCID data prefilled.
 
 **Deleted in Phase 59b:** `SavedPageOverlay.jsx`, `LinkVotesOverlay.jsx`.
 
@@ -380,6 +401,15 @@ Every member must have `.catch()` fallback.
 ### Legal Hold (AD Phase 53b)
 `legal_hold` flag on concepts, edges, concept_links prevents community unhide.
 
+### Verification URLs Point at Backend, Reset URLs Point at Frontend (Phase 61b fix, May 2026)
+Email verification works by emailing the user a link to a **backend** endpoint (`${FRONTEND_BASE_URL}/api/auth/verify-email?token=...`). The backend handler does the actual database mutation (sets `email_verified_at`, clears the token, sends the welcome email) and THEN redirects to a frontend page (`/email-verification?status=success`). The frontend page is a thin presentation layer.
+
+Password reset works the opposite way. The reset email links to a **frontend** page (`${FRONTEND_BASE_URL}/reset-password?token=...`). The frontend renders a "set a new password" form and POSTs to the backend on submit.
+
+The asymmetry exists because verification needs no user input (just clicking the link IS the action), while reset needs the user to choose a new password. Putting verification on the frontend (as initially shipped in Phase 61b before being fixed) created a silent failure: the page rendered "success" regardless of whether the backend had run.
+
+**AD:** Any email-triggered flow that mutates state without user input goes to the backend first. Any email-triggered flow that needs the user to enter something goes to the frontend first. New auth-adjacent email flows should follow this split.
+
 ### Stale-State Guard on Navigation (commit `3089bbf`, May 2026)
 Async fetches keyed on a route param (such as `edgeId`) must:
 1. Clear the parent-held param state to `null` at the START of navigation, not after the new fetch completes. Otherwise the child component renders one frame with the previous param value and fetches stale data.
@@ -431,6 +461,30 @@ Phase 59 added tunnel comments and unified the votes overlays.
 
 ---
 
+## Phase 61 Completion Narrative (through 61c + fix)
+
+Phase 61 replaced Twilio phone OTP authentication with ORCID-first email+password registration.
+
+**The trigger:** Twilio was annoying to deal with for an academic-research target audience (researchers are global, SMS deliverability is uneven internationally, and the SMS cost-per-signup adds up). ORCID was already partially integrated for post-login account linking. Making ORCID required for registration provided soft validation against spam ("you have to have an ORCID to sign up" is moderate friction for bad actors and zero friction for the target audience) without claiming identity verification (anyone can make an ORCID).
+
+**Five sub-phases planned, three complete:**
+- **61a (commit `8f5837e`)** added the Resend integration, the email-sending utility, three HTML email templates, five new `users` columns for email verification and password reset tokens, and a manual test script. No auth logic changed.
+- **61b (commit `34a23f8`)** added five new backend endpoints (`orcid/begin-registration`, `register-with-orcid`, `verify-email`, `forgot-password`, `reset-password`), extracted ORCID logic to a shared `utils/orcid.js`, and left the four Twilio-based endpoints in place untouched.
+- **61c (commit `6a1bbbb`)** reworked `LoginModal.jsx` and `OrcidCallback.jsx` for ORCID-first signup, added standalone `/reset-password` and `/email-verification` pages, and stopped the frontend from calling any of the Twilio endpoints. The backend Twilio endpoints stayed alive as zombie code.
+- **61d (planned, not yet started)** will handle existing accounts without ORCID linked. Production database is essentially empty of real users at the time of this writing, so 61d may collapse into a SQL migration that links the admin's ORCID + drops the requirement to handle legacy phone-only accounts.
+- **61e (planned)** will remove the `twilio` npm dependency, the Twilio env vars, the four legacy auth endpoints, and the `phone_hash` / `phone_lookup` columns.
+
+**The verify-URL bug:** Phase 61a's prompt to Claude Code (written by the chat-side Claude) included a specific example URL pattern (`${FRONTEND_BASE_URL}/verify-email?token=...`) that omitted the `/api/auth` prefix. Claude Code followed the example, so the verification email's link pointed at the frontend route instead of the backend endpoint. The frontend route happily rendered "success" regardless of whether the backend had run, so the bug was invisible until manual database inspection showed `email_verified_at` was still NULL for a "verified" user. Fixed in commit `6af90ce`. Documented as an Architecture Decision (see "Verification URLs Point at Backend, Reset URLs Point at Frontend"). One affected test user was manually verified via SQL.
+
+**Resend domain verification:** Initial deployment used Resend's test sender (`onboarding@resend.dev`), which only delivers to the address that signed up for Resend. This blocked multi-email testing. Domain verification for `orcaconcepts.org` was auto-configured via Cloudflare's Resend integration, after which `noreply@orcaconcepts.org` became the production sender.
+
+**Lessons:**
+- When writing a prompt for Claude Code, example URLs in the prose are treated as authoritative patterns. Vague specs Claude Code interprets sensibly; precise but incorrect examples it copies verbatim. Double-check any concrete URLs / file paths / SQL fragments in prompts before sending.
+- A frontend page that renders "success" based purely on a query param is a defensive choice that hides bugs. Whenever a frontend page reports the outcome of a backend operation, the page should verify that outcome via its own backend call, not trust what the URL says. Filed as future improvement, not done in 61c.
+- The "test it with curl" verification done after Phase 61b tested password reset (which had the right URL) but not email verification (which had the wrong URL, because curl can't get an OAuth code). Critical paths that require a browser to test should be flagged in self-verification steps as "deferred to next phase's E2E test" so they don't get implicitly skipped.
+
+---
+
 ## Phase 60a Completion Narrative
 
 Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/copyright thinking.
@@ -465,12 +519,18 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Copy-link subtree depth limit:** Hardcoded at 50 in the recursive CTE. If real-world graphs grow deeper, this will silently truncate the picker — should be made configurable or removed in favor of relying solely on the 500-edge row cap.
 - **Legacy votes endpoints (Phase 59b):** `GET /api/votes/saved` and `GET /api/votes/web-links/votes/me` are retained for rollback safety. Once `VotesOverlay` is proven stable in production, these endpoints and any remaining call sites should be removed.
 - **TunnelView pre-59a duplicate handling:** The component now expects duplicate rows. Any production data created before 59a will still be unique-per-pair. Worth confirming after launch that the rendering also handles the "single row" case cleanly (it should, but the test scenarios used during 59a development all had duplicates).
+- **Twilio zombie code (Phase 61):** The `twilio` npm dependency, four env vars (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `PHONE_LOOKUP_KEY`), four legacy auth endpoints (`send-code`, `verify-register`, `forgot-password/send-code`, `forgot-password/reset`), and two `users` columns (`phone_hash`, `phone_lookup`) remain in the codebase but are no longer called or written. Removal scheduled for Phase 61e.
+- **Email verification frontend trust (Phase 61c):** `VerifyEmailPage.jsx` reports success/error based on the `status` query param set by the backend redirect, without independently verifying. This hid the URL bug fixed mid-Phase-61. Defensive improvement: have the page call a backend `GET /api/auth/verify-email-status?token=...` to confirm the user's actual `email_verified_at` state. Low priority — the bug is fixed, the page is now reliable in practice.
+- **`FRONTEND_BASE_URL` naming (Phase 61):** The env var is used as the base URL for both frontend pages and backend API paths (since they're served from the same domain on Railway). Name implies "frontend only," but it's actually "the public base URL of the deployed app." Consider renaming to `PUBLIC_BASE_URL` in a future cleanup.
 
 ### Forward Roadmap
-- Lane Rideout legal disclosure of Phase 58 pivot
-- Revised legal documents (ToS, Privacy Policy, Copyright Policy) — Copyright Policy in particular needs review for any remaining references to documents/annotations from the pre-Phase-58 era, and should now reflect the user-removal pathway alongside DMCA and moderation
+- Phase 61d: handle legacy accounts (collapse into SQL migration if production users are essentially admin + test only)
+- Phase 61e: remove Twilio dependency, env vars, legacy endpoints, and phone columns
+- Welcome banner / verification reminder for unverified users (future)
+- ~~Domain verification for Resend on `orcaconcepts.org`~~ **completed Phase 61**
 - DMCA agent registration (unblocked; LLC formed)
-- Re-attach Railway and relaunch
+- ~~Re-attach Railway and relaunch~~ **completed Phase 61** (Railway connected to new repo, `orcaconcepts.org` domain re-attached)
+- Revised legal documents (ToS, Privacy Policy, Copyright Policy) — Copyright Policy in particular needs review for any remaining references to documents/annotations from the pre-Phase-58 era, and should now reflect the user-removal pathway alongside DMCA and moderation
 - Public data API
 - Federated ontologies (sketched in ORCA_HISTORY)
 - Retire legacy votes endpoints (`GET /api/votes/saved`, `GET /api/votes/web-links/votes/me`) once `VotesOverlay` is proven stable in production
@@ -478,10 +538,15 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 
 ---
 
-## Recent Commits (Phase 59 + 60a)
+## Recent Commits (Phase 59 through 61)
 
 ```
-{PHASE_60A_COMMIT_HASH} phase 60a: user-removable links + affirmation checkbox + title preview
+6af90ce fix(61): email verification URL pointed at frontend instead of backend endpoint
+6a1bbbb phase 61c: frontend ORCID-first registration + email-based password reset UI
+34a23f8 phase 61b: ORCID-first registration and email-based auth endpoints
+8f5837e Phase 61a: schema and email infrastructure (resend)
+5eb92bc cleaning up info pages
+515cb54 phase 60a: user-removable links + affirmation checkbox + title preview
         — Restored POST /web-links/remove with atomic added_by + legal_hold
           check; new link_removal_log table (sha256 hashes only, no plaintext);
           new GET /web-links/preview-title endpoint sharing OG-fetch utility;

@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
 **Last Updated:** May 16, 2026
-**Current Status:** Phase 61 COMPLETE (all sub-phases through 61e). Site live at orcaconcepts.org. ORCID-first email+password authentication is the only signup flow. All Twilio code, env vars, dependencies, and database columns are gone. `orcid_id` is NOT NULL at the database level.
+**Current Status:** Phase 62a complete. Phase 61 (Twilio-to-ORCID auth pivot) and Phase 62a (profile page fixes and Phase-58-era UI cleanup) both shipped. Site live at orcaconcepts.org.
 
 ---
 
@@ -413,6 +413,19 @@ The asymmetry exists because verification needs no user input (just clicking the
 
 This is a soft validation mechanism, not identity verification — anyone can create an ORCID. The friction filters casual abuse and signals that the platform is researcher-oriented. If persistent abuse emerges, the next layer of defense is "ORCID must have at least N works" or "ORCID must be older than N days" — both are additional checks at registration time, not architectural changes.
 
+### Auth Context Stays Minimal; Profile Data Comes from API (Phase 62a, May 2026)
+The auth context (`AuthContext.jsx`) is the source of truth ONLY for identity-level data needed to render the app shell: user `id`, `username`, and the JWT. Everything else about a user — `email`, `email_verified_at`, `orcid_id`, profile fields, subscription state, etc. — must be fetched from the appropriate API endpoint at component mount time.
+
+Rationale: the auth context is populated once at login (or registration) and only re-populated on subsequent logins. It cannot reliably reflect changes to user data that happen during an active session. Treating it as a cache of the full user record creates bugs where stale data displays after user edits, after schema changes, or after the user record gets updated server-side via admin action.
+
+The profile page is the first component to apply this split explicitly. Future components displaying user-data fields should:
+1. Take the user `id` from auth context (since that's identity, not data)
+2. Fetch the full record via the appropriate endpoint (e.g., `GET /api/users/:id/profile`)
+3. Render from the fetched response, not from auth context
+4. Re-fetch after any successful mutation that affects user data
+
+Components that only need identity (e.g., "show username in header") continue to read from auth context — that's the correct use.
+
 ### Stale-State Guard on Navigation (commit `3089bbf`, May 2026)
 Async fetches keyed on a route param (such as `edgeId`) must:
 1. Clear the parent-held param state to `null` at the START of navigation, not after the new fetch completes. Otherwise the child component renders one frame with the previous param value and fetches stale data.
@@ -461,6 +474,22 @@ Phase 59 added tunnel comments and unified the votes overlays.
 **Lessons:**
 - The "votes pages are display-only" framing only became visible once we tried to write the spec for the merged page. Both prior overlays had inconsistent affordances — Graph Votes had an X button, Link Votes did not — and the merge forced the question. Worth checking for similar inconsistencies elsewhere when components are touched.
 - Commit `f6b1765` bundled two unrelated features (tunnel comments + outreach mode) under a single message. Both are now documented, but the bundling made the doc-update pass harder than it needed to be — required an investigation phase to reconstruct the secondary scope. Future commits should keep features in separate commits, or at minimum the commit message should enumerate both pieces of scope.
+
+---
+
+## Phase 62a Completion Narrative
+
+Three small frontend fixes plus minor backend cleanup, all triggered by post-Phase-61 testing surfacing zombie UI:
+
+1. **Profile page data-fetch bug:** The profile page was reading user data from auth context, but the auth context doesn't include the `email` field. Newly-registered users saw "Email: not set" until they pressed F5, which triggered a fresh fetch from `GET /api/users/:id/profile` (which DOES include email). Fix: profile page now fetches user data from the API on mount via `useEffect`, with auth context demoted to "identity only" (id, username, JWT). Edit affordances re-fetch after save to avoid stale display.
+
+2. **Annotation filters on concept pages:** Phase 58a dropped the annotation tables but left UI filter options for "annotations" and "top annotations" in place. They were either dead-clicking or silently filtering on columns that no longer existed. Removed from concept pages, sort dropdowns, and any backend route branches that accepted `sort=annotations`.
+
+3. **Corpus/document counters on profile page:** Profile page showed "Corpuses created" and "Documents uploaded" with no numbers — the underlying tables were dropped in 58a, so the JOIN/COUNT queries returned nothing. Removed both the JSX and the backend computation.
+
+**Lesson:** Phase 58 (the document/corpus/annotation layer removal) was a large surgical change and the post-removal UI audit was incomplete. After major schema deletions, every page that consumed the deleted data should be explicitly walked. Filed for next time: when removing a major feature, the deletion PR should include a "consumer checklist" of every page/component that referenced it, with each item explicitly checked off after the corresponding UI is cleaned up.
+
+**Related architecture pattern:** "Auth context = who you are; API call = full data" is now the documented norm (see new AD below). The profile page is the first explicit consumer of this split — future user-data displays should follow the same pattern.
 
 ---
 
@@ -523,8 +552,10 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **TunnelView pre-59a duplicate handling:** The component now expects duplicate rows. Any production data created before 59a will still be unique-per-pair. Worth confirming after launch that the rendering also handles the "single row" case cleanly (it should, but the test scenarios used during 59a development all had duplicates).
 - **Email verification frontend trust (Phase 61c):** `VerifyEmailPage.jsx` reports success/error based on the `status` query param set by the backend redirect, without independently verifying. This hid the URL bug fixed mid-Phase-61. Defensive improvement: have the page call a backend `GET /api/auth/verify-email-status?token=...` to confirm the user's actual `email_verified_at` state. Low priority — the bug is fixed, the page is now reliable in practice.
 - **`FRONTEND_BASE_URL` naming (Phase 61):** The env var is used as the base URL for both frontend pages and backend API paths (since they're served from the same domain on Railway). Name implies "frontend only," but it's actually "the public base URL of the deployed app." Consider renaming to `PUBLIC_BASE_URL` in a future cleanup.
+- **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field, ORCID disconnect) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away.
 
 ### Forward Roadmap
+- ~~Phase 62a: profile page data-fetch fix + Phase-58-era UI cleanup~~ **completed May 16, 2026**
 - ~~Phase 61d/e: ORCID enforcement and Twilio removal~~ **completed May 16, 2026**
 - Welcome banner / verification reminder for unverified users (future)
 - ~~Domain verification for Resend on `orcaconcepts.org`~~ **completed Phase 61**
@@ -541,6 +572,7 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 ## Recent Commits (Phase 59 through 61)
 
 ```
+e05ec40 phase 62a: profile data-fetch fix + remove Phase-58-era zombie UI
 08ae45e phase 61d/e: enforce ORCID required, remove Twilio entirely
 6af90ce fix(61): email verification URL pointed at frontend instead of backend endpoint
 6a1bbbb phase 61c: frontend ORCID-first registration + email-based password reset UI

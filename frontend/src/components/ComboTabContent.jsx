@@ -37,6 +37,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
 
   // Path name resolution cache
   const [pathNames, setPathNames] = useState({});
+  const [shareCopied, setShareCopied] = useState(false);
 
   const isOwner = user && combo && user.id === combo.created_by;
 
@@ -214,6 +215,24 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
     }
   };
 
+  const handleShareLink = async () => {
+    const url = `${window.location.origin}/superconcept/${comboId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (err) {
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
+
   // Transfer ownership search (Phase 42c)
   const handleTransferSearch = (value) => {
     setTransferSearch(value);
@@ -299,6 +318,9 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
           </div>
         </div>
         <div style={styles.headerRight}>
+          <button onClick={handleShareLink} style={styles.shareButton} title="Copy shareable link to clipboard">
+            {shareCopied ? 'Copied!' : 'Share'}
+          </button>
           <button onClick={handleUnsubscribe} style={styles.unsubscribeButton}>Unsubscribe</button>
         </div>
       </div>
@@ -535,6 +557,9 @@ const styles = {
   headerRight: {
     flexShrink: 0,
     marginLeft: '16px',
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'flex-start',
   },
   comboName: {
     margin: '0 0 4px 0',
@@ -554,6 +579,18 @@ const styles = {
     fontSize: '12px',
     fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
+  },
+  shareButton: {
+    padding: '4px 12px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#f0f0f0',
+    color: '#555',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontFamily: "'EB Garamond', Georgia, serif",
+    whiteSpace: 'nowrap',
+    transition: 'all 0.15s',
   },
   unsubscribeButton: {
     padding: '4px 12px',

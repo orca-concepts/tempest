@@ -151,6 +151,22 @@ const AppShell = () => {
     }
   }, [isGuest]);
 
+  // Deep link: /superconcept/:id — auto-subscribe and open combo tab
+  useEffect(() => {
+    if (loading || authLoading) return;
+    const match = location.pathname.match(/^\/superconcept\/(\d+)$/);
+    if (!match) return;
+    const comboId = parseInt(match[1]);
+    // Clear the URL so this doesn't re-trigger
+    navigate('/', { replace: true });
+    if (isGuest) {
+      // Show browse superconcepts view for guests
+      setComboView({ view: 'list' });
+    } else {
+      handleSubscribeToCombo(comboId, '');
+    }
+  }, [loading, authLoading]);
+
   // Phase 30c: Build URL for graph tab history entries
   const buildGraphTabUrl = (tabId, tabType, conceptId, path, viewMode) => {
     const params = new URLSearchParams();

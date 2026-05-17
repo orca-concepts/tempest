@@ -179,7 +179,7 @@ const AppShell = () => {
       }
       navigate('/', { replace: true });
     }
-  }, [loading, authLoading]);
+  }, [loading, authLoading, location.pathname]);
 
   // Phase 30c: Build URL for graph tab history entries
   const buildGraphTabUrl = (tabId, tabType, conceptId, path, viewMode) => {

@@ -33,7 +33,7 @@ router.post('/web-links/copy', authenticateToken, votesController.copyWebLink);
 router.post('/web-links/remove', authenticateToken, votesController.removeWebLink); // Phase 60a
 router.post('/web-links/upvote', authenticateToken, votesController.upvoteWebLink);
 router.post('/web-links/unvote', authenticateToken, votesController.removeWebLinkVote);
-router.put('/web-links/:linkId/comment', authenticateToken, votesController.updateConceptLinkComment);
+router.post('/web-links/:linkId/addenda', authenticateToken, votesController.addConceptLinkAddendum);
 
 // All remaining vote routes require authentication
 router.use(authenticateToken);

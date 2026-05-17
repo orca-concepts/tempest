@@ -1502,6 +1502,7 @@ const votesController = {
           cl.title,
           cl.added_by,
           u.username AS added_by_username,
+          u.orcid_id AS author_orcid_id,
           cl.created_at,
           cl.comment,
           cl.updated_at,
@@ -1511,10 +1512,27 @@ const votesController = {
         LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE cl.edge_id = $1
-        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, cl.created_at, cl.comment, cl.updated_at
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at
         ${orderClause}`,
         [edgeId, userId]
       );
+
+      // Fetch addenda for all returned links in one query
+      const linkIds = result.rows.map(r => r.id);
+      let addendaMap = {};
+      if (linkIds.length > 0) {
+        const addendaResult = await pool.query(
+          `SELECT id, concept_link_id, body, created_at
+           FROM concept_link_addenda
+           WHERE concept_link_id = ANY($1::integer[])
+           ORDER BY created_at ASC`,
+          [linkIds]
+        );
+        for (const row of addendaResult.rows) {
+          if (!addendaMap[row.concept_link_id]) addendaMap[row.concept_link_id] = [];
+          addendaMap[row.concept_link_id].push({ id: row.id, body: row.body, createdAt: row.created_at });
+        }
+      }
 
       res.json({
         webLinks: result.rows.map(row => ({
@@ -1524,11 +1542,13 @@ const votesController = {
           title: row.title,
           addedBy: row.added_by,
           addedByUsername: row.added_by_username,
+          authorOrcidId: row.author_orcid_id || null,
           createdAt: row.created_at,
           comment: row.comment,
           updatedAt: row.updated_at,
           voteCount: parseInt(row.vote_count),
           userVoted: row.user_voted || false,
+          addenda: addendaMap[row.id] || [],
         }))
       });
     } catch (error) {
@@ -1933,64 +1953,45 @@ const votesController = {
   },
 
   // Update comment on a web link (creator only)
-  updateConceptLinkComment: async (req, res) => {
+  // POST /api/votes/web-links/:linkId/addenda — add an addendum to a concept link
+  addConceptLinkAddendum: async (req, res) => {
     const { linkId } = req.params;
-    const { comment } = req.body;
+    const { body } = req.body;
 
     try {
       if (!linkId) {
         return res.status(400).json({ error: 'linkId is required' });
       }
 
+      const trimmedBody = body ? String(body).trim() : '';
+      if (!trimmedBody) {
+        return res.status(400).json({ error: 'body is required' });
+      }
+      if (trimmedBody.length > 2000) {
+        return res.status(400).json({ error: 'Addendum body must be 2000 characters or fewer' });
+      }
+
       const userId = req.user.userId;
 
-      // Verify the link exists and was added by this user
+      // Atomic permission check: added_by must match and legal_hold must be false
       const linkCheck = await pool.query(
-        'SELECT id, added_by, comment FROM concept_links WHERE id = $1',
+        'SELECT id, added_by, legal_hold FROM concept_links WHERE id = $1',
         [linkId]
       );
-      if (linkCheck.rows.length === 0) {
-        return res.status(404).json({ error: 'Web link not found' });
-      }
-      if (linkCheck.rows[0].added_by !== userId) {
-        return res.status(403).json({ error: 'You can only edit comments on links you added' });
+      if (linkCheck.rows.length === 0 || linkCheck.rows[0].added_by !== userId || linkCheck.rows[0].legal_hold) {
+        return res.status(403).json({ error: 'Cannot add an addendum to this link.' });
       }
 
-      // Normalize: empty string or null clears the comment
-      const trimmedComment = (comment && comment.trim()) ? comment.trim() : null;
-
-      // Only bump updated_at when editing an existing comment (not adding one for the first time)
-      const hadComment = !!linkCheck.rows[0].comment;
       const result = await pool.query(
-        `UPDATE concept_links
-         SET comment = $1, updated_at = ${hadComment ? 'CURRENT_TIMESTAMP' : 'updated_at'}
-         WHERE id = $2
-         RETURNING id, edge_id, url, title, added_by, created_at, comment, updated_at`,
-        [trimmedComment, linkId]
+        `INSERT INTO concept_link_addenda (concept_link_id, author_id, body)
+         VALUES ($1, $2, $3)
+         RETURNING id, body, created_at, author_id`,
+        [linkId, userId, trimmedBody]
       );
 
-      // Fetch username
-      const userResult = await pool.query(
-        'SELECT username FROM users WHERE id = $1',
-        [result.rows[0].added_by]
-      );
-
-      res.json({
-        message: 'Comment updated',
-        webLink: {
-          id: result.rows[0].id,
-          edgeId: result.rows[0].edge_id,
-          url: result.rows[0].url,
-          title: result.rows[0].title,
-          addedBy: result.rows[0].added_by,
-          addedByUsername: userResult.rows[0]?.username || null,
-          createdAt: result.rows[0].created_at,
-          comment: result.rows[0].comment,
-          updatedAt: result.rows[0].updated_at,
-        }
-      });
+      res.json({ addendum: result.rows[0] });
     } catch (error) {
-      console.error('Error updating web link comment:', error);
+      console.error('Error adding concept link addendum:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

@@ -13,4 +13,7 @@ router.post('/create', authenticateToken, tunnelController.createTunnelLink);
 // Toggle vote on a tunnel link (auth required)
 router.post('/vote', authenticateToken, tunnelController.toggleTunnelVote);
 
+// Add an addendum to a tunnel link (auth required — author only)
+router.post('/:tunnelLinkId/addenda', authenticateToken, tunnelController.addTunnelLinkAddendum);
+
 module.exports = router;

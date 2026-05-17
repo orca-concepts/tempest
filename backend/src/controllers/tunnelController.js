@@ -26,6 +26,8 @@ const tunnelController = {
           c.name AS concept_name,
           a.name AS attribute_name,
           u.username AS created_by,
+          tl.created_by AS created_by_user_id,
+          u.orcid_id AS author_orcid_id,
           (SELECT COUNT(*) FROM tunnel_votes tv WHERE tv.tunnel_link_id = tl.id) AS tunnel_vote_count,
           (SELECT BOOL_OR(tv.user_id = $2) FROM tunnel_votes tv WHERE tv.tunnel_link_id = tl.id) AS user_voted,
           (SELECT COUNT(DISTINCT v.user_id) FROM votes v WHERE v.edge_id = tl.linked_edge_id) AS save_vote_count
@@ -68,6 +70,23 @@ const tunnelController = {
         }
       }
 
+      // Fetch addenda for all tunnel links in one query
+      const tunnelLinkIds = result.rows.map(r => r.tunnel_link_id);
+      let addendaMap = {};
+      if (tunnelLinkIds.length > 0) {
+        const addendaResult = await pool.query(
+          `SELECT id, tunnel_link_id, body, created_at
+           FROM tunnel_link_addenda
+           WHERE tunnel_link_id = ANY($1::integer[])
+           ORDER BY created_at ASC`,
+          [tunnelLinkIds]
+        );
+        for (const row of addendaResult.rows) {
+          if (!addendaMap[row.tunnel_link_id]) addendaMap[row.tunnel_link_id] = [];
+          addendaMap[row.tunnel_link_id].push({ id: row.id, body: row.body, createdAt: row.created_at });
+        }
+      }
+
       // Group results by attribute_id
       const grouped = {};
       for (const row of result.rows) {
@@ -98,7 +117,10 @@ const tunnelController = {
           saveVoteCount: Number(row.save_vote_count),
           comment: row.comment || null,
           createdBy: row.created_by || '[deleted user]',
+          createdByUserId: row.created_by_user_id || null,
+          authorOrcidId: row.author_orcid_id || null,
           createdAt: row.created_at,
+          addenda: addendaMap[row.tunnel_link_id] || [],
         });
       }
 
@@ -259,6 +281,48 @@ const tunnelController = {
       });
     } catch (error) {
       console.error('Error toggling tunnel vote:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+  // POST /api/tunnels/:tunnelLinkId/addenda — add an addendum to a tunnel link
+  addTunnelLinkAddendum: async (req, res) => {
+    const { tunnelLinkId } = req.params;
+    const { body } = req.body;
+
+    try {
+      if (!tunnelLinkId) {
+        return res.status(400).json({ error: 'tunnelLinkId is required' });
+      }
+
+      const trimmedBody = body ? String(body).trim() : '';
+      if (!trimmedBody) {
+        return res.status(400).json({ error: 'body is required' });
+      }
+      if (trimmedBody.length > 2000) {
+        return res.status(400).json({ error: 'Addendum body must be 2000 characters or fewer' });
+      }
+
+      const userId = req.user.userId;
+
+      // Permission check: created_by must match
+      const linkCheck = await pool.query(
+        'SELECT id, created_by FROM tunnel_links WHERE id = $1',
+        [tunnelLinkId]
+      );
+      if (linkCheck.rows.length === 0 || linkCheck.rows[0].created_by !== userId) {
+        return res.status(403).json({ error: 'Cannot add an addendum to this tunnel link.' });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO tunnel_link_addenda (tunnel_link_id, author_id, body)
+         VALUES ($1, $2, $3)
+         RETURNING id, body, created_at, author_id`,
+        [tunnelLinkId, userId, trimmedBody]
+      );
+
+      res.json({ addendum: result.rows[0] });
+    } catch (error) {
+      console.error('Error adding tunnel link addendum:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

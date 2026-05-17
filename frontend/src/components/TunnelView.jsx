@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { conceptsAPI, tunnelsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import ClampedText from './ClampedText';
+import OrcidBadge from './OrcidBadge';
 
 const TunnelView = ({
   conceptId,
@@ -10,6 +12,7 @@ const TunnelView = ({
   onNavigate,
   onOpenNewTab,
 }) => {
+  const { user } = useAuth();
   const [tunnelData, setTunnelData] = useState({});
   const [loading, setLoading] = useState(true);
   const [attributes, setAttributes] = useState([]);
@@ -401,9 +404,11 @@ const TunnelView = ({
                       card={card}
                       attrId={attrId}
                       isGuest={isGuest}
+                      user={user}
                       onVote={handleTunnelVote}
                       onClick={handleCardClick}
                       onRightClick={handleCardRightClick}
+                      onAddendumSuccess={loadData}
                     />
                   ))}
                 </div>
@@ -448,8 +453,35 @@ const TunnelView = ({
 };
 
 // Separate card component to keep things clean
-const TunnelCard = ({ card, attrId, isGuest, onVote, onClick, onRightClick }) => {
+const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick, onAddendumSuccess }) => {
   const pathDisplay = (card.pathNames || []).join(' \u2192 ');
+  const isCreator = user && card.createdByUserId === user.id;
+  const [showAddendumModal, setShowAddendumModal] = useState(false);
+  const [addendumBody, setAddendumBody] = useState('');
+  const [addendumError, setAddendumError] = useState(null);
+  const [addendumSubmitting, setAddendumSubmitting] = useState(false);
+
+  const handleAddAddendum = async () => {
+    setAddendumSubmitting(true);
+    setAddendumError(null);
+    try {
+      await tunnelsAPI.addTunnelLinkAddendum(card.tunnelLinkId, addendumBody.trim());
+      setShowAddendumModal(false);
+      setAddendumBody('');
+      if (onAddendumSuccess) onAddendumSuccess();
+    } catch (err) {
+      setAddendumError("Couldn't add addendum. Please try again.");
+    } finally {
+      setAddendumSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showAddendumModal) return;
+    const handleKey = (e) => { if (e.key === 'Escape') setShowAddendumModal(false); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [showAddendumModal]);
 
   return (
     <div
@@ -469,9 +501,24 @@ const TunnelCard = ({ card, attrId, isGuest, onVote, onClick, onRightClick }) =>
       >
         {card.conceptName}
       </div>
+      {/* Author */}
+      <div style={styles.cardAuthor}>
+        {card.createdBy}{card.authorOrcidId && <OrcidBadge orcidId={card.authorOrcidId} />}
+      </div>
       {/* Comment */}
       {card.comment && (
         <ClampedText text={card.comment} lines={3} style={styles.cardComment} />
+      )}
+      {/* Addenda */}
+      {card.addenda && card.addenda.length > 0 && (
+        <div style={styles.addendaBlock}>
+          {card.addenda.map((a) => (
+            <div key={a.id} style={styles.addendumItem}>
+              <div style={styles.addendumHeader}>Addendum — {new Date(a.createdAt).toLocaleString()}</div>
+              <ClampedText text={a.body} lines={3} style={styles.cardComment} />
+            </div>
+          ))}
+        </div>
       )}
       {/* Vote row */}
       <div style={styles.cardVoteRow}>
@@ -492,7 +539,43 @@ const TunnelCard = ({ card, attrId, isGuest, onVote, onClick, onRightClick }) =>
         <span style={styles.saveVoteCount} title="Save votes on this concept">
           ▲ {card.saveVoteCount}
         </span>
+        {isCreator && (
+          <span
+            onClick={(e) => { e.stopPropagation(); setShowAddendumModal(true); setAddendumError(null); setAddendumBody(''); }}
+            style={styles.addendumBtn}
+          >
+            Add addendum
+          </span>
+        )}
       </div>
+      {/* Addendum modal */}
+      {showAddendumModal && (
+        <div style={styles.modalOverlay} onClick={(e) => { e.stopPropagation(); setShowAddendumModal(false); }}>
+          <div style={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalTitle}>Add addendum</div>
+            <textarea
+              value={addendumBody}
+              onChange={(e) => setAddendumBody(e.target.value)}
+              style={styles.addendumTextarea}
+              rows={3}
+              placeholder="Write an addendum..."
+              autoFocus
+              maxLength={2000}
+            />
+            <div style={styles.charCount}>{addendumBody.length} / 2000</div>
+            {addendumError && <div style={styles.modalError}>{addendumError}</div>}
+            <div style={styles.modalButtons}>
+              <span onClick={() => setShowAddendumModal(false)} style={styles.modalCancelBtn}>Cancel</span>
+              <span
+                onClick={!addendumBody.trim() || addendumSubmitting ? undefined : handleAddAddendum}
+                style={!addendumBody.trim() || addendumSubmitting ? { ...styles.modalConfirmBtn, opacity: 0.5, cursor: 'default' } : styles.modalConfirmBtn}
+              >
+                {addendumSubmitting ? 'Posting...' : 'Post addendum'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -719,6 +802,12 @@ const styles = {
     cursor: 'pointer',
     marginBottom: '6px',
   },
+  cardAuthor: {
+    fontSize: '12px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#999',
+    marginBottom: '4px',
+  },
   cardComment: {
     fontSize: '13px',
     fontFamily: '"EB Garamond", Georgia, serif',
@@ -726,6 +815,29 @@ const styles = {
     marginBottom: '6px',
     lineHeight: '1.4',
     wordBreak: 'break-word',
+  },
+  addendaBlock: {
+    marginTop: 4,
+    paddingTop: 4,
+    borderTop: '1px solid #e0e0e0',
+    marginBottom: 6,
+  },
+  addendumItem: {
+    marginBottom: 6,
+  },
+  addendumHeader: {
+    color: '#999',
+    fontSize: '11px',
+    marginBottom: 2,
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  addendumBtn: {
+    fontSize: '12px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#999',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    marginLeft: 'auto',
   },
   cardVoteRow: {
     display: 'flex',
@@ -766,6 +878,16 @@ const styles = {
     color: '#333',
     backgroundColor: 'white',
   },
+  // Addendum modal
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 },
+  modalBox: { backgroundColor: '#faf9f6', border: '1px solid #d4d0c8', borderRadius: '6px', padding: '24px', maxWidth: '400px', width: '90%', fontFamily: '"EB Garamond", Georgia, serif' },
+  modalTitle: { fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '10px' },
+  addendumTextarea: { width: '100%', fontFamily: '"EB Garamond", Georgia, serif', fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+  charCount: { fontSize: '11px', color: '#aaa', textAlign: 'right', marginTop: 2, fontFamily: '"EB Garamond", Georgia, serif' },
+  modalError: { fontSize: '13px', color: '#c44', marginBottom: '12px', lineHeight: 1.4 },
+  modalButtons: { display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' },
+  modalCancelBtn: { fontSize: '13px', color: '#888', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', padding: '4px 14px', border: '1px solid #ccc', borderRadius: '3px', backgroundColor: 'transparent' },
+  modalConfirmBtn: { fontSize: '13px', color: '#333', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', padding: '4px 14px', border: '1px solid #999', borderRadius: '3px', backgroundColor: 'transparent' },
 };
 
 export default TunnelView;

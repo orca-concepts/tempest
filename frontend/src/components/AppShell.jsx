@@ -163,8 +163,8 @@ const AppShell = () => {
       const params = new URLSearchParams(location.search);
       const pathStr = params.get('path');
       const path = pathStr ? pathStr.split(',').map(Number).filter(Boolean) : [];
-      navigate('/', { replace: true });
       handleOpenConceptTab(conceptId, path);
+      navigate('/', { replace: true });
       return;
     }
 
@@ -172,12 +172,12 @@ const AppShell = () => {
     const comboMatch = location.pathname.match(/^\/superconcept\/(\d+)$/);
     if (comboMatch) {
       const comboId = parseInt(comboMatch[1]);
-      navigate('/', { replace: true });
       if (isGuest) {
         setGuestComboId(comboId);
       } else {
         handleSubscribeToCombo(comboId, '');
       }
+      navigate('/', { replace: true });
     }
   }, [loading, authLoading]);
 

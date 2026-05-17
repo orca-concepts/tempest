@@ -365,7 +365,7 @@ const Concept = ({
   };
 
   const handleShareLink = async () => {
-    const pathStr = effectivePath.slice(0, -1).join(',');
+    const pathStr = (path || []).slice(0, -1).join(',');
     const url = `${window.location.origin}/concept/${effectiveConceptId}${pathStr ? '?path=' + pathStr : ''}`;
     try {
       await navigator.clipboard.writeText(url);

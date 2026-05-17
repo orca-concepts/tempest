@@ -1,45 +1,43 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
 import ClampedText from './ClampedText';
+import OrcidBadge from './OrcidBadge';
 import { votesAPI } from '../services/api';
-
-const wasEdited = (link) => {
-  if (!link.updatedAt || !link.createdAt) return false;
-  return Math.abs(new Date(link.updatedAt).getTime() - new Date(link.createdAt).getTime()) > 2000;
-};
 
 /**
  * LinkCard — reusable link card.
  *
  * Props:
  *   link, user, isGuest, isFirst, contextLabel,
- *   onVoteToggle, onStartEdit,
- *   editingLinkId, editingComment, onEditChange, onSaveComment, onCancelEdit,
+ *   onVoteToggle,
  *   showInstances, instanceData, onToggleInstance, renderInstanceSnippet,
  *   cardRef, onRequestLogin,
  *   clickable      — if true, clicking the card body (except the title link) triggers onCardClick
  *   onCardClick    — (link) => void, called when clickable=true and card is clicked
  *   readOnlyVote   — if true, vote count is shown as plain text with no click handler
  *   onRemoveSuccess — callback after successful removal
+ *   onAddendumSuccess — callback after successful addendum
  */
 const LinkCard = ({
   link, user, isGuest, isFirst = false,
   contextLabel,
-  onVoteToggle, onStartEdit,
-  editingLinkId, editingComment, onEditChange, onSaveComment, onCancelEdit,
+  onVoteToggle,
   showInstances = false, instanceData, onToggleInstance, renderInstanceSnippet,
   cardRef, onRequestLogin,
   clickable = false, onCardClick,
   readOnlyVote = false,
   conceptId, conceptPath, onCopySuccess,
-  onRemoveSuccess,
+  onRemoveSuccess, onAddendumSuccess,
 }) => {
   const isCreator = user && link.addedBy === user.id;
-  const isEditing = editingLinkId === link.id;
   const [showCopyPicker, setShowCopyPicker] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [removeError, setRemoveError] = useState(null);
   const [removing, setRemoving] = useState(false);
+  const [showAddendumModal, setShowAddendumModal] = useState(false);
+  const [addendumBody, setAddendumBody] = useState('');
+  const [addendumError, setAddendumError] = useState(null);
+  const [addendumSubmitting, setAddendumSubmitting] = useState(false);
   const iData = instanceData || {};
   const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
@@ -72,17 +70,32 @@ const LinkCard = ({
     }
   };
 
-  // Escape key closes remove modal
+  const handleAddAddendum = async () => {
+    setAddendumSubmitting(true);
+    setAddendumError(null);
+    try {
+      await votesAPI.addConceptLinkAddendum(link.id, addendumBody.trim());
+      setShowAddendumModal(false);
+      setAddendumBody('');
+      if (onAddendumSuccess) onAddendumSuccess();
+    } catch (err) {
+      setAddendumError("Couldn't add addendum. Please try again.");
+    } finally {
+      setAddendumSubmitting(false);
+    }
+  };
+
+  // Escape key closes modals
   const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') setShowRemoveModal(false);
+    if (e.key === 'Escape') { setShowRemoveModal(false); setShowAddendumModal(false); }
   }, []);
 
   useEffect(() => {
-    if (showRemoveModal) {
+    if (showRemoveModal || showAddendumModal) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [showRemoveModal, handleKeyDown]);
+  }, [showRemoveModal, showAddendumModal, handleKeyDown]);
 
   const cardStyle = {
     ...(isFirst ? s.cardFirst : s.card),
@@ -97,20 +110,20 @@ const LinkCard = ({
       <a href={link.url} target="_blank" rel="noopener noreferrer" style={s.title}
         onClick={e => e.stopPropagation()}>{link.title || link.url}</a>
       {link.title && <div style={s.url}>{link.url}</div>}
-      {link.comment && !isEditing && (
+      {link.comment && (
         <div style={s.commentBlock}>
           <ClampedText text={link.comment} lines={3} style={s.commentText} />
-          <span style={s.commentMeta}>{link.addedByUsername}{wasEdited(link) && <span style={s.editedTag}>(edited)</span>}</span>
+          <span style={s.commentMeta}>{link.addedByUsername}</span>
         </div>
       )}
-      {isEditing && (
-        <div style={s.editArea}>
-          <textarea value={editingComment} onChange={e => onEditChange && onEditChange(e.target.value)}
-            style={s.textarea} rows={2} placeholder="Add a comment..." autoFocus />
-          <div style={s.editButtons}>
-            <span onClick={() => onSaveComment && onSaveComment(link.id)} style={s.saveBtn}>Save</span>
-            <span onClick={() => onCancelEdit && onCancelEdit()} style={s.cancelBtn}>Cancel</span>
-          </div>
+      {link.addenda && link.addenda.length > 0 && (
+        <div style={s.addendaBlock}>
+          {link.addenda.map((a) => (
+            <div key={a.id} style={s.addendumItem}>
+              <div style={s.addendumHeader}>Addendum — {new Date(a.createdAt).toLocaleString()}</div>
+              <ClampedText text={a.body} lines={3} style={s.commentText} />
+            </div>
+          ))}
         </div>
       )}
       <div style={s.bottomRow}>
@@ -122,10 +135,10 @@ const LinkCard = ({
             title={link.userVoted ? 'Remove vote' : 'Upvote'}>{'\u25b2'} {link.voteCount}</span>
         )}
         <span style={s.meta}>
-          {link.addedByUsername}
-          {!readOnlyVote && isCreator && !isEditing && onStartEdit && <span onClick={e => { e.stopPropagation(); onStartEdit(link); }} style={s.editBtn}>{link.comment ? 'Edit' : 'Add comment'}</span>}
-          {!readOnlyVote && isCreator && !isEditing && conceptId && <span onClick={e => { e.stopPropagation(); setShowCopyPicker(true); }} style={s.editBtn}>Copy</span>}
-          {!readOnlyVote && isCreator && !isEditing && <span onClick={e => { e.stopPropagation(); setShowRemoveModal(true); setRemoveError(null); }} style={s.editBtn}>Remove</span>}
+          {link.addedByUsername}{link.authorOrcidId && <OrcidBadge orcidId={link.authorOrcidId} />}
+          {!readOnlyVote && isCreator && <span onClick={e => { e.stopPropagation(); setShowAddendumModal(true); setAddendumError(null); setAddendumBody(''); }} style={s.editBtn}>Add addendum</span>}
+          {!readOnlyVote && isCreator && conceptId && <span onClick={e => { e.stopPropagation(); setShowCopyPicker(true); }} style={s.editBtn}>Copy</span>}
+          {!readOnlyVote && isCreator && <span onClick={e => { e.stopPropagation(); setShowRemoveModal(true); setRemoveError(null); }} style={s.editBtn}>Remove</span>}
         </span>
       </div>
       {showCopyPicker && (
@@ -154,6 +167,33 @@ const LinkCard = ({
                   </span>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showAddendumModal && (
+        <div style={s.modalOverlay} onClick={e => { e.stopPropagation(); setShowAddendumModal(false); }}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Add addendum</div>
+            <textarea
+              value={addendumBody}
+              onChange={e => setAddendumBody(e.target.value)}
+              style={s.textarea}
+              rows={3}
+              placeholder="Write an addendum..."
+              autoFocus
+              maxLength={2000}
+            />
+            <div style={s.charCount}>{addendumBody.length} / 2000</div>
+            {addendumError && <div style={s.modalError}>{addendumError}</div>}
+            <div style={s.modalButtons}>
+              <span onClick={() => setShowAddendumModal(false)} style={s.modalCancelBtn}>Cancel</span>
+              <span
+                onClick={!addendumBody.trim() || addendumSubmitting ? undefined : handleAddAddendum}
+                style={!addendumBody.trim() || addendumSubmitting ? { ...s.modalRemoveBtn, opacity: 0.5, cursor: 'default' } : s.modalRemoveBtn}
+              >
+                {addendumSubmitting ? 'Posting...' : 'Post addendum'}
+              </span>
             </div>
           </div>
         </div>
@@ -193,13 +233,8 @@ const s = {
   commentBlock: { fontSize: '12px', color: '#555', marginTop: '4px', marginBottom: '2px', lineHeight: 1.4 },
   commentText: { display: 'block', marginBottom: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.4 },
   commentMeta: { fontSize: '11px', color: '#aaa' },
-  editedTag: { marginLeft: '4px', fontSize: '11px', color: '#bbb' },
   editBtn: { marginLeft: '8px', fontSize: '12px', color: '#999', cursor: 'pointer', textDecoration: 'underline' },
-  editArea: { marginTop: '6px', marginBottom: '4px' },
   textarea: { width: '100%', fontFamily: '"EB Garamond", Georgia, serif', fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
-  editButtons: { display: 'flex', gap: '10px', marginTop: '4px' },
-  saveBtn: { fontSize: '12px', color: '#333', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', border: '1px solid #e0d9cf', padding: '2px 10px', borderRadius: '3px', backgroundColor: '#faf9f6' },
-  cancelBtn: { fontSize: '12px', color: '#999', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif' },
   bottomRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' },
   vote: { fontSize: '12px', fontFamily: '"EB Garamond", Georgia, serif' },
   meta: { fontSize: '12px', color: '#aaa' },
@@ -209,7 +244,12 @@ const s = {
   instanceToggle: { fontSize: '12px', color: '#888', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceToggleDisabled: { fontSize: '12px', color: '#ccc', cursor: 'default', fontFamily: '"EB Garamond", Georgia, serif' },
   instanceList: { marginTop: '4px', marginLeft: '8px', borderLeft: '2px solid #e0d9cf', paddingLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' },
-  // Remove confirmation modal
+  // Addenda display
+  addendaBlock: { marginTop: 8, paddingTop: 8, borderTop: '1px solid #ece6db' },
+  addendumItem: { marginBottom: 8, fontSize: '12px', color: '#555', lineHeight: 1.4 },
+  addendumHeader: { color: '#999', fontSize: '11px', marginBottom: 2, fontFamily: '"EB Garamond", Georgia, serif' },
+  charCount: { fontSize: '11px', color: '#aaa', textAlign: 'right', marginTop: 2, fontFamily: '"EB Garamond", Georgia, serif' },
+  // Modals
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 },
   modalBox: { backgroundColor: '#faf9f6', border: '1px solid #d4d0c8', borderRadius: '6px', padding: '24px', maxWidth: '400px', width: '90%', fontFamily: '"EB Garamond", Georgia, serif' },
   modalTitle: { fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '10px' },

@@ -245,8 +245,8 @@ export const votesAPI = {
   previewTitle: (url) =>
     api.get('/votes/web-links/preview-title', { params: { url } }),
 
-  updateLinkComment: (linkId, comment) =>
-    api.put(`/votes/web-links/${linkId}/comment`, { comment }),
+  addConceptLinkAddendum: (linkId, body) =>
+    api.post(`/votes/web-links/${linkId}/addenda`, { body }),
 
   getMyLinkVotes: () =>
     api.get('/votes/web-links/votes/me'),
@@ -348,6 +348,9 @@ export const tunnelsAPI = {
 
   toggleTunnelVote: (tunnelLinkId) =>
     api.post('/tunnels/vote', { tunnelLinkId }),
+
+  addTunnelLinkAddendum: (tunnelLinkId, body) =>
+    api.post(`/tunnels/${tunnelLinkId}/addenda`, { body }),
 };
 
 // Phase 41a: Users endpoints

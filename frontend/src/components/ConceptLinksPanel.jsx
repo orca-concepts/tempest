@@ -15,9 +15,6 @@ const ConceptLinksPanel = ({
   const [activeTab, setActiveTab] = useState('weblinks');
   const [linksSort, setLinksSort] = useState('top');
 
-  const [editingLinkId, setEditingLinkId] = useState(null);
-  const [editingComment, setEditingComment] = useState('');
-
   const [webLinks, setWebLinks] = useState([]);
   const [webLinksLoading, setWebLinksLoading] = useState(false);
   const [showAddLinkForm, setShowAddLinkForm] = useState(false);
@@ -184,8 +181,6 @@ const ConceptLinksPanel = ({
     try { if (wasVoted) await votesAPI.removeWebLinkVote(link.id); else await votesAPI.upvoteWebLink(link.id); }
     catch { setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: wasVoted, voteCount: wasVoted ? l.voteCount + 1 : l.voteCount - 1 } : l)); }
   };
-  const handleStartEditComment = (link) => { setEditingLinkId(link.id); setEditingComment(link.comment || ''); };
-  const handleCancelEditComment = () => { setEditingLinkId(null); setEditingComment(''); };
   const handleAddLink = async () => {
     const trimmed = newLinkUrl.trim();
     if (!trimmed) return;
@@ -200,14 +195,6 @@ const ConceptLinksPanel = ({
       lastFetchedUrlRef.current = '';
     } catch (err) { setAddLinkError(err.response?.data?.error || 'Failed to add link'); }
   };
-  const handleSaveComment = async (linkId) => {
-    const prev = webLinks.find(l => l.id === linkId);
-    setWebLinks(links => links.map(l => l.id === linkId ? { ...l, comment: editingComment.trim() || null, updatedAt: new Date().toISOString() } : l));
-    setEditingLinkId(null); setEditingComment('');
-    try { await votesAPI.updateLinkComment(linkId, editingComment.trim() || null); }
-    catch { if (prev) setWebLinks(links => links.map(l => l.id === linkId ? { ...l, comment: prev.comment, updatedAt: prev.updatedAt } : l)); }
-  };
-
   const handleCloseAddForm = () => {
     setShowAddLinkForm(false); setAddLinkError(null); setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment('');
     setAffirmed(false); setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
@@ -307,14 +294,12 @@ const ConceptLinksPanel = ({
         {addButton}{renderAddLinkForm()}{sortToggle}
         {webLinks.map((link, idx) => (
           <LinkCard key={link.id} link={link} user={user} isGuest={isGuest} isFirst={idx === 0}
-            onVoteToggle={handleToggleLinkVote} onStartEdit={handleStartEditComment}
-            editingLinkId={editingLinkId} editingComment={editingComment}
-            onEditChange={setEditingComment} onSaveComment={handleSaveComment} onCancelEdit={handleCancelEditComment}
+            onVoteToggle={handleToggleLinkVote}
             showInstances={true} instanceData={instanceData[link.id]} onToggleInstance={toggleInstanceExpansion}
             renderInstanceSnippet={renderInstanceSnippet}
             cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
             conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()}
-            onRemoveSuccess={() => loadLinks()} />
+            onRemoveSuccess={() => loadLinks()} onAddendumSuccess={() => loadLinks()} />
         ))}
       </>
     );

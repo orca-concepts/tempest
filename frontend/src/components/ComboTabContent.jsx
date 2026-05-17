@@ -321,7 +321,9 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
           <button onClick={handleShareLink} style={styles.shareButton} title="Copy shareable link to clipboard">
             {shareCopied ? 'Copied!' : 'Share'}
           </button>
-          <button onClick={handleUnsubscribe} style={styles.unsubscribeButton}>Unsubscribe</button>
+          {onUnsubscribe && (
+            <button onClick={handleUnsubscribe} style={styles.unsubscribeButton}>Unsubscribe</button>
+          )}
         </div>
       </div>
 

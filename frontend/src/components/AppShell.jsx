@@ -103,6 +103,7 @@ const AppShell = () => {
 
   // Phase 39b: Combo browse overlay state
   const [comboView, setComboView] = useState(null); // null | { view: 'list' }
+  const [guestComboId, setGuestComboId] = useState(null); // deep-linked combo for guests
 
   // Phase 39b: Combo subscriptions (persistent combo tabs)
   const [comboSubscriptions, setComboSubscriptions] = useState([]);
@@ -151,19 +152,32 @@ const AppShell = () => {
     }
   }, [isGuest]);
 
-  // Deep link: /superconcept/:id — auto-subscribe and open combo tab
+  // Deep link: /concept/:id and /superconcept/:id
   useEffect(() => {
     if (loading || authLoading) return;
-    const match = location.pathname.match(/^\/superconcept\/(\d+)$/);
-    if (!match) return;
-    const comboId = parseInt(match[1]);
-    // Clear the URL so this doesn't re-trigger
-    navigate('/', { replace: true });
-    if (isGuest) {
-      // Show browse superconcepts view for guests
-      setComboView({ view: 'list' });
-    } else {
-      handleSubscribeToCombo(comboId, '');
+
+    // /concept/:id?path=1,2,3
+    const conceptMatch = location.pathname.match(/^\/concept\/(\d+)$/);
+    if (conceptMatch) {
+      const conceptId = parseInt(conceptMatch[1]);
+      const params = new URLSearchParams(location.search);
+      const pathStr = params.get('path');
+      const path = pathStr ? pathStr.split(',').map(Number).filter(Boolean) : [];
+      navigate('/', { replace: true });
+      handleOpenConceptTab(conceptId, path);
+      return;
+    }
+
+    // /superconcept/:id
+    const comboMatch = location.pathname.match(/^\/superconcept\/(\d+)$/);
+    if (comboMatch) {
+      const comboId = parseInt(comboMatch[1]);
+      navigate('/', { replace: true });
+      if (isGuest) {
+        setGuestComboId(comboId);
+      } else {
+        handleSubscribeToCombo(comboId, '');
+      }
     }
   }, [loading, authLoading]);
 
@@ -1374,8 +1388,24 @@ const AppShell = () => {
             />
           )}
 
+          {/* Guest deep-link combo view */}
+          {!votesOpen && !comboView && guestComboId && (
+            <div>
+              <div style={{ padding: '12px 20px 0', fontFamily: '"EB Garamond", Georgia, serif' }}>
+                <span onClick={() => setGuestComboId(null)} style={{ cursor: 'pointer', color: '#888', fontSize: '14px', textDecoration: 'underline' }}>{'\u2190'} Back</span>
+              </div>
+              <ComboTabContent
+                comboId={guestComboId}
+                user={user}
+                isGuest={true}
+                onRequestLogin={handleRequestLogin}
+                onOpenConceptTab={handleOpenConceptTab}
+              />
+            </div>
+          )}
+
           {/* Normal tab content — hidden when overlays are active */}
-          {!votesOpen && !comboView && (
+          {!votesOpen && !comboView && !guestComboId && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {

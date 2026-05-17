@@ -55,12 +55,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
           alt="Children view showing a value hierarchy"
           style={usingOrcaStyles.heroImage}
           onClick={() => onImageClick({
-            slides: [{ image: '/images/using-orca/children_view.png', caption: 'Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values.' }],
+            slides: [{ image: '/images/using-orca/children_view.png', caption: 'Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values. This is test data' }],
             index: 0,
           })}
         />
         <p style={usingOrcaStyles.caption}>
-          Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values.
+          Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values. This is test data.
         </p>
       </div>
 
@@ -72,13 +72,13 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Flip View showing alternative parents"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/flip-view.png', caption: '\u201CFlip View\u201D shows you the alternative parents a given concept has; the concept might have different child paths to explore for different parent contexts.' }],
+              slides: [{ image: '/images/using-orca/flip-view.png', caption: '\u201CFlip View\u201D shows you the alternative parents a given concept has; the concept might have different child paths to explore for different parent contexts. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
             "Flip View" shows you the alternative parents a given concept has; the concept might have
-            different child paths to explore for different parent contexts.
+            different child paths to explore for different parent contexts. This is test data.
           </p>
         </div>
 
@@ -89,12 +89,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Tunnel view showing pinned concepts across graphs"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/tunnel_view.png', caption: 'Pin concepts from different types of graphs for quick navigation to relevant areas.' }],
+              slides: [{ image: '/images/using-orca/tunnel_view.png', caption: 'Pin concepts from different types of graphs for quick navigation to relevant areas. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Pin concepts from different types of graphs for quick navigation to relevant areas.
+            Pin concepts from different types of graphs for quick navigation to relevant areas. This is test data.
           </p>
         </div>
 
@@ -105,12 +105,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Superconcept page showing a curated reading list"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create superconcepts to build reading lists based on certain concepts.' }],
+              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create superconcepts to build reading lists based on certain concepts. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Create superconcepts to build reading lists based on certain concepts.
+            Create superconcepts to build reading lists based on certain concepts. This is test data.
           </p>
         </div>
       </div>

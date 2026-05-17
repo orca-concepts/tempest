@@ -1790,6 +1790,7 @@ const votesController = {
           cl.title,
           cl.added_by,
           u.username AS added_by_username,
+          u.orcid_id AS author_orcid_id,
           cl.created_at AS link_created_at,
           cl.comment,
           cl.updated_at AS link_updated_at,
@@ -1803,7 +1804,7 @@ const votesController = {
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE e.child_id = $1
         GROUP BY e.id, e.parent_id, e.graph_path, e.attribute_id, a.name,
-                 cp.name, cl.id, cl.url, cl.title, cl.added_by, u.username, cl.created_at,
+                 cp.name, cl.id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at,
                  cl.comment, cl.updated_at
         ORDER BY e.id, COUNT(clv.id) DESC, cl.created_at DESC
       `;
@@ -1835,12 +1836,40 @@ const votesController = {
             title: row.title,
             addedBy: row.added_by,
             addedByUsername: row.added_by_username,
+            authorOrcidId: row.author_orcid_id || null,
             createdAt: row.link_created_at,
             comment: row.comment,
             updatedAt: row.link_updated_at,
             voteCount: parseInt(row.vote_count),
             userVoted: row.user_voted || false,
           });
+        }
+      }
+
+      // Batch-fetch addenda for all link IDs across all edges
+      const allLinkIds = [];
+      for (const eid of edgeOrder) {
+        for (const link of edgeMap[eid].links) {
+          allLinkIds.push(link.id);
+        }
+      }
+      if (allLinkIds.length > 0) {
+        const addendaResult = await pool.query(
+          `SELECT id, concept_link_id, body, created_at
+           FROM concept_link_addenda
+           WHERE concept_link_id = ANY($1::integer[])
+           ORDER BY created_at ASC`,
+          [allLinkIds]
+        );
+        const addendaMap = {};
+        for (const row of addendaResult.rows) {
+          if (!addendaMap[row.concept_link_id]) addendaMap[row.concept_link_id] = [];
+          addendaMap[row.concept_link_id].push({ id: row.id, body: row.body, createdAt: row.created_at });
+        }
+        for (const eid of edgeOrder) {
+          for (const link of edgeMap[eid].links) {
+            link.addenda = addendaMap[link.id] || [];
+          }
         }
       }
 

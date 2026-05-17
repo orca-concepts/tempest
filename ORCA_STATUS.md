@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 16, 2026
-**Current Status:** Phase 62a complete. Phase 61 (Twilio-to-ORCID auth pivot) and Phase 62a (profile page fixes and Phase-58-era UI cleanup) both shipped. Site live at orcaconcepts.org.
+**Last Updated:** May 17, 2026
+**Current Status:** Phase 62b complete. Comment addenda model + author ORCID display + share links for concepts and superconcepts + deep-link navigation. Site live at orcaconcepts.org.
 
 ---
 
@@ -16,6 +16,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 **Phase 60a (May 2026):** Self-authored links may now be hard-deleted by their adder (carve-out from append-only AD — see "Append-Only" section for the reframed principle). New `link_removal_log` table preserves a sparse audit trail (sha256 of URL, no plaintext content). Add-link form gained a required affirmation checkbox and on-paste/on-blur title preview via new `GET /web-links/preview-title` endpoint reusing the existing OG-fetch utility.
 
 **Phase 61 pivot (May 2026):** Replaced Twilio phone OTP authentication with ORCID-first email+password registration. New signup flow: (1) ORCID OAuth proves the user owns an ORCID iD, (2) the user submits username, email, password, and ToS acceptance. If the submitted email matches an ORCID-verified email returned by `/v3.0/{orcid}/email`, the account is created with `email_verified_at = NOW()` and a welcome email is sent. Otherwise a verification email with a 24-hour single-use token is sent, and the welcome email follows after the user clicks the verify link. Password reset uses a similar email-token flow. Phase 61a added the schema + Resend integration. 61b added five new backend endpoints. 61c reworked `LoginModal.jsx` and added standalone `/reset-password` and `/email-verification` pages. A follow-up fix corrected the verification email's URL (it pointed at the frontend route instead of the backend endpoint, so verification appeared to succeed but didn't actually update the database).
+
+**Phase 62b (May 2026):** Replaced the editable-comment model on links and tunnel links with an append-only addendum system. Original comments are now immutable; the author can post timestamped addenda below. Author ORCID badges now display on both link types. Share links added for superconcepts. Deep-link navigation (`/concept/:id` and `/superconcept/:id`) now works for both logged-in users and guests.
 
 **Current state:** Site is live at orcaconcepts.org. Railway attached, domain connected. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
 
@@ -102,6 +104,10 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 **concept_link_votes** — Simple upvotes on links. UNIQUE(user_id, concept_link_id).
 
+**concept_link_addenda** — Append-only addenda posted by the link's author below the original comment (Phase 62b).
+- `id`, `concept_link_id` (FK concept_links, CASCADE, NOT NULL), `author_id` (FK users, SET NULL), `body` (TEXT, NOT NULL), `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+- Index on `concept_link_id`. Author is always the parent link's `added_by` at write time — enforced by backend, not by FK.
+
 ### Superconcept (Combo) Tables
 
 **combos** — Named collections of edges. Case-insensitive unique name. `created_by` uses ON DELETE SET NULL.
@@ -124,6 +130,10 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 **tunnel_votes** — Directional endorsements. UNIQUE(user_id, tunnel_link_id).
 - Constraint unchanged in Phase 59a — votes are per-row, each commented tunnel is its own row with its own independent vote tally.
+
+**tunnel_link_addenda** — Append-only addenda posted by the tunnel link's author (Phase 62b).
+- `id`, `tunnel_link_id` (FK tunnel_links, CASCADE, NOT NULL), `author_id` (FK users, SET NULL), `body` (TEXT, NOT NULL), `created_at` (TIMESTAMPTZ, NOT NULL, DEFAULT NOW())
+- Index on `tunnel_link_id`. Same author-enforcement pattern as `concept_link_addenda`.
 
 ### Moderation Tables
 
@@ -188,16 +198,16 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/web-links/by-url` | Guest | Cross-concept URL search |
-| GET | `/web-links/all/:conceptId` | Guest | All links across contexts |
+| GET | `/web-links/all/:conceptId` | Guest | All links across contexts. Each link includes `addenda[]` and `authorOrcidId` (Phase 62b). |
 | GET | `/web-links/preview-title` | Yes | **NEW Phase 60a.** Title preview for the add-link form. Query: `?url=...`. Validates well-formed http(s) URL (400 on malformed). Reuses the same OG-fetch utility as `POST /web-links/add` with SSRF protection (DNS resolve + private IP block) + 5s timeout. Returns `{ title: string }` (may be empty if no OG title found; SSRF-blocked URLs also return empty title — see "OG Title Auto-Fetch" AD for the rationale). |
 | GET | `/web-links/votes/me` | Yes | User's upvoted links (legacy, retained for rollback safety post-59b) |
-| GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new) |
+| GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new). Each link includes `addenda[]` and `authorOrcidId` (Phase 62b). |
 | POST | `/web-links/add` | Yes | Add link (OG title auto-fetch) |
 | POST | `/web-links/remove` | Yes | **RESTORED Phase 60a.** Hard-delete a self-authored link. Body: `{ linkId }`. Single SQL statement checks `added_by = req.user.userId AND legal_hold = false` to close the race against admin legal-hold-set. 403 with generic error on any failure (no information leakage). On success: row deleted, votes cascade, sparse record written to `link_removal_log`. This is the new-semantics version distinct from the version eliminated in commit `0b382c4`. |
 | POST | `/web-links/copy` | Yes | Copy link to a descendant edge (adder only, same root graph, descendant edge required). Returns new row; original untouched. |
+| POST | `/web-links/:linkId/addenda` | Yes | **NEW Phase 62b.** Add an addendum to a self-authored link. Body: `{ body }`. 2000 char limit. Atomic `added_by` + `legal_hold` check. Replaces the deleted `PUT /web-links/:linkId/comment` endpoint. |
 | POST | `/web-links/upvote` | Yes | Upvote link |
 | POST | `/web-links/unvote` | Yes | Remove upvote |
-| PUT | `/web-links/:linkId/comment` | Yes | Edit link comment |
 | GET | `/saved` | Yes | User's saved edges (legacy, retained for rollback safety post-59b) |
 | GET | `/me/all` | Yes | **NEW Phase 59b.** Unified votes payload for the combined Votes overlay. Returns `{ savedEdges, linkVotes, contextEdges, ancestorEdges }`. `contextEdges` are edges referenced by link votes but not saved by the user; `ancestorEdges` walk root-to-edge for every saved + context edge so the frontend can render full ancestry. Both context and ancestor entries are flagged `isContextOnly: true`. Single recursive CTE — no N+1. |
 | POST | `/add` | Yes | Save an edge |
@@ -227,9 +237,10 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 ### Tunnels (`/api/tunnels`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/:edgeId` | Guest | Tunnel links for edge. Each row returns its `comment` field (Phase 59a). |
+| GET | `/:edgeId` | Guest | Tunnel links for edge. Each row returns `comment`, `addenda[]`, `authorOrcidId`, and `createdByUserId` (Phase 62b). |
 | POST | `/create` | Yes | Create tunnel. Accepts optional `comment` (Phase 59a). Duplicates between the same edge pair are now allowed — every POST creates a new row. |
 | POST | `/vote` | Yes | Toggle tunnel vote (per-row, unchanged) |
+| POST | `/:tunnelLinkId/addenda` | Yes | **NEW Phase 62b.** Add an addendum to a self-authored tunnel link. Body: `{ body }`. 2000 char limit. `created_by` check. |
 
 ### Moderation (`/api/moderation`)
 POST `/flag`, `/unflag`, `/vote`, `/vote/remove`, `/comment`, `/unhide` (admin). GET `/hidden/:parentId`, `/comments/:edgeId`.
@@ -258,22 +269,22 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 
 ### Pages (`frontend/src/pages/`)
 - **Root.jsx** — Root concepts page with attribute filter
-- **Concept.jsx** — Concept page with children, Flip View, Tunnel View, links panel
+- **Concept.jsx** — Concept page with children, Flip View, Tunnel View, links panel. **Phase 62b fix:** Share link now uses `path` state (from API response) instead of `effectivePath` (tab path) — the previous code stripped the parent from the URL because `effectivePath` doesn't end with the concept ID in tab mode.
 - **ResetPasswordPage.jsx** — **NEW Phase 61c.** Standalone page at `/reset-password`. Reads `token` from query params, shows new-password form, POSTs to `/api/auth/reset-password`. On success, brief message then `navigate('/')` after 2 seconds. Accessible without auth.
 - **VerifyEmailPage.jsx** — **NEW Phase 61c.** Standalone page at `/email-verification`. Reads `status` and `reason` query params (set by the backend `/api/auth/verify-email` redirect). Shows success (auto-redirects home after 2s) or error (with "Return to home" link). Accessible without auth.
 
 ### Core Components (`frontend/src/components/`)
-- **AppShell.jsx** — Main layout: header, sidebar, tab management, overlays. Single "Votes" sidebar item replaces the former "Graph Votes" and "Link Votes" entries (Phase 59b). Reads `VITE_OUTREACH_MODE` into `isOutreachMode` (~line 24, Phase 59a) — when ON, hides Legal nav + login/signup, renders `<OutreachLanding />` in place of the sidebar/content area.
+- **AppShell.jsx** — Main layout: header, sidebar, tab management, overlays. Single "Votes" sidebar item replaces the former "Graph Votes" and "Link Votes" entries (Phase 59b). Reads `VITE_OUTREACH_MODE` into `isOutreachMode` (~line 24, Phase 59a) — when ON, hides Legal nav + login/signup, renders `<OutreachLanding />` in place of the sidebar/content area. **Phase 62b:** Deep-link effect handles `/concept/:id?path=...` (opens concept tab for guests and logged-in users) and `/superconcept/:id` (subscribes + opens combo tab for logged-in users; shows read-only `ComboTabContent` with back button for guests). `guestComboId` state tracks the deep-linked combo for guest viewing.
 - **OutreachLanding.jsx** — **NEW Phase 59a.** Landing page shown when `VITE_OUTREACH_MODE=true`. Replaces the entire app surface with an explanation that the platform is not yet live. See "Operational Modes" section.
 - **ConceptLinksPanel.jsx** — Right panel on concept page (Links tab + Superconcepts tab). Passes `conceptId` and `conceptPath` to LinkCard for copy-to-descendant flow. Uses shared `ClampedText`. **Phase 60a:** add-link form gained (a) a required affirmation checkbox ("I affirm this URL points to content that is publicly available through legitimate means...") — Submit disabled until checked, state NOT persisted across modal close/reopen; (b) title preview triggered by URL field `onPaste` or `onBlur` (whichever fires first) calling `GET /web-links/preview-title` with `AbortController` cancellation on URL change; pre-fills title field on success with inline edit allowed.
-- **LinkCard.jsx** — Reusable link card. Always-visible "Other instances on this concept (N)" / "Other instances across all concepts (N)" dropdowns (disabled when N=0). Prominent up-arrow vote icon. "Copy" button next to "Edit" visible only when the current user is the link's adder. **Phase 60a:** "Remove" button restored, visible only when `currentUser?.id === link.added_by` (UX-only gate; backend check is the security boundary). Opens an inline confirmation modal with Escape-to-close. On confirm, calls `POST /web-links/remove` and triggers parent refresh via `onRemoveSuccess` callback. Error path keeps the modal open with inline error ("Couldn't remove this link. It may have been placed on legal hold."). Uses shared `ClampedText`.
+- **LinkCard.jsx** — Reusable link card. Always-visible "Other instances on this concept (N)" / "Other instances across all concepts (N)" dropdowns (disabled when N=0). Prominent up-arrow vote icon. "Copy" button visible only when the current user is the link's adder. **Phase 60a:** "Remove" button restored, visible only when `currentUser?.id === link.added_by`. **Phase 62b:** Comment edit UI removed (original comments now immutable). "Add addendum" button visible to author only — opens inline modal with textarea, 2000-char counter, Escape-to-close. Addenda display below original comment with timestamps using shared `ClampedText`. Author username now accompanied by `OrcidBadge` (from `authorOrcidId` field).
 - **ClampedText.jsx** — **NEW Phase 59a.** Shared line-clamp component with expand toggle. Extracted from duplicated copies in LinkCard and ConceptLinksPanel; also consumed by TunnelView for tunnel comments.
 - **CopyLinkPicker.jsx** — Modal overlay for copying a link to a descendant edge. Expandable tree picker with path-scoped subtree fetch, request-generation race guard, Escape-to-close. Calls `POST /api/votes/web-links/copy` on confirm.
-- **ComboTabContent.jsx** — Superconcept tab: header, edge management, aggregated links view. Has request-generation race guard on `loadComboLinks`.
+- **ComboTabContent.jsx** — Superconcept tab: header, edge management, aggregated links view. Has request-generation race guard on `loadComboLinks`. **Phase 62b:** Share button in header copies `/superconcept/:id` URL to clipboard. Unsubscribe button conditionally hidden when rendered in guest read-only mode (no `onUnsubscribe` callback).
 - **ComboListView.jsx** — Browse Superconcepts overlay
 - **VotesOverlay.jsx** — **NEW Phase 59b.** Combined display-only votes page. Hierarchical tree built from `GET /api/votes/me/all` (saved edges + context edges + ancestors), with the user's link votes nested under each edge. No remove affordances anywhere — navigation into the concept is the only way to change votes. Saved edges visually distinguished from context-only edges. Applies Stale-State Guard request-generation pattern. Replaces the deleted `SavedPageOverlay.jsx` and `LinkVotesOverlay.jsx`.
 - **FlipView.jsx** — Alt parent contexts with Jaccard similarity
-- **TunnelView.jsx** — Cross-graph tunnels by attribute columns. Renders each tunnel row's optional `comment` (Phase 59a) using shared `ClampedText`. Duplicates between the same edge pair are expected and rendered as independent rows with independent vote counts — do not collapse them.
+- **TunnelView.jsx** — Cross-graph tunnels by attribute columns. Renders each tunnel row's optional `comment` (Phase 59a) using shared `ClampedText`. Duplicates between the same edge pair are expected and rendered as independent rows with independent vote counts — do not collapse them. **Phase 62b:** Each tunnel card now shows author username + `OrcidBadge`. Addenda display below comment. "Add addendum" button visible to author only with inline modal.
 - **ConceptGrid.jsx** — Grid display for child concepts
 - **SearchField.jsx** — Combined add/search with trigram matching
 - **DiffModal.jsx** — Side-by-side concept comparison
@@ -309,7 +320,9 @@ Every graph has one attribute from the root edge. Descendants inherit. Backend e
 ### Append-Only for Shared Graph Structure (reframed Phase 60a)
 Append-only applies to **shared graph structure** — content that becomes part of other users' experience and that other users vote on or build atop. **Concepts and edges are never user-deletable** (only hidden via moderation or legally removed). Votes on shared structure persist as history.
 
-**Carve-out for self-authored, self-contained content (Phase 60a):** A user may hard-delete their own `concept_links` rows via `POST /web-links/remove` when `legal_hold = false`. The rationale: a link is sufficiently self-contained that its removal does not collapse other users' graph structure — only the URL, title, comment, and vote count disappear; the edge itself, the concept structure, and other links remain. Compare to a concept or edge whose deletion would orphan every downstream contribution. Editing one's own link comment is still allowed (correction is different from removal). Link mobility is still provided by the copy-to-descendant flow.
+**Carve-out for self-authored, self-contained content (Phase 60a):** A user may hard-delete their own `concept_links` rows via `POST /web-links/remove` when `legal_hold = false`. The rationale: a link is sufficiently self-contained that its removal does not collapse other users' graph structure — only the URL, title, comment, and vote count disappear; the edge itself, the concept structure, and other links remain. Compare to a concept or edge whose deletion would orphan every downstream contribution. Link mobility is still provided by the copy-to-descendant flow.
+
+**Comment immutability + addenda (Phase 62b):** Original comments on `concept_links` and `tunnel_links` are now immutable once created. The `PUT /web-links/:linkId/comment` endpoint has been removed. Instead, the author may post append-only addenda via `POST /web-links/:linkId/addenda` or `POST /tunnels/:tunnelLinkId/addenda`. Each addendum is timestamped and displayed below the original comment. Addenda cascade-delete with their parent link. This is a strengthening of the append-only principle — not an exception.
 
 This is a narrower statement of the original append-only principle. The previous version (commit `0b382c4`) generalized "append-only" beyond shared structure because annotations — the pre-Phase-58 feature it was written for — *seemed* self-contained but actually weren't (threading + anchoring made them load-bearing for others). Now that annotations are gone, the principle can be sharpened to its actual target: shared structure.
 
@@ -426,6 +439,16 @@ The profile page is the first component to apply this split explicitly. Future c
 
 Components that only need identity (e.g., "show username in header") continue to read from auth context — that's the correct use.
 
+### Deep-Link Navigation for Concepts and Superconcepts (Phase 62b, May 2026)
+AppShell has a `useEffect` keyed on `[loading, authLoading, location.pathname]` that handles two URL patterns:
+
+- **`/concept/:id?path=1,2,3`** — calls `handleOpenConceptTab(conceptId, path)` which creates or reuses a graph tab. Works for both guests (ephemeral tab) and logged-in users (persisted tab). The URL is replaced with `/` after processing.
+- **`/superconcept/:id`** — for logged-in users, calls `handleSubscribeToCombo` (subscribes if needed, switches to combo tab). For guests, sets `guestComboId` state which renders a read-only `ComboTabContent` with a back button. URL replaced with `/`.
+
+**AD:** The deep-link effect must depend on `location.pathname`, not just `loading`/`authLoading`. Without the pathname dependency, the effect only fires on initial load — navigating to a share link while already loaded would not trigger it.
+
+**AD:** The concept share link (`Concept.jsx`) must use the `path` state (from the API response, which is `[root, ..., parent, conceptId]`) when building the URL, NOT `effectivePath` (the tab's stored path, which is `[root, ..., parent]` without the concept ID). Using `effectivePath.slice(0, -1)` strips the parent instead of the concept ID.
+
 ### Stale-State Guard on Navigation (commit `3089bbf`, May 2026)
 Async fetches keyed on a route param (such as `edgeId`) must:
 1. Clear the parent-held param state to `null` at the START of navigation, not after the new fetch completes. Otherwise the child component renders one frame with the previous param value and fetches stale data.
@@ -474,6 +497,24 @@ Phase 59 added tunnel comments and unified the votes overlays.
 **Lessons:**
 - The "votes pages are display-only" framing only became visible once we tried to write the spec for the merged page. Both prior overlays had inconsistent affordances — Graph Votes had an X button, Link Votes did not — and the merge forced the question. Worth checking for similar inconsistencies elsewhere when components are touched.
 - Commit `f6b1765` bundled two unrelated features (tunnel comments + outreach mode) under a single message. Both are now documented, but the bundling made the doc-update pass harder than it needed to be — required an investigation phase to reconstruct the secondary scope. Future commits should keep features in separate commits, or at minimum the commit message should enumerate both pieces of scope.
+
+---
+
+## Phase 62b Completion Narrative
+
+Phase 62b replaced the editable-comment model with an append-only addendum system, added author ORCID display, and shipped share links with deep-link navigation.
+
+**62b-1 through 62b-4 (core addenda work):** Two new tables (`concept_link_addenda`, `tunnel_link_addenda`) with FK CASCADE. The `PUT /web-links/:linkId/comment` endpoint was removed; two new `POST .../addenda` endpoints were added with atomic `added_by`/`legal_hold` checks and a 2000-character limit. Both `GET /web-links/:edgeId` and `GET /web-links/all/:conceptId` (flip view) now return `addenda[]` and `authorOrcidId` per link. `GET /tunnels/:edgeId` returns the same plus `createdByUserId`. Frontend: LinkCard lost its edit UI, gained addendum display (with `ClampedText`), "Add addendum" modal, and `OrcidBadge` next to author name. TunnelView gained author display, addendum display, and "Add addendum" modal. ConceptLinksPanel cleaned of all edit-related state and props.
+
+**Share links and deep-link navigation:** A Share button was added to both the concept page header and the superconcept (combo) tab header. Clicking it copies a URL (`/concept/:id?path=...` or `/superconcept/:id`) to the clipboard. A new `useEffect` in AppShell handles these URLs on navigation: concepts open a graph tab (works for guests and logged-in users); superconcepts subscribe + open the combo tab (logged-in) or show a read-only `ComboTabContent` with a back button (guests).
+
+**Share link path bug:** The concept share handler used `effectivePath.slice(0, -1)` to build the URL. In tab mode, `effectivePath` is the tab's stored path (`[root, ..., parent]`), not the API response path (`[root, ..., parent, conceptId]`). Slicing `effectivePath` stripped the parent from the URL instead of the concept ID. Fixed to use the `path` state from the API response. This was a pre-existing bug that only became visible once deep-link navigation was added — previously share links just showed the root page for guests.
+
+**Deep-link dependency bug:** The initial `useEffect` depended only on `[loading, authLoading]`, so it never re-ran when a logged-in user navigated to a share link (both values were already `false` and stable). Fixed by adding `location.pathname` to the dependency array.
+
+**Lessons:**
+- `effectivePath` (the tab's stored path) and `path` (the API response's full graph_path) diverge because the backend appends the concept ID to the path param. Any code that needs the full graph_path should use the API response, not the tab state.
+- `useEffect` dependencies for URL-driven effects must include the URL parts they depend on. `location.pathname` is not a derived value from `loading` — omitting it means the effect only fires on mount.
 
 ---
 
@@ -541,7 +582,7 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 
 ### Tech Debt
 - N+1 by-url count fetches (batch endpoint future optimization)
-- Title edit after creation not implemented (needs backend endpoint)
+- ~~Title edit after creation not implemented~~ **Superseded Phase 62b** — comments are now immutable; addenda replace editing
 - ~~ClampedText duplicated in LinkCard and ConceptLinksPanel~~ **Resolved Phase 59a** — extracted to shared `ClampedText.jsx`
 - AppShell tab management complexity warrants refactor
 - Tree ordering persistence retired (session-local only)
@@ -552,9 +593,13 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **TunnelView pre-59a duplicate handling:** The component now expects duplicate rows. Any production data created before 59a will still be unique-per-pair. Worth confirming after launch that the rendering also handles the "single row" case cleanly (it should, but the test scenarios used during 59a development all had duplicates).
 - **Email verification frontend trust (Phase 61c):** `VerifyEmailPage.jsx` reports success/error based on the `status` query param set by the backend redirect, without independently verifying. This hid the URL bug fixed mid-Phase-61. Defensive improvement: have the page call a backend `GET /api/auth/verify-email-status?token=...` to confirm the user's actual `email_verified_at` state. Low priority — the bug is fixed, the page is now reliable in practice.
 - **`FRONTEND_BASE_URL` naming (Phase 61):** The env var is used as the base URL for both frontend pages and backend API paths (since they're served from the same domain on Railway). Name implies "frontend only," but it's actually "the public base URL of the deployed app." Consider renaming to `PUBLIC_BASE_URL` in a future cleanup.
+- **Combo links endpoint missing addenda/ORCID (Phase 62b):** `GET /api/combos/:id/links` does not return `addenda[]` or `authorOrcidId` per link. ComboTabContent renders links with `readOnlyVote`, so the ORCID badge and addenda would be visible but the data isn't there. Low priority since combo link cards are a read-only aggregation view.
+- **Pre-existing: `POST /api/votes/add` broken (saved_tabs reference):** The `addVote` handler in `votesController.js` queries the dropped `saved_tabs` table (~line 101), causing a 500 on save-vote. Discovered during Phase 62b Level 1 testing. Not a 62b regression — predates this session.
+- **Deep-link concept tab label:** When opening a concept via `/concept/:id`, the tab label defaults to "Concept" because `handleOpenConceptTab` is called without a `conceptName`. The correct name loads after the API call, but the tab label isn't updated retroactively. Consider updating the tab label in `loadConcept` after the API response arrives.
 - **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field, ORCID disconnect) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away.
 
 ### Forward Roadmap
+- ~~Phase 62b: comment addenda + author ORCID + share links + deep-link navigation~~ **completed May 17, 2026**
 - ~~Phase 62a: profile page data-fetch fix + Phase-58-era UI cleanup~~ **completed May 16, 2026**
 - ~~Phase 61d/e: ORCID enforcement and Twilio removal~~ **completed May 16, 2026**
 - Welcome banner / verification reminder for unverified users (future)
@@ -569,9 +614,20 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 
 ---
 
-## Recent Commits (Phase 59 through 61)
+## Recent Commits (Phase 59 through 62b)
 
 ```
+bba3d0e fix: share button styling to match neighboring buttons
+7e8b0d8 fix: deep-link effect missing location.pathname dependency
+45e5c19 fix: share link used effectivePath instead of API path, dropping parent
+f00bfbf feat: deep-link for concepts and guest superconcept viewing
+6b4bc47 feat: share link for superconcepts
+c22cf80 fix: return addenda + authorOrcidId from getAllWebLinksForConcept (flip view)
+5909592 phase 62b-4: TunnelView addendum UI + author + ORCID display
+7a36d66 phase 62b-3: LinkCard addendum UI + ORCID badge
+b855c5a phase 62b-2: addenda endpoints + remove comment edit + return author ORCID
+38637d3 phase 62b-1: addenda tables for concept_links and tunnel_links
+e0a8446 update legal docs
 e05ec40 phase 62a: profile data-fetch fix + remove Phase-58-era zombie UI
 08ae45e phase 61d/e: enforce ORCID required, remove Twilio entirely
 6af90ce fix(61): email verification URL pointed at frontend instead of backend endpoint

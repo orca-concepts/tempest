@@ -1038,6 +1038,18 @@ const createTables = async () => {
     await client.query(`
       ALTER TABLE users DROP COLUMN IF EXISTS phone_lookup;
     `);
+    // Backfill any users missing orcid_id with fake ORCID iDs so NOT NULL can be applied
+    const nullOrcidUsers = await client.query(
+      'SELECT id FROM users WHERE orcid_id IS NULL ORDER BY id'
+    );
+    for (let i = 0; i < nullOrcidUsers.rows.length; i++) {
+      const fakeOrcid = `0000-0000-0000-${String(nullOrcidUsers.rows[i].id).padStart(4, '0')}`;
+      await client.query(
+        'UPDATE users SET orcid_id = $1 WHERE id = $2',
+        [fakeOrcid, nullOrcidUsers.rows[i].id]
+      );
+    }
+
     // Make orcid_id NOT NULL (all existing accounts must already have one)
     await client.query(`
       DO $$
@@ -1049,6 +1061,39 @@ const createTables = async () => {
           ALTER TABLE users ALTER COLUMN orcid_id SET NOT NULL;
         END IF;
       END $$;
+    `);
+
+    // ============================================================
+    // Phase 62b: Addenda tables for concept_links and tunnel_links
+    // Append-only addenda that authors can post below their original
+    // comment. The original comment is now immutable.
+    // ============================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS concept_link_addenda (
+        id SERIAL PRIMARY KEY,
+        concept_link_id INTEGER NOT NULL REFERENCES concept_links(id) ON DELETE CASCADE,
+        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_concept_link_addenda_link
+        ON concept_link_addenda(concept_link_id);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tunnel_link_addenda (
+        id SERIAL PRIMARY KEY,
+        tunnel_link_id INTEGER NOT NULL REFERENCES tunnel_links(id) ON DELETE CASCADE,
+        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        body TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_tunnel_link_addenda_link
+        ON tunnel_link_addenda(tunnel_link_id);
     `);
 
     console.log('Database tables created/migrated successfully!');

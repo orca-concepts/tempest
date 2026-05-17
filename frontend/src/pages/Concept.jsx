@@ -949,14 +949,14 @@ const styles = {
   },
   shareButton: {
     padding: '8px 16px',
-    backgroundColor: '#f0f0f0',
-    color: '#555',
-    border: '1px solid #ddd',
+    backgroundColor: 'transparent',
+    color: '#333',
+    border: '1px solid #333',
     borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: '"EB Garamond", Georgia, serif',
-    transition: 'all 0.15s',
+    fontWeight: '500',
     whiteSpace: 'nowrap',
   },
   annotateButton: {

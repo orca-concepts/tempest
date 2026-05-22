@@ -321,7 +321,7 @@ const authController = {
 
   // Step 2: Create account with ORCID + email + password
   registerWithOrcid: async (req, res) => {
-    const { orcidId, email, password, username, tosAccepted, tosVersion, verifiedEmailsFromOrcid } = req.body;
+    const { orcidId, email, password, username, tosAccepted, tosVersion, ageVerified, verifiedEmailsFromOrcid } = req.body;
 
     // Validate required fields
     if (!orcidId || !email || !password || !username) {
@@ -336,6 +336,11 @@ const authController = {
     // ToS validation
     if (tosAccepted !== true) {
       return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy.' });
+    }
+
+    // Age verification
+    if (ageVerified !== true) {
+      return res.status(400).json({ error: 'You must confirm you are at least 18 years old.' });
     }
     if (!tosVersion || typeof tosVersion !== 'string' || !tosVersion.trim()) {
       return res.status(400).json({ error: 'Invalid Terms of Service version.' });
@@ -362,10 +367,12 @@ const authController = {
     }
 
     try {
-      // Re-verify ORCID iD exists via public API
-      const orcidExists = await verifyOrcidExists(orcidId);
-      if (!orcidExists) {
-        return res.status(400).json({ error: 'Could not verify ORCID iD. Please try again.' });
+      // Re-verify ORCID iD exists via public API (skip in dev mode)
+      if (process.env.NODE_ENV === 'production') {
+        const orcidExists = await verifyOrcidExists(orcidId);
+        if (!orcidExists) {
+          return res.status(400).json({ error: 'Could not verify ORCID iD. Please try again.' });
+        }
       }
 
       // Check username availability

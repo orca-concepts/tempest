@@ -33,6 +33,7 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
   const [signUpConfirm, setSignUpConfirm] = useState('');
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Forgot state (email-based, Phase 61c)
   const [forgotStep, setForgotStep] = useState(1); // 1=identifier, 2=confirmation
@@ -86,6 +87,7 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
     setSignUpConfirm('');
     setShowSignUpPassword(false);
     setTosAccepted(false);
+    setAgeConfirmed(false);
     setForgotStep(1);
     setForgotIdentifier('');
     setError('');
@@ -172,6 +174,10 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
       setError('You must accept the Terms of Service and Privacy Policy');
       return;
     }
+    if (!ageConfirmed) {
+      setError('You must confirm you are at least 18 years old');
+      return;
+    }
     setLoading(true);
     const result = await registerWithOrcid({
       orcidId: orcidData.orcidId,
@@ -180,6 +186,7 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
       username: username.trim(),
       tosAccepted: true,
       tosVersion: CURRENT_TOS_VERSION,
+      ageVerified: true,
       verifiedEmailsFromOrcid: orcidData.verifiedEmails || [],
     });
     if (result.success) {
@@ -289,6 +296,18 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
       >
         {loading ? 'Connecting...' : 'Sign up with ORCID'}
       </button>
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => {
+            const fakeId = '0000-0000-0000-' + String(Math.floor(Math.random() * 9000) + 1000);
+            setOrcidData({ orcidId: fakeId, name: 'Dev User', verifiedEmails: [], unverifiedEmails: [] });
+            setSignupStep(2);
+          }}
+          style={{ ...styles.submitBtn, backgroundColor: '#888', borderColor: '#888' }}
+        >
+          Dev: Skip ORCID
+        </button>
+      )}
       <div style={styles.orcidNote}>
         Don't have an ORCID iD?{' '}
         <a href="https://orcid.org/register" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
@@ -385,13 +404,22 @@ const LoginModal = ({ isOpen, onClose, initialTab = 'login', notice, pendingOrci
             <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Terms of Service</a>,{' '}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</a>, and{' '}
             <a href="/copyright-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>Copyright Policy</a>.
-            I confirm I am at least 18 years old.
           </span>
+        </label>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '14px', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.4, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={ageConfirmed}
+            onChange={(e) => setAgeConfirmed(e.target.checked)}
+            disabled={loading}
+            style={{ marginTop: '3px', flexShrink: 0 }}
+          />
+          <span>I confirm I am at least 18 years old.</span>
         </label>
         <button
           onClick={handleSignupCreate}
-          style={(loading || !tosAccepted) ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
-          disabled={loading || !tosAccepted}
+          style={(loading || !tosAccepted || !ageConfirmed) ? { ...styles.submitBtn, ...styles.disabledBtn } : styles.submitBtn}
+          disabled={loading || !tosAccepted || !ageConfirmed}
         >
           {loading ? 'Creating account...' : 'Create Account'}
         </button>

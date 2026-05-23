@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 17, 2026
-**Current Status:** Phase 62b complete. Comment addenda model + author ORCID display + share links for concepts and superconcepts + deep-link navigation. Site live at orcaconcepts.org.
+**Last Updated:** May 23, 2026
+**Current Status:** Phase 63a complete. Favicon + page-specific Open Graph / Twitter Card preview tags for `/`, `/the-storm`, and `/using-orca`. Site live at orcaconcepts.org with verified Bluesky link previews.
 
 ---
 
@@ -18,6 +18,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 **Phase 61 pivot (May 2026):** Replaced Twilio phone OTP authentication with ORCID-first email+password registration. New signup flow: (1) ORCID OAuth proves the user owns an ORCID iD, (2) the user submits username, email, password, and ToS acceptance. If the submitted email matches an ORCID-verified email returned by `/v3.0/{orcid}/email`, the account is created with `email_verified_at = NOW()` and a welcome email is sent. Otherwise a verification email with a 24-hour single-use token is sent, and the welcome email follows after the user clicks the verify link. Password reset uses a similar email-token flow. Phase 61a added the schema + Resend integration. 61b added five new backend endpoints. 61c reworked `LoginModal.jsx` and added standalone `/reset-password` and `/email-verification` pages. A follow-up fix corrected the verification email's URL (it pointed at the frontend route instead of the backend endpoint, so verification appeared to succeed but didn't actually update the database).
 
 **Phase 62b (May 2026):** Replaced the editable-comment model on links and tunnel links with an append-only addendum system. Original comments are now immutable; the author can post timestamped addenda below. Author ORCID badges now display on both link types. Share links added for superconcepts. Deep-link navigation (`/concept/:id` and `/superconcept/:id`) now works for both logged-in users and guests.
+
+**Phase 63a (May 2026):** Added favicon and Open Graph / Twitter Card metadata for social media link previews. The favicon is an SVG of a lowercase 'o' in Georgia serif on an off-white `#FAF9F6` tile. Three pages have dedicated `summary_large_image` preview cards (home, The Storm, Using Orca) with custom screenshots; other paths fall back to a `summary` card with the favicon. Page-specific tags are injected by the Express SPA-fallback handler via an `OG_OVERRIDES` map — crawler bots and human visitors both receive the path-correct HTML, since crawlers don't execute JavaScript. Verified working on Bluesky via the cardyb extract endpoint.
 
 **Current state:** Site is live at orcaconcepts.org. Railway attached, domain connected. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
 
@@ -62,6 +64,38 @@ A frontend build flag that gates the live application behind an explanatory land
 - Legal hub via nav — though direct URLs to legal pages still resolve
 
 **Operational note:** Because this is a Vite build-time flag, flipping it requires a redeploy, not just a server restart. On Railway this means triggering a new build with the env var set. There is no in-app or admin-panel toggle.
+
+---
+
+## Static Assets & Social Sharing (Phase 63a)
+
+### Favicon
+
+`frontend/public/favicon.svg` — a lowercase 'o' in Georgia serif (black `#000` on `#FAF9F6` off-white tile, viewBox `0 0 64 64`). Referenced by `<link rel="icon" type="image/svg+xml" href="/favicon.svg" />` and `<link rel="apple-touch-icon" ...>` in `frontend/index.html`. SVG renders crisp at any size; no PNG fallbacks are generated (modern browsers handle SVG favicons natively; if legacy IE support is ever needed, that's a future phase).
+
+### Open Graph / Twitter Card metadata
+
+Baseline (fallback) OG and Twitter Card tags live in `frontend/index.html`. They use `og:image = favicon.svg` and `twitter:card = summary` (the small-card type) so deep-linked routes without a dedicated preview image still get a valid card.
+
+Page-specific previews are wired up via an `OG_OVERRIDES` map in `backend/src/server.js`, structured as:
+
+```javascript
+const OG_OVERRIDES = {
+  '/': { title, description, image, twitterCard },
+  '/the-storm': { ... },
+  '/using-orca': { ... },
+};
+```
+
+Each override path has its own 1200x630 PNG screenshot in `frontend/public/` (`og-orca-main.png`, `og-the-storm.png`, `og-using-orca.png`) and uses `twitter:card = summary_large_image` (the big-card type).
+
+**Architecture:** The Express SPA-fallback handler (the `/^(?!\/api).*/` catch-all that serves `frontend/dist/index.html` per Phase 54b) does string replacement on the cached `index.html` to inject the override tags when `req.path` has an entry in `OG_OVERRIDES`. All replacement values are HTML-escaped to prevent injection. Tags are served unconditionally — there is NO User-Agent gating, because human visitors never see meta tags and UA detection is brittle. The cache is loaded once at server start.
+
+**Static-serving gotcha:** Express's `express.static(frontendDist)` by default serves `index.html` for directory requests (i.e., `/`), bypassing the SPA fallback. Phase 63a-fix disables this with `express.static(frontendDist, { index: false })` so the home page falls through to the SPA fallback and picks up its override. Without this, all other override paths work but `/` silently serves the fallback tags.
+
+**Adding a new page-specific OG card:** (1) place a 1200x630 PNG in `frontend/public/`, (2) add a one-line entry to `OG_OVERRIDES` with the path, title, description, absolute image URL, and `twitterCard`. Verify via `https://cardyb.bsky.app/v1/extract?url=...` after deploy.
+
+**Cache gotcha:** Bluesky, Twitter, and other platforms cache OG data aggressively. If a preview looks wrong after a fix, the platform's debugger tools (e.g., cardyb) often have a refresh affordance, or you can append a dummy query string to force a fresh fetch.
 
 ---
 
@@ -599,9 +633,11 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field, ORCID disconnect) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away.
 
 ### Forward Roadmap
+- ~~Phase 63a: favicon + page-specific Open Graph / Twitter Card tags~~ **completed May 23, 2026**
 - ~~Phase 62b: comment addenda + author ORCID + share links + deep-link navigation~~ **completed May 17, 2026**
 - ~~Phase 62a: profile page data-fetch fix + Phase-58-era UI cleanup~~ **completed May 16, 2026**
 - ~~Phase 61d/e: ORCID enforcement and Twilio removal~~ **completed May 16, 2026**
+- Phase 63b: `robots.txt` + `sitemap.xml` for SEO/crawler control (on the horizon, unscheduled)
 - Welcome banner / verification reminder for unverified users (future)
 - ~~Domain verification for Resend on `orcaconcepts.org`~~ **completed Phase 61**
 - DMCA agent registration (unblocked; LLC formed)
@@ -614,9 +650,11 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 
 ---
 
-## Recent Commits (Phase 59 through 62b)
+## Recent Commits (Phase 59 through 63a)
 
 ```
+9b7f2b4 Phase 63a-fix: disable static directory-index so / hits OG override
+e41d556 Phase 63a: favicon + page-specific Open Graph / Twitter Card tags
 bba3d0e fix: share button styling to match neighboring buttons
 7e8b0d8 fix: deep-link effect missing location.pathname dependency
 45e5c19 fix: share link used effectivePath instead of API path, dropping parent

@@ -107,11 +107,70 @@ app.get('/health', (req, res) => {
 // Placed AFTER all /api routes so API requests are handled first.
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
+  const fs = require('fs');
   const frontendDist = path.join(__dirname, '../../frontend/dist');
   app.use(express.static(frontendDist));
+
+  // Phase 63a: page-specific Open Graph / Twitter Card overrides
+  const OG_OVERRIDES = {
+    '/': {
+      title: 'Orca',
+      description: 'A collaborative concept ontology platform for academic research.',
+      image: 'https://orcaconcepts.org/og-orca-main.png',
+      twitterCard: 'summary_large_image',
+    },
+    '/the-storm': {
+      title: 'The Categorical Storm',
+      description: 'An essay on conceptual hierarchies, the predictive mind, and the need for a shared sixth sense for category.',
+      image: 'https://orcaconcepts.org/og-the-storm.png',
+      twitterCard: 'summary_large_image',
+    },
+    '/using-orca': {
+      title: 'Using Orca',
+      description: 'An introduction to building shared concept hierarchies and exploring research with Orca.',
+      image: 'https://orcaconcepts.org/og-using-orca.png',
+      twitterCard: 'summary_large_image',
+    },
+    // Future page-specific overrides go here.
+  };
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
+  // Cache index.html in memory at startup
+  const indexHtml = fs.readFileSync(path.join(frontendDist, 'index.html'), 'utf8');
+
   // SPA fallback — any non-/api route serves index.html so React Router works
   app.get(/^(?!\/api).*/, (req, res) => {
-    res.sendFile(path.join(frontendDist, 'index.html'));
+    const override = OG_OVERRIDES[req.path];
+    if (override) {
+      const title = escapeHtml(override.title);
+      const description = escapeHtml(override.description);
+      const image = escapeHtml(override.image);
+      const twitterCard = escapeHtml(override.twitterCard);
+      const url = escapeHtml(`https://orcaconcepts.org${req.path === '/' ? '/' : req.path}`);
+
+      const html = indexHtml
+        .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/, `<meta property="og:title" content="${title}" />`)
+        .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${description}" />`)
+        .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${url}" />`)
+        .replace(/<meta property="og:image" content="[^"]*"\s*\/?>/, `<meta property="og:image" content="${image}" />`)
+        .replace(/<meta name="twitter:card" content="[^"]*"\s*\/?>/, `<meta name="twitter:card" content="${twitterCard}" />`)
+        .replace(/<meta name="twitter:title" content="[^"]*"\s*\/?>/, `<meta name="twitter:title" content="${title}" />`)
+        .replace(/<meta name="twitter:description" content="[^"]*"\s*\/?>/, `<meta name="twitter:description" content="${description}" />`)
+        .replace(/<meta name="twitter:image" content="[^"]*"\s*\/?>/, `<meta name="twitter:image" content="${image}" />`);
+
+      res.set('Content-Type', 'text/html');
+      return res.send(html);
+    }
+    res.set('Content-Type', 'text/html');
+    res.send(indexHtml);
   });
 }
 

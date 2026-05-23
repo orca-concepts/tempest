@@ -109,7 +109,7 @@ if (process.env.NODE_ENV === 'production') {
   const path = require('path');
   const fs = require('fs');
   const frontendDist = path.join(__dirname, '../../frontend/dist');
-  app.use(express.static(frontendDist));
+  app.use(express.static(frontendDist, { index: false }));
 
   // Phase 63a: page-specific Open Graph / Twitter Card overrides
   const OG_OVERRIDES = {

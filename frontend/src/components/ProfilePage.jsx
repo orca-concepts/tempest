@@ -13,8 +13,7 @@ const ProfilePage = () => {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState(null);
 
-  // ORCID state
-  const [disconnectConfirm, setDisconnectConfirm] = useState(false);
+  // ORCID state (dev-connect only; disconnect removed Phase 62c)
   const [orcidBusy, setOrcidBusy] = useState(false);
   const [orcidError, setOrcidError] = useState(null);
   const [orcidSuccess, setOrcidSuccess] = useState(null);
@@ -116,35 +115,6 @@ const ProfilePage = () => {
     }
   };
 
-  const handleConnectOrcid = async () => {
-    try {
-      setOrcidBusy(true);
-      setOrcidError(null);
-      const res = await authAPI.getOrcidAuthorizeUrl();
-      window.location.replace(res.data.url);
-    } catch (err) {
-      setOrcidError(err.response?.data?.error || 'Failed to initiate ORCID connection');
-      setOrcidBusy(false);
-    }
-  };
-
-  const handleDisconnectOrcid = async () => {
-    try {
-      setOrcidBusy(true);
-      setOrcidError(null);
-      await authAPI.disconnectOrcid();
-      setProfile(prev => ({ ...prev, orcidId: null }));
-      await refreshUser();
-      setDisconnectConfirm(false);
-      setOrcidSuccess('ORCID disconnected');
-      setTimeout(() => setOrcidSuccess(null), 2000);
-    } catch (err) {
-      setOrcidError(err.response?.data?.error || 'Failed to disconnect ORCID');
-    } finally {
-      setOrcidBusy(false);
-    }
-  };
-
   const handleDevConnect = async () => {
     if (!devOrcidInput.trim()) return;
     try {
@@ -212,53 +182,24 @@ const ProfilePage = () => {
 
         <p style={styles.mutedText}>Member since {formatDate(profile.createdAt)}</p>
 
-        {isOwnProfile && (
+        {isOwnProfile && isDev && (
           <div style={styles.orcidSection}>
             {orcidError && <p style={styles.errorText}>{orcidError}</p>}
             {orcidSuccess && <p style={styles.successText}>{orcidSuccess}</p>}
 
-            {!profile.orcidId ? (
-              <button
-                onClick={handleConnectOrcid}
-                disabled={orcidBusy}
-                style={styles.connectButton}
-              >
-                {orcidBusy ? 'Connecting...' : 'Connect ORCID'}
-              </button>
-            ) : (
-              <div>
-                {!disconnectConfirm ? (
-                  <button
-                    onClick={() => setDisconnectConfirm(true)}
-                    style={styles.disconnectLink}
-                  >
-                    Disconnect ORCID
-                  </button>
-                ) : (
-                  <div style={styles.confirmRow}>
-                    <span style={styles.mutedText}>Remove your ORCID connection?</span>
-                    <button onClick={handleDisconnectOrcid} disabled={orcidBusy} style={styles.confirmButton}>Confirm</button>
-                    <button onClick={() => setDisconnectConfirm(false)} style={styles.cancelButton}>Cancel</button>
-                  </div>
-                )}
+            <div style={styles.devSection}>
+              <p style={styles.devLabel}>Dev: Set ORCID manually</p>
+              <div style={styles.devRow}>
+                <input
+                  type="text"
+                  value={devOrcidInput}
+                  onChange={e => setDevOrcidInput(e.target.value)}
+                  placeholder="0000-0001-2345-6789"
+                  style={styles.devInput}
+                />
+                <button onClick={handleDevConnect} disabled={orcidBusy} style={styles.devButton}>Set</button>
               </div>
-            )}
-
-            {isDev && (
-              <div style={styles.devSection}>
-                <p style={styles.devLabel}>Dev: Set ORCID manually</p>
-                <div style={styles.devRow}>
-                  <input
-                    type="text"
-                    value={devOrcidInput}
-                    onChange={e => setDevOrcidInput(e.target.value)}
-                    placeholder="0000-0001-2345-6789"
-                    style={styles.devInput}
-                  />
-                  <button onClick={handleDevConnect} disabled={orcidBusy} style={styles.devButton}>Set</button>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -429,16 +370,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: '"EB Garamond", Georgia, serif',
-  },
-  disconnectLink: {
-    background: 'none',
-    border: 'none',
-    color: '#888',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    padding: 0,
-    textDecoration: 'underline',
   },
   confirmRow: {
     display: 'flex',

@@ -40,7 +40,6 @@ router.post('/delete-account', authenticateToken, authController.deleteAccount);
 // ORCID OAuth (link/unlink for logged-in users)
 router.get('/orcid/authorize-url', optionalAuth, authController.getOrcidAuthorizeUrl);
 router.post('/orcid/callback', authenticateToken, authController.orcidCallback);
-router.post('/orcid/disconnect', authenticateToken, authController.disconnectOrcid);
 router.post('/orcid/dev-connect', authenticateToken, authController.devConnectOrcid);
 
 // ORCID-first registration + email-based auth (Phase 61b)

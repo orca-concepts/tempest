@@ -60,9 +60,6 @@ export const authAPI = {
   orcidCallback: (code) =>
     api.post('/auth/orcid/callback', { code }),
 
-  disconnectOrcid: () =>
-    api.post('/auth/orcid/disconnect'),
-
   devConnectOrcid: (orcidId) =>
     api.post('/auth/orcid/dev-connect', { orcidId }),
 

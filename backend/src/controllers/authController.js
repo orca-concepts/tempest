@@ -209,20 +209,6 @@ const authController = {
     }
   },
 
-  // Phase 41a: ORCID disconnect
-  disconnectOrcid: async (req, res) => {
-    try {
-      await pool.query(
-        'UPDATE users SET orcid_id = NULL WHERE id = $1',
-        [req.user.userId]
-      );
-      res.json({ success: true });
-    } catch (error) {
-      console.error('ORCID disconnect error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
   // Phase 41a: Dev-mode ORCID bypass (non-production only)
   devConnectOrcid: async (req, res) => {
     if (process.env.NODE_ENV === 'production') {

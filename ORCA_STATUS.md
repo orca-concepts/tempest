@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
 **Last Updated:** May 23, 2026
-**Current Status:** Phase 63a complete. Favicon + page-specific Open Graph / Twitter Card preview tags for `/`, `/the-storm`, and `/using-orca`. Site live at orcaconcepts.org with verified Bluesky link previews.
+**Current Status:** Phase 62c complete. Removed dead ORCID disconnect endpoint and UI (zombie code from Phase 41a, invalidated by Phase 61d/e's ORCID-required design). Same-day security posture hardening: rotated production Resend, ORCID, and JWT secrets; retired R2 entirely (credentials revoked, bucket deleted, env vars removed); added `backend/.gitignore` as defense-in-depth; removed unused production secrets from local `backend/.env`. Phase 63a (favicon + page-specific Open Graph / Twitter Card preview tags) remains live.
 
 ---
 
@@ -18,6 +18,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 **Phase 61 pivot (May 2026):** Replaced Twilio phone OTP authentication with ORCID-first email+password registration. New signup flow: (1) ORCID OAuth proves the user owns an ORCID iD, (2) the user submits username, email, password, and ToS acceptance. If the submitted email matches an ORCID-verified email returned by `/v3.0/{orcid}/email`, the account is created with `email_verified_at = NOW()` and a welcome email is sent. Otherwise a verification email with a 24-hour single-use token is sent, and the welcome email follows after the user clicks the verify link. Password reset uses a similar email-token flow. Phase 61a added the schema + Resend integration. 61b added five new backend endpoints. 61c reworked `LoginModal.jsx` and added standalone `/reset-password` and `/email-verification` pages. A follow-up fix corrected the verification email's URL (it pointed at the frontend route instead of the backend endpoint, so verification appeared to succeed but didn't actually update the database).
 
 **Phase 62b (May 2026):** Replaced the editable-comment model on links and tunnel links with an append-only addendum system. Original comments are now immutable; the author can post timestamped addenda below. Author ORCID badges now display on both link types. Share links added for superconcepts. Deep-link navigation (`/concept/:id` and `/superconcept/:id`) now works for both logged-in users and guests.
+
+**Phase 62c (May 23, 2026):** Removed the ORCID disconnect endpoint (`POST /api/auth/orcid/disconnect`) and the Connect/Disconnect conditional UI block on the profile page. The endpoint was zombie code from Phase 41a (when ORCID was optional) that survived Phase 61d/e's transition to ORCID-required accounts. It was broken in two ways: (1) it attempted `UPDATE users SET orcid_id = NULL`, which violates the NOT NULL constraint added in 61d/e, and (2) even if it had worked, the defensive ORCID-present check at login (`authController.js:87`) would have locked the user out permanently. The bug surfaced during manual exercise of the endpoint during a security-hardening session and was fixed by removing the endpoint and UI rather than dropping the constraint. The profile page now passively displays the user's ORCID iD using the existing `OrcidBadge` component. The `devConnectOrcid` endpoint (dev-only ORCID linking) remains intact. This is the second instance of a zombie-code cleanup mirroring Phase 62a — see "Phase Transitions Can Leave Zombie Code" in Key Learnings.
 
 **Phase 63a (May 2026):** Added favicon and Open Graph / Twitter Card metadata for social media link previews. The favicon is an SVG of a lowercase 'o' in Georgia serif on an off-white `#FAF9F6` tile. Three pages have dedicated `summary_large_image` preview cards (home, The Storm, Using Orca) with custom screenshots; other paths fall back to a `summary` card with the favicon. Page-specific tags are injected by the Express SPA-fallback handler via an `OG_OVERRIDES` map — crawler bots and human visitors both receive the path-correct HTML, since crawlers don't execute JavaScript. Verified working on Bluesky via the cardyb extract endpoint.
 
@@ -36,6 +38,26 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 - **Styling:** Inline styles only (no CSS files), EB Garamond serif font
 - **License:** AGPL-3.0-only
 - **Repository:** github.com/orca-concepts/orca (public)
+
+---
+
+## Security Posture (May 23, 2026)
+
+**Production secrets** live only in Railway environment variables. They are not stored in any document, repository, or local file outside Railway. Each secret has a documented rotation procedure (in the off-repo operations runbook, not here, for the obvious reason).
+
+**Local development environment** (`backend/.env`) contains only local-dev-safe values:
+- `JWT_SECRET`: distinct from production (rotating production has no effect on local)
+- `DATABASE_URL`: points at the local Postgres instance only
+- `ORCID_CLIENT_ID` / `ORCID_CLIENT_SECRET`: removed. ORCID OAuth is not exercised in local dev; the `POST /api/auth/orcid/dev-connect` endpoint (404 in production) is used instead to link an ORCID iD without an OAuth call. The `verifyOrcidExists` step in `registerWithOrcid` is also skipped outside production.
+- `RESEND_API_KEY`: removed. `backend/src/utils/email.js` explicitly sets `resend = null` when the key is missing and all send functions early-return with a warning log. Emails are silently not sent in local dev.
+
+**Git ignore protection** is layered: root `.gitignore` excludes `.env`; `backend/.gitignore` adds defense-in-depth for the same exclusion at the backend folder level. The latter exists so that a stray `git add backend/.env` run from the wrong working directory still has a chance of being blocked.
+
+**Account access**: The Gmail account that owns Railway, Resend, ORCID, Cloudflare, and GitHub access has 2FA enabled.
+
+**R2 storage was retired** as part of this hardening pass. The R2 access key was revoked at Cloudflare, the bucket was deleted, and the `R2_*` env vars were removed from Railway. The codebase has no S3/R2 SDK imports, no `R2_*` references, no related dependencies in `package.json`, and no upload routes — verified by audit before retirement. R2 was originally provisioned for the pre-Phase-58 document-upload feature and survived the Phase 58 pivot as orphaned config.
+
+**Note on git history**: prior versions of this file referenced outside counsel by name; the current version does not. Older commits retain the reference. A history rewrite (`git filter-repo` + force-push) would be required to remove it. Decided not worth the risk and effort: the attorney-client relationship is not confidential and the reference is benign.
 
 ---
 
@@ -211,7 +233,7 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 | POST | `/delete-account` | Yes | Delete account (requires zero owned combos) |
 | GET | `/orcid/authorize-url` | Optional | ORCID OAuth URL (with optional `state` param to distinguish register vs link flows) |
 | POST | `/orcid/callback` | Yes | Exchange ORCID code for existing-account linking |
-| POST | `/orcid/disconnect` | Yes | Remove ORCID link |
+| POST | `/orcid/dev-connect` | Yes | **Dev-only.** Links an ORCID iD to the current account by writing it directly to the DB (no OAuth call). Returns 404 in production. Used for local testing without exercising the real ORCID OAuth flow. |
 
 ### Concepts (`/api/concepts`)
 | Method | Path | Auth | Description |
@@ -326,7 +348,7 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 - **VoteSetBar.jsx** — Vote set color swatches and filtering
 - **HiddenConceptsView.jsx** — Moderation review panel
 - **LoginModal.jsx** — Login/Register/Forgot password modal. **Phase 61c:** registration tab now shows "Sign up with ORCID" as Step 1 (no email/password fields until ORCID auth succeeds), then a Step 2 form with email (prefilled from ORCID-verified email if available), username, password, and ToS checkbox. The Twilio-based phone OTP signup was removed. Forgot-password sub-view replaced with email-based reset request (calls `/api/auth/forgot-password`, shows timing-safe confirmation message).
-- **ProfilePage.jsx** — User profile with ORCID, Privacy and Data section
+- **ProfilePage.jsx** — User profile with ORCID, Privacy and Data section. **Phase 62c:** The Connect/Disconnect ORCID conditional UI was removed along with its handlers (`handleConnectOrcid`, `handleDisconnectOrcid`) and the `disconnectConfirm` state. Since ORCID is required at registration, both branches were unreachable. The profile now passively displays the user's ORCID iD via `OrcidBadge`. The `isDev`-gated dev-connect input remains for local testing.
 - **DeleteAccountFlow.jsx** — Account deletion with superconcept transfer pre-check
 - **SidebarDndContext.jsx** — Drag-and-drop for sidebar reordering
 - **InfoPage.jsx** — Using orca page with comments
@@ -518,6 +540,18 @@ The Phase 59b ancestor walk in `GET /votes/me/all` is the inverse case — walki
 
 ---
 
+### Phase Transitions Can Leave Zombie Code (added Phase 62c)
+When a phase changes an architectural assumption — e.g., "ORCID is optional" → "ORCID is required" in Phase 61d/e — endpoints, UI elements, and code paths that depended on the previous assumption may survive in the codebase even though they are no longer reachable, valid, or correct. This has now happened twice:
+
+- **Phase 62a** cleaned up Phase-58-era zombie UI on the profile page (saved-tabs and annotation-related affordances that the Phase 58 pivot had silently invalidated).
+- **Phase 62c** removed the ORCID disconnect endpoint and UI, which Phase 41a had created when ORCID was optional and Phase 61d/e had silently invalidated when it added the `NOT NULL` constraint on `orcid_id`. The endpoint was broken (it attempted `UPDATE users SET orcid_id = NULL`, violating the constraint) and, even if it had worked, the defensive ORCID-present check at login would have permanently locked out any user who used it.
+
+The pattern is: a phase changes a constraint, schema, or invariant; previously-valid code paths that relied on the old invariant become invalid but compile and ship; they sit dormant until either (a) a user exercises them, (b) a developer notices during unrelated work, or (c) an architecture review surfaces them. The cost of leaving them is real — the disconnect endpoint would have produced a 500 error on first contact with any real user clicking the button.
+
+**Practice going forward:** when a phase changes an architectural assumption, search the codebase for previously-valid code paths that relied on the old assumption, not just the obvious ones the phase touches. Endpoints, UI buttons, conditional branches keyed on the now-invariant condition, and tests are all candidates. This is a class of debt distinct from "TODOs" and "tech debt" — it's silent invalidation rather than known imperfection, and it doesn't surface in normal review.
+
+---
+
 ## Phase 59 Completion Narrative
 
 Phase 59 added tunnel comments and unified the votes overlays.
@@ -630,9 +664,10 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Combo links endpoint missing addenda/ORCID (Phase 62b):** `GET /api/combos/:id/links` does not return `addenda[]` or `authorOrcidId` per link. ComboTabContent renders links with `readOnlyVote`, so the ORCID badge and addenda would be visible but the data isn't there. Low priority since combo link cards are a read-only aggregation view.
 - **Pre-existing: `POST /api/votes/add` broken (saved_tabs reference):** The `addVote` handler in `votesController.js` queries the dropped `saved_tabs` table (~line 101), causing a 500 on save-vote. Discovered during Phase 62b Level 1 testing. Not a 62b regression — predates this session.
 - **Deep-link concept tab label:** When opening a concept via `/concept/:id`, the tab label defaults to "Concept" because `handleOpenConceptTab` is called without a `conceptName`. The correct name loads after the API call, but the tab label isn't updated retroactively. Consider updating the tab label in `loadConcept` after the API response arrives.
-- **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field, ORCID disconnect) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away.
+- **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away. (Phase 62c removed the ORCID Connect/Disconnect flow from this surface — no longer applicable.)
 
 ### Forward Roadmap
+- ~~Phase 62c: removed dead ORCID disconnect endpoint and UI~~ **completed May 23, 2026**
 - ~~Phase 63a: favicon + page-specific Open Graph / Twitter Card tags~~ **completed May 23, 2026**
 - ~~Phase 62b: comment addenda + author ORCID + share links + deep-link navigation~~ **completed May 17, 2026**
 - ~~Phase 62a: profile page data-fetch fix + Phase-58-era UI cleanup~~ **completed May 16, 2026**

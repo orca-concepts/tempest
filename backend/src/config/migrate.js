@@ -1118,6 +1118,32 @@ const createTables = async () => {
         ON safe_browsing_rejections(url_hash);
     `);
 
+    // Phase 65b: Comment mentions (in-orca URL references indexed at write time)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS comment_mentions (
+        id SERIAL PRIMARY KEY,
+        source_type VARCHAR(32) NOT NULL,
+        source_id INTEGER NOT NULL,
+        target_type VARCHAR(16) NOT NULL,
+        target_id INTEGER NOT NULL,
+        target_path INTEGER[],
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT comment_mentions_source_type_check
+          CHECK (source_type IN ('concept_link_comment', 'concept_link_addendum',
+                                 'tunnel_link_comment', 'tunnel_link_addendum')),
+        CONSTRAINT comment_mentions_target_type_check
+          CHECK (target_type IN ('concept', 'superconcept', 'link', 'tunnel'))
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_comment_mentions_target
+        ON comment_mentions(target_type, target_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_comment_mentions_source
+        ON comment_mentions(source_type, source_id);
+    `);
+
     console.log('Database tables created/migrated successfully!');
   } catch (error) {
     await client.query('ROLLBACK');

@@ -1,4 +1,17 @@
 const pool = require('../config/database');
+const { parseMentions } = require('../utils/parseMentions');
+
+// Insert mention rows parsed from comment/addendum text.
+async function insertMentions(queryable, sourceType, sourceId, text) {
+  const mentions = parseMentions(text);
+  for (const m of mentions) {
+    await queryable.query(
+      `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [sourceType, sourceId, m.targetType, m.targetId, m.targetPath]
+    );
+  }
+}
 
 const tunnelController = {
   // GET /api/tunnels/:edgeId — get all tunnel links for an edge, grouped by attribute
@@ -211,6 +224,12 @@ const tunnelController = {
         [userId, reverseRow.id]
       );
 
+      // Parse and store mentions from the comment (both directions)
+      if (comment) {
+        await insertMentions(client, 'tunnel_link_comment', forwardRow.id, comment);
+        await insertMentions(client, 'tunnel_link_comment', reverseRow.id, comment);
+      }
+
       await client.query('COMMIT');
 
       res.json({
@@ -319,6 +338,9 @@ const tunnelController = {
          RETURNING id, body, created_at, author_id`,
         [tunnelLinkId, userId, trimmedBody]
       );
+
+      // Parse and store mentions from the addendum body
+      await insertMentions(pool, 'tunnel_link_addendum', result.rows[0].id, trimmedBody);
 
       res.json({ addendum: result.rows[0] });
     } catch (error) {

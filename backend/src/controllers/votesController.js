@@ -2,6 +2,20 @@ const pool = require('../config/database');
 const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
+const { parseMentions } = require('../utils/parseMentions');
+
+// Insert mention rows parsed from comment/addendum text.
+// Uses the provided queryable (pool or transaction client).
+async function insertMentions(queryable, sourceType, sourceId, text) {
+  const mentions = parseMentions(text);
+  for (const m of mentions) {
+    await queryable.query(
+      `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [sourceType, sourceId, m.targetType, m.targetId, m.targetPath]
+    );
+  }
+}
 
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
@@ -1626,6 +1640,11 @@ const votesController = {
         [userId, result.rows[0].id]
       );
 
+      // Parse and store mentions from the comment
+      if (trimmedComment) {
+        await insertMentions(pool, 'concept_link_comment', result.rows[0].id, trimmedComment);
+      }
+
       res.status(201).json({
         message: 'Web link added',
         webLink: {
@@ -2030,6 +2049,9 @@ const votesController = {
          RETURNING id, body, created_at, author_id`,
         [linkId, userId, trimmedBody]
       );
+
+      // Parse and store mentions from the addendum body
+      await insertMentions(pool, 'concept_link_addendum', result.rows[0].id, trimmedBody);
 
       res.json({ addendum: result.rows[0] });
     } catch (error) {
@@ -2500,6 +2522,16 @@ const votesController = {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      // Clean up mention rows for this link's comment and addenda
+      // (no FK cascade since comment_mentions has no FK by design)
+      await client.query(
+        `DELETE FROM comment_mentions
+         WHERE (source_type = 'concept_link_comment' AND source_id = $1)
+            OR (source_type = 'concept_link_addendum' AND source_id IN
+                (SELECT id FROM concept_link_addenda WHERE concept_link_id = $1))`,
+        [linkId]
+      );
 
       const result = await client.query(
         `DELETE FROM concept_links

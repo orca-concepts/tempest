@@ -23,6 +23,8 @@ const ConceptLinksPanel = ({
   const [newLinkComment, setNewLinkComment] = useState('');
   const [addLinkError, setAddLinkError] = useState(null);
   const [affirmed, setAffirmed] = useState(false);
+  const [unsafeUrl, setUnsafeUrl] = useState(false);
+  const [unsafeUrlValue, setUnsafeUrlValue] = useState('');
 
   // Title preview state
   const [titlePreviewLoading, setTitlePreviewLoading] = useState(false);
@@ -166,8 +168,14 @@ const ConceptLinksPanel = ({
         if (title) setNewLinkTitle(title);
         setTitlePreviewLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (controller.signal.aborted) return;
+        if (err.response?.status === 403 && err.response?.data?.code === 'unsafe_url') {
+          setUnsafeUrl(true);
+          setUnsafeUrlValue(trimmed);
+          setTitlePreviewLoading(false);
+          return;
+        }
         setTitlePreviewError(true);
         setTitlePreviewLoading(false);
       });
@@ -193,11 +201,19 @@ const ConceptLinksPanel = ({
       setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment(''); setShowAddLinkForm(false); setAffirmed(false);
       setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
       lastFetchedUrlRef.current = '';
-    } catch (err) { setAddLinkError(err.response?.data?.error || 'Failed to add link'); }
+    } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.code === 'unsafe_url') {
+        setUnsafeUrl(true);
+        setUnsafeUrlValue(trimmed);
+        return;
+      }
+      setAddLinkError(err.response?.data?.error || 'Failed to add link');
+    }
   };
   const handleCloseAddForm = () => {
     setShowAddLinkForm(false); setAddLinkError(null); setNewLinkUrl(''); setNewLinkTitle(''); setNewLinkComment('');
-    setAffirmed(false); setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
+    setAffirmed(false); setUnsafeUrl(false); setUnsafeUrlValue('');
+    setTitlePreviewResult(null); setTitlePreviewError(false); setTitlePreviewLoading(false);
     lastFetchedUrlRef.current = '';
     if (abortControllerRef.current) abortControllerRef.current.abort();
   };
@@ -234,7 +250,7 @@ const ConceptLinksPanel = ({
         <input
           type="text"
           value={newLinkUrl}
-          onChange={e => { setNewLinkUrl(e.target.value); setAddLinkError(null); }}
+          onChange={e => { setNewLinkUrl(e.target.value); setAddLinkError(null); if (unsafeUrl && e.target.value.trim() !== unsafeUrlValue) { setUnsafeUrl(false); setUnsafeUrlValue(''); } }}
           onBlur={() => fetchTitlePreview(newLinkUrl)}
           onPaste={e => {
             const pasted = e.clipboardData.getData('text');
@@ -246,13 +262,16 @@ const ConceptLinksPanel = ({
           style={styles.addLinkInput}
           autoFocus
         />
-        {titlePreviewLoading && (
+        {unsafeUrl && (
+          <div style={styles.unsafeUrlError}>This URL was flagged by Google Safe Browsing as potentially unsafe. It cannot be posted to Orca.</div>
+        )}
+        {!unsafeUrl && titlePreviewLoading && (
           <div style={styles.titlePreviewStatus}>Fetching title...</div>
         )}
-        {titlePreviewError && (
+        {!unsafeUrl && titlePreviewError && (
           <div style={styles.titlePreviewStatus}>Couldn't fetch title — you can enter one manually</div>
         )}
-        {titlePreviewResult && !titlePreviewLoading && (
+        {!unsafeUrl && titlePreviewResult && !titlePreviewLoading && (
           <div style={styles.titlePreviewBox}>{titlePreviewResult}</div>
         )}
         <input type="text" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} placeholder="Title (optional — auto-fetched if empty)" style={styles.addLinkInput} />
@@ -265,7 +284,7 @@ const ConceptLinksPanel = ({
           </span>
         </label>
         <div style={styles.commentEditButtons}>
-          <span onClick={affirmed ? handleAddLink : undefined} style={affirmed ? styles.commentSaveBtn : { ...styles.commentSaveBtn, opacity: 0.4, cursor: 'default' }}>Add</span>
+          <span onClick={affirmed && !unsafeUrl ? handleAddLink : undefined} style={affirmed && !unsafeUrl ? styles.commentSaveBtn : { ...styles.commentSaveBtn, opacity: 0.4, cursor: 'default' }}>Add</span>
           <span onClick={handleCloseAddForm} style={styles.commentCancelBtn}>Cancel</span>
         </div>
       </div>
@@ -364,6 +383,7 @@ const styles = {
   addLinkForm: { marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '6px' },
   addLinkInput: { width: '100%', fontFamily: '"EB Garamond", Georgia, serif', fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', outline: 'none', boxSizing: 'border-box' },
   addLinkError: { fontSize: '12px', color: '#c44' },
+  unsafeUrlError: { fontSize: '12px', color: '#c44', fontFamily: '"EB Garamond", Georgia, serif', backgroundColor: '#fdf0f0', padding: '8px 10px', borderRadius: '3px', lineHeight: 1.4 },
   commentTextarea: { width: '100%', fontFamily: '"EB Garamond", Georgia, serif', fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
   commentEditButtons: { display: 'flex', gap: '10px', marginTop: '4px' },
   commentSaveBtn: { fontSize: '12px', color: '#333', cursor: 'pointer', fontFamily: '"EB Garamond", Georgia, serif', border: '1px solid #e0d9cf', padding: '2px 10px', borderRadius: '3px', backgroundColor: '#faf9f6' },

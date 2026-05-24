@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
+const safeBrowsing = require('../utils/safeBrowsing');
 
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
@@ -1590,6 +1591,18 @@ const votesController = {
         return res.status(400).json({ error: 'Cannot add web links to a hidden concept' });
       }
 
+      // Google Safe Browsing check
+      const sbResult = await safeBrowsing.checkUrl(trimmedUrl);
+      if (!sbResult.safe) {
+        const urlHash = crypto.createHash('sha256').update(trimmedUrl.toLowerCase()).digest('hex');
+        await pool.query(
+          `INSERT INTO safe_browsing_rejections (attempted_by_user_id, url_hash, threat_types, source)
+           VALUES ($1, $2, $3, $4)`,
+          [userId, urlHash, sbResult.threats, 'add']
+        );
+        return res.status(403).json({ error: 'This URL was flagged by Google Safe Browsing and cannot be posted.', code: 'unsafe_url' });
+      }
+
       // If user didn't supply a title, auto-fetch from OG metadata (up to 5s)
       let resolvedTitle = title ? title.trim().substring(0, 255) : null;
       if (!resolvedTitle) {
@@ -2536,6 +2549,18 @@ const votesController = {
       }
     } catch {
       return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    // Google Safe Browsing check
+    const sbResult = await safeBrowsing.checkUrl(url);
+    if (!sbResult.safe) {
+      const urlHash = crypto.createHash('sha256').update(url.toLowerCase()).digest('hex');
+      await pool.query(
+        `INSERT INTO safe_browsing_rejections (attempted_by_user_id, url_hash, threat_types, source)
+         VALUES ($1, $2, $3, $4)`,
+        [req.user.userId, urlHash, sbResult.threats, 'preview']
+      );
+      return res.status(403).json({ error: 'This URL was flagged by Google Safe Browsing and cannot be posted.', code: 'unsafe_url' });
     }
 
     try {

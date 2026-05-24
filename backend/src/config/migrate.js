@@ -1096,6 +1096,28 @@ const createTables = async () => {
         ON tunnel_link_addenda(tunnel_link_id);
     `);
 
+    // ============================================================
+    // Phase 64a: Safe Browsing rejection audit log
+    // ============================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS safe_browsing_rejections (
+        id SERIAL PRIMARY KEY,
+        attempted_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        url_hash CHAR(64) NOT NULL,
+        threat_types TEXT[] NOT NULL,
+        source VARCHAR(16) NOT NULL,
+        rejected_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_safe_browsing_rejections_user
+        ON safe_browsing_rejections(attempted_by_user_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_safe_browsing_rejections_hash
+        ON safe_browsing_rejections(url_hash);
+    `);
+
     console.log('Database tables created/migrated successfully!');
   } catch (error) {
     await client.query('ROLLBACK');

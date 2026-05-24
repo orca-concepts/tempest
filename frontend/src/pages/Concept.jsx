@@ -210,6 +210,26 @@ const Concept = ({
     }
   };
 
+  // Phase 65a: Read URL fragment (#link-:id / #tunnel-:id) after concept loads
+  useEffect(() => {
+    if (!concept) return;
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const linkFragMatch = hash.match(/^#link-(\d+)$/);
+    const tunnelFragMatch = hash.match(/^#tunnel-(\d+)$/);
+
+    if (linkFragMatch) {
+      // No view mode change — ConceptLinksPanel renders alongside any view.
+    } else if (tunnelFragMatch) {
+      // View mode switch is handled upstream by handleOpenConceptTab's
+      // viewMode arg; this branch is retained for manually-pasted fragment URLs.
+    }
+
+    // Clear the fragment so it doesn't retrigger on rerender.
+    navigate(window.location.pathname + window.location.search, { replace: true });
+  }, [concept?.id]);
+
   // ─── Navigation helpers ──────────────────────────────────
 
   // Navigate within this tab to a new concept
@@ -368,7 +388,7 @@ const Concept = ({
 
   const handleShareLink = async () => {
     const pathStr = (path || []).slice(0, -1).join(',');
-    const url = `${window.location.origin}/concept/${effectiveConceptId}${pathStr ? '?path=' + pathStr : ''}`;
+    const url = `${window.location.origin}/concept/${effectiveConceptId}?path=${pathStr}`;
     try {
       await navigator.clipboard.writeText(url);
       setShareLinkCopied(true);

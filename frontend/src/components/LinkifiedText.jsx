@@ -5,6 +5,8 @@ import React, { useState, useEffect, useRef } from 'react';
  * pattern defined in backend/src/utils/inOrcaLinks.js. They are not literally
  * shared at build time, but must be kept in sync manually.
  */
+// Note: [\\d,]* intentionally allows zero characters after ?path= — root concepts
+// have empty graph_path and their share URLs emit ?path= with no value.
 const IN_ORCA_LINK_PATTERN =
   '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|superconcept|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
 

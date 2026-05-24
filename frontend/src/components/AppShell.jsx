@@ -222,7 +222,7 @@ const AppShell = () => {
       tunnelsAPI.getTunnelLocation(tunnelLinkId)
         .then(({ data }) => {
           setPendingScrollTunnelLinkId(tunnelLinkId);
-          handleOpenConceptTab(data.conceptId, data.parentPath);
+          handleOpenConceptTab(data.conceptId, data.parentPath, undefined, undefined, undefined, 'tunnel');
           navigate('/', { replace: true });
         })
         .catch(() => {

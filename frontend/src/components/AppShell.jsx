@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { votesAPI, combosAPI, tunnelsAPI } from '../services/api';
@@ -29,6 +29,12 @@ const AppShell = () => {
   const { logout, logoutEverywhere, user, isGuest, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Phase 65a-fix-2: suppress default tab activation when the URL is a deep-link.
+  // Mount-only — intentionally not reactive (loadAllTabs runs once at mount).
+  const hasDeepLinkInUrl = useMemo(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    return /^\/(concept|superconcept|link|tunnel)\/\d+$/.test(location.pathname);
+  }, []);
 
   // Phase 30g: Info page detection and header nav
   const INFO_SLUGS = ['using-orca', 'the-storm'];
@@ -361,10 +367,12 @@ const AppShell = () => {
       setOwnedCombos(myCombosRes.data.combos || []);
       setSidebarItems(sidebarRes.data.items || []);
 
-      // Set active tab: prefer first graph tab, then first corpus tab
-      if (loadedGraph.length > 0) {
+      // Set active tab: prefer first graph tab, then first corpus tab.
+      // Skip when a deep-link is present — the deep-link useEffect will
+      // activate the correct tab once its (possibly async) resolution completes.
+      if (loadedGraph.length > 0 && !hasDeepLinkInUrl) {
         setActiveTab({ type: 'graph', id: loadedGraph[0].id });
-      } else {
+      } else if (loadedGraph.length === 0) {
         // No tabs at all — will auto-create a default graph tab
         createDefaultGraphTab();
       }

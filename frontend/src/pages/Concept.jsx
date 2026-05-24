@@ -30,6 +30,8 @@ const Concept = ({
   onComboEdgeAdded,
   pendingScrollLinkId,
   onPendingScrollLinkConsumed,
+  pendingScrollTunnelLinkId,
+  onPendingScrollTunnelLinkConsumed,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -808,6 +810,8 @@ const Concept = ({
                 isGuest={isGuest}
                 onNavigate={handleTunnelNavigate}
                 onOpenNewTab={handleOpenNewTab}
+                pendingScrollTunnelLinkId={pendingScrollTunnelLinkId}
+                onPendingScrollTunnelLinkConsumed={onPendingScrollTunnelLinkConsumed}
               />
             ) : (
               <FlipView

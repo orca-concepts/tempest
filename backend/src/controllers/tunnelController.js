@@ -326,6 +326,37 @@ const tunnelController = {
       res.status(500).json({ error: 'Internal server error' });
     }
   },
+
+  // GET /api/tunnels/:tunnelLinkId/location — resolve a tunnel link ID to its concept + path
+  getTunnelLocation: async (req, res) => {
+    const tunnelLinkId = parseInt(req.params.tunnelLinkId, 10);
+    if (!Number.isFinite(tunnelLinkId)) return res.status(404).json({ error: 'Not found' });
+
+    try {
+      const result = await pool.query(
+        `SELECT tl.id AS tunnel_link_id, tl.origin_edge_id, e.child_id AS concept_id, e.graph_path
+         FROM tunnel_links tl
+         JOIN edges e ON tl.origin_edge_id = e.id
+         WHERE tl.id = $1
+           AND e.legal_hold = false
+           AND e.is_hidden = false`,
+        [tunnelLinkId]
+      );
+
+      if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+
+      const row = result.rows[0];
+      return res.json({
+        tunnelLinkId: row.tunnel_link_id,
+        edgeId: row.origin_edge_id,
+        conceptId: row.concept_id,
+        parentPath: row.graph_path
+      });
+    } catch (err) {
+      console.error('getTunnelLocation error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
 };
 
 module.exports = tunnelController;

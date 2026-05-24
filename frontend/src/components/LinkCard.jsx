@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
-import ClampedText from './ClampedText';
+import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
 import { votesAPI } from '../services/api';
 
@@ -38,6 +38,7 @@ const LinkCard = ({
   const [addendumBody, setAddendumBody] = useState('');
   const [addendumError, setAddendumError] = useState(null);
   const [addendumSubmitting, setAddendumSubmitting] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const iData = instanceData || {};
   const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
@@ -112,7 +113,7 @@ const LinkCard = ({
       {link.title && <div style={s.url}>{link.url}</div>}
       {link.comment && (
         <div style={s.commentBlock}>
-          <ClampedText text={link.comment} lines={3} style={s.commentText} />
+          <LinkifiedText text={link.comment} lines={3} style={s.commentText} />
           <span style={s.commentMeta}>{link.addedByUsername}</span>
         </div>
       )}
@@ -121,7 +122,7 @@ const LinkCard = ({
           {link.addenda.map((a) => (
             <div key={a.id} style={s.addendumItem}>
               <div style={s.addendumHeader}>Addendum — {new Date(a.createdAt).toLocaleString()}</div>
-              <ClampedText text={a.body} lines={3} style={s.commentText} />
+              <LinkifiedText text={a.body} lines={3} style={s.commentText} />
             </div>
           ))}
         </div>
@@ -136,6 +137,7 @@ const LinkCard = ({
         )}
         <span style={s.meta}>
           {link.addedByUsername}{link.authorOrcidId && <OrcidBadge orcidId={link.authorOrcidId} />}
+          <span onClick={e => { e.stopPropagation(); const url = `${window.location.origin}/link/${link.id}`; navigator.clipboard.writeText(url).then(() => { setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); }).catch(() => {}); }} style={s.editBtn}>{shareCopied ? 'Copied!' : 'Share'}</span>
           {!readOnlyVote && isCreator && <span onClick={e => { e.stopPropagation(); setShowAddendumModal(true); setAddendumError(null); setAddendumBody(''); }} style={s.editBtn}>Add addendum</span>}
           {!readOnlyVote && isCreator && conceptId && <span onClick={e => { e.stopPropagation(); setShowCopyPicker(true); }} style={s.editBtn}>Copy</span>}
           {!readOnlyVote && isCreator && <span onClick={e => { e.stopPropagation(); setShowRemoveModal(true); setRemoveError(null); }} style={s.editBtn}>Remove</span>}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { conceptsAPI, tunnelsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import ClampedText from './ClampedText';
+import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
 
 const TunnelView = ({
@@ -11,6 +11,8 @@ const TunnelView = ({
   isGuest = false,
   onNavigate,
   onOpenNewTab,
+  pendingScrollTunnelLinkId,
+  onPendingScrollTunnelLinkConsumed,
 }) => {
   const { user } = useAuth();
   const [tunnelData, setTunnelData] = useState({});
@@ -26,6 +28,7 @@ const TunnelView = ({
   const [columnFeedback, setColumnFeedback] = useState({}); // attributeId -> message
   const [tunnelComment, setTunnelComment] = useState(''); // comment for the confirmation box
   const searchTimers = useRef({});
+  const tunnelCardRefs = useRef({});
 
   // Right-click context menu
   const [contextMenu, setContextMenu] = useState(null); // { x, y, card }
@@ -50,6 +53,21 @@ const TunnelView = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Pending scroll to a specific tunnel card
+  useEffect(() => {
+    if (!pendingScrollTunnelLinkId || loading) return;
+    const timer = setTimeout(() => {
+      const el = tunnelCardRefs.current[pendingScrollTunnelLinkId];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.backgroundColor = '#fffbcc';
+        setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
+      }
+      if (onPendingScrollTunnelLinkConsumed) onPendingScrollTunnelLinkConsumed();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pendingScrollTunnelLinkId, loading]);
 
   // Close context menu on outside click or Escape
   useEffect(() => {
@@ -409,6 +427,7 @@ const TunnelView = ({
                       onClick={handleCardClick}
                       onRightClick={handleCardRightClick}
                       onAddendumSuccess={loadData}
+                      cardRef={el => { tunnelCardRefs.current[card.tunnelLinkId] = el; }}
                     />
                   ))}
                 </div>
@@ -453,10 +472,11 @@ const TunnelView = ({
 };
 
 // Separate card component to keep things clean
-const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick, onAddendumSuccess }) => {
+const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick, onAddendumSuccess, cardRef }) => {
   const pathDisplay = (card.pathNames || []).join(' \u2192 ');
   const isCreator = user && card.createdByUserId === user.id;
   const [showAddendumModal, setShowAddendumModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [addendumBody, setAddendumBody] = useState('');
   const [addendumError, setAddendumError] = useState(null);
   const [addendumSubmitting, setAddendumSubmitting] = useState(false);
@@ -485,6 +505,7 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
 
   return (
     <div
+      ref={cardRef}
       style={styles.card}
       onContextMenu={(e) => onRightClick(e, card)}
     >
@@ -507,7 +528,7 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
       </div>
       {/* Comment */}
       {card.comment && (
-        <ClampedText text={card.comment} lines={3} style={styles.cardComment} />
+        <LinkifiedText text={card.comment} lines={3} style={styles.cardComment} />
       )}
       {/* Addenda */}
       {card.addenda && card.addenda.length > 0 && (
@@ -515,7 +536,7 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
           {card.addenda.map((a) => (
             <div key={a.id} style={styles.addendumItem}>
               <div style={styles.addendumHeader}>Addendum — {new Date(a.createdAt).toLocaleString()}</div>
-              <ClampedText text={a.body} lines={3} style={styles.cardComment} />
+              <LinkifiedText text={a.body} lines={3} style={styles.cardComment} />
             </div>
           ))}
         </div>
@@ -538,6 +559,12 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
         </button>
         <span style={styles.saveVoteCount} title="Save votes on this concept">
           ▲ {card.saveVoteCount}
+        </span>
+        <span
+          onClick={(e) => { e.stopPropagation(); const url = `${window.location.origin}/tunnel/${card.tunnelLinkId}`; navigator.clipboard.writeText(url).then(() => { setShareCopied(true); setTimeout(() => setShareCopied(false), 2000); }).catch(() => {}); }}
+          style={styles.addendumBtn}
+        >
+          {shareCopied ? 'Copied!' : 'Share'}
         </span>
         {isCreator && (
           <span

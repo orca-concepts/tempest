@@ -27,6 +27,7 @@ router.get('/web-links/by-url', optionalAuth, votesController.getWebLinksByUrl);
 router.get('/web-links/all/:conceptId', optionalAuth, votesController.getAllWebLinksForConcept);
 router.get('/web-links/preview-title', authenticateToken, votesController.previewTitle); // Phase 60a — must be before :edgeId
 router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVotes); // Phase 58d-2 — must be before :edgeId
+router.get('/web-links/:linkId/location', optionalAuth, votesController.getWebLinkLocation); // Phase 65a — must be before :edgeId
 router.get('/web-links/:edgeId', optionalAuth, votesController.getWebLinks);
 router.post('/web-links/add', authenticateToken, webLinkAddLimiter, votesController.addWebLink);
 router.post('/web-links/copy', authenticateToken, votesController.copyWebLink);

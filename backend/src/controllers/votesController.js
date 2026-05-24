@@ -2571,6 +2571,38 @@ const votesController = {
     }
   },
 
+  // GET /api/votes/web-links/:linkId/location — resolve a link ID to its concept + path
+  getWebLinkLocation: async (req, res) => {
+    const linkId = parseInt(req.params.linkId, 10);
+    if (!Number.isFinite(linkId)) return res.status(404).json({ error: 'Not found' });
+
+    try {
+      const result = await pool.query(
+        `SELECT cl.id AS link_id, cl.edge_id, e.child_id AS concept_id, e.graph_path
+         FROM concept_links cl
+         JOIN edges e ON cl.edge_id = e.id
+         WHERE cl.id = $1
+           AND cl.legal_hold = false
+           AND e.legal_hold = false
+           AND e.is_hidden = false`,
+        [linkId]
+      );
+
+      if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+
+      const row = result.rows[0];
+      return res.json({
+        linkId: row.link_id,
+        edgeId: row.edge_id,
+        conceptId: row.concept_id,
+        parentPath: row.graph_path
+      });
+    } catch (err) {
+      console.error('getWebLinkLocation error:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
 };
 
 module.exports = votesController;

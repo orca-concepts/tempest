@@ -4,6 +4,9 @@ const authenticateToken = require('../middleware/auth');
 const optionalAuth = authenticateToken.optionalAuth;
 const tunnelController = require('../controllers/tunnelController');
 
+// Phase 65a: resolve tunnel link to its concept + path (guest-accessible) — must be before :edgeId
+router.get('/:tunnelLinkId/location', optionalAuth, tunnelController.getTunnelLocation);
+
 // Get tunnel links for an edge (guest-accessible)
 router.get('/:edgeId', optionalAuth, tunnelController.getTunnelLinks);
 

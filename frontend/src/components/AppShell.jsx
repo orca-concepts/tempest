@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { votesAPI, combosAPI } from '../services/api';
+import { votesAPI, combosAPI, tunnelsAPI } from '../services/api';
 import { arrayMove } from '@dnd-kit/sortable';
 import Root from '../pages/Root';
 import Concept from '../pages/Concept';
@@ -117,6 +117,17 @@ const AppShell = () => {
   // Phase 58d: Pending scroll-to-link after cross-concept navigation
   const [pendingScrollLinkId, setPendingScrollLinkId] = useState(null);
 
+  // Phase 65a: Pending scroll-to-tunnel-link
+  const [pendingScrollTunnelLinkId, setPendingScrollTunnelLinkId] = useState(null);
+
+  // Phase 65a: Toast for unavailable link/tunnel share URLs
+  const [unavailableLinkToast, setUnavailableLinkToast] = useState(false);
+  useEffect(() => {
+    if (!unavailableLinkToast) return;
+    const timer = setTimeout(() => setUnavailableLinkToast(false), 4000);
+    return () => clearTimeout(timer);
+  }, [unavailableLinkToast]);
+
   // Phase 12b: Sidebar collapse state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -178,6 +189,41 @@ const AppShell = () => {
         handleSubscribeToCombo(comboId, '');
       }
       navigate('/', { replace: true });
+      return;
+    }
+
+    // Phase 65a: /link/:id — resolve to concept page with fragment
+    const linkMatch = location.pathname.match(/^\/link\/(\d+)$/);
+    if (linkMatch) {
+      const linkId = parseInt(linkMatch[1], 10);
+      votesAPI.getWebLinkLocation(linkId)
+        .then(({ data }) => {
+          setPendingScrollLinkId(linkId);
+          handleOpenConceptTab(data.conceptId, data.parentPath);
+          navigate('/', { replace: true });
+        })
+        .catch(() => {
+          setUnavailableLinkToast(true);
+          navigate('/', { replace: true });
+        });
+      return;
+    }
+
+    // Phase 65a: /tunnel/:id — resolve to concept page with tunnel view
+    const tunnelMatch = location.pathname.match(/^\/tunnel\/(\d+)$/);
+    if (tunnelMatch) {
+      const tunnelLinkId = parseInt(tunnelMatch[1], 10);
+      tunnelsAPI.getTunnelLocation(tunnelLinkId)
+        .then(({ data }) => {
+          setPendingScrollTunnelLinkId(tunnelLinkId);
+          handleOpenConceptTab(data.conceptId, data.parentPath);
+          navigate('/', { replace: true });
+        })
+        .catch(() => {
+          setUnavailableLinkToast(true);
+          navigate('/', { replace: true });
+        });
+      return;
     }
   }, [loading, authLoading, location.pathname]);
 
@@ -1220,7 +1266,10 @@ const AppShell = () => {
         </div>
       </header>
 
-
+      {/* Phase 65a: Unavailable link toast */}
+      {unavailableLinkToast && (
+        <div style={styles.unavailableLinkToast}>That link is no longer available.</div>
+      )}
 
       {/* Phase 30g: Info pages replace normal layout */}
       {/* Legal pages also replace normal layout */}
@@ -1456,6 +1505,8 @@ const AppShell = () => {
                         onComboEdgeAdded={() => setComboRefreshKey(k => k + 1)}
                         pendingScrollLinkId={isActive ? pendingScrollLinkId : null}
                         onPendingScrollLinkConsumed={() => setPendingScrollLinkId(null)}
+                        pendingScrollTunnelLinkId={isActive ? pendingScrollTunnelLinkId : null}
+                        onPendingScrollTunnelLinkConsumed={() => setPendingScrollTunnelLinkId(null)}
                       />
                     )}
                   </div>
@@ -1923,6 +1974,15 @@ const styles = {
     fontSize: '16px',
     color: '#666',
     fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  unavailableLinkToast: {
+    padding: '10px 20px',
+    backgroundColor: '#f5f0ea',
+    borderBottom: '1px solid #d4d0c8',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#555',
+    textAlign: 'center',
   },
 };
 

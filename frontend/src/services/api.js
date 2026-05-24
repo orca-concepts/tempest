@@ -247,6 +247,9 @@ export const votesAPI = {
 
   getMyLinkVotes: () =>
     api.get('/votes/web-links/votes/me'),
+
+  getWebLinkLocation: (linkId) =>
+    api.get(`/votes/web-links/${linkId}/location`),
 };
 
 // Moderation endpoints (Phase 16a)
@@ -348,6 +351,9 @@ export const tunnelsAPI = {
 
   addTunnelLinkAddendum: (tunnelLinkId, body) =>
     api.post(`/tunnels/${tunnelLinkId}/addenda`, { body }),
+
+  getTunnelLocation: (tunnelLinkId) =>
+    api.get(`/tunnels/${tunnelLinkId}/location`),
 };
 
 // Phase 41a: Users endpoints

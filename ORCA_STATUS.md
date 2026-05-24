@@ -1,7 +1,7 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** May 23, 2026
-**Current Status:** Phase 62c complete. Removed dead ORCID disconnect endpoint and UI (zombie code from Phase 41a, invalidated by Phase 61d/e's ORCID-required design). Same-day security posture hardening: rotated production Resend, ORCID, and JWT secrets; retired R2 entirely (credentials revoked, bucket deleted, env vars removed); added `backend/.gitignore` as defense-in-depth; removed unused production secrets from local `backend/.env`. Phase 63a (favicon + page-specific Open Graph / Twitter Card preview tags) remains live.
+**Last Updated:** May 24, 2026
+**Current Status:** Phase 64a complete. Added Google Safe Browsing v4 check at URL submission and preview time. Malicious URLs (malware, phishing, unwanted software, potentially harmful applications) are rejected at `POST /web-links/add` and `GET /web-links/preview-title` with a 403 + `code: 'unsafe_url'`. New `safe_browsing_rejections` audit table stores sha256 hash + threat types only (no plaintext URLs), modeled on `link_removal_log`. Utility follows the fail-open never-throws contract of `email.js` and `orcid.js` — missing API key in local dev produces a startup warning and allows all URLs. Phase 62c (zombie ORCID disconnect cleanup) and Phase 63a (favicon + page-specific OG/Twitter Card preview tags) remain live.
 
 ---
 
@@ -23,6 +23,8 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 
 **Phase 63a (May 2026):** Added favicon and Open Graph / Twitter Card metadata for social media link previews. The favicon is an SVG of a lowercase 'o' in Georgia serif on an off-white `#FAF9F6` tile. Three pages have dedicated `summary_large_image` preview cards (home, The Storm, Using Orca) with custom screenshots; other paths fall back to a `summary` card with the favicon. Page-specific tags are injected by the Express SPA-fallback handler via an `OG_OVERRIDES` map — crawler bots and human visitors both receive the path-correct HTML, since crawlers don't execute JavaScript. Verified working on Bluesky via the cardyb extract endpoint.
 
+**Phase 64a (May 24, 2026):** Added Google Safe Browsing v4 URL safety check. The check runs at two existing call sites: `POST /api/votes/web-links/add` (security boundary, before INSERT) and `GET /api/votes/web-links/preview-title` (early feedback during the add-link form). Flagged URLs are rejected with `403` and a machine-readable `code: 'unsafe_url'`. Threat categories checked: MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION. A sparse `safe_browsing_rejections` audit table records sha256 of URL, threat types, source ('add' vs 'preview'), and attempting user — modeled on `link_removal_log`. The utility follows the established fail-open never-throws contract: missing key, timeouts, network failures all return `{ safe: true, threats: [] }` with a warning log. Local dev runs without the key (warning at startup); production has the key set in Railway. This replaces the previously-considered "domain allowlist" approach — the allowlist was rejected as too restrictive for cross-disciplinary research (Phase 60a) and as insufficient defense against actually-malicious URLs (which Safe Browsing addresses directly).
+
 **Current state:** Site is live at orcaconcepts.org. Railway attached, domain connected. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
 
 **Key files:** This file (`ORCA_STATUS.md`) is the canonical technical reference. `ORCA_HISTORY.md` has completed phase narratives through Phase 58. `CLAUDE.md` has conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
@@ -41,15 +43,16 @@ Orca is an open-source (AGPL v3) collaborative action ontology platform for acad
 
 ---
 
-## Security Posture (May 23, 2026)
+## Security Posture (May 24, 2026)
 
-**Production secrets** live only in Railway environment variables. They are not stored in any document, repository, or local file outside Railway. Each secret has a documented rotation procedure (in the off-repo operations runbook, not here, for the obvious reason).
+**Production secrets** live only in Railway environment variables. They are not stored in any document, repository, or local file outside Railway. Each secret has a documented rotation procedure (in the off-repo operations runbook, not here, for the obvious reason). Current production keys: `JWT_SECRET`, `DATABASE_URL`, `ORCID_CLIENT_ID`, `ORCID_CLIENT_SECRET`, `RESEND_API_KEY`, `GOOGLE_SAFE_BROWSING_API_KEY` (Phase 64a). The Safe Browsing key is restricted at Google Cloud Console to the Safe Browsing API only — even if exfiltrated, it cannot be used to incur cost on other GCP services.
 
 **Local development environment** (`backend/.env`) contains only local-dev-safe values:
 - `JWT_SECRET`: distinct from production (rotating production has no effect on local)
 - `DATABASE_URL`: points at the local Postgres instance only
 - `ORCID_CLIENT_ID` / `ORCID_CLIENT_SECRET`: removed. ORCID OAuth is not exercised in local dev; the `POST /api/auth/orcid/dev-connect` endpoint (404 in production) is used instead to link an ORCID iD without an OAuth call. The `verifyOrcidExists` step in `registerWithOrcid` is also skipped outside production.
 - `RESEND_API_KEY`: removed. `backend/src/utils/email.js` explicitly sets `resend = null` when the key is missing and all send functions early-return with a warning log. Emails are silently not sent in local dev.
+- `GOOGLE_SAFE_BROWSING_API_KEY`: absent. `backend/src/utils/safeBrowsing.js` logs a single startup warning and `checkUrl` returns `{ safe: true, threats: [] }` on every call. URL safety is not checked in local dev; this is acceptable because malicious-link testing happens against production using Google's published test URL (`http://malware.testing.google.test/testing/malware/`).
 
 **Git ignore protection** is layered: root `.gitignore` excludes `.env`; `backend/.gitignore` adds defense-in-depth for the same exclusion at the backend folder level. The latter exists so that a stray `git add backend/.env` run from the wrong working directory still has a chance of being blocked.
 
@@ -208,6 +211,8 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 **dmca_strikes** — Per-user DMCA strike record. Partial index on active (uncleared) strikes.
 **link_removal_log** — Sparse audit trail for user-initiated link removals (Phase 60a). Records `removed_link_id` (no FK, the link is gone), `removed_by_user_id` (FK users, SET NULL), `original_edge_id` (no FK), `original_url_hash` (sha256 of lowercased URL, CHAR(64)), `removed_at`. No plaintext URL, title, or comment is preserved — this is intentional. Indexed on `removed_by_user_id` and `original_url_hash` for forensic lookup ("did user X ever post URL Y?").
 
+**safe_browsing_rejections** — Sparse audit trail for URL submissions rejected by Google Safe Browsing (Phase 64a). Records `id`, `attempted_by_user_id` (FK users, SET NULL), `url_hash` (sha256 of lowercased URL, CHAR(64), NOT NULL), `threat_types` (TEXT[] NOT NULL — array of Safe Browsing categories like `MALWARE`, `SOCIAL_ENGINEERING`), `source` (VARCHAR(16) NOT NULL — `'add'` or `'preview'`, distinguishes the security-boundary rejection from the preview-time rejection), `rejected_at`. Indexed on `attempted_by_user_id` and `url_hash`. No plaintext URL preserved. Modeled on `link_removal_log`. Same forensic question is answerable: "did user X ever attempt to post URL Y?" — extends to "from which call site, and what was the threat category?".
+
 ### Infrastructure Tables
 
 **rate_limit_counters** — Postgres-backed rate limit store (SMS, global safety net).
@@ -255,10 +260,10 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 |--------|------|------|-------------|
 | GET | `/web-links/by-url` | Guest | Cross-concept URL search |
 | GET | `/web-links/all/:conceptId` | Guest | All links across contexts. Each link includes `addenda[]` and `authorOrcidId` (Phase 62b). |
-| GET | `/web-links/preview-title` | Yes | **NEW Phase 60a.** Title preview for the add-link form. Query: `?url=...`. Validates well-formed http(s) URL (400 on malformed). Reuses the same OG-fetch utility as `POST /web-links/add` with SSRF protection (DNS resolve + private IP block) + 5s timeout. Returns `{ title: string }` (may be empty if no OG title found; SSRF-blocked URLs also return empty title — see "OG Title Auto-Fetch" AD for the rationale). |
+| GET | `/web-links/preview-title` | Yes | **NEW Phase 60a.** Title preview for the add-link form. Query: `?url=...`. Validates well-formed http(s) URL (400 on malformed). **Phase 64a:** runs Google Safe Browsing check BEFORE OG-fetch; rejects unsafe URLs with `403 { code: 'unsafe_url' }` and logs a `safe_browsing_rejections` row (`source: 'preview'`). On safe URLs, reuses the same OG-fetch utility as `POST /web-links/add` with SSRF protection (DNS resolve + private IP block) + 5s timeout. Returns `{ title: string }` (may be empty if no OG title found; SSRF-blocked URLs also return empty title — see "OG Title Auto-Fetch" AD for the rationale). |
 | GET | `/web-links/votes/me` | Yes | User's upvoted links (legacy, retained for rollback safety post-59b) |
 | GET | `/web-links/:edgeId` | Guest | Links for edge (?sort=top/new). Each link includes `addenda[]` and `authorOrcidId` (Phase 62b). |
-| POST | `/web-links/add` | Yes | Add link (OG title auto-fetch) |
+| POST | `/web-links/add` | Yes | Add link (OG title auto-fetch). **Phase 64a:** runs Google Safe Browsing check after URL validation and before OG-fetch + INSERT; rejects unsafe URLs with `403 { code: 'unsafe_url' }` and logs a `safe_browsing_rejections` row (`source: 'add'`). |
 | POST | `/web-links/remove` | Yes | **RESTORED Phase 60a.** Hard-delete a self-authored link. Body: `{ linkId }`. Single SQL statement checks `added_by = req.user.userId AND legal_hold = false` to close the race against admin legal-hold-set. 403 with generic error on any failure (no information leakage). On success: row deleted, votes cascade, sparse record written to `link_removal_log`. This is the new-semantics version distinct from the version eliminated in commit `0b382c4`. |
 | POST | `/web-links/copy` | Yes | Copy link to a descendant edge (adder only, same root graph, descendant edge required). Returns new row; original untouched. |
 | POST | `/web-links/:linkId/addenda` | Yes | **NEW Phase 62b.** Add an addendum to a self-authored link. Body: `{ body }`. 2000 char limit. Atomic `added_by` + `legal_hold` check. Replaces the deleted `PUT /web-links/:linkId/comment` endpoint. |
@@ -316,6 +321,7 @@ POST `/legal-removal`, GET `/legal/removals`, POST `/legal/removals/:id/mark-not
 
 - **`backend/src/utils/email.js`** (Phase 61a) — Resend wrapper. Exports `sendVerificationEmail`, `sendWelcomeEmail`, `sendPasswordResetEmail`. Each function NEVER throws — returns `{ success, error }`. Fails loudly at module load if `RESEND_API_KEY` is missing in production; warns in dev. Templates live in `backend/src/email-templates/{verify-email,welcome,reset-password}.html`.
 - **`backend/src/utils/orcid.js`** (Phase 61b) — Shared ORCID API utility. Exports `exchangeOrcidCode`, `fetchOrcidEmails`, `verifyOrcidExists`. Used by both `POST /api/auth/orcid/callback` (existing-account linking) and `POST /api/auth/orcid/begin-registration` (new-account registration). All calls have 5-second timeouts.
+- **`backend/src/utils/safeBrowsing.js`** (Phase 64a) — Google Safe Browsing v4 wrapper. Exports one function: `async function checkUrl(url) → { safe: boolean, threats: string[] }`. NEVER throws — fail-open on any error (returns `{ safe: true, threats: [] }` with a warning log). 5-second timeout via `AbortController`. Single startup warning when `GOOGLE_SAFE_BROWSING_API_KEY` is missing. Sends `clientId: 'orca-concepts'`, all four threat types (MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION), `ANY_PLATFORM`. Called from `webLinksController.addWebLink` and `webLinksController.previewTitle`. Same contract shape as `email.js` and `orcid.js`.
 - **`backend/scripts/test-email.js`** (Phase 61a) — CLI script for manually testing Resend integration. Usage: `node scripts/test-email.js <email-address>`.
 - **`backend/scripts/manual-verify-email.js`** (Phase 61 follow-up fix) — CLI admin tool to manually mark a user's `email_verified_at` and send their welcome email. Created during the verify-URL bug postmortem; useful for any future case where email delivery leaves a user in a stuck state. Usage: `node scripts/manual-verify-email.js <user-id>`.
 
@@ -431,6 +437,30 @@ The Votes overlay shows the user's current votes and provides click-to-navigate,
 Server-side fetching with SSRF protections (DNS resolve + private IP block). 5s timeout. Falls back to URL-as-title.
 
 The OG-fetch utility (`fetchOgTitle`) is designed to **never throw** — it returns `null` (or empty string at the endpoint layer) on any failure, including SSRF blocks, timeouts, no-OG-tag pages, and network errors. This is intentional because both call sites (`POST /web-links/add` and `GET /web-links/preview-title`, Phase 60a) need to handle "no title available" gracefully without distinguishing the cause. The consequence: a user attempting to preview a private-IP URL will see "Couldn't fetch title — you can enter one manually" instead of a specific SSRF error. The SSRF protection IS still active (no request leaves the server); the user-facing message is just less specific. Acceptable because the threat model does not include accidental private-IP URLs from researchers, and distinguishing failure modes would either (a) change the utility's contract in a way that affects `addWebLink`, or (b) require duplicating SSRF checks at the controller layer.
+
+### Safe Browsing Check at URL Submission (Phase 64a)
+
+Every URL submitted to `concept_links` is checked against Google Safe Browsing v4 before being accepted. The check runs at two call sites:
+1. `GET /web-links/preview-title` — early feedback during the add-link form. Runs before the OG-fetch.
+2. `POST /web-links/add` — security boundary. Runs after URL validation, before OG-fetch and INSERT. Defense-in-depth: catches URLs flagged between preview and submit (unlikely but possible if Safe Browsing's database updated mid-session).
+
+**Threat categories checked:** MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION. Any match rejects the URL.
+
+**Response on rejection:** `403 { error: '...', code: 'unsafe_url' }`. The `code` is the machine-readable contract; the `error` string is human-readable but should not be relied on by frontend logic. Frontend distinguishes this from other 403s and displays a blocking error that disables Submit (cannot be overridden by the affirmation checkbox).
+
+**Fail-open philosophy:** Safe Browsing's API being unreachable (network failure, timeout, rate-limit, missing key) does NOT block link posting. The utility returns `{ safe: true, threats: [] }` and logs a warning. The reasoning: Orca is not a financial or medical platform; brief loss of malicious-URL filtering during a Safe Browsing outage is a smaller harm than blocking all link posts during the outage. Researchers using the platform during such a window get the equivalent of "no URL safety check" — which is the same posture every link service had before Safe Browsing existed.
+
+**Audit trail:** Every rejection writes a row to `safe_browsing_rejections` with the sha256 hash of the lowercased URL, the threat types matched, the call source (`'add'` or `'preview'`), and the attempting user. No plaintext URL is preserved. This matches the privacy-preserving forensic posture of `link_removal_log` and answers the same class of question: "did user X ever attempt to post URL Y?" — with the added dimension of "from which call site, with which threat type."
+
+**No appeal pathway shipped.** False positives are expected to be rare (Safe Browsing is generally precise) and a researcher who needs to discuss a flagged URL can describe it in prose without posting it as a clickable link. If false positives become a real friction point, an email-to-admin appeal flow is the next iteration — not in scope for 64a.
+
+**Why this and not a domain allowlist:** Considered in Phase 60a and again in 64a planning. An allowlist that's "large enough not to limit researchers" must include every preprint server, every publisher, every university worldwide, every government/IGO, every news outlet, every repository platform — and will still miss things, generating steady "why can't I post this" complaints. Meanwhile, an allowlist defends against "random links" but not "dangerous links" (a compromised university subdomain or a hijacked publisher URL is on the allowlist). Safe Browsing reverses both: it doesn't restrict researchers, and it actually checks for the threat class the allowlist would have only proxied.
+
+**Out-of-scope for 64a:**
+- Retroactive scan of URLs already in the database (separate task)
+- Tunnel link URLs (tunnels reference internal edges, not external URLs)
+- Page comments and other non-`concept_links` text fields (separate phase if abuse surfaces)
+- Appeal mechanism (deferred until needed)
 
 ### Save/Swap Mutual Exclusivity
 Saving removes existing swap; swapping removes existing save with cascading unsave.
@@ -552,6 +582,31 @@ The pattern is: a phase changes a constraint, schema, or invariant; previously-v
 
 ---
 
+## Phase 64a Completion Narrative
+
+Phase 64a added Google Safe Browsing v4 URL safety checks at the two existing link-submission call sites, replacing the previously-considered domain-allowlist approach.
+
+**The trigger:** revisiting domain restrictions as a defense against "random or dangerous links." The original Phase 60a discussion had rejected an allowlist as too restrictive for cross-disciplinary research. In re-examining the question, the framing shifted: an allowlist defends against the *origin* of a URL (which is a weak proxy for safety — university subdomains and Google Docs both make any allowlist and both get compromised), while what the user actually wanted to defend against was malicious *content* at the URL. Safe Browsing addresses the actual threat directly without the false-positive cost of a domain list.
+
+**Design choices, all of which followed established patterns:**
+- **Two call sites, same utility.** Preview-time check gives early feedback before the user invests effort in the affirmation checkbox; post-time check is the security boundary. Defense-in-depth.
+- **Fail-open never-throws contract.** Mirrors `email.js` and `orcid.js`. Module logs once at startup if the key is missing; every `checkUrl` call returns `{ safe: true, threats: [] }` on any failure. Safe Browsing outages should not take down link posting on a research platform.
+- **Sparse hash-only audit table.** `safe_browsing_rejections` matches `link_removal_log`'s schema and intent. Same forensic capability ("did user X ever attempt URL Y?") without retaining content the user wasn't allowed to post in the first place. The added `source` column distinguishes preview from post — both are signal but they're different signals.
+- **403 with `code: 'unsafe_url'`.** Machine-readable contract for the frontend so it can render a blocking error (no override possible) while distinguishing this case from other 403s (e.g., legal-hold).
+- **No appeal flow.** False positives are expected to be rare. If they become friction, an email-to-admin path is the next iteration. Deferred until needed.
+
+**Implementation notes:**
+- Local dev runs without the API key. The startup warning is the correct local behavior; testing happens against production using Google's published test URL (`http://malware.testing.google.test/testing/malware/`), which Safe Browsing always flags. This preserves the Phase-62c-era security posture of keeping production secrets out of `backend/.env`.
+- The Google Cloud API key is restricted to the Safe Browsing API only — if exfiltrated, it cannot be used to incur cost on other GCP services.
+- The check is positioned BEFORE the OG-fetch at both call sites, so SSRF protection is not the only thing standing between an attacker and a fetched-but-malicious response. The order is: validate format → check Safe Browsing → fetch OG title → INSERT.
+
+**Lessons:**
+- The "domain allowlist" framing surfaced twice (Phase 60a planning, Phase 64a planning) and was rejected both times for the same underlying reason. Worth noting that revisiting a previously-rejected approach is fine — but the second visit should explicitly re-engage with the prior reasoning rather than relitigate from scratch. The framing that finally moved the conversation was "what is the actual threat — origin or content?" — and once that was clear, Safe Browsing was the obvious answer.
+- The pattern of "server-side utility that gates a write path, with sparse hash-only audit logging on rejection" now has two instances (`link_removal_log` and `safe_browsing_rejections`). Both follow the same shape. If a third instance lands (e.g., spam detection, content classifier), the audit-write logic is worth extracting into a small helper. Premature to abstract at N=2.
+- Suggested early in planning to add the production key to `backend/.env` for local smoke-testing, which would have directly undone the Phase-62c security hardening pass. Caught and corrected before any change was made. Going forward: any phase that adds a new external API integration with a production key should default to the fail-open / disabled path locally, with testing happening against production.
+
+---
+
 ## Phase 59 Completion Narrative
 
 Phase 59 added tunnel comments and unified the votes overlays.
@@ -667,6 +722,7 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Profile page edit affordances need verification (Phase 62a):** The profile page now re-fetches after edit-save operations. Confirm in production that all edit flows (e.g., the Edit button next to the email field) properly trigger a re-fetch and don't leave stale data on screen. If any edit flow doesn't trigger a re-fetch, it'll silently show stale data until the user navigates away. (Phase 62c removed the ORCID Connect/Disconnect flow from this surface — no longer applicable.)
 
 ### Forward Roadmap
+- ~~Phase 64a: Google Safe Browsing URL check at preview and post~~ **completed May 24, 2026**
 - ~~Phase 62c: removed dead ORCID disconnect endpoint and UI~~ **completed May 23, 2026**
 - ~~Phase 63a: favicon + page-specific Open Graph / Twitter Card tags~~ **completed May 23, 2026**
 - ~~Phase 62b: comment addenda + author ORCID + share links + deep-link navigation~~ **completed May 17, 2026**
@@ -685,9 +741,16 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 
 ---
 
-## Recent Commits (Phase 59 through 63a)
+## Recent Commits (Phase 59 through 64a)
 
 ```
+6b362d0 phase 64a: Google Safe Browsing URL check at preview and post
+        — safeBrowsing.js utility (fail-open, 5s timeout, never throws);
+          safe_browsing_rejections audit table (sha256 hash only, no plaintext);
+          reject unsafe URLs at POST /web-links/add and GET /web-links/preview-title;
+          403 with code: 'unsafe_url' for frontend distinction; ConceptLinksPanel
+          shows blocking error and disables submit on unsafe URL; .env.example
+          entry; missing key = fail-open with startup warning.
 9b7f2b4 Phase 63a-fix: disable static directory-index so / hits OG override
 e41d556 Phase 63a: favicon + page-specific Open Graph / Twitter Card tags
 bba3d0e fix: share button styling to match neighboring buttons

@@ -17,17 +17,14 @@ const mentionsController = {
         return res.status(400).json({ error: 'targetId must be a positive integer' });
       }
 
-      // For concept targets, path is required
+      // For concept targets, path is required (empty = root concept)
       let targetPath = null;
       if (targetType === 'concept') {
         const pathStr = req.query.path;
-        if (!pathStr) {
+        if (pathStr === null || pathStr === undefined) {
           return res.status(400).json({ error: 'path query parameter is required for concept mentions' });
         }
-        targetPath = pathStr.split(',').map(Number).filter(n => Number.isFinite(n) && n > 0);
-        if (targetPath.length === 0) {
-          return res.status(400).json({ error: 'path must contain at least one valid integer' });
-        }
+        targetPath = pathStr === '' ? [] : pathStr.split(',').map(Number).filter(n => Number.isFinite(n) && n > 0);
       }
 
       const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);

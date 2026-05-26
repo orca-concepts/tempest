@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
 import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
+import MentionsPanel from './MentionsPanel';
 import { votesAPI } from '../services/api';
 
 /**
@@ -39,6 +40,7 @@ const LinkCard = ({
   const [addendumError, setAddendumError] = useState(null);
   const [addendumSubmitting, setAddendumSubmitting] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [mentionsExpanded, setMentionsExpanded] = useState(false);
   const iData = instanceData || {};
   const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
@@ -219,6 +221,19 @@ const LinkCard = ({
               All concepts ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
             </span>
             {iData.expanded?.other && otherCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.otherConceptInstances.map(renderInstanceSnippet)}</div>}
+          </div>
+          <div style={s.instanceColumn}>
+            <span
+              style={(link.mentionCount || 0) > 0 ? s.instanceToggle : s.instanceToggleDisabled}
+              onClick={(link.mentionCount || 0) > 0 ? (e) => { e.stopPropagation(); setMentionsExpanded(p => !p); } : undefined}
+            >
+              Mentioned by ({link.mentionCount || 0}) {(link.mentionCount || 0) > 0 ? (mentionsExpanded ? '\u25be' : '\u25b8') : ''}
+            </span>
+            {mentionsExpanded && (link.mentionCount || 0) > 0 && (
+              <div style={s.instanceList}>
+                <MentionsPanel targetType="link" targetId={link.id} emptyStateNoun="link" expanded={true} />
+              </div>
+            )}
           </div>
         </div>
       )}

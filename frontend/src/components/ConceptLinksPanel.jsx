@@ -3,12 +3,14 @@ import { votesAPI, combosAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import OrcidBadge from './OrcidBadge';
 import LinkCard from './LinkCard';
+import MentionsPanel from './MentionsPanel';
 
 const ConceptLinksPanel = ({
   conceptId, conceptName, path, currentEdgeId, isGuest, viewMode,
   onRequestLogin, onNavigateToSuperconcept, onOpenConceptTab,
   pendingScrollLinkId, onPendingScrollLinkConsumed,
   collapsible = false,
+  conceptMentionCount = 0,
 }) => {
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(collapsible);
@@ -353,10 +355,20 @@ const ConceptLinksPanel = ({
             {superconcepts.length > 0 && (
               <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('superconcepts')} style={{ ...styles.tab, ...(activeTab === 'superconcepts' ? styles.tabActive : {}) }}>Superconcepts ({superconcepts.length})</span></>
             )}
+            <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('mentions')} style={{ ...styles.tab, ...(activeTab === 'mentions' ? styles.tabActive : {}), ...(conceptMentionCount === 0 && activeTab !== 'mentions' ? { color: '#ccc' } : {}) }}>Mentioned by ({conceptMentionCount})</span></>
           </div>
           <div style={styles.content}>
             {activeTab === 'weblinks' && renderWebLinksTab()}
             {activeTab === 'superconcepts' && renderSuperconceptsTab()}
+            {activeTab === 'mentions' && (
+              <MentionsPanel
+                targetType="concept"
+                targetId={conceptId}
+                targetPath={path || []}
+                emptyStateNoun="concept"
+                expanded={true}
+              />
+            )}
           </div>
         </>
       )}

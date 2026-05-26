@@ -399,7 +399,7 @@ export const adminAPI = {
 export const mentionsAPI = {
   getMentions: (targetType, targetId, { path, limit, offset } = {}) => {
     const params = {};
-    if (path) params.path = path;
+    if (path != null) params.path = path;
     if (limit != null) params.limit = limit;
     if (offset != null) params.offset = offset;
     return api.get(`/mentions/${targetType}/${targetId}`, { params });

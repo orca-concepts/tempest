@@ -1522,7 +1522,27 @@ const votesController = {
           cl.comment,
           cl.updated_at,
           COUNT(clv.id) AS vote_count,
-          BOOL_OR(clv.user_id = $2) AS user_voted
+          BOOL_OR(clv.user_id = $2) AS user_voted,
+          -- IMPORTANT: This visibility filter must match the one in mentionsController.js.
+          -- Both filter out mentions whose source's parent link/tunnel is hidden or legal-held.
+          -- If you change one, change all four. See Phase 65b-2-fix for the bug that motivated this.
+          (SELECT COUNT(*)
+           FROM comment_mentions cm
+           LEFT JOIN concept_links cl_c2 ON cm.source_type = 'concept_link_comment' AND cm.source_id = cl_c2.id
+           LEFT JOIN concept_link_addenda cla_c2 ON cm.source_type = 'concept_link_addendum' AND cm.source_id = cla_c2.id
+           LEFT JOIN concept_links cl_p2 ON cl_p2.id = COALESCE(cl_c2.id, cla_c2.concept_link_id)
+           LEFT JOIN tunnel_links tl_c2 ON cm.source_type = 'tunnel_link_comment' AND cm.source_id = tl_c2.id
+           LEFT JOIN tunnel_link_addenda tla_c2 ON cm.source_type = 'tunnel_link_addendum' AND cm.source_id = tla_c2.id
+           LEFT JOIN tunnel_links tl_p2 ON tl_p2.id = COALESCE(tl_c2.id, tla_c2.tunnel_link_id)
+           WHERE cm.target_type = 'link' AND cm.target_id = cl.id
+             AND (
+               (cm.source_type IN ('concept_link_comment', 'concept_link_addendum') AND cl_p2.id IS NOT NULL AND cl_p2.legal_hold = false
+                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = cl_p2.edge_id AND e.is_hidden = false AND e.legal_hold = false))
+               OR
+               (cm.source_type IN ('tunnel_link_comment', 'tunnel_link_addendum') AND tl_p2.id IS NOT NULL
+                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = tl_p2.origin_edge_id AND e.is_hidden = false AND e.legal_hold = false))
+             )
+          ) AS mention_count
         FROM concept_links cl
         LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
@@ -1564,6 +1584,7 @@ const votesController = {
           voteCount: parseInt(row.vote_count),
           userVoted: row.user_voted || false,
           addenda: addendaMap[row.id] || [],
+          mentionCount: parseInt(row.mention_count || 0),
         }))
       });
     } catch (error) {

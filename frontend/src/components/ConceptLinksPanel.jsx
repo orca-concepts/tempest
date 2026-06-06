@@ -7,7 +7,7 @@ import MentionsPanel from './MentionsPanel';
 
 const ConceptLinksPanel = ({
   conceptId, conceptName, path, currentEdgeId, isGuest, viewMode,
-  onRequestLogin, onNavigateToSuperconcept, onOpenConceptTab,
+  onRequestLogin, onNavigateToSituation, onOpenConceptTab,
   pendingScrollLinkId, onPendingScrollLinkConsumed,
   collapsible = false,
   conceptMentionCount = 0,
@@ -37,7 +37,7 @@ const ConceptLinksPanel = ({
 
   const [instanceData, setInstanceData] = useState({});
   const [instancePathNames, setInstancePathNames] = useState({});
-  const [superconcepts, setSuperconcepts] = useState([]);
+  const [situations, setSituations] = useState([]);
   const linkRefs = useRef({});
   const linksRequestIdRef = useRef(0);
   const isChildrenView = viewMode === 'children';
@@ -81,19 +81,19 @@ const ConceptLinksPanel = ({
 
   useEffect(() => { loadLinks(); }, [loadLinks]);
 
-  // Load superconcepts
+  // Load situations
   useEffect(() => {
-    if (!isChildrenView || !currentEdgeId) { setSuperconcepts([]); return; }
+    if (!isChildrenView || !currentEdgeId) { setSituations([]); return; }
     let cancelled = false;
     combosAPI.getCombosByEdge(currentEdgeId)
-      .then(res => { if (!cancelled) setSuperconcepts(res.data || []); })
-      .catch(() => { if (!cancelled) setSuperconcepts([]); });
+      .then(res => { if (!cancelled) setSituations(res.data || []); })
+      .catch(() => { if (!cancelled) setSituations([]); });
     return () => { cancelled = true; };
   }, [currentEdgeId, isChildrenView]);
 
   useEffect(() => {
-    if (activeTab === 'superconcepts' && superconcepts.length === 0) setActiveTab('weblinks');
-  }, [superconcepts.length, activeTab]);
+    if (activeTab === 'situations' && situations.length === 0) setActiveTab('weblinks');
+  }, [situations.length, activeTab]);
 
   // Scroll helper
   const scrollToAndHighlight = useCallback((targetLinkId) => {
@@ -326,18 +326,18 @@ const ConceptLinksPanel = ({
     );
   };
 
-  const renderSuperconceptsTab = () => {
-    if (superconcepts.length === 0) return <div style={{ color: '#999', fontSize: '14px', padding: '8px 0' }}>No superconcepts contain this edge.</div>;
+  const renderSituationsTab = () => {
+    if (situations.length === 0) return <div style={{ color: '#999', fontSize: '14px', padding: '8px 0' }}>No situations contain this edge.</div>;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {superconcepts.map(sc => {
+        {situations.map(sc => {
           const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
           return (
-            <div key={sc.id} style={styles.superconceptCard}>
-              <span onClick={() => onNavigateToSuperconcept && onNavigateToSuperconcept(sc.id, sc.name)} style={styles.superconceptName}>{sc.name}</span>
-              <div style={styles.superconceptOwner}>by {sc.created_by_username || '[deleted user]'}{sc.created_by_orcid_id && <OrcidBadge orcidId={sc.created_by_orcid_id} />}</div>
-              {sc.description && <div style={styles.superconceptDescription}>{sc.description}</div>}
-              <div style={styles.superconceptStats}>{plural(sc.edge_count, 'concept')} {'\u00b7'} {plural(sc.subscriber_count, 'subscriber')}</div>
+            <div key={sc.id} style={styles.situationCard}>
+              <span onClick={() => onNavigateToSituation && onNavigateToSituation(sc.id, sc.name)} style={styles.situationName}>{sc.name}</span>
+              <div style={styles.situationOwner}>by {sc.created_by_username || '[deleted user]'}{sc.created_by_orcid_id && <OrcidBadge orcidId={sc.created_by_orcid_id} />}</div>
+              {sc.description && <div style={styles.situationDescription}>{sc.description}</div>}
+              <div style={styles.situationStats}>{plural(sc.edge_count, 'concept')} {'\u00b7'} {plural(sc.subscriber_count, 'subscriber')}</div>
             </div>
           );
         })}
@@ -352,14 +352,14 @@ const ConceptLinksPanel = ({
         <>
           <div style={styles.tabBar}>
             <span onClick={() => setActiveTab('weblinks')} style={{ ...styles.tab, ...(activeTab === 'weblinks' ? styles.tabActive : {}) }}>Links</span>
-            {superconcepts.length > 0 && (
-              <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('superconcepts')} style={{ ...styles.tab, ...(activeTab === 'superconcepts' ? styles.tabActive : {}) }}>Superconcepts ({superconcepts.length})</span></>
+            {situations.length > 0 && (
+              <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('situations')} style={{ ...styles.tab, ...(activeTab === 'situations' ? styles.tabActive : {}) }}>Situations ({situations.length})</span></>
             )}
             <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('mentions')} style={{ ...styles.tab, ...(activeTab === 'mentions' ? styles.tabActive : {}), ...(conceptMentionCount === 0 && activeTab !== 'mentions' ? { color: '#ccc' } : {}) }}>Mentioned by ({conceptMentionCount})</span></>
           </div>
           <div style={styles.content}>
             {activeTab === 'weblinks' && renderWebLinksTab()}
-            {activeTab === 'superconcepts' && renderSuperconceptsTab()}
+            {activeTab === 'situations' && renderSituationsTab()}
             {activeTab === 'mentions' && (
               <MentionsPanel
                 targetType="concept"
@@ -408,11 +408,11 @@ const styles = {
   instanceRow: { cursor: 'pointer', padding: '4px 6px', borderRadius: '3px', fontSize: '12px', color: '#555', transition: 'background-color 0.15s' },
   instancePath: { color: '#555', lineHeight: 1.4, overflowWrap: 'anywhere', wordBreak: 'break-word' },
   instanceSnippet: { fontSize: '11px', color: '#999', marginTop: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
-  superconceptCard: { padding: '10px 12px', border: '1px solid #e0d9cf', borderRadius: '4px', backgroundColor: '#faf9f6' },
-  superconceptName: { fontFamily: '"EB Garamond", Georgia, serif', fontSize: '15px', color: '#333', cursor: 'pointer', background: 'none', border: 'none', padding: 0, textAlign: 'left', display: 'block', fontWeight: 'normal' },
-  superconceptOwner: { fontSize: '13px', color: '#888', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' },
-  superconceptDescription: { fontSize: '13px', color: '#666', marginTop: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
-  superconceptStats: { fontSize: '12px', color: '#999', marginTop: '4px' },
+  situationCard: { padding: '10px 12px', border: '1px solid #e0d9cf', borderRadius: '4px', backgroundColor: '#faf9f6' },
+  situationName: { fontFamily: '"EB Garamond", Georgia, serif', fontSize: '15px', color: '#333', cursor: 'pointer', background: 'none', border: 'none', padding: 0, textAlign: 'left', display: 'block', fontWeight: 'normal' },
+  situationOwner: { fontSize: '13px', color: '#888', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' },
+  situationDescription: { fontSize: '13px', color: '#666', marginTop: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+  situationStats: { fontSize: '12px', color: '#999', marginTop: '4px' },
 };
 
 export default ConceptLinksPanel;

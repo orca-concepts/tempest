@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef } from 'react';
 // Note: [\\d,]* intentionally allows zero characters after ?path= — root concepts
 // have empty graph_path and their share URLs emit ?path= with no value.
 const IN_ORCA_LINK_PATTERN =
-  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|superconcept|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
+  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|situation|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
 
 const IN_ORCA_LINK_REGEX_GLOBAL = new RegExp(IN_ORCA_LINK_PATTERN, 'g');
 

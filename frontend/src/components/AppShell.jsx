@@ -33,7 +33,7 @@ const AppShell = () => {
   // Phase 65a-fix-2: suppress default tab activation when the URL is a deep-link.
   // Mount-only — intentionally not reactive (loadAllTabs runs once at mount).
   const hasDeepLinkInUrl = useMemo(() => { // eslint-disable-line react-hooks/exhaustive-deps
-    return /^\/(concept|superconcept|link|tunnel)\/\d+$/.test(location.pathname);
+    return /^\/(concept|situation|link|tunnel)\/\d+$/.test(location.pathname);
   }, []);
 
   // Phase 30g: Info page detection and header nav
@@ -169,7 +169,7 @@ const AppShell = () => {
     }
   }, [isGuest]);
 
-  // Deep link: /concept/:id and /superconcept/:id
+  // Deep link: /concept/:id and /situation/:id
   useEffect(() => {
     if (loading || authLoading) return;
 
@@ -185,8 +185,8 @@ const AppShell = () => {
       return;
     }
 
-    // /superconcept/:id
-    const comboMatch = location.pathname.match(/^\/superconcept\/(\d+)$/);
+    // /situation/:id
+    const comboMatch = location.pathname.match(/^\/situation\/(\d+)$/);
     if (comboMatch) {
       const comboId = parseInt(comboMatch[1]);
       if (isGuest) {
@@ -787,7 +787,7 @@ const AppShell = () => {
     }
   }, [isGuest, handleRequestLogin]);
 
-  const handleNavigateToSuperconcept = useCallback((comboId, comboName) => {
+  const handleNavigateToSituation = useCallback((comboId, comboName) => {
     handleSubscribeToCombo(comboId, comboName || '');
   }, [handleSubscribeToCombo]);
 
@@ -1321,8 +1321,8 @@ const AppShell = () => {
               <button
                 onClick={() => { setVotesOpen(false); setComboView({ view: 'list' }); }}
                 style={styles.sidebarActionButton}
-                title="Browse and manage superconcepts"
-              >Browse Superconcepts</button>
+                title="Browse and manage situations"
+              >Browse Situations</button>
             </div>
 
             <div style={styles.sidebarDivider} />
@@ -1439,7 +1439,7 @@ const AppShell = () => {
               }}
               onRequestLogin={() => {
                 setLoginModalTab('login');
-                setLoginModalNotice('Log in to subscribe to superconcepts');
+                setLoginModalNotice('Log in to subscribe to situations');
                 setShowLoginModal(true);
               }}
             />
@@ -1508,7 +1508,7 @@ const AppShell = () => {
                         isGuest={isGuest}
                         onOpenConceptTab={handleOpenConceptTab}
                         onRequestLogin={handleRequestLogin}
-                        onNavigateToSuperconcept={handleNavigateToSuperconcept}
+                        onNavigateToSituation={handleNavigateToSituation}
                         ownedCombos={ownedCombos}
                         onComboEdgeAdded={() => setComboRefreshKey(k => k + 1)}
                         pendingScrollLinkId={isActive ? pendingScrollLinkId : null}

@@ -99,18 +99,18 @@ const UsingOrcaContent = ({ onImageClick }) => {
         </div>
 
         <div style={cellStyle}>
-          <div style={usingOrcaStyles.sectionTitle}>Superconcepts</div>
+          <div style={usingOrcaStyles.sectionTitle}>Situations</div>
           <img
             src="/images/using-orca/superconcept.png"
-            alt="Superconcept page showing a curated reading list"
+            alt="Situation page showing a curated reading list"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create superconcepts to build reading lists based on certain concepts. This is test data.' }],
+              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create situations to build reading lists based on certain concepts. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Create superconcepts to build reading lists based on certain concepts. This is test data.
+            Create situations to build reading lists based on certain concepts. This is test data.
           </p>
         </div>
       </div>

@@ -172,7 +172,7 @@ const usersController = {
 
       // Run all data queries in parallel with .catch fallbacks
       const [
-        webLinks, pageComments, moderationComments, superconcepts,
+        webLinks, pageComments, moderationComments, situations,
         graphVotes, swapVotes, linkVotes,
         webLinkVotes, flagVotes, tunnelVotes, pageCommentVotes,
         comboSubs, graphTabs,
@@ -201,13 +201,13 @@ const usersController = {
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: moderation_comments failed:', e.message); return []; }),
 
-        // Superconcepts (combos) owned
+        // Situations (combos) owned
         pool.query(
           `SELECT cb.id, cb.name, cb.created_at,
                   (SELECT COUNT(*)::int FROM combo_subscriptions cs WHERE cs.combo_id = cb.id) AS subscriber_count
            FROM combos cb WHERE cb.created_by = $1`,
           [userId]
-        ).then(r => r.rows).catch(e => { console.error('export: superconcepts failed:', e.message); return []; }),
+        ).then(r => r.rows).catch(e => { console.error('export: situations failed:', e.message); return []; }),
 
         // Graph votes (saves)
         pool.query(
@@ -302,7 +302,7 @@ const usersController = {
           web_links: webLinks,
           page_comments: pageComments,
           moderation_comments: moderationComments,
-          superconcepts_owned: superconcepts,
+          situations_owned: situations,
         },
         votes_and_subscriptions: {
           graph_votes: graphVotes,

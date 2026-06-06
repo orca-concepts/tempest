@@ -1132,7 +1132,7 @@ const createTables = async () => {
           CHECK (source_type IN ('concept_link_comment', 'concept_link_addendum',
                                  'tunnel_link_comment', 'tunnel_link_addendum')),
         CONSTRAINT comment_mentions_target_type_check
-          CHECK (target_type IN ('concept', 'superconcept', 'link', 'tunnel'))
+          CHECK (target_type IN ('concept', 'situation', 'link', 'tunnel'))
       );
     `);
     await client.query(`
@@ -1142,6 +1142,14 @@ const createTables = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_comment_mentions_source
         ON comment_mentions(source_type, source_id);
+    `);
+
+    // Phase 66: Rename superconcept -> situation in comment_mentions target_type
+    await client.query(`UPDATE comment_mentions SET target_type = 'situation' WHERE target_type = 'superconcept'`);
+    await client.query(`
+      ALTER TABLE comment_mentions DROP CONSTRAINT IF EXISTS comment_mentions_target_type_check;
+      ALTER TABLE comment_mentions ADD CONSTRAINT comment_mentions_target_type_check
+        CHECK (target_type IN ('concept', 'situation', 'link', 'tunnel'));
     `);
 
     console.log('Database tables created/migrated successfully!');

@@ -10,7 +10,7 @@
 // Trailing punctuation (commas, periods, parens, brackets) is excluded via the
 // negative lookahead on common prose punctuation at the end.
 const IN_ORCA_LINK_PATTERN =
-  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|superconcept|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
+  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|situation|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
 
 const IN_ORCA_LINK_REGEX_GLOBAL = new RegExp(IN_ORCA_LINK_PATTERN, 'g');
 
@@ -19,7 +19,7 @@ const IN_ORCA_LINK_REGEX_GLOBAL = new RegExp(IN_ORCA_LINK_PATTERN, 'g');
  *
  * @param {string} text — the text to scan
  * @returns {Array<{
- *   targetType: 'concept'|'superconcept'|'link'|'tunnel',
+ *   targetType: 'concept'|'situation'|'link'|'tunnel',
  *   targetId: number,
  *   targetPath: number[]|null,
  *   fragment: { type: 'link'|'tunnel', id: number } | null

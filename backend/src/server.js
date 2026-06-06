@@ -148,6 +148,11 @@ if (process.env.NODE_ENV === 'production') {
   // Cache index.html in memory at startup
   const indexHtml = fs.readFileSync(path.join(frontendDist, 'index.html'), 'utf8');
 
+  // Phase 66: Redirect old /superconcept/:id URLs to /situation/:id
+  app.get(/^\/superconcept\/(\d+)$/, (req, res) => {
+    res.redirect(301, `/situation/${req.params[0]}`);
+  });
+
   // SPA fallback — any non-/api route serves index.html so React Router works
   app.get(/^(?!\/api).*/, (req, res) => {
     const override = OG_OVERRIDES[req.path];

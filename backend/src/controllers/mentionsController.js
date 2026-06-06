@@ -1,6 +1,6 @@
 const pool = require('../config/database');
 
-const VALID_TARGET_TYPES = ['concept', 'superconcept', 'link', 'tunnel'];
+const VALID_TARGET_TYPES = ['concept', 'situation', 'link', 'tunnel'];
 
 const mentionsController = {
   // GET /api/mentions/:targetType/:targetId?path=...&limit=20&offset=0
@@ -9,7 +9,7 @@ const mentionsController = {
       const { targetType, targetId: targetIdStr } = req.params;
 
       if (!VALID_TARGET_TYPES.includes(targetType)) {
-        return res.status(400).json({ error: 'Invalid targetType. Must be one of: concept, superconcept, link, tunnel' });
+        return res.status(400).json({ error: 'Invalid targetType. Must be one of: concept, situation, link, tunnel' });
       }
 
       const targetId = parseInt(targetIdStr, 10);

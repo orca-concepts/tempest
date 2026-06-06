@@ -83,7 +83,8 @@ const getCombo = async (req, res) => {
               parent_c.name AS parent_name,
               e.attribute_id,
               a.name AS attribute_name,
-              e.graph_path
+              e.graph_path,
+              (SELECT COUNT(*)::int FROM votes v WHERE v.edge_id = ce.edge_id) AS save_count
        FROM combo_edges ce
        JOIN edges e ON e.id = ce.edge_id
        JOIN concepts child_c ON child_c.id = e.child_id
@@ -409,15 +410,15 @@ const transferOwnership = async (req, res) => {
     );
     if (comboCheck.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Superconcept not found' });
+      return res.status(404).json({ error: 'Situation not found' });
     }
     if (comboCheck.rows[0].created_by !== userId) {
       await client.query('ROLLBACK');
-      return res.status(403).json({ error: 'Only the superconcept owner can transfer ownership' });
+      return res.status(403).json({ error: 'Only the situation owner can transfer ownership' });
     }
     if (Number(newOwnerId) === userId) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'You already own this superconcept' });
+      return res.status(400).json({ error: 'You already own this situation' });
     }
 
     const userCheck = await client.query(

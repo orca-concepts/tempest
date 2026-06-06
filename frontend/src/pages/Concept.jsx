@@ -25,7 +25,7 @@ const Concept = ({
   isGuest = false,
   onOpenConceptTab,
   onRequestLogin,
-  onNavigateToSuperconcept,
+  onNavigateToSituation,
   ownedCombos = [],
   onComboEdgeAdded,
   pendingScrollLinkId,
@@ -702,12 +702,12 @@ const Concept = ({
                     }
                   }}
                   style={styles.annotateButton}
-                  title="Add this concept to a superconcept"
+                  title="Add this concept to a situation"
                 >
                   {comboFeedback === 'added' ? 'Added \u2713'
-                    : comboFeedback === 'duplicate' ? 'Already in superconcept'
+                    : comboFeedback === 'duplicate' ? 'Already in situation'
                     : comboFeedback ? comboFeedback
-                    : 'Add to Superconcept'}
+                    : 'Add to Situation'}
                 </button>
                 {showComboPicker && (
                   <div style={styles.comboPickerDropdown}>
@@ -858,7 +858,7 @@ const Concept = ({
                 isGuest={isGuest}
                 viewMode={effectiveViewMode}
                 onRequestLogin={onRequestLogin}
-                onNavigateToSuperconcept={onNavigateToSuperconcept}
+                onNavigateToSituation={onNavigateToSituation}
                 onOpenConceptTab={onOpenConceptTab}
                 pendingScrollLinkId={pendingScrollLinkId}
                 onPendingScrollLinkConsumed={onPendingScrollLinkConsumed}

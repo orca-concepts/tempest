@@ -13,7 +13,7 @@
 
 // Same base pattern as inOrcaLinks.js — kept in sync manually.
 const IN_ORCA_LINK_PATTERN =
-  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|superconcept|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
+  '(?:https://orcaconcepts\\.org|https?://localhost(?::\\d+)?)/(?:concept|situation|link|tunnel)/\\d+(?:\\?path=[\\d,]*)?(?:#(?:link|tunnel)-\\d+)?';
 
 /**
  * Parse text for in-orca URLs that qualify as indexable mentions.
@@ -52,7 +52,7 @@ function parseMentions(text) {
         seen.add(dedupeKey);
 
         results.push({ targetType: 'concept', targetId, targetPath });
-      } else if (['superconcept', 'link', 'tunnel'].includes(targetType)) {
+      } else if (['situation', 'link', 'tunnel'].includes(targetType)) {
         const dedupeKey = `${targetType}:${targetId}:`;
         if (seen.has(dedupeKey)) continue;
         seen.add(dedupeKey);

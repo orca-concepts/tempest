@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { combosAPI, conceptsAPI, usersAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
 import LinkCard from './LinkCard';
@@ -14,7 +14,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
   const [comboLinksLoading, setComboLinksLoading] = useState(false);
   const [comboLinksSort, setComboLinksSort] = useState('top');
 
-  // Owner: add subconcept state
+  // Owner: add concept state
   const [showAddPicker, setShowAddPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -38,8 +38,39 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
   // Path name resolution cache
   const [pathNames, setPathNames] = useState({});
   const [shareCopied, setShareCopied] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+
+  // Phase 66: Hide/unhide state (client-side only)
+  const [hiddenEdgeIds, setHiddenEdgeIds] = useState(new Set());
 
   const isOwner = user && combo && user.id === combo.created_by;
+
+  const toggleHideEdge = (edgeId) => {
+    setHiddenEdgeIds(prev => {
+      const next = new Set(prev);
+      if (next.has(edgeId)) next.delete(edgeId);
+      else next.add(edgeId);
+      return next;
+    });
+  };
+
+  // Group edges by attribute for column layout
+  const attributeGroups = useMemo(() => {
+    const groups = {};
+    edges.forEach(edge => {
+      const attrId = edge.attribute_id;
+      if (!groups[attrId]) {
+        groups[attrId] = { attributeId: attrId, attributeName: edge.attribute_name, edges: [] };
+      }
+      groups[attrId].edges.push(edge);
+    });
+    return Object.values(groups).sort((a, b) => a.attributeName.localeCompare(b.attributeName));
+  }, [edges]);
+
+  // Filter links by hidden edges
+  const visibleLinks = useMemo(() => {
+    return comboLinks.filter(link => !hiddenEdgeIds.has(link.edge_id));
+  }, [comboLinks, hiddenEdgeIds]);
 
   // Load combo data
   const loadCombo = useCallback(async () => {
@@ -63,7 +94,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
         } catch (err) { /* non-critical */ }
       }
     } catch (err) {
-      setError('Failed to load superconcept');
+      setError('Failed to load situation');
       console.error('Failed to load combo:', err);
     }
   }, [comboId]);
@@ -193,7 +224,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
       await loadCombo();
     } catch (err) {
       if (err.response?.status === 409) {
-        setAddError('This concept in this context is already in the superconcept');
+        setAddError('This concept in this context is already in the situation');
       } else {
         setAddError(err.response?.data?.error || 'Failed to add concept');
       }
@@ -203,6 +234,12 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
   const handleRemoveEdge = async (edgeId) => {
     try {
       await combosAPI.removeEdge(comboId, edgeId);
+      // Also remove from hidden set if it was hidden
+      setHiddenEdgeIds(prev => {
+        const next = new Set(prev);
+        next.delete(edgeId);
+        return next;
+      });
       await loadCombo();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to remove concept');
@@ -210,13 +247,13 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
   };
 
   const handleUnsubscribe = () => {
-    if (window.confirm(`Unsubscribe from "${combo?.name}"? This removes the superconcept tab from your sidebar.`)) {
+    if (window.confirm(`Unsubscribe from "${combo?.name}"? This removes the situation tab from your sidebar.`)) {
       if (onUnsubscribe) onUnsubscribe(comboId);
     }
   };
 
   const handleShareLink = async () => {
-    const url = `${window.location.origin}/superconcept/${comboId}`;
+    const url = `${window.location.origin}/situation/${comboId}`;
     try {
       await navigator.clipboard.writeText(url);
       setShareCopied(true);
@@ -268,7 +305,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
     }
   };
 
-  // Build path string for an edge
+  // Build path string for an edge (used in context picker)
   const buildPathString = (edge) => {
     if (edge.isRoot) return `[root] [${edge.attribute_name}]`;
     const parts = (edge.graph_path || []).slice(0, -1).map(id => pathNames[id] || `#${id}`);
@@ -280,20 +317,15 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
     return parts.length > 0 ? parts.join(' \u2192 ') : '[root]';
   };
 
-  const relativeTime = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    if (days < 30) return `${days}d ago`;
-    return new Date(dateStr).toLocaleDateString();
+  // Build full path for concept cards (root -> ... -> parent -> concept)
+  const buildFullPath = (edge) => {
+    const parts = (edge.graph_path || []).map(id => pathNames[id] || `#${id}`);
+    parts.push(edge.concept_name);
+    return parts.join(' \u2192 ');
   };
 
   if (loading) {
-    return <div style={styles.loadingContainer}>Loading superconcept...</div>;
+    return <div style={styles.loadingContainer}>Loading situation...</div>;
   }
 
   if (error) {
@@ -321,125 +353,20 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
           <button onClick={handleShareLink} style={styles.shareButton} title="Copy shareable link to clipboard">
             {shareCopied ? 'Copied!' : 'Share'}
           </button>
+          {isOwner && (
+            <button onClick={() => { setShowTransfer(!showTransfer); setTransferConfirm(null); setTransferSearch(''); setTransferResults([]); setTransferFeedback(''); }} style={styles.shareButton}>
+              {showTransfer ? 'Cancel' : 'Transfer'}
+            </button>
+          )}
           {onUnsubscribe && (
             <button onClick={handleUnsubscribe} style={styles.unsubscribeButton}>Unsubscribe</button>
           )}
         </div>
       </div>
 
-      {/* Owner controls */}
-      {/* Subconcepts section — list visible to everyone, add/remove owner-only */}
-      {(edges.length > 0 || isOwner) && (
-        <div style={styles.ownerSection}>
-          <div style={styles.ownerSectionHeader}>
-            <span style={styles.ownerSectionTitle}>Subconcepts</span>
-            {isOwner && (
-              <button
-                onClick={() => { setShowAddPicker(!showAddPicker); setAddError(''); setSelectedConcept(null); setSearchQuery(''); setSearchResults([]); }}
-                style={styles.addButton}
-              >
-                {showAddPicker ? 'Cancel' : '+ Add Concept'}
-              </button>
-            )}
-          </div>
-
-          {edges.length === 0 && isOwner && !showAddPicker && (
-            <div style={styles.emptyHint}>No concepts added yet. Click "+ Add Concept" to get started.</div>
-          )}
-
-          {edges.length > 0 && (
-            <div style={styles.subconcepts}>
-              {edges.map(edge => (
-                <div key={edge.edge_id} style={styles.subconceptRow}>
-                  <div style={styles.subconceptInfo}>
-                    <span
-                      style={{ ...styles.subconceptName, cursor: 'pointer' }}
-                      onClick={() => onOpenConceptTab && onOpenConceptTab(edge.concept_id, edge.graph_path || [], edge.concept_name, edge.attribute_name)}
-                      title="Open in graph tab"
-                    >{edge.concept_name}</span>
-                    <span style={styles.attrBadge}>[{edge.attribute_name}]</span>
-                    <span style={styles.subconceptPath}>{buildPathString(edge)}</span>
-                  </div>
-                  {isOwner && (
-                    <button
-                      onClick={() => handleRemoveEdge(edge.edge_id)}
-                      style={styles.removeButton}
-                      title="Remove from superconcept"
-                    >{'\u2715'}</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add subconcept picker */}
-          {showAddPicker && (
-            <div style={styles.pickerArea}>
-              <input
-                type="text"
-                placeholder="Search for a concept..."
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setSelectedConcept(null); setConceptContexts([]); setAddError(''); }}
-                style={styles.searchInput}
-                autoFocus
-              />
-              {addError && <div style={styles.errorText}>{addError}</div>}
-              {searchLoading && <div style={styles.hint}>Searching...</div>}
-
-              {/* Search results */}
-              {!selectedConcept && searchResults.length > 0 && (
-                <div style={styles.searchResultsList}>
-                  {searchResults.map(r => (
-                    <div
-                      key={r.id}
-                      style={styles.searchResultItem}
-                      onClick={() => handleSelectSearchResult(r)}
-                    >
-                      {r.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Context picker for selected concept */}
-              {selectedConcept && (
-                <div style={styles.contextPicker}>
-                  <div style={styles.contextPickerHeader}>
-                    Select a context for <strong style={{ fontWeight: '600' }}>{selectedConcept.name}</strong>:
-                    <button onClick={() => { setSelectedConcept(null); setConceptContexts([]); setAddError(''); }} style={styles.backLink}>← Back to results</button>
-                  </div>
-                  {contextsLoading ? (
-                    <div style={styles.hint}>Loading contexts...</div>
-                  ) : conceptContexts.length === 0 ? (
-                    <div style={styles.hint}>No contexts found for this concept.</div>
-                  ) : (
-                    <div style={styles.contextList}>
-                      {conceptContexts.map(ctx => (
-                        <div
-                          key={ctx.edge_id}
-                          style={styles.contextItem}
-                          onClick={() => handleAddEdge(ctx.edge_id)}
-                        >
-                          <span>
-                            {ctx.isRoot ? '[root]' : buildPathString(ctx)}
-                            {' \u2192 '}{selectedConcept.name}
-                          </span>
-                          <span style={styles.attrBadge}>[{ctx.attribute_name}]</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Transfer ownership (Phase 42c) */}
-      {isOwner && (
-        <div style={styles.transferSection}>
-          <div style={styles.ownerSectionTitle}>Transfer ownership</div>
+      {/* Transfer ownership inline (Phase 42c) */}
+      {isOwner && showTransfer && (
+        <div style={styles.transferInline}>
           {transferConfirm ? (
             <div>
               <div style={{ fontSize: '14px', fontFamily: "'EB Garamond', Georgia, serif", color: '#333', marginBottom: '10px' }}>
@@ -460,6 +387,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
                 onFocus={() => { setTransferInputFocused(true); if (transferBlurTimerRef.current) clearTimeout(transferBlurTimerRef.current); }}
                 onBlur={() => { transferBlurTimerRef.current = setTimeout(() => setTransferInputFocused(false), 200); }}
                 style={styles.transferInput}
+                autoFocus
               />
               {transferFeedback && (
                 <div style={{ fontSize: '13px', fontFamily: "'EB Garamond', Georgia, serif", color: '#333', marginTop: '6px' }}>{transferFeedback}</div>
@@ -493,6 +421,136 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
         </div>
       )}
 
+      {/* Concepts section — columns by attribute */}
+      {(edges.length > 0 || isOwner) && (
+        <div style={styles.conceptsSection}>
+          {/* Add button row — owner only */}
+          {isOwner && (
+            <div style={styles.addButtonRow}>
+              <button
+                onClick={() => { setShowAddPicker(!showAddPicker); setAddError(''); setSelectedConcept(null); setSearchQuery(''); setSearchResults([]); }}
+                style={styles.addButton}
+              >
+                {showAddPicker ? 'Cancel' : '+ Add Concept'}
+              </button>
+            </div>
+          )}
+
+          {/* Add concept picker */}
+          {showAddPicker && (
+            <div style={styles.pickerArea}>
+              <input
+                type="text"
+                placeholder="Search for a concept..."
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setSelectedConcept(null); setConceptContexts([]); setAddError(''); }}
+                style={styles.searchInput}
+                autoFocus
+              />
+              {addError && <div style={styles.errorText}>{addError}</div>}
+              {searchLoading && <div style={styles.hint}>Searching...</div>}
+
+              {/* Search results */}
+              {!selectedConcept && searchResults.length > 0 && (
+                <div style={styles.searchResultsList}>
+                  {searchResults.map(r => (
+                    <div
+                      key={r.id}
+                      style={styles.searchResultItem}
+                      onClick={() => handleSelectSearchResult(r)}
+                    >
+                      {r.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Context picker for selected concept */}
+              {selectedConcept && (
+                <div style={styles.contextPicker}>
+                  <div style={styles.contextPickerHeader}>
+                    Select a context for <strong style={{ fontWeight: '600' }}>{selectedConcept.name}</strong>:
+                    <button onClick={() => { setSelectedConcept(null); setConceptContexts([]); setAddError(''); }} style={styles.backLink}>{'\u2190'} Back to results</button>
+                  </div>
+                  {contextsLoading ? (
+                    <div style={styles.hint}>Loading contexts...</div>
+                  ) : conceptContexts.length === 0 ? (
+                    <div style={styles.hint}>No contexts found for this concept.</div>
+                  ) : (
+                    <div style={styles.contextList}>
+                      {conceptContexts.map(ctx => (
+                        <div
+                          key={ctx.edge_id}
+                          style={styles.contextItem}
+                          onClick={() => handleAddEdge(ctx.edge_id)}
+                        >
+                          <span>
+                            {ctx.isRoot ? '[root]' : buildPathString(ctx)}
+                            {' \u2192 '}{selectedConcept.name}
+                          </span>
+                          <span style={styles.attrBadge}>[{ctx.attribute_name}]</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {edges.length === 0 && isOwner && !showAddPicker && (
+            <div style={styles.emptyHint}>No concepts added yet. Click "+ Add Concept" to get started.</div>
+          )}
+
+          {/* Four-column layout by attribute */}
+          {edges.length > 0 && (
+            <div style={styles.columnsContainer}>
+              {attributeGroups.map(group => (
+                <div key={group.attributeId} style={styles.column}>
+                  <div style={styles.columnHeader}>[{group.attributeName}]</div>
+                  {group.edges.map(edge => {
+                    const isHidden = hiddenEdgeIds.has(edge.edge_id);
+                    return (
+                      <div key={edge.edge_id} style={{ ...styles.conceptCard, ...(isHidden ? styles.conceptCardHidden : {}) }}>
+                        <div style={styles.conceptCardHeader}>
+                          <span
+                            style={styles.conceptCardName}
+                            onClick={() => onOpenConceptTab && onOpenConceptTab(edge.concept_id, edge.graph_path || [], edge.concept_name, edge.attribute_name)}
+                            title="Open in graph tab"
+                          >
+                            {edge.concept_name}
+                          </span>
+                          <div style={styles.conceptCardActions}>
+                            <button
+                              onClick={() => toggleHideEdge(edge.edge_id)}
+                              style={styles.hideToggleButton}
+                              title="Temporarily remove this concept from the search"
+                            >
+                              {isHidden ? 'show' : 'hide'}
+                            </button>
+                            {isOwner && (
+                              <button
+                                onClick={() => handleRemoveEdge(edge.edge_id)}
+                                style={styles.removeButton}
+                                title="Remove from situation"
+                              >{'\u2715'}</button>
+                            )}
+                          </div>
+                        </div>
+                        <div style={styles.conceptCardPath}>{buildFullPath(edge)}</div>
+                        <div style={styles.conceptCardVotes}>
+                          {'\u25B2'} {Number(edge.save_count) || 0}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Aggregated links (Phase 58d-2) */}
       {edges.length > 0 && (
         <div style={{ marginTop: '16px' }}>
@@ -510,10 +568,14 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
           </div>
           {comboLinksLoading ? (
             <div style={styles.emptyState}>Loading links...</div>
-          ) : comboLinks.length === 0 ? (
-            <div style={styles.emptyState}>No links in this superconcept yet. Add a link to one of its subconcepts to see it here.</div>
+          ) : visibleLinks.length === 0 ? (
+            <div style={styles.emptyState}>
+              {comboLinks.length === 0
+                ? 'No links in this situation yet. Add a link to one of its concepts to see it here.'
+                : 'All concepts are hidden. Unhide a concept to see its links.'}
+            </div>
           ) : (
-            comboLinks.map((link, idx) => (
+            visibleLinks.map((link, idx) => (
               <LinkCard key={link.id} isFirst={idx === 0}
                 link={{ ...link, voteCount: Number(link.vote_count) || 0, addedBy: link.added_by, addedByUsername: link.added_by_username, createdAt: link.created_at }}
                 user={user} isGuest={isGuest}
@@ -602,23 +664,16 @@ const styles = {
     fontSize: '12px',
     fontFamily: "'EB Garamond', Georgia, serif",
   },
-  // Owner section
-  ownerSection: {
+  // Concepts section
+  conceptsSection: {
     marginBottom: '16px',
     paddingBottom: '12px',
     borderBottom: '1px solid #e0e0e0',
   },
-  ownerSectionHeader: {
+  addButtonRow: {
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8px',
-  },
-  ownerSectionTitle: {
-    fontSize: '14px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    fontWeight: '600',
-    color: '#555',
+    justifyContent: 'flex-end',
+    marginBottom: '12px',
   },
   addButton: {
     padding: '3px 10px',
@@ -636,37 +691,75 @@ const styles = {
     color: '#999',
     padding: '8px 0',
   },
-  subconcepts: {
+  // Column layout (Phase 66)
+  columnsContainer: {
+    display: 'flex',
+    gap: '24px',
+    overflowX: 'auto',
+    alignItems: 'flex-start',
+  },
+  column: {
+    minWidth: '180px',
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: '8px',
   },
-  subconceptRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    backgroundColor: '#faf9f6',
-  },
-  subconceptInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    flex: 1,
-    minWidth: 0,
-    flexWrap: 'wrap',
-  },
-  subconceptName: {
-    fontSize: '14px',
+  columnHeader: {
+    fontSize: '16px',
     fontFamily: "'EB Garamond', Georgia, serif",
     fontWeight: '600',
     color: '#333',
+    paddingBottom: '8px',
+    borderBottom: '2px solid #ddd',
+    marginBottom: '4px',
   },
-  subconceptPath: {
+  conceptCard: {
+    padding: '10px 12px',
+    border: '1px solid #e0d9cf',
+    borderRadius: '4px',
+    backgroundColor: '#faf9f6',
+  },
+  conceptCardHidden: {
+    opacity: 0.4,
+  },
+  conceptCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  conceptCardName: {
+    fontSize: '15px',
+    fontFamily: "'EB Garamond', Georgia, serif",
+    fontWeight: '600',
+    color: '#333',
+    cursor: 'pointer',
+  },
+  conceptCardActions: {
+    display: 'flex',
+    gap: '4px',
+    flexShrink: 0,
+  },
+  hideToggleButton: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '12px',
+    color: '#999',
+    padding: '2px 4px',
+    fontFamily: "'EB Garamond', Georgia, serif",
+  },
+  conceptCardPath: {
     fontSize: '12px',
     fontFamily: "'EB Garamond', Georgia, serif",
     color: '#999',
+    marginTop: '4px',
+  },
+  conceptCardVotes: {
+    fontSize: '12px',
+    fontFamily: "'EB Garamond', Georgia, serif",
+    color: '#888',
+    marginTop: '4px',
   },
   removeButton: {
     background: 'none',
@@ -678,8 +771,8 @@ const styles = {
     fontFamily: "'EB Garamond', Georgia, serif",
     flexShrink: 0,
   },
-  // Transfer ownership (Phase 42c)
-  transferSection: {
+  // Transfer ownership inline (Phase 42c / Phase 66)
+  transferInline: {
     marginBottom: '16px',
     paddingBottom: '12px',
     borderBottom: '1px solid #e0e0e0',
@@ -729,7 +822,7 @@ const styles = {
   },
   // Picker
   pickerArea: {
-    marginTop: '8px',
+    marginBottom: '12px',
     padding: '10px',
     border: '1px solid #ddd',
     borderRadius: '6px',
@@ -822,46 +915,6 @@ const styles = {
     borderRadius: '8px',
     whiteSpace: 'nowrap',
   },
-  // Filter bar
-  filterBar: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-    alignItems: 'center',
-    marginBottom: '10px',
-    padding: '8px 0',
-  },
-  filterBadgeActive: {
-    padding: '2px 8px',
-    fontSize: '12px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    borderRadius: '10px',
-    backgroundColor: '#333',
-    color: 'white',
-    border: '1px solid #333',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  filterBadge: {
-    padding: '2px 8px',
-    fontSize: '12px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    borderRadius: '10px',
-    backgroundColor: 'transparent',
-    color: '#999',
-    border: '1px solid #ddd',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    opacity: 0.7,
-  },
-  showAllLink: {
-    fontSize: '12px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#888',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    marginLeft: '4px',
-  },
   // Sort bar
   sortBar: {
     display: 'flex',
@@ -870,20 +923,6 @@ const styles = {
     gap: '4px',
     marginBottom: '6px',
     padding: '4px 0',
-  },
-  matchLabel: {
-    fontSize: '13px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#888',
-    marginLeft: '16px',
-    paddingRight: '2px',
-  },
-  matchHelper: {
-    fontSize: '12px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#888',
-    marginBottom: '12px',
-    padding: '0 0 4px 0',
   },
   sortOption: {
     fontSize: '13px',
@@ -905,102 +944,6 @@ const styles = {
   sortSep: {
     color: '#ccc',
     fontSize: '13px',
-  },
-  docLine: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '6px',
-    flexWrap: 'wrap',
-    marginBottom: '4px',
-  },
-  docTitleLink: {
-    fontSize: '15px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    fontWeight: '600',
-    color: '#333',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-    textDecorationColor: '#ccc',
-  },
-  corpusNameLabel: {
-    fontSize: '12px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#999',
-  },
-  quoteBlock: {
-    fontSize: '14px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#555',
-    paddingLeft: '12px',
-    borderLeft: '2px solid #ddd',
-    margin: '4px 0',
-    lineHeight: '1.4',
-  },
-  commentBlock: {
-    fontSize: '13px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#666',
-    margin: '4px 0',
-    lineHeight: '1.4',
-  },
-  conceptBadgeLine: {
-    margin: '4px 0',
-  },
-  conceptBadge: {
-    fontSize: '11px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#666',
-    padding: '1px 7px',
-    border: '1px solid #ddd',
-    borderRadius: '10px',
-    whiteSpace: 'nowrap',
-  },
-  bottomRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '6px',
-  },
-  voteArea: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  voteButton: {
-    fontSize: '13px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#888',
-    cursor: 'pointer',
-    padding: '2px 6px',
-    borderRadius: '3px',
-    border: '1px solid #ddd',
-    backgroundColor: 'transparent',
-  },
-  voteButtonActive: {
-    fontSize: '13px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: 'white',
-    cursor: 'pointer',
-    padding: '2px 6px',
-    borderRadius: '3px',
-    border: '1px solid #333',
-    backgroundColor: '#333',
-  },
-  voteCountReadonly: {
-    fontSize: '13px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#888',
-    padding: '2px 6px',
-  },
-  corpusVoteCount: {
-    fontSize: '11px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#aaa',
-  },
-  meta: {
-    fontSize: '11px',
-    fontFamily: "'EB Garamond', Georgia, serif",
-    color: '#aaa',
   },
   emptyState: {
     textAlign: 'center',

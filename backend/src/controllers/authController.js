@@ -121,7 +121,7 @@ const authController = {
     try {
       await client.query('BEGIN');
 
-      // Pre-check: user must not own any combos/superconcepts (Phase 42c)
+      // Pre-check: user must not own any combos/situations (Phase 42c)
       const ownedCombos = await client.query(
         'SELECT id, name FROM combos WHERE created_by = $1',
         [req.user.userId]
@@ -129,7 +129,7 @@ const authController = {
       if (ownedCombos.rows.length > 0) {
         await client.query('ROLLBACK');
         return res.status(400).json({
-          error: `You still own ${ownedCombos.rows.length} superconcept(s). Transfer ownership before deleting your account.`,
+          error: `You still own ${ownedCombos.rows.length} situation(s). Transfer ownership before deleting your account.`,
           ownedCombos: ownedCombos.rows
         });
       }

@@ -270,12 +270,6 @@ const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
               </div>
             )}
           </div>
-          <div style={styles.legend}>
-            <span style={styles.savedIndicator}>{'\u25CF'}</span>
-            <span style={styles.legendLabel}>saved</span>
-            <span style={styles.contextIndicator}>{'\u25CB'}</span>
-            <span style={styles.legendLabel}>context</span>
-          </div>
           <div style={styles.treesContainer}>
             {trees.filter(hasUserContent).map(tree => (
               <div key={tree.edgeId} style={styles.treeCard}>
@@ -304,8 +298,6 @@ const styles = {
   savedCount: { fontSize: '14px', color: '#888', fontFamily: '"EB Garamond", Georgia, serif' },
   toolbarButtons: { display: 'flex', gap: '8px' },
   toolbarButton: { padding: '6px 14px', backgroundColor: '#f0f0f0', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', color: '#555', fontFamily: '"EB Garamond", Georgia, serif' },
-  legend: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' },
-  legendLabel: { fontSize: '12px', color: '#999', fontFamily: '"EB Garamond", Georgia, serif', marginRight: '10px' },
   treesContainer: { display: 'flex', flexDirection: 'column', gap: '16px' },
   treeCard: { backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', padding: '20px', overflow: 'hidden' },
   nodeRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 4px', borderRadius: '4px' },

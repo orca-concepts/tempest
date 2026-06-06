@@ -93,12 +93,12 @@ const DeleteAccountFlow = ({ onClose }) => {
 
         {error && <p style={styles.error}>{error}</p>}
 
-        {/* Step 1: Superconcept ownership */}
+        {/* Step 1: Situation ownership */}
         {step === 1 && (
           <div>
             <p style={styles.text}>
-              Transfer ownership of the superconcepts below before deleting your account.
-              Use each superconcept's tab in the sidebar to transfer ownership.
+              Transfer ownership of the situations below before deleting your account.
+              Use each situation's tab in the sidebar to transfer ownership.
             </p>
 
             {ownedCombos.length > 0 && (
@@ -113,7 +113,7 @@ const DeleteAccountFlow = ({ onClose }) => {
                       {resolved ? (
                         <span style={styles.resolvedLabel}>Done</span>
                       ) : (
-                        <span style={styles.noMembersNote}>Transfer via superconcept tab</span>
+                        <span style={styles.noMembersNote}>Transfer via situation tab</span>
                       )}
                     </div>
                   );

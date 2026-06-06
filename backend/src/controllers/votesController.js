@@ -110,30 +110,6 @@ const votesController = {
           }
         }
 
-        // Also create vote_tab_links for backwards compatibility with the old saved tabs
-        // system (still in the DB). Link new votes to the user's first tab if it exists.
-        const defaultTab = await client.query(
-          'SELECT id FROM saved_tabs WHERE user_id = $1 ORDER BY display_order ASC LIMIT 1',
-          [userId]
-        );
-        if (defaultTab.rows.length > 0) {
-          const savedTabId = defaultTab.rows[0].id;
-          for (const eid of edgeIdsToSave) {
-            const voteRow = await client.query(
-              'SELECT id FROM votes WHERE user_id = $1 AND edge_id = $2',
-              [userId, eid]
-            );
-            if (voteRow.rows.length > 0) {
-              await client.query(
-                `INSERT INTO vote_tab_links (vote_id, saved_tab_id)
-                 VALUES ($1, $2)
-                 ON CONFLICT (vote_id, saved_tab_id) DO NOTHING`,
-                [voteRow.rows[0].id, savedTabId]
-              );
-            }
-          }
-        }
-
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -931,26 +907,6 @@ const votesController = {
              ON CONFLICT (user_id, edge_id) DO NOTHING`,
             [userId, replacementEdgeId]
           );
-
-          // Backwards-compat: link to user's first saved tab if it exists
-          const defaultTab = await client.query(
-            'SELECT id FROM saved_tabs WHERE user_id = $1 ORDER BY display_order ASC LIMIT 1',
-            [userId]
-          );
-          if (defaultTab.rows.length > 0) {
-            const voteRow = await client.query(
-              'SELECT id FROM votes WHERE user_id = $1 AND edge_id = $2',
-              [userId, replacementEdgeId]
-            );
-            if (voteRow.rows.length > 0) {
-              await client.query(
-                `INSERT INTO vote_tab_links (vote_id, saved_tab_id)
-                 VALUES ($1, $2)
-                 ON CONFLICT (vote_id, saved_tab_id) DO NOTHING`,
-                [voteRow.rows[0].id, defaultTab.rows[0].id]
-              );
-            }
-          }
 
           autoSaved = true;
         }

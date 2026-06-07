@@ -1,20 +1,36 @@
-# ORCA Graph-Seeding Tool — Rubric
+# Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.1 (first real draft)
-**Purpose of this file:** This is the tool's *brain* — the set of principles, the run
-procedure, and the tunable knobs it uses to propose contributions to Orca's concept
-graphs. It is meant to be read, argued with, and edited. Every run is an opportunity to
-refine it. It does **not** store the graph itself (see Principle 7).
+**Version:** 0.2
+**Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
+and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
+meant to be read, argued with, and edited; every run is an opportunity to refine it. It
+does **not** store the graph itself (Principle 7).
+
+Chaos is no longer only a concept-extractor. Its deeper job is to build and continually
+revise **an evolving model of the researcher** — or of the global amalgam of researchers —
+as that researcher interacts with the world of scientific research. Reading papers is the
+model's sensory channel; proposing research-shaped concepts approximates its active
+channel. Everything below serves that.
 
 ---
 
 ## 0. Changelog
 
-- **v0.1** — First draft. Established Principles 1–7, the run procedure, the knob table,
-  and the values-domain notes. Built from the Transparency / Rigor / Honesty seed
-  (two cognitive-science exemplar papers) and four design directives: subtextual
-  concepts, the cost/benefit lens + hypothetical-researcher step, mid-path insertion,
-  and a bounded cognitive-science corpus with document revisiting.
+- **v0.1** — First draft. Principles 1–7, run procedure, knob table, values-domain notes.
+  Transparency / Rigor / Honesty value seed from two cognitive-science exemplar papers.
+- **v0.2** — Major revision and reorganization.
+  - Added Section 2 (Foundations): five intellectual commitments — move-step analysis,
+    Campbell's monomyth, Foucault, Friston's active inference, Barsalou's Situated Action
+    Cycle.
+  - Added Principles P8 (co-grounding, promoted from a P5 sub-note), P9 (researcher as
+    fulcrum / self-anchoring), P10 (read conduct as move-step analysis), P11 (one evolving
+    model with temporal depth).
+  - Sharpened P2 with the disposition-vs-behavior line.
+  - Filled in the Actions domain (four roots). Re-voiced values as dispositions.
+  - Added Section 5 (Situations) and Section 6 (the internal lifecycle map and dialectical
+    tradeoff tunnels).
+  - Updated run procedure, knobs, and formats. Corpus focus made explicitly
+    cross-disciplinary; citation tracking added.
 
 ---
 
@@ -25,174 +41,335 @@ Orca's four domains together model a **cost/benefit analysis of research**:
 - **Benefit — what to move toward:** *values* and *open questions*.
 - **Cost — what pursuing them takes:** *actions* and *tools*.
 
-A researcher planning new work is, in effect, navigating this cost/benefit landscape.
-The motivating analogy (held loosely, not as a claim) is the predictive-processing view
-of mind: the brain runs a hierarchical generative model that cascades from abstract to
-concrete, and that model is plausibly shaped like a cost/benefit calculation. Orca's
-abstract-to-concrete hierarchies may mirror that shape. If so, then exploring Orca's
-graphs, tunnels, and linked documents should be genuinely useful when planning a
-research proposal and weighing its costs against its benefits.
+A researcher planning new work navigates this landscape. **The tool's meta-objective is
+usefulness to a researcher-planner** — not completeness, not taxonomic tidiness. ("Usefulness"
+is therefore not a value node; it is the lens every proposal is judged against — P5.)
 
-**The tool's meta-objective is therefore usefulness to a researcher-planner** — not
-completeness, not taxonomic tidiness. (This is why "Usefulness" is not itself a value
-*node*: it is the lens every proposal is judged against. See Principle 5.)
+The cost/benefit frame has two faces of one self: the benefit side (values, questions) is
+the **aspirational self** — who I want to be, what I want to know; the cost side (actions,
+tools) is the **enacting self** — what I do and use to get there.
 
 ---
 
-## 2. Core principles
+## 2. Foundations
 
-Each principle is a standalone, editable entry. Format: the rule, why it holds, and a
-Yes/No example to keep it concrete.
+Five bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
+citation.
+
+- **Move-step analysis (Swales' CARS model).** Genre analysts read research writing as a
+  sequence of rhetorical *moves* (establish a territory → establish a niche → occupy it)
+  and finer *steps*, each performing a communicative function in the act of claiming
+  research space. **Commitment:** Chaos reads a document for what its *conduct* is doing in
+  the arc of producing research — the move it represents, the choices it embodies — not for
+  the terminology on its surface. (→ P10.)
+
+- **Campbell's monomyth (the hero's journey).** A cyclical event-structure — departure,
+  initiation, return — that recurs across stories as a lens for interpreting them.
+  **Commitment:** treat the research life cycle as a *cycle* with recognizable stages, and
+  read papers as episodes within it. (→ Section 6.)
+
+- **Foucault, *The Order of Things*.** Knowledge is produced through situated acts of
+  categorization, with the individual knower at the center as both the one who orders and a
+  thing ordered. **Commitment (our reading):** the individual researcher is the fulcrum on
+  which the relations of things turn; Orca self-orients every concept around that person.
+  (→ P9.)
+
+- **Friston, active inference.** A system separated from its environment by a boundary
+  (sensory states flowing in, active states flowing out) maintains an internal generative
+  model and revises it to reduce surprise; adaptive models have *temporal depth*.
+  **Commitment:** Chaos is one such model of the researcher, revised as it reads, and it
+  must acquire temporal depth — tracking research as it unfolds over time. (→ P11, Section 6.)
+
+- **Barsalou, the Situated Action Cycle.** Concepts are not abstract tokens; they develop
+  *within situations of action* that integrate self, environment, action, and outcome, and
+  they function to support predictions for action. **Commitment:** Orca's Situations and the
+  lifecycle map are exactly these loci — concept development happens inside situated cycles,
+  which is why both are first-class. (→ Sections 5, 6.)
+
+A convergence worth noting: Campbell's narrative cycle and Barsalou's Situated Action Cycle
+arrive independently at the same shape — situated, sequential, self-centered episodes. The
+lifecycle map sits on that shared foundation.
+
+---
+
+## 3. Core principles
+
+Each is a standalone, editable entry: the rule, why it holds, and a Yes/No example.
 
 ### P1 — Concept identity by path
-A concept is defined by its children, in the context of its parent path. Moving *down* a
-hierarchy moves from general to specific; a child is part of what makes up its parent,
-though that relationship can be abstract.
-- **Why:** This is Orca's native semantics (path-dependent identity). The same name under
-  a different parent is a different entity.
+A concept is defined by its children, in the context of its parent path. Down a hierarchy
+goes general → specific; a child is part of what makes up its parent, though abstractly.
 
-### P2 — Graph qualities, not practices or methods *(confirmed)*
-A value graph holds **qualities** (expressions of the Good). A *practice or strategy*
-belongs in the **action** graph; an *instrument or method* belongs in the **tool** graph.
-A value leaf bottoms out at the most specific *quality*; one step more concrete and you
-have crossed into another domain. The paper that performed the practice becomes the
-**exemplar link** tying the quality to its instantiation, and the cross-domain concept
-becomes a **tunnel candidate**.
-- **Why:** Without this, the value graph quietly collapses into a to-do list of
-  open-science chores.
-- **Yes:** "Calibrated claims," "Inspectability of evidence."
-- **No:** "Specification-curve analysis" (a tool) or "Preregister the analysis" (an
-  action) as value concepts.
+### P2 — Graph qualities, not practices or methods *(sharpened)*
+A value graph holds **qualities** (dispositions of the researcher — see P9). A *practice or
+strategy* belongs in the **action** graph; an *instrument or method* in the **tool** graph.
+- **The disposition-vs-behavior line:** a value is a *standing quality*; the action is its
+  *exercise*. They tunnel; they are not the same node.
+- **Yes:** "Skeptical of one's own conclusions" (disposition).
+- **No:** "Run every defensible version of the analysis" as a *value* — that is the action
+  the disposition drives.
 
 ### P3 — Subtextual, not terminological
-Graph the researcher's *lived and tacit* conceptualization, not the article's vocabulary.
-Ask: "What is this paper an instance of, in the felt experience of doing research?" The
-right concept is one a researcher would recognize as theirs **even if the paper never
-names it.** This is a soft line — the concept may appear in the source — but the aim is to
-sit *above or beneath* the literal text, in the more abstract ways of thinking about
-research that papers rarely state outright.
-- **Why:** The point of Orca is to help people think about research more abstractly and
-  more personally than the documents themselves do. Indexing jargon defeats that.
-- **Yes:** "Honesty about intentions" (no paper says this; a researcher recognizes it).
-- **No:** Indexing "researcher degrees of freedom" or "FAIR principles" because those
-  phrases appear in the source.
-- **Relation to P2:** Both push concepts away from the literal text — P2 by domain
-  (qualities vs. practices/methods), P3 by abstraction (experience vs. terminology).
+Graph the researcher's lived, tacit conceptualization, not the article's vocabulary. The
+right concept is one a researcher would recognize as theirs even if the paper never names
+it. Soft line — the word may appear in the source — but aim above the literal text.
+- **Yes:** "Forthcoming." **No:** indexing "researcher degrees of freedom" because the
+  phrase appears.
+- Works with P9: P3 pushes away from text by abstraction; P9 anchors to the self.
 
 ### P4 — Grow from encounters, not taxonomy
-A new concept appears because a real paper exemplified something the graph could not yet
-hold — not because the taxonomy "felt incomplete." Evidence-led growth keeps the graph
-first-person and subjective, and resists drifting into a tight technical ontology.
+A new concept appears because a real paper exemplified something the graph could not hold —
+not because the taxonomy "felt incomplete." Evidence-led growth keeps the graph
+first-person and resists drift into a technical ontology.
 
 ### P5 — The cost/benefit lens & the hypothetical-researcher test
-Before proposing anything, simulate a researcher planning new work and navigating the
-cost/benefit reasoning of Section 1. Ask: *would landing on this concept, and this
-exemplar document, help that researcher see this benefit (value / open question) or this
-cost (action / tool) instantiated in actual research, in a way that informs their own
-plan?* If not, do not propose it. A source document linked to a concept must be an
-**exemplar that demonstrates the concept being instantiated**, not a document that merely
-discusses it.
-- **This test is also the engine of tunnel proposals.** The most useful tunnels join a
-  benefit-domain concept to the cost-domain concept it implies (value ↔ action/tool;
-  open question ↔ action/tool), modeling "to obtain this benefit, here is the cost."
-  Within-side tunnels (value ↔ question, action ↔ tool) are also valid.
+Before proposing anything, simulate a researcher planning new work. Ask: would landing on
+this concept, and this exemplar document, help them see a benefit (value/question) or a cost
+(action/tool) *instantiated in actual research* in a way that informs their plan? If not,
+don't propose it. A linked document must be an **exemplar that demonstrates the concept**,
+not one that merely discusses it. (Co-grounding, the engine of tunnels, is now P8.)
 
-### P6 — Do not be a prisoner of existing structure (mid-path insertion)
-Be willing to insert a concept *between* an existing parent and child, or otherwise
-restructure. Mechanically, under append-only, you never move an edge: you create the new
-intermediate edge (Parent → X) and a new edge (X → existing child), and support migrates
-to the better path via votes and future links; the original edge persists until the
-community deprecates it through moderation.
-- **Practical rule:** Restructure **freely while still in the proposal stage** (it costs
-  nothing there). Restructure **already-applied** structure only when the improvement is
-  clear, because append-only leaves the superseded edges behind as residue.
+### P6 — Don't be a prisoner of existing structure
+Be willing to insert a concept between an existing parent and child. Under append-only you
+never move an edge; you create the new intermediate (Parent → X) and the new edge
+(X → child), and support migrates via votes and links. **Restructure freely in the proposal
+stage; restructure already-applied structure only when the gain is clear**, since the old
+edges persist as residue.
 
 ### P7 — Brain vs. state separation *(meta)*
-This rubric is the *brain* (how to decide). The graph in the database is the *state*
-(what has been decided). The rubric never hard-codes the current graph; it encodes the
-principles that generate and revise it.
+This rubric is the *brain* (how to decide). The database is the *state* (what's decided).
+The rubric never hard-codes the current graph.
+
+### P8 — Co-grounding *(promoted to first-class)*
+A cross-domain connection is strongest when a **single document instantiates all of its
+ends** — then the relationship is witnessed, not guessed. Two applications:
+- **Cost/benefit tunnels:** prefer tunnels where one paper exemplifies both the value (or
+  question) and the action (or tool) it connects to.
+- **Situations:** compose them from member edges that share grounding documents; the
+  intersection reading list (Section 5) then falls out for free.
+- A connection that no single document grounds on every end is more speculative — propose
+  it more cautiously. (Exception: dialectical tradeoff tunnels in the lifecycle map, which
+  are validated by reasoning, not documents — Section 6.)
+
+### P9 — The researcher as fulcrum (self-anchoring)
+Every concept is a predicate of the researcher's **self**, which is what gives a concept its
+felt, "this is mine" quality. Intimacy comes from the *referent* (a person), not from
+grammar — so **no first-person pronouns are needed**, and concepts stay short.
+- **Values** = *who I am* (dispositions). **Actions** = *what I do*. **Tools** = *what I
+  use*. **Questions** = *what I ask*. Voice differs in form across domains, but the anchor —
+  the self — is uniform, which is what lets a Situation read as a coherent self-portrait.
+- **The phrasing ceiling (composability discipline):** a concept must remain a noun, gerund,
+  or short imperative *phrase* that can take a parent and children and read general →
+  specific. It may **never** become a declarative clause with a truth value.
+  - **Yes:** "Letting others check my work." **No:** "Open data improves reproducibility"
+    (a proposition — stops being an ontology node).
+- **Guardrail (with P2):** a value-disposition must not slide into the behavior that enacts
+  it. ("Skeptical," not "tests the result every way.")
+
+### P10 — Read conduct as move-step analysis
+Read a paper for the research *process and effort* it represents — which phase of the life
+cycle (Section 6) its conduct instantiates, and what was at stake and traded off there — not
+for the words on the page. A paper is a record of *moves a researcher made*. This is the
+reading method that produces good exemplars and locates papers in the lifecycle map.
+
+### P11 — One evolving model, with temporal depth
+Chaos maintains and revises a *single* model of the researcher as it consumes research
+(active inference). Two consequences:
+- **The two value systems co-evolve.** Orca's researcher-dispositions (Section 4) and the
+  lifecycle map's abstract Good-values (Section 6) both ultimately track "good research," so
+  Chaos updates them *together* as it learns. They need not be discretely linked unless that
+  proves useful.
+- **The model needs temporal depth.** Research unfolds over time; a paper sits between prior
+  work it advances and future work that advances from it. Chaos tracks this through citation
+  relationships among linked papers (Section 7), building a progression axis it can grow into.
 
 ---
 
-## 3. Domain notes
+## 4. Domain notes
 
-### Values *(active focus)*
-Values are expressions of the Good; children define the parent more than the reverse. All
-root-level values are notionally children of a proto-root "Good" that we do **not**
-instantiate — the value domain is a *forest* of independent root graphs, not one tree
-under a literal "Good" node.
+### Values *(active focus)* — dispositions of the researcher
+Values describe *who the researcher is*, not what research is (P9). Roots are broad virtues;
+leaves are specific dispositions; children define the parent. The forest of independent
+roots stands (no literal "Good" node).
 
-- **Current roots:** Transparency, Rigor, Honesty.
-- **Candidate root (emerged, not yet seeded):** Protecting participants / research ethics
-  — in genuine tension with Transparency, which is a feature, not a bug.
-- **Rejected as a node:** Usefulness — it is the meta-objective (P5), not a value.
+- **Current roots:** Transparency, Rigor, Honesty — already person-describing, so the
+  disposition reframe barely moves them. It bites at the leaves, where earlier drafts
+  described the *work*. Re-voicings:
+  - "Inspectability of evidence" → **Open to scrutiny**
+  - "Calibrated claims" → **Measured**
+  - "Robustness to analytic choices" → **Skeptical of one's own conclusions** (the *testing*
+    lives in the action graph)
+  - "Reporting disconfirming results" → **Forthcoming** (this one was already action-shaped;
+    the reframe sends the *act* of reporting to the action graph and keeps the disposition
+    here — so self-anchoring doubles as a detector for value leaves that were secretly actions)
+- **Candidate root (emerged, not yet seeded):** Protecting participants / research ethics —
+  in genuine tension with Transparency, which is a feature.
+
+### Actions *(cost side)* — what I do
+Abstractions read as strategies; concrete steps sit beneath. Current roots from the seed:
+
+- **Make the work checkable** → Publish the materials to re-run the analysis (→ Deposit your
+  data and code openly); Record your decisions as you go (→ Document where you departed from
+  the plan); Disclose what could bias the work.
+- **Commit before you look** → Register hypotheses and design before collecting data.
+- **Pressure-test your own result** → Run every defensible version of the analysis (→ Sample
+  the space when too large to enumerate); Check the result against chance.
+- **Report it straight** → Report findings that cut against your hypothesis; Anchor effect
+  sizes to familiar comparisons.
 
 ### Open questions *(benefit side, not yet built)*
-A parent question is answered by answering its more concrete child questions; concrete
-questions are stepping stones to abstract ones.
-
-### Actions *(cost side, not yet built)*
-Abstractions read almost as strategies, with more concrete steps beneath them.
+A parent question is answered by answering its more concrete child questions.
 
 ### Tools *(cost side, not yet built)*
 Generic tool concepts connect more concrete examples of actual tools.
 
+### Corpus and cross-disciplinarity
+Pull from across the cognitive sciences — **neuroscience, psychology, linguistics, AI,
+philosophy, anthropology**. **Cross-disciplinary concepts are especially valuable:** a
+disposition or strategy that recurs across, say, neuroscience and anthropology is more
+likely to be a deep, lived, subtextual concept than a discipline-bound term.
+
 ---
 
-## 4. Run procedure
+## 5. Situations (composition over the graph)
 
-1. **Load state.** Read the current graph (concepts, edges, links) from the dev database;
-   load this rubric.
+A Situation (the app feature, backed by `combos`/`combo_edges`) is a **composed research
+lens**: a curated set of member *edges* — concept-in-context, not bare concepts — assembled
+into a coherent slice of context, read through against source material. The redesigned page
+lays members out in four attribute columns (value, question | action, tool), so the
+cost/benefit balance is visible at a glance.
+
+- **Members are edges.** Each member is a concept at a specific path and attribute.
+- **Reading list = intersection, not aggregation (P8 generalized).** Compose situations from
+  edges that *share grounding documents*; those shared documents then surface across multiple
+  members and form an intersection-rich reading list under the app's aggregation, with no app
+  change required. A document touching several members is evidence they belong in one frame.
+- **Composition is hybrid.** Build both directions: **bottom-up** (cluster edges by shared
+  grounding documents and let the frame crystallize) and **top-down** (name a research context
+  a researcher would recognize, then assemble members and a reading list to fit). Reconcile
+  the two — in reality these are built with feedback from both sides.
+- **Domain-balance read-out.** Every proposed situation reports its spread across the four
+  columns in cost/benefit terms. Lopsidedness is *informative*, not forbidden — surface and
+  interpret it ("names what to want and one way to pursue it, but is silent on tooling cost").
+  A deliberately one-sided frame (all open questions = an unexplored frontier) is legitimate.
+- **Felt-context test.** Beyond "do these make sense together," ask: read across its columns,
+  does this situation feel like *a self-portrait a researcher recognizes in themselves* doing
+  this kind of work? (P9 delivers this at the situation level.)
+- **Core spine vs. toggleable members.** The page lets anyone hide/show member cards
+  (excluding their links from the reading list). Design situations with a stable co-grounded
+  *spine* plus a few members that sharpen or pivot the lens when toggled.
+
+---
+
+## 6. The lifecycle map *(internal to Chaos — for now)*
+
+A second structure Chaos builds and hones as it reads: a map of the **research life cycle**
+as a *cycle* of phases (Campbell + Barsalou), used to interpret papers (move-step analysis)
+and to hold value *tensions*. It is **internal to the tool and not part of the Orca app at
+present** — but there is no deep philosophical barrier to it (or its tradeoff tunnels)
+entering Orca later, since Chaos aims to build the graphs real researchers would make. It is
+**built incrementally**, not fixed scaffolding; it sharpens as the corpus grows.
+
+- **Phases (provisional, illustrative).** Sensing the gap → Committing to a question →
+  Designing the approach → Executing and wrestling with data → Interpreting → Reporting and
+  returning → (back to sensing). These will be revised from evidence; do not treat them as
+  settled.
+
+- **Phase values are abstract Goods, not dispositions.** Unlike Orca's researcher-anchored
+  values, the map holds Good-values in the abstract: Speed, Rigor, Novelty, Significance,
+  Depth, Breadth, Precision, Generality, Parsimony, and so on.
+
+- **Dialectical tradeoff tunnels.** The map's tunnels are **not** cost/benefit. They connect
+  values that act as **tradeoffs** — competing for the same finite resources (time, energy,
+  attention), such that a researcher tends to have to *choose*. This is closer to how values
+  are actually navigated: a field of tensions, not a checklist of virtues.
+  - Illustrative tensions by phase: *Designing* — Rigor ↔ Speed, Control ↔ Ecological
+    validity, Precision ↔ Generality; *Interpreting* — Boldness ↔ Caution, Parsimony ↔
+    Completeness; *Sensing the gap* — Novelty ↔ Significance.
+  - **Validated by reasoning, not documents.** Tradeoffs are established by logic about
+    shared resources, not by exemplar papers (the P8 co-grounding requirement does not apply
+    here). A paper may sometimes illustrate a tradeoff, but the map's job is to find and
+    justify the tensions themselves.
+
+- **Co-evolution with Orca's values (P11).** As Chaos reads, it updates the map's Goods and
+  Orca's researcher-dispositions together; both track good research.
+
+- **The move-step lens (P10).** Each paper's conduct is placed at a phase and read for the
+  tensions the authors navigated there (e.g., "chose robustness over speed by running the
+  full multiverse"). This is how the map grows.
+
+---
+
+## 7. Run procedure
+
+1. **Load state.** Read the current graph (concepts, edges, links, situations, citation
+   relationships) from the dev database; load this rubric.
 2. **Assemble the working set of papers.**
-   - *Revisit:* re-read already-linked documents — as the graph grows, an old paper may
-     now exemplify concepts that did not exist on its last pass.
-   - *Fetch:* pull a small batch (≈5–10) of new open-access papers within the corpus
-     focus, preferring full text (methods/results are needed to judge exemplification).
-3. **Doc-driven pass** (per paper). Decompose the paper's *conduct* across all enabled
-   domains. Identify the subtextual qualities and open questions it instantiates
-   (benefit) and the actions and tools it used (cost). Apply P2 and P3 throughout.
-4. **Concept-driven pass** (per newly-proposed or recently-added concept). Scan existing
-   linked documents for ones that should now connect to it. Note tunnel candidates.
-5. **Hypothetical-researcher test** (P5). For each candidate link, concept, and tunnel,
-   run the cost/benefit simulation. Keep what informs a real planning decision; drop the
-   rest.
-6. **Structure check** (P6). Consider mid-path insertions or restructurings that improve
-   the graph — freely in the proposal, conservatively against already-applied structure.
-7. **Emit proposals** in the format below, within the concept-creation budget. Write
-   nothing to the database without review.
-8. **Capture feedback.** Each item is accepted, rejected, or modified, *with a reason.*
-   The reasons are distilled into edits to this rubric (logged in Section 0).
+   - *Revisit:* re-read already-linked documents — a grown graph may now offer concepts they
+     did not have on their last pass.
+   - *Fetch:* pull a small batch (≈5–10) of new open-access papers spanning the cognitive
+     sciences (neuroscience, psychology, linguistics, AI, philosophy, anthropology),
+     preferring full text and cross-disciplinary material.
+3. **Move-step read** (P10). For each paper, place its conduct at a lifecycle phase and read
+   it for the qualities/questions (benefit) and actions/tools (cost) it instantiates, and the
+   value-tensions it navigated. Apply P2, P3, P9 throughout.
+4. **Concept-driven pass.** For each new/recent concept, scan existing linked documents that
+   should now connect to it; note tunnel candidates.
+5. **Hypothetical-researcher test** (P5) and **co-grounding check** (P8) on every candidate
+   link, concept, and tunnel.
+6. **Situation-composition pass** (Section 5). Cluster edges by shared grounding documents;
+   build situations hybrid (bottom-up + top-down); produce a balance read-out, an intersection
+   reading list, a core/toggleable split; apply the felt-context test.
+7. **Lifecycle-map update** (Section 6). Refine phases, abstract Good-values, and dialectical
+   tradeoff tunnels by reasoning. Update Orca's researcher-dispositions and the map's Goods
+   together (P11).
+8. **Citation tracking** (P11). Record citation relationships among linked papers to build the
+   temporal progression axis.
+9. **Structure check** (P6). Consider mid-path insertions / restructurings.
+10. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
+    to the database without review.
+11. **Capture feedback.** Each item accepted/rejected/modified, with a reason; reasons drive
+    edits to this rubric (Section 0).
 
 ---
 
-## 5. Knobs (current settings)
+## 8. Knobs (current settings)
 
 | Knob | Current setting | Notes |
 |---|---|---|
-| `corpus_focus` | Cognitive sciences | Interdisciplinary within, bounded to limit breadth |
+| `corpus_focus` | Cognitive sciences across six fields | Neuroscience, psychology, linguistics, AI, philosophy, anthropology |
+| `cross_disciplinary_preference` | High | Concepts recurring across fields are especially valued |
 | `papers_per_run` | 5–10 new + revisit set | |
-| `concept_creation_budget` | Conservative | Last run: 3 roots + 6 children from 2 papers — calibrate from feedback |
-| `domain_boundary_strictness` | Firm | P2 |
-| `subtextuality_strictness` | Firm but soft-edged | P3 — concept may appear in source, but aim above the text |
-| `exemplar_verification` | Trust the claim | We trust data-availability statements; flip to verify-the-artifact at time cost |
-| `root_abstractness` | Mid | Transparency / Rigor / Honesty level, not a single "Integrity" root |
+| `concept_creation_budget` | Conservative | Calibrate from feedback |
+| `domain_boundary_strictness` | Firm | P2, incl. disposition-vs-behavior |
+| `concept_voice` | Researcher-anchored | Dispositions for values; my-actions/tools/questions (P9) |
+| `phrasing_ceiling` | Short, composable phrase; never a proposition | P9 |
+| `subtextuality_strictness` | Firm but soft-edged | P3 |
+| `exemplar_verification` | Trust the claim | Flip to verify-the-artifact at time cost |
+| `cogrounding_preference` | Preferred | P8 — tunnels and situations |
+| `tunnel_types` | Cost/benefit (Orca, doc-grounded) + dialectical tradeoff (map, reasoning-validated) | |
+| `situation_composition` | Hybrid | Bottom-up cluster + top-down frame |
+| `citation_tracking` | On | Build temporal progression axis (P11) |
+| `lifecycle_map` | Internal, incremental | Not in Orca app for now |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |
-| `tunnel_proposal` | On | Prefer benefit ↔ cost cross-domain tunnels (P5) |
-| `revisit_policy` | Every run | Re-pass linked docs for newly-available concepts |
+| `root_abstractness` | Mid | |
+| `revisit_policy` | Every run | |
 
 ---
 
-## 6. Proposal & feedback formats
+## 9. Proposal & feedback formats
 
-**Concept proposal:** graph + attribute; parent path; new child concept; rationale
-(why it belongs here, general→specific, subtextual).
-
-**Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
-claim (how the document's *conduct* instantiates the concept).
-
-**Tunnel proposal:** from-edge ↔ to-edge; rationale stated as a cost/benefit relation.
-
-**Mid-path insertion:** the existing edge being refined; the new intermediate concept;
-the resulting Parent → X → child path.
-
-**Feedback (per item):** accept / reject / modify + reason. Reasons drive rubric edits.
+- **Concept proposal:** graph + attribute; parent path; new child; rationale (general →
+  specific, subtextual, self-anchored).
+- **Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
+  claim (how the conduct instantiates the concept).
+- **Cost/benefit tunnel proposal:** from-edge ↔ to-edge; rationale as a cost/benefit relation;
+  the co-grounding document where one exists (P8).
+- **Dialectical tradeoff tunnel (map):** value ↔ value; the shared resource they compete for;
+  the reasoning for the tension; the phase(s) it lives in. No exemplar required.
+- **Situation proposal:** member edges; suggested name; domain-balance read-out; intersection
+  reading list (shared documents); core spine vs. toggleable members.
+- **Citation relationship:** paper A advances paper B (A cites B) → a progression edge.
+- **Mid-path insertion:** the existing edge refined; the new intermediate; the resulting
+  Parent → X → child path.
+- **Feedback (per item):** accept / reject / modify + reason. Reasons drive rubric edits.

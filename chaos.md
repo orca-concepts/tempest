@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.2
+**Version:** 0.3
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -11,6 +11,11 @@ revise **an evolving model of the researcher** — or of the global amalgam of r
 as that researcher interacts with the world of scientific research. Reading papers is the
 model's sensory channel; proposing research-shaped concepts approximates its active
 channel. Everything below serves that.
+
+Two further commitments frame the aim. Orca is meant to function as an **extended mind** —
+a trusted external store of categories the researcher offloads to — and Chaos works to grow
+that store's **integrated information**, connecting what was previously separate. See
+Foundations.
 
 ---
 
@@ -31,6 +36,12 @@ channel. Everything below serves that.
     tradeoff tunnels).
   - Updated run procedure, knobs, and formats. Corpus focus made explicitly
     cross-disciplinary; citation tracking added.
+- **v0.3** — Added two foundations: Tononi's integrated information (phi) and Clark &
+  Chalmers' extended mind. Added Principles P12 (grow integrated information / the phi
+  balance) and P13 (recurrence is the corpus's vote). Added a recurrence-&-phi step to the
+  run procedure and a new Section 8 (Architecture & operation) capturing the pipeline,
+  the code-vs-Claude split, the staged autonomy, and the validation model. Knobs and
+  Formats renumbered to Sections 9 and 10.
 
 ---
 
@@ -49,11 +60,16 @@ The cost/benefit frame has two faces of one self: the benefit side (values, ques
 the **aspirational self** — who I want to be, what I want to know; the cost side (actions,
 tools) is the **enacting self** — what I do and use to get there.
 
+The cost/benefit frame reflects what Lisa Feldman Barrett writes about cognition and conscious 
+experience as anchored by body budgeting, interoceptive activities in the brain. The 
+categorical mechanisms of the brain are thus anchored by questions of finite energy and the 
+decisions to be made with it. 
+
 ---
 
 ## 2. Foundations
 
-Five bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
+Seven bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
 citation.
 
 - **Move-step analysis (Swales' CARS model).** Genre analysts read research writing as a
@@ -86,9 +102,29 @@ citation.
   lifecycle map are exactly these loci — concept development happens inside situated cycles,
   which is why both are first-class. (→ Sections 5, 6.)
 
+- **Tononi, integrated information theory.** Consciousness is theorized to track Φ (phi):
+  a system has high phi when it is both highly *integrated* (not decomposable without loss)
+  and highly *differentiated* (rich in distinct states). IIT is prominent but contested, so
+  we use it as a generative heuristic, not a settled measure. **Commitment:** Chaos works to
+  grow the graph's integrated information — connecting what was separate while keeping it
+  specific — on the wager that a more integrated category store makes its user a more
+  integrated thinker. (→ P12.)
+
+- **Clark & Chalmers, the extended mind.** Reliable external resources we offload to —
+  Otto's notebook, a stored phone number — count as genuine parts of the cognitive system,
+  provided they are reliably available, easily accessed, and *automatically endorsed*.
+  **Commitment:** Orca is a cognitive prosthesis the researcher offloads categories to,
+  which imposes a trustworthiness bar on the category store. The endorsement criterion is
+  exactly P9's "this is mine" — self-anchoring is the precondition for Orca being a genuine
+  extension of the mind rather than a database one merely consults.
+
 A convergence worth noting: Campbell's narrative cycle and Barsalou's Situated Action Cycle
 arrive independently at the same shape — situated, sequential, self-centered episodes. The
-lifecycle map sits on that shared foundation.
+lifecycle map sits on that shared foundation. And four of these commitments form one spine:
+the mind models the world (predictive processing, beneath active inference), updates that
+model through action and perception (active inference), extends it into trusted technology
+(extended mind), and is worth more the more integrated the model becomes (integrated
+information). Chaos grows that extended, integrated model.
 
 ---
 
@@ -182,6 +218,26 @@ Chaos maintains and revises a *single* model of the researcher as it consumes re
 - **The model needs temporal depth.** Research unfolds over time; a paper sits between prior
   work it advances and future work that advances from it. Chaos tracks this through citation
   relationships among linked papers (Section 7), building a progression axis it can grow into.
+
+### P12 — Grow integrated information (the phi balance)
+Prefer additions that raise the graph's *integrated information* (Tononi, used heuristically).
+A good addition both **integrates** — connects regions of the graph that were previously
+separate or weakly linked — and **differentiates** — adds specific, distinct content. Balance
+familiar and novel: an addition that only thickens an already-dense node is redundant (no new
+information); one that bridges distant, well-grounded regions raises phi most; one that
+connects things with no grounding is noise (integration without differentiation). Part of this
+is a plain, inspectable graph metric — does the proposal bridge currently-distant nodes? — so
+phi is a surfaced variable, not a vibe.
+- **Yes:** a disposition that recurs across two disciplines, bridging their sub-graphs.
+- **No:** a fourth near-synonym leaf under an already-rich node.
+
+### P13 — Recurrence is the corpus's vote
+With little external ground truth, the strongest empirical signal is **recurrence**: a
+specific concept independently re-exemplified by fresh research is the world confirming it
+(in active-inference terms, a prediction kept low-surprise — P11). Chaos tracks how often each
+concept is independently re-exemplified, treating well-recurring concepts as validated and
+one-offs as speculative. Recurrence is also a promotion signal — a specific disposition that
+keeps recurring, especially across disciplines, earns a place nearer a root.
 
 ---
 
@@ -325,15 +381,69 @@ entering Orca later, since Chaos aims to build the graphs real researchers would
    together (P11).
 8. **Citation tracking** (P11). Record citation relationships among linked papers to build the
    temporal progression axis.
-9. **Structure check** (P6). Consider mid-path insertions / restructurings.
-10. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
+9. **Recurrence & phi pass** (P12, P13). Update each concept's recurrence count from this run's
+   exemplars; then rank the candidate set by its contribution to integrated information — the
+   familiar↔novel balance — preferring well-grounded additions that bridge previously-separate
+   regions over those that merely thicken dense ones.
+10. **Structure check** (P6). Consider mid-path insertions / restructurings.
+11. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
     to the database without review.
-11. **Capture feedback.** Each item accepted/rejected/modified, with a reason; reasons drive
+12. **Capture feedback.** Each item accepted/rejected/modified, with a reason; reasons drive
     edits to this rubric (Section 0).
 
 ---
 
-## 8. Knobs (current settings)
+## 8. Architecture & operation
+
+How Chaos is *built and run*, distinct from *what* it reasons (Section 7).
+
+**Shape.** Chaos is a **staged pipeline orchestrated as a Claude Code skill** — not an
+autonomous agent swarm. Deterministic plumbing is small, testable scripts; reasoning stages
+are Claude calls guided by this file. The separation keeps the tool legible and keeps a
+database write from ever depending on an opaque agent loop.
+
+**The pipeline:**
+1. *Snapshot* (code) — read the dev DB into a compact structured state (concepts, edges by
+   domain, links, situations, citation edges, lifecycle map).
+2. *Source* (code/API) — fetch open-access papers across the six fields; full text; dedupe
+   against already-linked papers; pull citation metadata.
+3. *Read & decompose* (Claude) — move-step read each paper into candidate concepts, links,
+   tunnels, and a lifecycle-phase placement.
+4. *Compose & integrate* (Claude) — situations, tunnels, tradeoffs, citation edges.
+5. *Recurrence & phi rank* (Claude + code metrics) — update recurrence counts; rank the
+   candidate set by the integration / differentiation balance.
+6. *Emit* (code) — write proposals to a review file, never directly to the DB.
+7. *Review gate* (you) — accept / reject / modify, with reasons.
+8. *Apply* (code) — write accepted proposals to the DB, transactionally and idempotently.
+9. *Distill* (Claude + you) — turn reasons into edits to this file.
+
+Code owns the plumbing (1, 2, 6, 8); Claude owns the thinking (3, 4, 5, 9); steps 3–5 read
+this rubric as their instructions.
+
+**Autonomy, staged.**
+- *Phase A (now, through honing):* every run is human-gated — Chaos proposes, you review,
+  accepted items are written. This is where the rubric hardens.
+- *Phase B (after honing):* scheduled runs may auto-write **low-risk** outputs (links,
+  citation edges) while still queuing **high-risk** outputs (new concepts, roots, situations,
+  lifecycle changes) for review, because append-only makes concept creation sticky. The
+  trigger to loosen the gate is the validation signals maturing (consistent acceptance plus
+  rising recurrence).
+
+**Validation model (no external ground truth).** Three signals: (1) your review;
+(2) recurrence in fresh literature (P13); (3) the integration (phi) trend of the graph over
+runs (P12). Signals (2) and (3) also *prioritize review*, so a full-capacity run surfaces its
+highest-value, highest-confidence proposals first rather than burying the reviewer.
+
+**Operational notes.** Chaos's contributions are attributed to a dedicated **seed account**
+(clean provenance, and a clean handoff when real users arrive), not a personal account. Writes
+are idempotent and transactional — respect the edge uniqueness constraint and dedupe links
+(the link table permits duplicate URLs). External DB access uses Railway's public Postgres
+proxy URL. Pre-launch, the dev graph is disposable: a full-capacity pass can be run, inspected
+whole, and redone.
+
+---
+
+## 9. Knobs (current settings)
 
 | Knob | Current setting | Notes |
 |---|---|---|
@@ -351,13 +461,16 @@ entering Orca later, since Chaos aims to build the graphs real researchers would
 | `situation_composition` | Hybrid | Bottom-up cluster + top-down frame |
 | `citation_tracking` | On | Build temporal progression axis (P11) |
 | `lifecycle_map` | Internal, incremental | Not in Orca app for now |
+| `phi_balance` | Prefer integrative + differentiated | P12 — bridge separate regions; avoid both redundancy and noise |
+| `recurrence_tracking` | On | P13 — recurrence is the corpus's validation signal |
+| `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 8 |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |
 | `root_abstractness` | Mid | |
 | `revisit_policy` | Every run | |
 
 ---
 
-## 9. Proposal & feedback formats
+## 10. Proposal & feedback formats
 
 - **Concept proposal:** graph + attribute; parent path; new child; rationale (general →
   specific, subtextual, self-anchored).

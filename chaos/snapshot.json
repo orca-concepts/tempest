@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "generated_at": "2026-06-09T11:39:42.737Z",
+    "database": "concept_hierarchy",
+    "read_only": true,
+    "source": "chaos/snapshot.js"
+  },
+  "counts": {
+    "attributes": 4,
+    "concepts": 0,
+    "edges": 0,
+    "concept_links": 0,
+    "combos": 0,
+    "combo_edges": 0,
+    "tunnel_links": 0
+  },
+  "attributes": [
+    {
+      "id": 1,
+      "name": "action"
+    },
+    {
+      "id": 2,
+      "name": "tool"
+    },
+    {
+      "id": 3,
+      "name": "value"
+    },
+    {
+      "id": 142,
+      "name": "question"
+    }
+  ],
+  "concepts": [],
+  "edges_by_attribute": {
+    "action": [],
+    "tool": [],
+    "value": [],
+    "question": []
+  },
+  "concept_links": [],
+  "combos": [],
+  "combo_edges": [],
+  "tunnel_links": []
+}

@@ -37,4 +37,8 @@ coverage/
 # Misc
 .cache/
 orca-legal-bullet-points_1.md
-PRELAUNCH.md 
+PRELAUNCH.md
+
+# Chaos — local backups and regenerable fetched papers
+backups/
+chaos/papers/

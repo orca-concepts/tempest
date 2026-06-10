@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.4
+**Version:** 0.5
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -49,6 +49,11 @@ Foundations.
   dialectical tradeoff tunnels. Recast Situations (Section 5) as cost/benefit moments
   (Barsalou anchor) that Chaos also learns from research. Added a Learning model to Section 8.
   Trimmed P11's two-value-systems clause. Updated the run procedure, knobs, and formats.
+- **v0.5** — Honing from Run 1 (bootstrapping seed). Extended P10 to read the introduction's
+  rhetorical moves (Swales CARS Move 1/2) for the early phases (Sensing, Committing) and for
+  questions — conduct-reading alone systematically under-populated the front of the life cycle.
+  Added a tunnel-directness note to P2 (pair a disposition with the action that most directly
+  enacts it).
 
 ---
 
@@ -151,7 +156,9 @@ goes general → specific; a child is part of what makes up its parent, though a
 A value graph holds **qualities** (dispositions of the researcher — see P9). A *practice or
 strategy* belongs in the **action** graph; an *instrument or method* in the **tool** graph.
 - **The disposition-vs-behavior line:** a value is a *standing quality*; the action is its
-  *exercise*. They tunnel; they are not the same node.
+  *exercise*. They tunnel; they are not the same node. When you tunnel them, pair the
+  disposition with the action that *most directly* enacts it (Skeptical ↔ cross-check;
+  Measured ↔ calibrated reporting) — not with whatever action the same paper happens to ground.
 - **Yes:** "Skeptical of one's own conclusions" (disposition).
 - **No:** "Run every defensible version of the analysis" as a *value* — that is the action
   the disposition drives.
@@ -218,6 +225,11 @@ Read a paper for the research *process and effort* it represents — which phase
 cycle (Section 6) its conduct instantiates, and what was at stake and traded off there — not
 for the words on the page. A paper is a record of *moves a researcher made*. This is the
 reading method that produces good exemplars and locates papers in the lifecycle map.
+- **Read both ends of the arc.** The conduct in methods/results/discussion documents the
+  *mid-to-late* phases (Designing → Reporting). The *early* phases (Sensing the gap,
+  Committing to a question) and most *questions* live only in the introduction's rhetorical
+  moves — Swales' CARS Move 1 (establish a territory) and Move 2 (establish a niche / the
+  gap). Read those moves too, or the front of the life cycle stays empty.
 
 ### P11 — One evolving model, with temporal depth
 Chaos maintains and revises a *single* model of the researcher as it consumes research
@@ -407,8 +419,10 @@ set if the evidence warrants. Do not treat the phases as settled scaffolding.
    - *Fetch:* pull a batch of new open-access papers spanning the cognitive sciences
      (neuroscience, psychology, linguistics, AI, philosophy, anthropology), preferring full
      text and cross-disciplinary material.
-3. **Move-step read & prediction test** (P10, P14). For each paper, place its conduct at a
-   lifecycle phase and read it for the dispositions/questions (benefit) and actions/tools (cost)
+3. **Move-step read & prediction test** (P10, P14). For each paper, read *both ends of the
+   arc*: the conduct in methods/results for the mid-to-late phases, and the introduction's CARS
+   moves (territory, niche) for the early phases (Sensing, Committing) and questions. Place its
+   conduct at a phase; read it for the dispositions/questions (benefit) and actions/tools (cost)
    it instantiates. Score it *against what the graph predicted it would contain*: record gaps
    (add), non-confirmations (toward decay), and mis-structures (restructure). Apply P2, P3, P9.
 4. **Concept-driven pass.** For each new/recent concept, scan existing linked documents that

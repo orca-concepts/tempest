@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.3
+**Version:** 0.4
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -42,6 +42,13 @@ Foundations.
   run procedure and a new Section 8 (Architecture & operation) capturing the pipeline,
   the code-vs-Claude split, the staged autonomy, and the validation model. Knobs and
   Formats renumbered to Sections 9 and 10.
+- **v0.4** — Made prediction-error the primary learning loop: added P14 (the graph is a set
+  of predictions; learn from gaps, non-confirmations, and mis-structures), with a cautious,
+  reversible disconfirmation policy and active sampling. Simplified the lifecycle map (Section
+  6) from a parallel value system into a phase index over the real concepts; deferred the
+  dialectical tradeoff tunnels. Recast Situations (Section 5) as cost/benefit moments
+  (Barsalou anchor) that Chaos also learns from research. Added a Learning model to Section 8.
+  Trimmed P11's two-value-systems clause. Updated the run procedure, knobs, and formats.
 
 ---
 
@@ -93,14 +100,18 @@ citation.
 - **Friston, active inference.** A system separated from its environment by a boundary
   (sensory states flowing in, active states flowing out) maintains an internal generative
   model and revises it to reduce surprise; adaptive models have *temporal depth*.
-  **Commitment:** Chaos is one such model of the researcher, revised as it reads, and it
-  must acquire temporal depth — tracking research as it unfolds over time. (→ P11, Section 6.)
+  **Commitment:** Chaos is one such model of the researcher, revised as it reads. The graph it
+  maintains is a set of *predictions* about research, and each new article tests them —
+  prediction error is the primary learning signal. The model must also acquire temporal depth,
+  tracking research as it unfolds. (→ P11, P14, Section 6.)
 
 - **Barsalou, the Situated Action Cycle.** Concepts are not abstract tokens; they develop
   *within situations of action* that integrate self, environment, action, and outcome, and
   they function to support predictions for action. **Commitment:** Orca's Situations and the
   lifecycle map are exactly these loci — concept development happens inside situated cycles,
-  which is why both are first-class. (→ Sections 5, 6.)
+  which is why both are first-class. We don't apply the cycle literally, but we borrow its
+  anchor: a situation is a *moment of cost and benefit* — actions and the goal-states they
+  serve — not merely a coherent set of concepts. (→ Sections 5, 6.)
 
 - **Tononi, integrated information theory.** Consciousness is theorized to track Φ (phi):
   a system has high phi when it is both highly *integrated* (not decomposable without loss)
@@ -210,14 +221,12 @@ reading method that produces good exemplars and locates papers in the lifecycle 
 
 ### P11 — One evolving model, with temporal depth
 Chaos maintains and revises a *single* model of the researcher as it consumes research
-(active inference). Two consequences:
-- **The two value systems co-evolve.** Orca's researcher-dispositions (Section 4) and the
-  lifecycle map's abstract Good-values (Section 6) both ultimately track "good research," so
-  Chaos updates them *together* as it learns. They need not be discretely linked unless that
-  proves useful.
-- **The model needs temporal depth.** Research unfolds over time; a paper sits between prior
-  work it advances and future work that advances from it. Chaos tracks this through citation
-  relationships among linked papers (Section 7), building a progression axis it can grow into.
+(active inference). There is one value system — Orca's researcher-dispositions (Section 4);
+the lifecycle map (Section 6) is no longer a parallel system but a phase index over those same
+concepts. The model needs **temporal depth**: a paper sits between prior work it advances and
+future work that advances from it, and Chaos tracks this through citation relationships among
+linked papers (Section 7), building a progression axis. *How* the model learns from research —
+prediction and error — is P14.
 
 ### P12 — Grow integrated information (the phi balance)
 Prefer additions that raise the graph's *integrated information* (Tononi, used heuristically).
@@ -237,7 +246,40 @@ specific concept independently re-exemplified by fresh research is the world con
 (in active-inference terms, a prediction kept low-surprise — P11). Chaos tracks how often each
 concept is independently re-exemplified, treating well-recurring concepts as validated and
 one-offs as speculative. Recurrence is also a promotion signal — a specific disposition that
-keeps recurring, especially across disciplines, earns a place nearer a root.
+keeps recurring, especially across disciplines, earns a place nearer a root. Recurrence is the
+*confirmation* half of the prediction loop (P14).
+
+### P14 — The graph is a set of predictions; learn from prediction error
+The whole graph is a standing set of predictions about research, and each new article tests
+them. This — not human feedback — is the primary learning signal; the aim is to maximize what
+is learned from every article and to lean on curation as little as possible. Three forms of
+error, three operations:
+- **Gap (under-prediction):** the article instantiates something the graph cannot hold → *add* it.
+- **Non-confirmation (doesn't bear out):** the graph holds a concept or situation research keeps
+  *not* instantiating → *decay its attention* (append-only forbids deletion; confidence and
+  visibility drop instead).
+- **Mis-structure:** the article instantiates a concept the graph has, but under a different
+  parent path than predicted → *restructure* (P6). The concept was right; the relationship wasn't.
+
+Recurrence (P13) is the confirmation signal; phi (P12) judges what is worth adding.
+
+**Disconfirmation is cautious and reversible.** Be generous about how much testing is required
+before non-confirmation counts as error: absence in a thin corpus is *untested*, not
+disconfirmed — a prediction can only be retired in a region Chaos has actually sampled. Decay is
+never deletion; later research can dig a decayed concept back up and re-confirm it. Each concept
+and situation carries an explicit prediction and a ledger (confirmed / expected-but-absent /
+appeared-elsewhere).
+
+**Active sampling.** To maximize learning per article and to test fairly, source next what most
+reduces uncertainty — the shakiest predictions (concepts added but unconfirmed, situations not
+yet co-grounded) and the regions a prediction must be sampled in before it can be retired.
+Because curation recedes, *balanced* sourcing across the six fields and the phases is the
+load-bearing guard against the graph merely mirroring its own reading list.
+
+**Division of labor.** Curation hones the *reader* (this rubric — how Chaos reads and judges) and
+recedes; research grows and self-corrects the *knowledge* (the graph) and scales. The loop is the
+same across regimes — research in Phase A/B seeding, user contributions after launch; only the
+sensory stream changes. In practice a human still reviews before anything reaches real users.
 
 ---
 
@@ -291,9 +333,11 @@ likely to be a deep, lived, subtextual concept than a discipline-bound term.
 
 A Situation (the app feature, backed by `combos`/`combo_edges`) is a **composed research
 lens**: a curated set of member *edges* — concept-in-context, not bare concepts — assembled
-into a coherent slice of context, read through against source material. The redesigned page
-lays members out in four attribute columns (value, question | action, tool), so the
-cost/benefit balance is visible at a glance.
+into a coherent slice of context, read through against source material. More than a coherent
+set of concepts, a situation is a **moment of cost and benefit** — actions and the goal-states
+they serve (the Barsalou-inspired anchor). The redesigned page lays members out in four
+attribute columns (value, question | action, tool), so the cost/benefit balance is visible at
+a glance.
 
 - **Members are edges.** Each member is a concept at a specific path and attribute.
 - **Reading list = intersection, not aggregation (P8 generalized).** Compose situations from
@@ -314,82 +358,85 @@ cost/benefit balance is visible at a glance.
 - **Core spine vs. toggleable members.** The page lets anyone hide/show member cards
   (excluding their links from the reading list). Design situations with a stable co-grounded
   *spine* plus a few members that sharpen or pivot the lens when toggled.
+- **Same-phase clustering (Section 6).** Concepts sharing a lifecycle phase are natural
+  co-members — a situation is usually a moment *within* one phase, so phase is a composition
+  heuristic alongside shared-document co-grounding.
+- **Situations learn too.** Chaos looks for *exemplars* of a situation in the literature (a
+  paper that instantiates the whole moment) and proposes *latent* situations it detects under
+  the surface of the text (the move-step read, P10) — not only situations composed from
+  concepts already in the graph.
 
 ---
 
 ## 6. The lifecycle map *(internal to Chaos — for now)*
 
-A second structure Chaos builds and hones as it reads: a map of the **research life cycle**
-as a *cycle* of phases (Campbell + Barsalou), used to interpret papers (move-step analysis)
-and to hold value *tensions*. It is **internal to the tool and not part of the Orca app at
-present** — but there is no deep philosophical barrier to it (or its tradeoff tunnels)
-entering Orca later, since Chaos aims to build the graphs real researchers would make. It is
-**built incrementally**, not fixed scaffolding; it sharpens as the corpus grows.
+A structure Chaos builds and hones as it reads: a map of the **research life cycle** as a
+*cycle* of phases (Campbell + Barsalou), used to **sort the concepts Chaos adds into phases**
+and, mainly, to seed situations from same-phase concepts. It is **internal to the tool and not
+part of the Orca app at present**, though there's no deep barrier to it entering Orca later,
+since Chaos aims to build the graphs real researchers would make. It is **built incrementally**,
+and — importantly — its phases are **flexible**: as more research is consumed, revise the phase
+set if the evidence warrants. Do not treat the phases as settled scaffolding.
 
+- **It is a phase index over the real concepts, not a separate value system.** Each value,
+  action, and tool Chaos adds is sorted into a phase. *Questions are not phase-mapped* — they
+  don't belong to a single phase of research.
+- **Primary use: seeding situations.** Concepts sharing a phase are natural co-members of a
+  situation (a moment within that phase). This is the map's main job (Section 5).
 - **Phases (provisional, illustrative).** Sensing the gap → Committing to a question →
   Designing the approach → Executing and wrestling with data → Interpreting → Reporting and
-  returning → (back to sensing). These will be revised from evidence; do not treat them as
-  settled.
-
-- **Phase values are abstract Goods, not dispositions.** Unlike Orca's researcher-anchored
-  values, the map holds Good-values in the abstract: Speed, Rigor, Novelty, Significance,
-  Depth, Breadth, Precision, Generality, Parsimony, and so on.
-
-- **Dialectical tradeoff tunnels.** The map's tunnels are **not** cost/benefit. They connect
-  values that act as **tradeoffs** — competing for the same finite resources (time, energy,
-  attention), such that a researcher tends to have to *choose*. This is closer to how values
-  are actually navigated: a field of tensions, not a checklist of virtues.
-  - Illustrative tensions by phase: *Designing* — Rigor ↔ Speed, Control ↔ Ecological
-    validity, Precision ↔ Generality; *Interpreting* — Boldness ↔ Caution, Parsimony ↔
-    Completeness; *Sensing the gap* — Novelty ↔ Significance.
-  - **Validated by reasoning, not documents.** Tradeoffs are established by logic about
-    shared resources, not by exemplar papers (the P8 co-grounding requirement does not apply
-    here). A paper may sometimes illustrate a tradeoff, but the map's job is to find and
-    justify the tensions themselves.
-
-- **Co-evolution with Orca's values (P11).** As Chaos reads, it updates the map's Goods and
-  Orca's researcher-dispositions together; both track good research.
-
-- **The move-step lens (P10).** Each paper's conduct is placed at a phase and read for the
-  tensions the authors navigated there (e.g., "chose robustness over speed by running the
-  full multiverse"). This is how the map grows.
+  returning → (back to sensing). Revisable from evidence.
+- **The move-step lens (P10).** Each paper's conduct is read for which phase it instantiates —
+  which is how concepts get their phase, and how the phase set itself gets tested and revised.
+- **Value tradeoffs are deferred.** The earlier idea of abstract Good-values in dialectical
+  tradeoff tunnels (Speed ↔ Rigor, etc.) is *not* part of the build. It may return later as
+  interesting metadata, but it is not a current target.
 
 ---
 
 ## 7. Run procedure
 
 1. **Load state.** Read the current graph (concepts, edges, links, situations, citation
-   relationships) from the dev database; load this rubric.
-2. **Assemble the working set of papers.**
+   relationships, prediction ledgers) from the dev database; load this rubric.
+2. **Assemble the working set of papers** (active sampling, P14). Source to *test the graph's
+   shakiest predictions* — unconfirmed concepts, situations not yet co-grounded, and regions a
+   prediction must be sampled in before it can be retired — while keeping coverage balanced
+   across the six fields and the phases (the bias guard).
    - *Revisit:* re-read already-linked documents — a grown graph may now offer concepts they
      did not have on their last pass.
-   - *Fetch:* pull a small batch (≈5–10) of new open-access papers spanning the cognitive
-     sciences (neuroscience, psychology, linguistics, AI, philosophy, anthropology),
-     preferring full text and cross-disciplinary material.
-3. **Move-step read** (P10). For each paper, place its conduct at a lifecycle phase and read
-   it for the qualities/questions (benefit) and actions/tools (cost) it instantiates, and the
-   value-tensions it navigated. Apply P2, P3, P9 throughout.
+   - *Fetch:* pull a batch of new open-access papers spanning the cognitive sciences
+     (neuroscience, psychology, linguistics, AI, philosophy, anthropology), preferring full
+     text and cross-disciplinary material.
+3. **Move-step read & prediction test** (P10, P14). For each paper, place its conduct at a
+   lifecycle phase and read it for the dispositions/questions (benefit) and actions/tools (cost)
+   it instantiates. Score it *against what the graph predicted it would contain*: record gaps
+   (add), non-confirmations (toward decay), and mis-structures (restructure). Apply P2, P3, P9.
 4. **Concept-driven pass.** For each new/recent concept, scan existing linked documents that
    should now connect to it; note tunnel candidates.
 5. **Hypothetical-researcher test** (P5) and **co-grounding check** (P8) on every candidate
    link, concept, and tunnel.
-6. **Situation-composition pass** (Section 5). Cluster edges by shared grounding documents;
-   build situations hybrid (bottom-up + top-down); produce a balance read-out, an intersection
-   reading list, a core/toggleable split; apply the felt-context test.
-7. **Lifecycle-map update** (Section 6). Refine phases, abstract Good-values, and dialectical
-   tradeoff tunnels by reasoning. Update Orca's researcher-dispositions and the map's Goods
-   together (P11).
+6. **Situation-composition pass** (Section 5). Cluster edges by shared grounding documents and
+   by shared lifecycle phase; build situations hybrid (bottom-up + top-down); also surface
+   *exemplar* and *latent* situations found in the text. Produce a balance read-out, an
+   intersection reading list, a core/toggleable split; apply the felt-context test.
+7. **Lifecycle phase-sorting** (Section 6). Sort each new value/action/tool concept into a
+   phase (questions excepted), and revise the phase set itself if the evidence warrants. No
+   tradeoff tunnels — deferred.
 8. **Citation tracking** (P11). Record citation relationships among linked papers to build the
    temporal progression axis.
-9. **Recurrence & phi pass** (P12, P13). Update each concept's recurrence count from this run's
-   exemplars; then rank the candidate set by its contribution to integrated information — the
-   familiar↔novel balance — preferring well-grounded additions that bridge previously-separate
-   regions over those that merely thicken dense ones.
-10. **Structure check** (P6). Consider mid-path insertions / restructurings.
+9. **Ledger, recurrence & phi pass** (P12, P13, P14). Update each concept's and situation's
+   prediction ledger from this run (confirmations, expected-but-absent, appeared-elsewhere);
+   decay only what's been fairly sampled and still unconfirmed, reversibly. Then rank the
+   candidate set by its contribution to integrated information — the familiar↔novel balance —
+   preferring well-grounded additions that bridge previously-separate regions over those that
+   thicken dense ones.
+10. **Structure check** (P6). Consider mid-path insertions / restructurings, including the
+    mis-structures surfaced in step 3.
 11. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
     to the database without review.
-12. **Capture feedback.** Each item accepted/rejected/modified, with a reason; reasons drive
-    edits to this rubric (Section 0).
+12. **Capture feedback** (secondary signal). Each item accepted/rejected/modified, with a
+    reason; reasons hone the *reader* — edits to this rubric (Section 0) — and recede over time
+    as the research-driven loop (P14) takes over.
 
 ---
 
@@ -408,10 +455,10 @@ database write from ever depending on an opaque agent loop.
 2. *Source* (code/API) — fetch open-access papers across the six fields; full text; dedupe
    against already-linked papers; pull citation metadata.
 3. *Read & decompose* (Claude) — move-step read each paper into candidate concepts, links,
-   tunnels, and a lifecycle-phase placement.
-4. *Compose & integrate* (Claude) — situations, tunnels, tradeoffs, citation edges.
-5. *Recurrence & phi rank* (Claude + code metrics) — update recurrence counts; rank the
-   candidate set by the integration / differentiation balance.
+   tunnels, a phase placement, and a prediction test against the current graph.
+4. *Compose & integrate* (Claude) — situations, tunnels, phase-sorting, citation edges.
+5. *Ledger, recurrence & phi rank* (Claude + code metrics) — update prediction ledgers and
+   recurrence; rank the candidate set by the integration / differentiation balance.
 6. *Emit* (code) — write proposals to a review file, never directly to the DB.
 7. *Review gate* (you) — accept / reject / modify, with reasons.
 8. *Apply* (code) — write accepted proposals to the DB, transactionally and idempotently.
@@ -434,12 +481,29 @@ this rubric as their instructions.
 runs (P12). Signals (2) and (3) also *prioritize review*, so a full-capacity run surfaces its
 highest-value, highest-confidence proposals first rather than burying the reviewer.
 
+**Learning model.** Chaos does not learn by changing the model's weights; it learns by refining
+external memory (current agentic practice). Three substrates, kept distinct and legible:
+- *Procedural* — this rubric. Honed by your feedback during seeding; recedes over time.
+- *Semantic* — the graph plus each node's prediction ledger and recurrence-derived confidence.
+  This is the dominant, scaling loop: research grows and self-corrects it via prediction error
+  (P14).
+- *Episodic* — a persistent record of each run's proposals and outcomes. **Not built yet**; it
+  is what a reflect-and-consolidate step would draw on.
+
+Reflect after each run, then *consolidate*: convert episodic reasons into procedural edits and
+semantic confidence — but only let a lesson change a principle once it has *recurred* (no
+overfitting to one run). Forgetting is by reversible decay, never deletion. The same loop runs
+across regimes — research in Phase A/B seeding, user contributions after launch — with only the
+input stream changing.
+
 **Operational notes.** Chaos's contributions are attributed to a dedicated **seed account**
 (clean provenance, and a clean handoff when real users arrive), not a personal account. Writes
 are idempotent and transactional — respect the edge uniqueness constraint and dedupe links
 (the link table permits duplicate URLs). External DB access uses Railway's public Postgres
 proxy URL. Pre-launch, the dev graph is disposable: a full-capacity pass can be run, inspected
-whole, and redone.
+whole, and redone. The papers/citations migration (per SCHEMA_NOTES) now also carries each
+node's prediction ledger; a persistent episodic feedback store is a further table to add when
+the reflect/consolidate loop is automated.
 
 ---
 
@@ -457,12 +521,15 @@ whole, and redone.
 | `subtextuality_strictness` | Firm but soft-edged | P3 |
 | `exemplar_verification` | Trust the claim | Flip to verify-the-artifact at time cost |
 | `cogrounding_preference` | Preferred | P8 — tunnels and situations |
-| `tunnel_types` | Cost/benefit (Orca, doc-grounded) + dialectical tradeoff (map, reasoning-validated) | |
+| `tunnel_types` | Cost/benefit (Orca, doc-grounded) | Dialectical tradeoff tunnels deferred (§6) |
 | `situation_composition` | Hybrid | Bottom-up cluster + top-down frame |
 | `citation_tracking` | On | Build temporal progression axis (P11) |
-| `lifecycle_map` | Internal, incremental | Not in Orca app for now |
+| `lifecycle_map` | Internal phase index; flexible phases | Sorts concepts into phases; seeds same-phase situations; tradeoffs deferred |
 | `phi_balance` | Prefer integrative + differentiated | P12 — bridge separate regions; avoid both redundancy and noise |
-| `recurrence_tracking` | On | P13 — recurrence is the corpus's validation signal |
+| `recurrence_tracking` | On | P13 — the confirmation signal of the prediction loop |
+| `disconfirmation_policy` | Cautious; generous testing threshold | P14 — untested ≠ disconfirmed; decay is reversible, gated on having sampled the area |
+| `active_sampling` | On | P14 — source to test the shakiest predictions |
+| `sourcing_balance` | Enforced across fields + phases | P14 — the bias guard as curation recedes |
 | `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 8 |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |
 | `root_abstractness` | Mid | |
@@ -472,16 +539,18 @@ whole, and redone.
 
 ## 10. Proposal & feedback formats
 
-- **Concept proposal:** graph + attribute; parent path; new child; rationale (general →
-  specific, subtextual, self-anchored).
+- **Concept proposal:** graph + attribute; parent path; new child; lifecycle phase; rationale
+  (general → specific, subtextual, self-anchored); the prediction it makes (what research should
+  keep instantiating).
 - **Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
   claim (how the conduct instantiates the concept).
 - **Cost/benefit tunnel proposal:** from-edge ↔ to-edge; rationale as a cost/benefit relation;
   the co-grounding document where one exists (P8).
-- **Dialectical tradeoff tunnel (map):** value ↔ value; the shared resource they compete for;
-  the reasoning for the tension; the phase(s) it lives in. No exemplar required.
-- **Situation proposal:** member edges; suggested name; domain-balance read-out; intersection
-  reading list (shared documents); core spine vs. toggleable members.
+- **Prediction-test outcome (per article):** gaps (add), non-confirmations (toward decay),
+  mis-structures (restructure) — the article scored against what the graph predicted (P14).
+- **Situation proposal:** member edges; suggested name; lifecycle phase; domain-balance
+  read-out; intersection reading list (shared documents); core spine vs. toggleable members;
+  cost/benefit-moment rationale (actions + the goal-states they serve).
 - **Citation relationship:** paper A advances paper B (A cites B) → a progression edge.
 - **Mid-path insertion:** the existing edge refined; the new intermediate; the resulting
   Parent → X → child path.

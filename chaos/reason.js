@@ -709,6 +709,187 @@ function reconstructConcepts(integration, perPaper) {
   });
 }
 
+// ============================================================================
+// Stage-5 feedback fixes: merge-rewrite of references, explicit ancestors, and
+// openalex-id normalization of all paper references. These run in main() AFTER
+// reconstructConcepts and rewrite links/tunnels/situations so they follow their
+// (possibly renamed) canonical concepts, and convert reading lists to openalex ids.
+// ============================================================================
+
+function normalizeUrl(u) {
+  if (!u) return null;
+  try {
+    return String(u).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '') || null;
+  } catch {
+    return null;
+  }
+}
+function workIdOf(s) {
+  const m = String(s || '').match(/W\d+/);
+  return m ? m[0] : null;
+}
+
+// Build a resolver from the RAW integration concepts (which carry source_refs):
+// (attribute, [paper_id], any per-paper name the concept was merged from) → the
+// canonical merged concept {attribute, name, parent_path}. Paper-keyed lookups win;
+// the paper-agnostic fallback is suppressed when one source name maps to two canon.
+function buildAliasResolver(rawConcepts) {
+  const byPaper = new Map();
+  const noPaper = new Map();
+  const conflict = new Set();
+  const reg = (attr, paperId, name, canon) => {
+    if (paperId != null) byPaper.set(`${attr}|${paperId}|${normName(name)}`, canon);
+    const k = `${attr}|${normName(name)}`;
+    if (noPaper.has(k)) {
+      if (normName(noPaper.get(k).name) !== normName(canon.name)) conflict.add(k);
+    } else {
+      noPaper.set(k, canon);
+    }
+  };
+  for (const c of asArray(rawConcepts)) {
+    const canon = { attribute: c.attribute, name: c.name, parent_path: asArray(c.parent_path) };
+    reg(c.attribute, null, c.name, canon); // a concept is its own canonical identity
+    for (const r of asArray(c.source_refs)) reg(c.attribute, r.paper_id, r.name, canon);
+  }
+  return function resolve(attribute, paperId, name) {
+    if (paperId != null) {
+      const hit = byPaper.get(`${attribute}|${paperId}|${normName(name)}`);
+      if (hit) return hit;
+    }
+    const k = `${attribute}|${normName(name)}`;
+    if (conflict.has(k)) return null;
+    return noPaper.get(k) || null;
+  };
+}
+
+// 1b: ensure every concept named in a parent_path is itself a concept proposal,
+// so apply.js never silently auto-creates an unreported root. Mutates integration.
+function addAncestorConcepts(integration) {
+  const concepts = asArray(integration.concepts);
+  const have = new Set(concepts.map((c) => `${c.attribute}|${normName(c.name)}`));
+  const added = [];
+  for (const c of concepts) {
+    const pp = asArray(c.parent_path);
+    for (let i = 0; i < pp.length; i++) {
+      const key = `${c.attribute}|${normName(pp[i])}`;
+      if (have.has(key)) continue;
+      have.add(key);
+      added.push({
+        attribute: c.attribute,
+        name: pp[i],
+        parent_path: pp.slice(0, i),
+        phase: c.attribute === 'question' ? null : c.phase || null,
+        prediction: '',
+        recurrence: 0,
+        grounding_papers: [],
+        confidence: 'S',
+        phi: '',
+        ancestor_of: c.name,
+      });
+    }
+  }
+  integration.concepts = concepts.concat(added);
+  return added.length;
+}
+
+// 1a: rewrite per-paper links to the canonical merged concept (attribute, name,
+// parent_path). Returns the flat finalLinks array used by the emitters.
+function rewriteLinks(perPaper, resolve) {
+  const out = [];
+  for (const p of asArray(perPaper)) {
+    for (const l of asArray(p.links)) {
+      const canon = resolve(l.attribute, p.paper_id, l.concept_name);
+      out.push({
+        paper_id: p.paper_id,
+        attribute: canon ? canon.attribute : l.attribute,
+        concept_name: canon ? canon.name : l.concept_name,
+        parent_path: canon ? canon.parent_path : asArray(l.parent_path),
+        url: l.url,
+        claim: l.claim,
+      });
+    }
+  }
+  return out;
+}
+
+// 1a (cont.): rewrite tunnel endpoints to canonical names. Mutates integration.
+function rewriteTunnels(integration, resolve) {
+  for (const t of asArray(integration.tunnels)) {
+    for (const end of [t && t.from, t && t.to]) {
+      if (!end) continue;
+      const canon = resolve(end.attribute, null, end.name);
+      if (canon) {
+        end.attribute = canon.attribute;
+        end.name = canon.name;
+      }
+    }
+  }
+}
+
+// 1a (cont.): rewrite situation members + the core_spine/toggleable name lists.
+function rewriteSituations(integration, resolve) {
+  for (const st of asArray(integration.situations)) {
+    const rename = new Map(); // norm(oldName) -> canonical name
+    for (const m of asArray(st.members)) {
+      const canon = resolve(m.attribute, null, m.name);
+      if (canon) {
+        rename.set(normName(m.name), canon.name);
+        m.attribute = canon.attribute;
+        m.name = canon.name;
+      }
+    }
+    const fix = (arr) => asArray(arr).map((n) => rename.get(normName(n)) || n);
+    if (st.core_spine) st.core_spine = fix(st.core_spine);
+    if (st.toggleable) st.toggleable = fix(st.toggleable);
+  }
+}
+
+// 1c: corpus maps (paper DOI/url → openalex work id) for normalizing reading lists.
+function buildPaperKeyMaps(selected) {
+  const doiToWork = new Map();
+  const urlToWork = new Map();
+  for (const s of asArray(selected)) {
+    let rec;
+    try {
+      rec = loadPaper(s.id);
+    } catch {
+      continue;
+    }
+    const work = workIdOf(rec.openalex_id) || s.id;
+    if (rec.doi) doiToWork.set(normalizeUrl(rec.doi), work);
+    if (rec.best_oa_url) urlToWork.set(normalizeUrl(rec.best_oa_url), work);
+  }
+  return { doiToWork, urlToWork };
+}
+
+// 1c: convert each situation reading list to openalex work ids; drop out-of-corpus
+// entries (e.g. an arXiv URL for a paper not in this run). Mutates integration.
+function normalizeReadingLists(integration, paperMaps) {
+  for (const st of asArray(integration.situations)) {
+    const out = [];
+    for (const entry of asArray(st.reading_list)) {
+      const w =
+        workIdOf(entry) ||
+        paperMaps.doiToWork.get(normalizeUrl(entry)) ||
+        paperMaps.urlToWork.get(normalizeUrl(entry));
+      if (w && !out.includes(w)) out.push(w);
+    }
+    st.reading_list = out;
+  }
+}
+
+// Orchestrates the four fixes in dependency order. resolve is built from RAW
+// integration concepts (before reconstruction strips source_refs). Returns finalLinks.
+function finalizeProposals(integration, perPaper, selected) {
+  const resolve = buildAliasResolver(integration.concepts); // raw concepts carry source_refs
+  integration.concepts = reconstructConcepts(integration, perPaper);
+  addAncestorConcepts(integration);
+  rewriteTunnels(integration, resolve);
+  rewriteSituations(integration, resolve);
+  normalizeReadingLists(integration, buildPaperKeyMaps(selected));
+  return rewriteLinks(perPaper, resolve);
+}
+
 function computeDistributions(integration) {
   const concepts = asArray(integration.concepts);
   const domain = { value: 0, action: 0, tool: 0, question: 0 };
@@ -726,7 +907,7 @@ function computeDistributions(integration) {
   return { domain, phase, questionsUnphased };
 }
 
-function writeJson(integration, perPaper, selected, dist) {
+function writeJson(integration, perPaper, selected, dist, finalLinks) {
   const out = {
     generated_by: 'chaos/reason.js',
     model: MODEL,
@@ -748,9 +929,7 @@ function writeJson(integration, perPaper, selected, dist) {
       non_confirmations: asArray(p.prediction_test && p.prediction_test.non_confirmations),
       mis_structures: asArray(p.prediction_test && p.prediction_test.mis_structures),
     })),
-    links: perPaper.flatMap((p) =>
-      asArray(p.links).map((l) => ({ paper_id: p.paper_id, ...l }))
-    ),
+    links: asArray(finalLinks),
   };
   fs.writeFileSync(PROPOSALS_JSON, JSON.stringify(out, null, 2), 'utf8');
 }
@@ -764,7 +943,7 @@ function rubricVersion() {
   }
 }
 
-function writeMarkdown(integration, perPaper, selected, dist) {
+function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
   const L = [];
   const concepts = asArray(integration.concepts);
   const byAttr = (a) => concepts.filter((c) => c.attribute === a);
@@ -821,12 +1000,15 @@ function writeMarkdown(integration, perPaper, selected, dist) {
   // Link proposals
   L.push('# 2. Link proposals');
   L.push('');
-  L.push('Format (§10): target edge · URL · comment = the exemplification claim (P5). Grouped by paper.');
+  L.push('Format (§10): target edge · URL · comment = the exemplification claim (P5). Grouped by paper. References rewritten to canonical merged concepts.');
   L.push('');
-  for (const p of perPaper) {
-    const links = asArray(p.links);
-    if (!links.length) continue;
-    L.push(`**${p.paper_id}** — ${(p._meta && p._meta.url) || ''}`);
+  const linksByPaper = new Map();
+  for (const l of asArray(finalLinks)) {
+    if (!linksByPaper.has(l.paper_id)) linksByPaper.set(l.paper_id, []);
+    linksByPaper.get(l.paper_id).push(l);
+  }
+  for (const [pid, links] of linksByPaper) {
+    L.push(`**${pid}**`);
     for (const l of links) {
       L.push(`- → ${l.attribute || ''} · ${pathLabel(l.parent_path)} › ${l.concept_name}: ${l.claim || ''}`);
     }
@@ -974,13 +1156,15 @@ async function main() {
   console.log('\nIntegration pass:');
   const integration = await runIntegration(perPaper, rubric);
 
-  // Rebuild full concept objects locally from the compact merge decisions + caches.
-  integration.concepts = reconstructConcepts(integration, perPaper);
+  // Rebuild concepts locally + apply the Stage-5 fixes: merge-rewrite links/tunnels/
+  // situations to canonical names, emit ancestors explicitly, normalize reading lists
+  // to openalex ids. Returns the rewritten flat links array.
+  const finalLinks = finalizeProposals(integration, perPaper, selected);
 
   // Emit.
   const dist = computeDistributions(integration);
-  writeJson(integration, perPaper, selected, dist);
-  writeMarkdown(integration, perPaper, selected, dist);
+  writeJson(integration, perPaper, selected, dist, finalLinks);
+  writeMarkdown(integration, perPaper, selected, dist, finalLinks);
   printSummary(integration, dist);
 }
 
@@ -1029,6 +1213,15 @@ module.exports = {
   reconstructConcepts,
   runIntegration,
   __setCallModelForTest,
+  // Stage-5 merge-rewrite / ancestor / normalization fixes (exported for tests):
+  buildAliasResolver,
+  addAncestorConcepts,
+  rewriteLinks,
+  rewriteTunnels,
+  rewriteSituations,
+  normalizeReadingLists,
+  workIdOf,
+  normalizeUrl,
   PHASES,
   ATTRIBUTES,
 };

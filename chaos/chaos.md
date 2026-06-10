@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.6
+**Version:** 0.7
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -58,6 +58,12 @@ Foundations.
   Committing at zero while questions doubled: P10 cited only CARS Moves 1–2. Added Move 3
   (occupying the niche) — the announced purpose, stated hypotheses, preregistration — as the
   *Committing* move, distinguishing the act of committing from the question committed to.
+- **v0.7** — From the first in-app browse of an applied graph. Added the experiential north
+  star to §1: the platform should feel like *sharing a big research brain* — navigation as
+  traveling the neural pathways of research's conceptual domains. Added recurrence-funded
+  *deepening* to P12 (differentiate children when a concept's accumulated groundings
+  instantiate it in distinct ways) and a root-level curation note to §4 (roots are hooks —
+  intriguing category-openers that invite descent).
 
 ---
 
@@ -80,6 +86,16 @@ The cost/benefit frame reflects what Lisa Feldman Barrett writes about cognition
 experience as anchored by body budgeting, interoceptive activities in the brain. The 
 categorical mechanisms of the brain are thus anchored by questions of finite energy and the 
 decisions to be made with it. 
+
+**The experiential north star: sharing a big research brain.** What the mechanics serve is a
+felt experience — navigating Orca should feel like traveling the neural pathways of research's
+conceptual domains: descending a graph follows a pathway deeper; tunnels and situations are the
+long-range fibers that associate distant regions; exemplar links are where a pathway touches
+the world. This is the extended-mind commitment (§2) made experiential, and the phi principle
+(P12) is its structural measure — integration across differentiated regions is what makes a
+brain a brain rather than a filing cabinet. Proposals should be judged partly by whether they
+make the brain feel more *travelable*: depth to descend into, bridges to cross, hooks that
+invite the journey.
 
 ---
 
@@ -260,6 +276,11 @@ is a plain, inspectable graph metric — does the proposal bridge currently-dist
 phi is a surfaced variable, not a vibe.
 - **Yes:** a disposition that recurs across two disciplines, bridging their sub-graphs.
 - **No:** a fourth near-synonym leaf under an already-rich node.
+- **Deepen where recurrence funds it.** Differentiation also runs *downward*: when a concept
+  accumulates multiple groundings that instantiate it in recognizably distinct ways (forthcoming
+  about confounds vs. about nulls vs. about a method's limits), propose children that carry
+  those distinctions — the evidence has earned the depth. Bootstrapping runs are rightly
+  shallow; a maturing graph should grow descent paths, not just new leaves.
 
 ### P13 — Recurrence is the corpus's vote
 With little external ground truth, the strongest empirical signal is **recurrence**: a
@@ -305,6 +326,12 @@ sensory stream changes. In practice a human still reviews before anything reache
 ---
 
 ## 4. Domain notes
+
+**Roots are hooks.** The root level — browsed across all domains or within one attribute — is
+a distinct part of the user experience: it's the storefront, and it should intrigue. A good
+root is a short, category-opening name that makes a visitor curious what lives beneath it.
+New abstract roots may be proposed sparingly when recurrence supports a genuinely new region
+(P13), and judged partly as invitations: does this root promise an interesting descent?
 
 ### Values *(active focus)* — dispositions of the researcher
 Values describe *who the researcher is*, not what research is (P9). Roots are broad virtues;

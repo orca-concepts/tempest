@@ -71,6 +71,13 @@ function arxivIdFromDoi(doi) {
   const m = String(doi || '').toLowerCase().match(/10\.48550\/arxiv\.([0-9]{4}\.[0-9]{4,5})/);
   return m ? m[1] : null;
 }
+// The OpenAlex work id (the 'W…' token), extracted from a short id, a full
+// openalex URL, or a proposals reference. Returns null for non-openalex strings
+// (e.g. a DOI URL) — used so apply resolves every paper reference by openalex_id only.
+function workIdOf(s) {
+  const m = String(s || '').match(/W\d+/);
+  return m ? m[0] : null;
+}
 // FNV-1a — derive a stable run_id from the proposals content so re-running the
 // SAME file is idempotent (same run_id → ledger events are not re-appended), while
 // a regenerated proposals.json is a genuinely new observation round.
@@ -194,15 +201,29 @@ function buildPlan(proposals) {
       if (conceptBySig.has(s)) members.push(s);
       else unmapped.push(`situation "${st.name}" member not in concepts: ${m.attribute}:${m.name}`);
     }
+    // reading_list is normalized to openalex work ids by reason.js (Stage-5). Old-shape
+    // proposals.json may still hold DOI/URL strings — those resolve to no paper; report
+    // rather than fail (regenerate proposals.json to get openalex-id reading lists).
+    const readingRaw = asArray(st.reading_list);
+    const readingWork = readingRaw.map(workIdOf).filter(Boolean);
+    const readingNonOpenalex = readingRaw.filter((e) => !workIdOf(e));
+    if (readingNonOpenalex.length) {
+      unmapped.push(
+        `situation "${st.name}" reading_list has ${readingNonOpenalex.length} non-openalex entr${readingNonOpenalex.length === 1 ? 'y' : 'ies'} ` +
+          `(regenerate proposals.json for openalex-id reading lists): ${readingNonOpenalex.join(', ')}`
+      );
+    }
     situations.push({
       name: st.name,
       description: st.rationale || '',
       members,
-      readingList: asArray(st.reading_list),
+      phase: st.phase || null,
+      readingWork, // openalex work ids only
+      coreSpine: asArray(st.core_spine),
+      toggleable: asArray(st.toggleable),
       // standing prediction: situations carry no `prediction` field — use rationale.
       prediction: st.rationale || '',
     });
-    unmapped.push(`situation "${st.name}" metadata not persisted (combos has no column): phase, reading_list, core_spine, toggleable`);
   }
 
   // --- predictions + events ---
@@ -241,9 +262,15 @@ function printPlan(plan) {
     const a = s.split('|')[0];
     if (byDomain[a] !== undefined) byDomain[a] += 1;
   }
-  const eventCount =
-    plan.conceptPredictions.reduce((n, c) => n + c.groundingShort.filter((g) => plan.byShort.has(g)).length, 0) +
-    plan.situations.reduce((n, st) => n + st.readingList.length, 0);
+  // Corpus paper set, keyed by openalex work id (matches apply's resolvePaper).
+  const corpusWork = new Set([...plan.byShort.keys()].map(workIdOf).filter(Boolean));
+  const conceptPredCount = plan.conceptPredictions.filter((c) => (c.prediction || '').trim()).length;
+  const situationPredCount = plan.situations.filter((s) => (s.prediction || '').trim()).length;
+  const conceptEvents = plan.conceptPredictions.reduce(
+    (n, c) => n + c.groundingShort.filter((g) => corpusWork.has(workIdOf(g))).length, 0);
+  const situationEvents = plan.situations.reduce(
+    (n, st) => n + st.readingWork.filter((w) => corpusWork.has(workIdOf(w))).length, 0);
+  const eventCount = conceptEvents + situationEvents;
 
   console.log('================ CHAOS APPLY — DRY RUN (no writes) ================');
   console.log(`run_id: ${plan.runId}`);
@@ -257,8 +284,9 @@ function printPlan(plan) {
   console.log(`  tunnel_links ............... ${plan.tunnels.length}`);
   console.log(`  combos (situations) ........ ${plan.situations.length}`);
   console.log(`  combo_edges ................ ${plan.situations.reduce((n, s) => n + s.members.length, 0)}`);
-  console.log(`  chaos_predictions .......... ${plan.conceptPredictions.length + plan.situations.length}  (${plan.conceptPredictions.length} concept + ${plan.situations.length} situation)`);
-  console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target)`);
+  console.log(`  chaos_situation_meta ....... ${plan.situations.length}  (phase + reading list + spine/toggleable per situation)`);
+  console.log(`  chaos_predictions .......... ${conceptPredCount + situationPredCount}  (${conceptPredCount} concept + ${situationPredCount} situation; empty predictions skipped)`);
+  console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target; reading lists resolved by openalex id)`);
 
   console.log('\nConcepts by domain (proposed):', JSON.stringify(byDomain),
     '| proposals.counts_by_domain:', JSON.stringify(plan.counts_by_domain));
@@ -311,7 +339,8 @@ async function apply(plan) {
   const client = await pool.connect();
   const stats = {
     papers: 0, paper_citations: 0, concepts: 0, edges: 0, concept_links: 0,
-    tunnel_links: 0, combos: 0, combo_edges: 0, chaos_predictions: 0, chaos_prediction_events: 0,
+    tunnel_links: 0, combos: 0, combo_edges: 0, chaos_situation_meta: 0,
+    chaos_predictions: 0, chaos_prediction_events: 0,
   };
   try {
     await client.query('BEGIN');
@@ -329,9 +358,10 @@ async function apply(plan) {
     const attrId = new Map(attrRows.map((a) => [a.name, a.id]));
 
     // ---- a. papers + paper_citations ----
-    const paperIdByOpenalex = new Map(); // full openalex url -> papers.id
-    const paperIdByShort = new Map(); // short id -> papers.id
-    const paperIdByDoiUrl = new Map(); // normalized doi url -> papers.id
+    const paperIdByOpenalex = new Map(); // full openalex url -> papers.id (for citations)
+    const paperIdByWork = new Map(); // openalex work id 'W…' -> papers.id (for all proposal refs)
+    // Resolve any proposal paper reference (short id, full url) by openalex_id only.
+    const resolvePaper = (ref) => paperIdByWork.get(workIdOf(ref)) || null;
     for (const rec of plan.papers) {
       const disc = (rec.discipline_tags && rec.discipline_tags.query_fields) || [];
       const res = await client.query(
@@ -356,9 +386,8 @@ async function apply(plan) {
       const pid = res.rows[0].id;
       if (res.rows[0].inserted) stats.papers += 1;
       paperIdByOpenalex.set(rec.openalex_id, pid);
-      paperIdByShort.set(rec.id, pid);
-      const du = normalizeUrl(rec.doi);
-      if (du) paperIdByDoiUrl.set(du, pid);
+      const w = workIdOf(rec.openalex_id);
+      if (w) paperIdByWork.set(w, pid);
     }
 
     for (const c of plan.citations) {
@@ -453,7 +482,7 @@ async function apply(plan) {
     for (const l of plan.links) {
       const edgeId = leafEdgeBySig.get(l.s);
       if (!edgeId) continue; // resolved during plan; guard anyway
-      const paperId = paperIdByShort.get(l.paperShort) || null;
+      const paperId = resolvePaper(l.paperShort);
       const exists = await client.query(
         'SELECT id FROM concept_links WHERE edge_id=$1 AND LOWER(url)=LOWER($2) LIMIT 1',
         [edgeId, l.url]
@@ -513,6 +542,21 @@ async function apply(plan) {
         );
         if (res.rowCount) stats.combo_edges += 1;
       }
+      // Situation metadata that combos can't hold (phase, reading list, spine split).
+      const metaRes = await client.query(
+        `INSERT INTO chaos_situation_meta (combo_id, lifecycle_phase, reading_list, core_spine, toggleable)
+         VALUES ($1,$2,$3,$4,$5)
+         ON CONFLICT (combo_id) DO UPDATE SET
+           lifecycle_phase = EXCLUDED.lifecycle_phase, reading_list = EXCLUDED.reading_list,
+           core_spine = EXCLUDED.core_spine, toggleable = EXCLUDED.toggleable, updated_at = NOW()
+           WHERE chaos_situation_meta.lifecycle_phase IS DISTINCT FROM EXCLUDED.lifecycle_phase
+              OR chaos_situation_meta.reading_list IS DISTINCT FROM EXCLUDED.reading_list
+              OR chaos_situation_meta.core_spine IS DISTINCT FROM EXCLUDED.core_spine
+              OR chaos_situation_meta.toggleable IS DISTINCT FROM EXCLUDED.toggleable
+         RETURNING (xmax = 0) AS inserted`,
+        [comboId, st.phase, st.readingWork, st.coreSpine, st.toggleable]
+      );
+      if (metaRes.rows[0] && metaRes.rows[0].inserted) stats.chaos_situation_meta += 1;
     }
 
     // ---- f. prediction ledger ----
@@ -549,18 +593,18 @@ async function apply(plan) {
     for (const cp of plan.conceptPredictions) {
       const edgeId = leafEdgeBySig.get(cp.s);
       if (!edgeId) continue;
-      await upsertPrediction('concept', edgeId, cp.prediction);
+      if ((cp.prediction || '').trim()) await upsertPrediction('concept', edgeId, cp.prediction);
       for (const g of cp.groundingShort) {
-        const pid = paperIdByShort.get(g);
+        const pid = resolvePaper(g);
         if (pid) await addEvent('concept', edgeId, pid);
       }
     }
     for (const st of plan.situations) {
       const comboId = comboIdByName.get(norm(st.name));
       if (!comboId) continue;
-      await upsertPrediction('situation', comboId, st.prediction);
-      for (const url of st.readingList) {
-        const pid = paperIdByDoiUrl.get(normalizeUrl(url));
+      if ((st.prediction || '').trim()) await upsertPrediction('situation', comboId, st.prediction);
+      for (const w of st.readingWork) {
+        const pid = resolvePaper(w);
         if (pid) await addEvent('situation', comboId, pid);
       }
     }

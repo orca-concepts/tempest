@@ -185,6 +185,34 @@ async function migrate() {
     `);
 
     // ========================================================================
+    // 4b. chaos_situation_meta — the situation metadata that the combos schema has
+    //     no room for (chaos.md §5; Stage-5 feedback). A situation (= combo) is a
+    //     cost/benefit MOMENT: it carries a lifecycle phase, an intersection
+    //     reading list, and a core-spine / toggleable split. combos holds only
+    //     name + description, so this side table extends it 1:1.
+    //
+    //     Types: combo_id is the PK *and* FK → combos ON DELETE CASCADE, so the
+    //     metadata is owned by exactly one combo and dies with it. The three lists
+    //     are flat arrays of short scalars — reading_list = openalex work ids;
+    //     core_spine / toggleable = canonical concept names — so TEXT[] is the
+    //     natural fit (queryable with array operators, matches the existing
+    //     papers.authors / papers.discipline_tags TEXT[] convention). JSONB would
+    //     be overkill: there is no nesting or key/value structure to preserve.
+    //     lifecycle_phase is a single short label → VARCHAR(64).
+    // ========================================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chaos_situation_meta (
+        combo_id INTEGER PRIMARY KEY REFERENCES combos(id) ON DELETE CASCADE,
+        lifecycle_phase VARCHAR(64),
+        reading_list TEXT[],
+        core_spine TEXT[],
+        toggleable TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // ========================================================================
     // 5. Chaos seed account (chaos.md §8 "Operational notes"; SCHEMA_NOTES §2d).
     //    A dedicated, login-disabled system user that owns every Chaos-applied
     //    contribution (created_by / added_by), for clean provenance and a clean
@@ -207,6 +235,7 @@ async function migrate() {
     console.log('  + concept_links.paper_id (nullable FK → papers, ON DELETE SET NULL)');
     console.log('  + chaos_predictions');
     console.log('  + chaos_prediction_events (append-only)');
+    console.log('  + chaos_situation_meta');
     console.log(`  + seed user "${SEED_USERNAME}" (login disabled) — id = ${seedId}`);
     return seedId;
   } catch (err) {

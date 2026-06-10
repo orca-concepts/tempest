@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.5
+**Version:** 0.6
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -54,6 +54,10 @@ Foundations.
   questions — conduct-reading alone systematically under-populated the front of the life cycle.
   Added a tunnel-directness note to P2 (pair a disposition with the action that most directly
   enacts it).
+- **v0.6** — Honing from Run 2 (clean 10-paper sample). v0.5 populated Sensing but left
+  Committing at zero while questions doubled: P10 cited only CARS Moves 1–2. Added Move 3
+  (occupying the niche) — the announced purpose, stated hypotheses, preregistration — as the
+  *Committing* move, distinguishing the act of committing from the question committed to.
 
 ---
 
@@ -226,10 +230,15 @@ cycle (Section 6) its conduct instantiates, and what was at stake and traded off
 for the words on the page. A paper is a record of *moves a researcher made*. This is the
 reading method that produces good exemplars and locates papers in the lifecycle map.
 - **Read both ends of the arc.** The conduct in methods/results/discussion documents the
-  *mid-to-late* phases (Designing → Reporting). The *early* phases (Sensing the gap,
-  Committing to a question) and most *questions* live only in the introduction's rhetorical
-  moves — Swales' CARS Move 1 (establish a territory) and Move 2 (establish a niche / the
-  gap). Read those moves too, or the front of the life cycle stays empty.
+  *mid-to-late* phases (Designing → Reporting). The *early* phases and most *questions* live
+  only in the introduction's rhetorical moves — read all three of Swales' CARS moves:
+  - **Move 1 (establish a territory) and Move 2 (establish a niche / the gap)** → *Sensing the
+    gap*, and the questions themselves.
+  - **Move 3 (occupy the niche)** — the announced purpose, the stated hypotheses, the
+    preregistration, the "here we test…" — → *Committing to a question*. The question is the
+    *content* of the commitment; Committing-phase concepts are the dispositions and actions of
+    *locking in* (e.g. "Commit before you look," stating hypotheses up front).
+  Read all three moves, or the front of the life cycle stays empty.
 
 ### P11 — One evolving model, with temporal depth
 Chaos maintains and revises a *single* model of the researcher as it consumes research
@@ -421,7 +430,7 @@ set if the evidence warrants. Do not treat the phases as settled scaffolding.
      text and cross-disciplinary material.
 3. **Move-step read & prediction test** (P10, P14). For each paper, read *both ends of the
    arc*: the conduct in methods/results for the mid-to-late phases, and the introduction's CARS
-   moves (territory, niche) for the early phases (Sensing, Committing) and questions. Place its
+   moves — territory and niche (→ Sensing, questions), occupying the niche (→ Committing). Place its
    conduct at a phase; read it for the dispositions/questions (benefit) and actions/tools (cost)
    it instantiates. Score it *against what the graph predicted it would contain*: record gaps
    (add), non-confirmations (toward decay), and mis-structures (restructure). Apply P2, P3, P9.

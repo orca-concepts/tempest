@@ -1,9 +1,10 @@
 {
   "meta": {
-    "generated_at": "2026-06-09T11:39:42.737Z",
+    "generated_at": "2026-06-10T15:41:10.376Z",
     "database": "concept_hierarchy",
     "read_only": true,
-    "source": "chaos/snapshot.js"
+    "source": "chaos/snapshot.js",
+    "chaos_seed_user_id": 25
   },
   "counts": {
     "attributes": 4,
@@ -12,7 +13,11 @@
     "concept_links": 0,
     "combos": 0,
     "combo_edges": 0,
-    "tunnel_links": 0
+    "tunnel_links": 0,
+    "papers": 0,
+    "paper_citations": 0,
+    "chaos_predictions": 0,
+    "chaos_prediction_events": 0
   },
   "attributes": [
     {

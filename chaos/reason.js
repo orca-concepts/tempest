@@ -487,8 +487,18 @@ function __setCallModelForTest(fn) {
 // Per-paper pass (resumable via on-disk cache)
 // ----------------------------------------------------------------------------
 
+// rubricHash() salts every cache key with a hash of chaos.md, so editing the rubric
+// automatically invalidates stale per-paper AND integration cache entries — the
+// rubric is the model's system prompt, so a different rubric is a different read and
+// must not silently reuse an old result. Memoized per process.
+let _rubricHash = null;
+function rubricHash() {
+  if (_rubricHash === null) _rubricHash = fnv1a(fs.readFileSync(RUBRIC_PATH, 'utf8'));
+  return _rubricHash;
+}
+
 function cachePathFor(id) {
-  return path.join(CACHE_DIR, `${id}.json`);
+  return path.join(CACHE_DIR, `${id}-r${rubricHash()}.json`);
 }
 
 async function runPerPaper(selected, systemText) {
@@ -589,7 +599,7 @@ function fnv1a(str) {
 }
 
 function integrationCachePath(compact) {
-  const h = fnv1a(JSON.stringify(compact) + `|${MODEL}|${EFFORT}`);
+  const h = fnv1a(JSON.stringify(compact) + `|${MODEL}|${EFFORT}|r${rubricHash()}`);
   return path.join(CACHE_DIR, `integration-${h}.json`);
 }
 
@@ -974,12 +984,33 @@ async function main() {
   printSummary(integration, dist);
 }
 
+// Best-effort: close global fetch (undici) keep-alive sockets so the event loop
+// drains and Node exits on its own. This lets us avoid calling process.exit() while
+// sockets are still mid-close — that race trips a harmless libuv assertion on
+// Windows at shutdown. Setting process.exitCode instead of process.exit() means the
+// process ends cleanly once the loop is empty.
+async function closeHttp() {
+  try {
+    const sym = Object.getOwnPropertySymbols(globalThis).find(
+      (s) => s.description === 'undici.globalDispatcher.1'
+    );
+    const d = sym && globalThis[sym];
+    if (d && typeof d.close === 'function') await d.close();
+  } catch {
+    /* ignore — best effort */
+  }
+}
+
 if (require.main === module) {
   main()
-    .then(() => process.exit(0))
-    .catch((err) => {
+    .then(async () => {
+      await closeHttp();
+      process.exitCode = 0;
+    })
+    .catch(async (err) => {
       console.error('\nreason.js failed:', err.message);
-      process.exit(1);
+      await closeHttp();
+      process.exitCode = 1;
     });
 }
 
@@ -988,6 +1019,8 @@ module.exports = {
   extractJson,
   fnv1a,
   pathLabel,
+  rubricHash,
+  cachePathFor,
   computeDistributions,
   writeJson,
   writeMarkdown,

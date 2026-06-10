@@ -118,12 +118,32 @@ async function main() {
     `)
   ).rows;
 
+  // --- Chaos support tables (Stage 4 migration). Counted only if present, so the
+  //     snapshot still runs against a DB that predates chaos/migrate-chaos.js
+  //     (a null count == "table not migrated yet"). Counts only — the proposals
+  //     pipeline derives recurrence etc. by query, never from a stored counter.
+  async function countIfExists(table) {
+    const reg = await pool.query('SELECT to_regclass($1) AS t', [`public.${table}`]);
+    if (!reg.rows[0].t) return null;
+    return (await pool.query(`SELECT COUNT(*)::int AS n FROM ${table}`)).rows[0].n;
+  }
+  const papersCount = await countIfExists('papers');
+  const paperCitationsCount = await countIfExists('paper_citations');
+  const chaosPredictionsCount = await countIfExists('chaos_predictions');
+  const chaosPredictionEventsCount = await countIfExists('chaos_prediction_events');
+
+  // Chaos seed account id (read-only lookup; null if not provisioned). Useful to a
+  // later apply stage for created_by / added_by attribution.
+  const seedRow = await pool.query(`SELECT id FROM users WHERE username = 'chaos-seed'`);
+  const chaosSeedUserId = seedRow.rows[0] ? seedRow.rows[0].id : null;
+
   const snapshot = {
     meta: {
       generated_at: new Date().toISOString(),
       database: process.env.DB_NAME || '(from DATABASE_URL)',
       read_only: true,
       source: 'chaos/snapshot.js',
+      chaos_seed_user_id: chaosSeedUserId,
     },
     counts: {
       attributes: attributes.length,
@@ -133,6 +153,10 @@ async function main() {
       combos: combos.length,
       combo_edges: comboEdges.length,
       tunnel_links: tunnelLinks.length,
+      papers: papersCount,
+      paper_citations: paperCitationsCount,
+      chaos_predictions: chaosPredictionsCount,
+      chaos_prediction_events: chaosPredictionEventsCount,
     },
     attributes,
     concepts,

@@ -7,6 +7,12 @@ the schema does **not** yet contain.
 This stage is investigation + plumbing only. Nothing here creates, alters, or writes
 anything. The "Gaps" section is a report, not a to-do that was executed.
 
+> **Update (Stage 4):** the support schema for several of the gaps below has since
+> been created in the **local dev** database by `chaos/migrate-chaos.js` (additive,
+> idempotent; production/Railway untouched). Gap statuses are annotated inline below
+> and the created schema is documented in **§4**. The seed account exists; its id is
+> reported in §4.
+
 - **Database:** `concept_hierarchy` (local dev), read via the backend's own pg pool
   (`backend/src/config/database.js`) and env vars (`backend/.env`). No new connection
   configuration was introduced.
@@ -115,7 +121,9 @@ hang citations off.
 - **Needed:** a `papers` (or `sources`) table with a stable identity (DOI / arXiv id /
   normalized URL), title, fetched metadata, and discipline tags. `concept_links` would
   then reference a paper id rather than (or in addition to) a raw URL.
-- **Status:** does not exist. Report only.
+- **Status:** **RESOLVED (Stage 4)** — `papers` table created with `openalex_id`
+  UNIQUE plus DOI / arXiv-id / normalized-url dedupe keys; `concept_links` gained a
+  nullable `paper_id` FK. See §4.
 
 ### 2b. A citations table (paper → paper) — **MISSING**
 chaos.md §7.8 ("citation tracking") and P11 ("temporal depth") require recording that
@@ -124,7 +132,9 @@ inter-paper relationships of any kind. (It cannot be modeled on `tunnel_links`, 
 connects *edges* in the concept graph, not papers.)
 - **Needed:** a `paper_citations` table — `citing_paper_id`, `cited_paper_id`,
   depends on 2a existing first.
-- **Status:** does not exist. Report only.
+- **Status:** **RESOLVED (Stage 4)** — `paper_citations(citing_paper_id,
+  cited_paper_id)` created, composite PK, both FK → `papers`, self-citation barred.
+  Populated at apply time from each paper's `referenced_works`. See §4.
 
 ### 2c. A per-concept recurrence count — **MISSING**
 P13 ("recurrence is the corpus's vote") and the §9 `recurrence_tracking` knob require
@@ -135,7 +145,11 @@ papers. No such counter or derivable source exists today: with no papers table (
 - **Needed:** either a `recurrence_count` column on a concept-context (likely on
   `edges`, since identity is contextual — P1) or a derived count over a papers↔concepts
   grounding table. Depends conceptually on 2a.
-- **Status:** does not exist. Report only.
+- **Status:** **RESOLVED by derivation (Stage 4)** — no stored counter was added (P14:
+  "counts are derived, never stored"). With `papers` (2a) and `concept_links.paper_id`,
+  a concept's recurrence is `COUNT(DISTINCT paper_id)` over the `concept_links` on its
+  edge(s); the prediction ledger (`chaos_prediction_events`, §4) records the
+  confirmation events the count is read from. See §4.
 
 ### 2d. A dedicated Chaos seed user account — **MISSING (not verified to exist)**
 §8 "Operational notes" specifies that Chaos's contributions are attributed to a
@@ -146,7 +160,9 @@ snapshot does not read `users`, so this stage cannot confirm or deny a specific 
 flagged as a provisioning gap to settle before any write stage.)
 - **Needed:** one `users` row reserved for Chaos, whose id is the `created_by` /
   `added_by` for every Chaos-applied proposal.
-- **Status:** not provisioned / unverified. Report only — no user is created here.
+- **Status:** **RESOLVED (Stage 4)** — seed user `chaos-seed` created (id in §4),
+  login disabled (non-bcrypt `password_hash`), with a synthetic ≤19-char sentinel
+  `orcid_id` (the column is `NOT NULL VARCHAR(19)`). See §4.
 
 ### 2e. A proposal-staging table — **MISSING (by design, for now)**
 The pipeline (§8 steps 6–8) emits proposals to a **review file**, gates on human
@@ -171,3 +187,63 @@ table (2a), inter-paper citations (2b), and per-concept recurrence (2c) — plus
 operational pieces a write stage will need: a dedicated seed account (2d) and, if the
 review gate ever moves into the DB, a proposal-staging table (2e). All five are
 reported here and **not built** in this stage.
+
+**Stage 4 resolved 2a, 2b, 2c (by derivation), and 2d** (see §4). 2e remains a review
+**file**, by design (chaos.md §8); it is the one gap deliberately left as a non-table.
+
+---
+
+## 4. Stage 4 — support schema created (local dev only)
+
+Built by `chaos/migrate-chaos.js` (run manually; additive + idempotent; the Railway
+deploy path runs only `backend/src/config/migrate.js`, so **production is untouched**).
+Counts are surfaced by `chaos/snapshot.js` (`counts.papers`, `counts.paper_citations`,
+`counts.chaos_predictions`, `counts.chaos_prediction_events`, `meta.chaos_seed_user_id`).
+
+### `papers` (gap 2a)
+One row per sourced paper, shaped from `chaos/papers/index.json`.
+- `id` PK; `openalex_id` TEXT **UNIQUE NOT NULL** (hard identity).
+- `doi`, `arxiv_id` — secondary identities, each a **partial UNIQUE index** (WHERE NOT
+  NULL); `url_normalized` — plain index (publisher landing pages can repeat, so not unique).
+- `title`, `publication_year`, `host_venue`, `authors` TEXT[], `abstract`,
+  `discipline_tags` TEXT[] (the six query-field tags), `full_text_available` BOOLEAN,
+  `referenced_works_count` INTEGER, `created_at`.
+
+### `paper_citations` (gap 2b)
+Within-corpus citation edges, derived at apply time from `referenced_works`.
+- `(citing_paper_id, cited_paper_id)` composite **PK**; both FK → `papers(id)` ON DELETE
+  CASCADE; `CHECK (citing <> cited)`; reverse index on `cited_paper_id`.
+
+### `concept_links.paper_id` (gap 2a)
+Nullable FK → `papers(id)` **ON DELETE SET NULL**, indexed. User-pasted links keep NULL;
+Chaos-applied links point at their paper. **LEFT JOIN convention** applies (both this and
+`added_by` can be NULL).
+
+### `chaos_predictions` + `chaos_prediction_events` (gaps 2c, ledger)
+The prediction text and its observation log are split:
+- **`chaos_predictions`** — the standing prediction each concept/situation makes
+  (chaos.md §10). One per target → `UNIQUE(target_type, target_id)`, upsertable. Columns:
+  `target_type` CHECK in (`concept`,`situation`), `target_id`, `prediction` NOT NULL,
+  `run_id`, timestamps.
+- **`chaos_prediction_events`** — **append-only** observation log (no `updated_at`).
+  Columns: `target_type` (same CHECK), `target_id`, `run_id`, `event` CHECK in
+  (`confirmed`,`expected_absent`,`appeared_elsewhere`), `paper_id` nullable FK → `papers`
+  ON DELETE SET NULL, `noted_at`. Indexed on `(target_type,target_id)`, `run_id`, `paper_id`.
+- **Rationale for two tables:** the prediction is a single property of the target; the
+  events are many per target. Storing the text on every event would duplicate it and
+  conflate "the prediction" with "an observation of it." **Counts (P13 recurrence, P14
+  decay) are derived by query over the events, never stored.**
+- **Polymorphic, no FK on `target_id`:** concept targets resolve to edges/concepts,
+  situation targets to combos — different tables. This matches Orca's existing
+  `comment_mentions` / `sidebar_items` polymorphic-no-FK convention; CHECK constraints
+  pin the enumerations. `run_id` is a free-form label (the episodic run store is not
+  built yet — chaos.md §8).
+
+### Seed account (gap 2d)
+`users` row `username='chaos-seed'`, `email='chaos-seed@orcaconcepts.org'`, login disabled
+(non-bcrypt `password_hash`), sentinel `orcid_id='CHAOS-SEED-ACCOUNT'` (column is NOT NULL
+VARCHAR(19)). **Seed account id: `25`** (this dev DB). Created idempotently (ON CONFLICT on
+username). It will own `created_by`/`added_by` for every Chaos-applied contribution.
+
+**Not built (still a file, by design):** the proposal-staging gap (2e) — the review gate
+stays a file (chaos/proposals.md / .json), per chaos.md §8.

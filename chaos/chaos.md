@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.7
+**Version:** 0.8
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -64,6 +64,12 @@ Foundations.
   *deepening* to P12 (differentiate children when a concept's accumulated groundings
   instantiate it in distinct ways) and a root-level curation note to §4 (roots are hooks —
   intriguing category-openers that invite descent).
+- **v0.8** — Analytic/associative balance. Eighth foundation: creative cognition as DMN/ECN
+  coupling. New P15: child sets mix analytic (decomposing) and associative (leaping) edges,
+  with an association taxonomy; multi-parent placement practice (populates flip view). P12
+  note: abstract associative hubs as the distance-work premium. P13 note: discipline-diverse
+  grounding sets per concept. New proposal type: restructure-mentions (stigmergic addenda
+  left at superseded locations). North star gains two gears of navigation.
 
 ---
 
@@ -95,13 +101,16 @@ the world. This is the extended-mind commitment (§2) made experiential, and the
 (P12) is its structural measure — integration across differentiated regions is what makes a
 brain a brain rather than a filing cabinet. Proposals should be judged partly by whether they
 make the brain feel more *travelable*: depth to descend into, bridges to cross, hooks that
-invite the journey.
+invite the journey. Travel itself has **two gears** (P15): executive descent — deliberate,
+stepwise movement down analytic edges — and default-mode drift — associative jumps across
+tunnels, flips to alternate parents, thematic leaps between siblings. The graph should reward
+both.
 
 ---
 
 ## 2. Foundations
 
-Seven bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
+Eight bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
 citation.
 
 - **Move-step analysis (Swales' CARS model).** Genre analysts read research writing as a
@@ -153,6 +162,15 @@ citation.
   which imposes a trustworthiness bar on the category store. The endorsement criterion is
   exactly P9's "this is mine" — self-anchoring is the precondition for Orca being a genuine
   extension of the mind rather than a database one merely consults.
+
+- **Creative cognition as DMN/ECN coupling.** Creative thought is not pure free association
+  nor pure deliberate analysis but the *coupling* of both — the default mode network's
+  spontaneous associative generation working with the executive control network's evaluation
+  and constraint (Beaty et al.); creative minds also show *flatter associative hierarchies*,
+  keeping remote associates available (Mednick). **Commitment:** the graph supports both modes
+  of thought and of travel. Child sets mix analytic and associative edges (P15); navigation
+  has an executive gear and a default-mode gear (§1). Orca leans associative by character —
+  cross-domain tunnels, subtextual concepts — but the lean is a gradient, not a monoculture.
 
 A convergence worth noting: Campbell's narrative cycle and Barsalou's Situated Action Cycle
 arrive independently at the same shape — situated, sequential, self-centered episodes. The
@@ -281,6 +299,11 @@ phi is a surfaced variable, not a vibe.
   about confounds vs. about nulls vs. about a method's limits), propose children that carry
   those distinctions — the evidence has earned the depth. Bootstrapping runs are rightly
   shallow; a maturing graph should grow descent paths, not just new leaves.
+- **The distance-work premium.** Phi measures *structural* distance bridged; P15's associative
+  edges are its semantic complement. An abstract concept with broad associative reach — a hub
+  whose children and tunnels span regions analytic decomposition would never join — raises phi
+  precisely because of that reach. Such concepts earn a premium, provided each connection is
+  individually grounded.
 
 ### P13 — Recurrence is the corpus's vote
 With little external ground truth, the strongest empirical signal is **recurrence**: a
@@ -290,6 +313,10 @@ concept is independently re-exemplified, treating well-recurring concepts as val
 one-offs as speculative. Recurrence is also a promotion signal — a specific disposition that
 keeps recurring, especially across disciplines, earns a place nearer a root. Recurrence is the
 *confirmation* half of the prediction loop (P14).
+- **Diversify each concept's grounding set.** The cross-disciplinary preference applies not
+  only to corpus sourcing (P14) but to the links attached to each concept: prefer groundings
+  that broaden a concept's discipline mix. A concept grounded in four fields is a stronger
+  bridge than one grounded four times in one field, even at equal recurrence.
 
 ### P14 — The graph is a set of predictions; learn from prediction error
 The whole graph is a standing set of predictions about research, and each new article tests
@@ -322,6 +349,35 @@ load-bearing guard against the graph merely mirroring its own reading list.
 recedes; research grows and self-corrects the *knowledge* (the graph) and scales. The loop is the
 same across regimes — research in Phase A/B seeding, user contributions after launch; only the
 sensory stream changes. In practice a human still reviews before anything reaches real users.
+
+### P15 — Two kinds of edges: analytic and associative
+A parent–child edge has a *character*, not just a direction. **Analytic** edges decompose: the
+child is contained in the parent's meaning — a tighter specification, a sub-kind, a step of the
+strategy. **Associative** edges leap: the child belongs by resemblance rather than definition.
+A good child set mixes both — mostly analytic differentiation, plus associative members that
+import distance — leaning associative per Orca's character, but never a monoculture. Walking
+analytic edges is executive traversal; walking associative ones is default-mode drift (§1, §2).
+
+**The kinds of association** (so "associative" never degrades into "random"):
+- *Similarity* — feature overlap between the concepts themselves.
+- *Thematic contiguity* — co-occurrence in lived scenarios (dog–leash, not the taxonomic
+  dog–wolf): things a researcher meets together.
+- *Analogy* — shared relational structure across domains; the engine of cross-disciplinary
+  insight and the natural source of tunnels.
+- *Metaphor* — cross-domain mapping that reframes (a graph as a brain).
+- *Affective association* — shared feeling-tone; two dispositions that are alike to *inhabit*
+  even if unalike to define.
+
+**Discipline:** an associative edge is grounded differently, not less. It must still pass the
+hypothetical-researcher test (P5), carry an exemplar, and respect the domain boundary (P2) —
+association licenses the *placement*, never the existence, of a concept.
+
+**Multi-parent placement.** Associative concepts naturally belong in several parent contexts.
+When a concept's groundings support more than one placement, propose the additional contexts —
+each is its own contextual entity (P1), and the flip between them is the associative jump made
+navigable (it is also what populates the app's flip view / "other instances" surfaces). A
+concept whose groundings span contexts but which sits under a single parent is an
+under-realized associative hub.
 
 ---
 
@@ -480,8 +536,12 @@ set if the evidence warrants. Do not treat the phases as settled scaffolding.
    candidate set by its contribution to integrated information — the familiar↔novel balance —
    preferring well-grounded additions that bridge previously-separate regions over those that
    thicken dense ones.
-10. **Structure check** (P6). Consider mid-path insertions / restructurings, including the
-    mis-structures surfaced in step 3.
+10. **Structure check** (P6, P15). Consider mid-path insertions / restructurings, including the
+    mis-structures surfaced in step 3, and multi-parent placements for concepts whose groundings
+    span contexts. Check child sets for analytic/associative balance. **Every restructure
+    proposal includes its mention**: a stigmergic addendum at the superseded location carrying
+    the in-orca URL of the new one ("this is now more fully held at …"), so old paths point
+    forward instead of dead-ending — and the new location accrues "Mentioned by" traces.
 11. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
     to the database without review.
 12. **Capture feedback** (secondary signal). Each item accepted/rejected/modified, with a
@@ -580,6 +640,9 @@ the reflect/consolidate loop is automated.
 | `disconfirmation_policy` | Cautious; generous testing threshold | P14 — untested ≠ disconfirmed; decay is reversible, gated on having sampled the area |
 | `active_sampling` | On | P14 — source to test the shakiest predictions |
 | `sourcing_balance` | Enforced across fields + phases | P14 — the bias guard as curation recedes |
+| `edge_character_mix` | Lean associative, never monoculture | P15 — analytic + associative children per child set |
+| `multi_parent_placement` | On, grounding-gated | P15 — propose additional parent contexts; populates flip view |
+| `restructure_mentions` | Always emitted with restructures | §7 step 10 — stigmergic forward-pointers at superseded locations |
 | `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 8 |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |
 | `root_abstractness` | Mid | |
@@ -589,9 +652,13 @@ the reflect/consolidate loop is automated.
 
 ## 10. Proposal & feedback formats
 
-- **Concept proposal:** graph + attribute; parent path; new child; lifecycle phase; rationale
+- **Concept proposal:** graph + attribute; parent path; new child; lifecycle phase; edge
+  character (analytic | associative, with the association kind if the latter — P15); rationale
   (general → specific, subtextual, self-anchored); the prediction it makes (what research should
   keep instantiating).
+- **Restructure-mention:** the superseded location (edge/link); the in-orca URL of the new
+  location; a one-line addendum text pointing forward. Emitted with every restructure /
+  re-homing proposal (P6, P14 mis-structure, P15 multi-parent consolidation).
 - **Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
   claim (how the conduct instantiates the concept).
 - **Cost/benefit tunnel proposal:** from-edge ↔ to-edge; rationale as a cost/benefit relation;

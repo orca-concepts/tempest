@@ -3,8 +3,9 @@ import { combosAPI, conceptsAPI, usersAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
 import LinkCard from './LinkCard';
 
-const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin, onOpenConceptTab, refreshKey }) => {
+const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConceptTab, refreshKey }) => {
   const [combo, setCombo] = useState(null);
+  const [voteBusy, setVoteBusy] = useState(false);
   const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -246,9 +247,29 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
     }
   };
 
-  const handleUnsubscribe = () => {
-    if (window.confirm(`Unsubscribe from "${combo?.name}"? This removes the situation tab from your sidebar.`)) {
-      if (onUnsubscribe) onUnsubscribe(comboId);
+  // Phase 67: toggle the current user's vote on this situation. Optimistic,
+  // reconciled against the server's authoritative count. Independent of tabs.
+  const handleToggleVote = async () => {
+    if (isGuest) {
+      if (onRequestLogin) onRequestLogin();
+      return;
+    }
+    if (voteBusy) return;
+    setVoteBusy(true);
+    const flip = (c) => c ? {
+      ...c,
+      user_voted: !c.user_voted,
+      vote_count: (c.vote_count || 0) + (c.user_voted ? -1 : 1),
+    } : c;
+    setCombo(flip);
+    try {
+      const res = await combosAPI.vote(comboId);
+      setCombo(prev => prev ? { ...prev, user_voted: res.data.voted, vote_count: res.data.vote_count } : prev);
+    } catch (err) {
+      setCombo(flip); // revert
+      if (err.response?.status === 401 && onRequestLogin) onRequestLogin();
+    } finally {
+      setVoteBusy(false);
     }
   };
 
@@ -346,10 +367,18 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
             {' \u00B7 '}
             {edges.length} concept{edges.length !== 1 ? 's' : ''}
             {' \u00B7 '}
-            {combo?.subscriber_count || 0} subscriber{combo?.subscriber_count != 1 ? 's' : ''}
+            {combo?.vote_count || 0} vote{combo?.vote_count != 1 ? 's' : ''}
           </div>
         </div>
         <div style={styles.headerRight}>
+          <button
+            onClick={handleToggleVote}
+            disabled={voteBusy}
+            style={combo?.user_voted ? styles.voteButtonActive : styles.voteButton}
+            title={combo?.user_voted ? 'Remove your vote' : 'Vote for this situation'}
+          >
+            {'\u25B2'} {combo?.user_voted ? 'Voted' : 'Vote'} {combo?.vote_count || 0}
+          </button>
           <button onClick={handleShareLink} style={styles.shareButton} title="Copy shareable link to clipboard">
             {shareCopied ? 'Copied!' : 'Share'}
           </button>
@@ -357,9 +386,6 @@ const ComboTabContent = ({ comboId, user, isGuest, onUnsubscribe, onRequestLogin
             <button onClick={() => { setShowTransfer(!showTransfer); setTransferConfirm(null); setTransferSearch(''); setTransferResults([]); setTransferFeedback(''); }} style={styles.shareButton}>
               {showTransfer ? 'Cancel' : 'Transfer'}
             </button>
-          )}
-          {onUnsubscribe && (
-            <button onClick={handleUnsubscribe} style={styles.unsubscribeButton}>Unsubscribe</button>
           )}
         </div>
       </div>
@@ -654,12 +680,22 @@ const styles = {
     fontSize: '12px',
     fontFamily: "'EB Garamond', Georgia, serif",
   },
-  unsubscribeButton: {
+  voteButton: {
     padding: '4px 12px',
     border: '1px solid #ccc',
     borderRadius: '4px',
     backgroundColor: 'transparent',
     color: '#666',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontFamily: "'EB Garamond', Georgia, serif",
+  },
+  voteButtonActive: {
+    padding: '4px 12px',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    backgroundColor: '#333',
+    color: '#faf9f6',
     cursor: 'pointer',
     fontSize: '12px',
     fontFamily: "'EB Garamond', Georgia, serif",

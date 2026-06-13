@@ -301,8 +301,8 @@ export const pagesAPI = {
 
 // Phase 39a: Combos
 export const combosAPI = {
-  listCombos: (search, sort) =>
-    api.get('/combos', { params: { search, sort } }),
+  listCombos: (search, sort, filter) =>
+    api.get('/combos', { params: { search, sort, filter } }),
 
   getCombo: (id) =>
     api.get(`/combos/${id}`),
@@ -324,6 +324,9 @@ export const combosAPI = {
 
   unsubscribe: (comboId) =>
     api.post('/combos/unsubscribe', { comboId }),
+
+  vote: (comboId) =>
+    api.post(`/combos/${comboId}/vote`),
 
   addEdge: (comboId, edgeId) =>
     api.post(`/combos/${comboId}/edges/add`, { edgeId }),

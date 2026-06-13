@@ -21,5 +21,6 @@ router.get('/:id/links', optionalAuth, comboController.getComboLinks); // Phase 
 router.post('/:id/edges/add', authenticateToken, comboController.addEdgeToCombo);
 router.post('/:id/edges/remove', authenticateToken, comboController.removeEdgeFromCombo);
 router.post('/:id/transfer-ownership', authenticateToken, comboController.transferOwnership);
+router.post('/:id/vote', authenticateToken, comboController.toggleComboVote); // Phase 67: situation votes
 
 module.exports = router;

@@ -337,7 +337,7 @@ const ConceptLinksPanel = ({
               <span onClick={() => onNavigateToSituation && onNavigateToSituation(sc.id, sc.name)} style={styles.situationName}>{sc.name}</span>
               <div style={styles.situationOwner}>by {sc.created_by_username || '[deleted user]'}{sc.created_by_orcid_id && <OrcidBadge orcidId={sc.created_by_orcid_id} />}</div>
               {sc.description && <div style={styles.situationDescription}>{sc.description}</div>}
-              <div style={styles.situationStats}>{plural(sc.edge_count, 'concept')} {'\u00b7'} {plural(sc.subscriber_count, 'subscriber')}</div>
+              <div style={styles.situationStats}>{plural(sc.edge_count, 'concept')} {'\u00b7'} {'\u25b2'} {plural(sc.vote_count, 'vote')}</div>
             </div>
           );
         })}

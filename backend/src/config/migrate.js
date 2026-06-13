@@ -841,6 +841,22 @@ const createTables = async () => {
       ALTER TABLE combo_subscriptions ADD COLUMN IF NOT EXISTS group_id INTEGER REFERENCES tab_groups(id) ON DELETE SET NULL;
     `);
 
+    // Phase 67: Situation (combo) votes — an endorsement signal independent of
+    // which situations a user has open as tabs (combo_subscriptions now backs
+    // "open tabs"). Mirrors tunnel_votes: a simple per-row toggle vote.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS combo_votes (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        combo_id INTEGER REFERENCES combos(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, combo_id)
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_combo_votes_combo ON combo_votes(combo_id);
+    `);
+
     // Phase 39e: Change combos.created_by to ON DELETE SET NULL for existing databases
     await client.query(`
       DO $$

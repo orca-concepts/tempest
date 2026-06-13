@@ -192,7 +192,7 @@ const AppShell = () => {
       if (isGuest) {
         setGuestComboId(comboId);
       } else {
-        handleSubscribeToCombo(comboId, '');
+        handleOpenSituationTab(comboId, '');
       }
       navigate('/', { replace: true });
       return;
@@ -754,44 +754,42 @@ const AppShell = () => {
     }
   }, []);
 
-  const handleSubscribeToCombo = useCallback(async (comboId, comboName) => {
+  // Phase 67: situations open as tabs (like graph tabs), not via subscription.
+  // "Open" is idempotent — the backing combo_subscriptions row + sidebar item
+  // are created if absent (409 = already open → just activate the tab).
+  const handleOpenSituationTab = useCallback(async (comboId, comboName) => {
     if (isGuest) {
       handleRequestLogin();
       return;
     }
     try {
       await combosAPI.subscribe(comboId);
-      const newSub = { id: comboId, combo_id: comboId, name: comboName, subscriber_count: 0 };
-      setComboSubscriptions(prev => [...prev, newSub]);
+      const newSub = { id: comboId, combo_id: comboId, name: comboName };
+      setComboSubscriptions(prev =>
+        prev.some(s => s.id === comboId) ? prev : [...prev, newSub]
+      );
       setActiveTab({ type: 'combo', id: comboId });
       setComboView(null);
-     
-      setSavedPageOpen(false);
-     
-     
       await refreshSidebarItems();
     } catch (err) {
       if (err.response?.status === 409) {
-        // Already subscribed — just switch to the tab
+        // Already open — just switch to the tab.
         setActiveTab({ type: 'combo', id: comboId });
         setComboView(null);
-       
-        setSavedPageOpen(false);
-       
-       
       } else if (err.response?.status === 401) {
         handleRequestLogin();
       } else {
-        alert(err.response?.data?.error || 'Failed to subscribe');
+        alert(err.response?.data?.error || 'Failed to open situation');
       }
     }
   }, [isGuest, handleRequestLogin]);
 
   const handleNavigateToSituation = useCallback((comboId, comboName) => {
-    handleSubscribeToCombo(comboId, comboName || '');
-  }, [handleSubscribeToCombo]);
+    handleOpenSituationTab(comboId, comboName || '');
+  }, [handleOpenSituationTab]);
 
-  const handleUnsubscribeFromCombo = useCallback(async (comboId) => {
+  // Phase 67: close a situation tab (the sidebar X), mirroring handleCloseGraphTab.
+  const handleCloseSituationTab = useCallback(async (comboId) => {
     try {
       await combosAPI.unsubscribe(comboId);
       setComboSubscriptions(prev => {
@@ -809,7 +807,7 @@ const AppShell = () => {
       });
       await refreshSidebarItems();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to unsubscribe');
+      alert(err.response?.data?.error || 'Failed to close situation');
     }
   }, [activeTab, graphTabs]);
 
@@ -1071,17 +1069,18 @@ const AppShell = () => {
         }}
         onClick={() => {
           setActiveTab({ type: 'combo', id: combo.id });
-         
           setComboView(null);
-          setSavedPageOpen(false);
-         
-         
         }}
         onContextMenu={(e) => handleTabContextMenu(e, 'combo', combo.id)}
         title={`${combo.name} — right-click for options`}
       >
         <span style={styles.sidebarArrowPlaceholder} />
         <span style={styles.sidebarItemLabel}>{combo.name}</span>
+        <button
+          style={styles.sidebarCloseButton}
+          onClick={(e) => { e.stopPropagation(); handleCloseSituationTab(combo.id); }}
+          title="Close situation"
+        >{'✕'}</button>
       </div>
     );
   };
@@ -1098,7 +1097,7 @@ const AppShell = () => {
           paddingLeft: `${12 + depth * 16}px`,
           ...(isActive ? styles.sidebarItemActive : {}),
         }}
-        onClick={() => { setActiveTab({ type: 'graph', id: tab.id }); setComboView(null); setSavedPageOpen(false); }}
+        onClick={() => { setActiveTab({ type: 'graph', id: tab.id }); setComboView(null); }}
         onContextMenu={(e) => handleTabContextMenu(e, 'graph', tab.id)}
         title={`${tab.label} — right-click for options`}
       >
@@ -1431,15 +1430,12 @@ const AppShell = () => {
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
-              comboSubscriptions={comboSubscriptions}
-              onSubscribe={() => reloadComboSubscriptions()}
-              onUnsubscribe={(comboId) => handleUnsubscribeFromCombo(comboId)}
               onComboClick={(combo) => {
-                handleSubscribeToCombo(combo.id, combo.name);
+                handleOpenSituationTab(combo.id, combo.name);
               }}
               onRequestLogin={() => {
                 setLoginModalTab('login');
-                setLoginModalNotice('Log in to subscribe to situations');
+                setLoginModalNotice('Log in to open situations');
                 setShowLoginModal(true);
               }}
             />
@@ -1476,7 +1472,6 @@ const AppShell = () => {
                       comboId={combo.id}
                       user={user}
                       isGuest={isGuest}
-                      onUnsubscribe={handleUnsubscribeFromCombo}
                       onRequestLogin={handleRequestLogin}
                       onOpenConceptTab={handleOpenConceptTab}
                       refreshKey={comboRefreshKey}
@@ -1584,8 +1579,8 @@ const AppShell = () => {
               <div style={styles.contextMenuDivider} />
               <button
                 style={{ ...styles.contextMenuItem, color: '#555' }}
-                onClick={() => { handleUnsubscribeFromCombo(contextMenu.tabId); setContextMenu(null); }}
-              >Unsubscribe</button>
+                onClick={() => { handleCloseSituationTab(contextMenu.tabId); setContextMenu(null); }}
+              >Close situation</button>
             </>
           )}
 

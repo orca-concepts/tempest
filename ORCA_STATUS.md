@@ -1,7 +1,12 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** June 6, 2026
-**Current Status:** Phase 66 complete. "Superconcept" renamed to "situation" across the entire app (UI text, URL routes, backend regexes, CHECK constraints, data export keys). URL route changed from `/superconcept/:id` to `/situation/:id` with a 301 redirect for backwards compatibility. Situation page (ComboTabContent) redesigned: concepts now grouped into columns by attribute (action, tool, value, question) matching the TunnelView layout pattern, with client-side hide/show toggles and filtered aggregated links. VotesOverlay legend removed. Pre-existing bug fixed: dead `saved_tabs`/`vote_tab_links` references in `addVote` and `addSwapVote` that caused 500 errors on save votes. `getCombo` endpoint now returns `save_count` per edge. Phases 64a, 65a, 65b-1, 62c, and 63a remain live.
+**Last Updated:** June 13, 2026
+**Current Status:** Phase 67 complete. Situations are now **tabs, not subscriptions**: clicking a situation anywhere (Browse page or a concept's Situations link-panel tab) opens it as a closeable tab (sidebar X, like graph tabs) that persists across refresh. The subscribe/unsubscribe model is reframed in place — `combo_subscriptions` + `sidebar_items` now back "open tabs"; the words "subscribe/subscription" are gone from the UI. New independent **situation votes** (`combo_votes`, modeled on `tunnel_votes`): a vote button at the top of the situation page, the new default sort on the Browse page (replacing "Subscribers"), and a new **"Voted" view** filter. Fixed the root cause of the "Failed to subscribe" / "Not subscribed to this combo" popups — zombie `setSavedPageOpen` calls (left from the Phase 59b `SavedPageOverlay` deletion) that threw a `ReferenceError` after a successful subscribe; `unsubscribeFromCombo` is now idempotent. The Votes overlay is unchanged (graph + link votes only). Phases 66, 64a, 65a, 65b-1/2, 62c, and 63a remain live.
+
+**Phase 67 (June 13, 2026):** Situations-as-tabs + situation votes.
+- **Bug fix (the trigger):** `setSavedPageOpen` was called at four sites in `AppShell.jsx` but never declared — dead state from the `SavedPageOverlay` removed in Phase 59b. In `handleSubscribeToCombo` the `combosAPI.subscribe()` call succeeded, then the undefined call threw a `ReferenceError`, was caught, and surfaced as a misleading "Failed to subscribe" alert (also skipping `refreshSidebarItems`, so the situation never appeared in the sidebar). Clicking a situation from Browse and from the concept link-panel Situations tab both routed through this. The follow-on "Not subscribed to this combo" popup was `unsubscribeFromCombo` returning 404 for a row that was never created.
+- **Model change:** `handleSubscribeToCombo` → `handleOpenSituationTab` (idempotent open + activate; 409 = already open → just activate) and `handleUnsubscribeFromCombo` → `handleCloseSituationTab` (wired to a new sidebar X button on combo items, mirroring `handleCloseGraphTab`). `combo_subscriptions` is kept as the backing store for "open tabs" (no table rename), so open situations persist across refresh exactly like graph tabs. `unsubscribeFromCombo` returns `200 { ok: true }` when nothing was deleted (idempotent close).
+- **Situation votes:** new `combo_votes` table (mirror of `tunnel_votes`, simple per-row toggle), `POST /api/combos/:id/vote` (`toggleComboVote`), `vote_count` + `user_voted` added to `listCombos` and `getCombo`. Browse default sort is now `vote_count DESC` (replacing subscriber count); `listCombos` accepts `?filter=voted` (EXISTS against `combo_votes` for the current user). Vote button in the `ComboTabContent` header (optimistic toggle); the header "Unsubscribe" button was removed (closing is the sidebar X). Browse cards are open-only: card click opens the tab, vote **count** is displayed but not votable from the card (voting is on the situation page).
 
 ---
 
@@ -204,7 +209,8 @@ All tables below are created/maintained in `backend/src/config/migrate.js`. Tabl
 
 **combos** — Named collections of edges. Case-insensitive unique name. `created_by` uses ON DELETE SET NULL.
 **combo_edges** — Junction: combo to edge. UNIQUE(combo_id, edge_id).
-**combo_subscriptions** — User subscriptions. Has `group_id` FK to tab_groups.
+**combo_subscriptions** — **(Phase 67) now backs "open situation tabs"**, not a user-facing subscription. A row means "this user has this situation open as a tab." Has `group_id` FK to tab_groups. `subscribeToCombo`/`unsubscribeFromCombo` are the open/close-tab operations (close is idempotent). UNIQUE(user_id, combo_id).
+**combo_votes** — **(Phase 67)** Per-row situation vote (endorsement), independent of open tabs. UNIQUE(user_id, combo_id), index on `combo_id`. Modeled on `tunnel_votes`. Drives the Browse default sort and the "Voted" view filter.
 
 ### Navigation Tables
 
@@ -320,14 +326,15 @@ All routes mounted in `backend/src/server.js`. Auth: `authenticateToken` = requi
 ### Situations (`/api/combos`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/` | Guest | List all combos |
-| GET | `/:id` | Guest | Combo details + edges. **Phase 66:** also returns `save_count` per edge via correlated subquery. |
+| GET | `/` | Guest | List all combos. **Phase 67:** returns `vote_count` + `user_voted` per combo; default sort is `vote_count DESC` (was subscriber count); accepts `?filter=voted` (only situations the current user voted for) and `?sort=new`. |
+| GET | `/:id` | Guest | Combo details + edges. **Phase 66:** also returns `save_count` per edge. **Phase 67:** returns `vote_count` + `user_voted` for the situation. |
 | GET | `/:id/links` | Guest | Aggregated links (?sort=top/new) |
 | GET | `/by-edge/:edgeId` | Guest | Combos containing an edge |
 | POST | `/create` | Yes | Create combo |
 | GET | `/mine` | Yes | User's owned combos |
-| GET | `/subscriptions` | Yes | User's combo subscriptions |
-| POST | `/subscribe`, `/unsubscribe` | Yes | Subscription management |
+| GET | `/subscriptions` | Yes | User's open situation tabs (formerly "subscriptions") |
+| POST | `/subscribe`, `/unsubscribe` | Yes | **Phase 67:** open / close a situation tab (idempotent). Reframed in place — no longer a user-facing subscription. |
+| POST | `/:id/vote` | Yes | **NEW Phase 67.** Toggle the current user's vote on a situation. Returns `{ voted, vote_count }`. Mirrors `POST /tunnels/vote`. |
 | POST | `/:id/edges/add`, `/:id/edges/remove` | Yes | Edge management (owner) |
 | POST | `/:id/transfer-ownership` | Yes | Ownership transfer |
 
@@ -996,8 +1003,11 @@ Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/c
 - **Addendum-precise scroll-and-highlight deferred (Phase 65b-2):** When a mention's source is an addendum (not the original comment), clicking the mention opens the parent link/tunnel card with scroll-and-highlight on the card itself, not on the specific addendum within it. Users must eyeball which addendum mentioned them. Would require extending the URL fragment grammar to support `#link-:id-addendum-:id` (or equivalent) and adding addendum-precise scroll logic in `LinkCard` and `TunnelView`. Deferred; revisit if users complain. Low priority — link cards aren't huge.
 - **OG image file still named with old "superconcept" convention (Phase 66):** If a page-specific OG card screenshot was named `og-superconcept.png` or similar, it may need renaming for consistency with the "situation" rename. Low priority — the filename is never user-visible, only the OG_OVERRIDES path key matters.
 - **`handleOpenConceptTab` accepts `conceptName` but is called without one in deep-link branches:** The deep-link concept tab label item above generalizes — `/link/:id` and `/tunnel/:id` resolutions also call `handleOpenConceptTab(data.conceptId, data.parentPath)` without a name. The fix is the same: pull the name from the loaded concept after the API call and update the tab label retroactively.
+- **`subscriber_count` is now vestigial (Phase 67):** The Browse page and situation header display `vote_count` instead. `getComboSubscriptions` still computes `subscriber_count` (now meaning "people with the situation open as a tab"), and the field is unused by the UI. Drop from that query if no consumer reappears. Also: `reloadComboSubscriptions` in `AppShell.jsx` is defined but no longer called (its only caller, the old Browse `onSubscribe`, was removed) — safe to delete on next pass.
+- **`combo_subscriptions` table name is misleading post-Phase-67:** it now stores "open situation tabs," not subscriptions. Kept the name to avoid a wide rename across migrate/controller/routes/`api.js`. The endpoints `POST /combos/subscribe` and `/unsubscribe` are likewise reframed open/close-tab operations. Consider renaming to `combo_open_tabs` (+ endpoint aliases) if the vocabulary mismatch causes confusion. Low priority.
 
 ### Forward Roadmap
+- ~~Phase 67: situations-as-tabs (reframe subscriptions → open tabs, closeable X) + situation votes (`combo_votes`) + Browse votes sort + "Voted" view + `setSavedPageOpen` zombie fix~~ **completed June 13, 2026**
 - ~~Phase 66: "Superconcept" → "Situation" rename + situation page redesign + VotesOverlay legend removal + saved_tabs bug fix~~ **completed June 6, 2026**
 - ~~Phase 65b-2: Mentions UI — concept tab + link card affordance + tunnel card affordance + mentionCount in list endpoints~~ **completed May 26, 2026** (with `65b-2-fix` follow-up for visibility filter alignment). **In-orca-links arc complete.**
 - ~~Phase 65a: share buttons on links/tunnel-links + in-comment linkify of in-orca URLs~~ **completed May 24, 2026** (with `65a-fix` and `65a-fix-2` follow-ups)

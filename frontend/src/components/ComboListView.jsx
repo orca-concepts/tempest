@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { combosAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
 
-const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubscriptions, onComboClick, onRequestLogin }) => {
+const ComboListView = ({ onBack, isGuest, onComboClick, onRequestLogin }) => {
   const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState('subscribers');
+  const [sortOption, setSortOption] = useState('votes');
+  // Phase 67: "All" vs "Voted" (situations the current user has voted for).
+  const [viewOption, setViewOption] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -28,12 +30,13 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
 
   useEffect(() => {
     loadCombos();
-  }, [debouncedSearch, sortOption]);
+  }, [debouncedSearch, sortOption, viewOption]);
 
   const loadCombos = async () => {
     try {
       setLoading(true);
-      const res = await combosAPI.listCombos(debouncedSearch || undefined, sortOption);
+      const filter = viewOption === 'voted' ? 'voted' : undefined;
+      const res = await combosAPI.listCombos(debouncedSearch || undefined, sortOption, filter);
       setCombos(res.data.combos || []);
     } catch (err) {
       console.error('Failed to load combos:', err);
@@ -47,13 +50,14 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
     setCreateError('');
     try {
       setCreating(true);
-      await combosAPI.createCombo(newName.trim(), newDescription.trim() || undefined);
+      const res = await combosAPI.createCombo(newName.trim(), newDescription.trim() || undefined);
       setShowCreate(false);
       setNewName('');
       setNewDescription('');
       await loadCombos();
-      // Creator auto-subscribes — notify parent to reload subscriptions
-      if (onSubscribe) onSubscribe();
+      // Phase 67: open the new situation as a tab (this also refreshes the sidebar).
+      const created = res.data?.combo;
+      if (created && onComboClick) onComboClick(created);
     } catch (err) {
       if (err.response?.status === 409) {
         setCreateError('A situation with this name already exists');
@@ -62,44 +66,6 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
       }
     } finally {
       setCreating(false);
-    }
-  };
-
-  const handleSubscribeClick = async (e, comboId) => {
-    e.stopPropagation();
-    try {
-      await combosAPI.subscribe(comboId);
-      // Update local state optimistically
-      setCombos(prev => prev.map(c =>
-        c.id === comboId
-          ? { ...c, user_subscribed: true, subscriber_count: (c.subscriber_count || 0) + 1 }
-          : c
-      ));
-      if (onSubscribe) onSubscribe();
-    } catch (err) {
-      if (err.response?.status === 409) {
-        // Already subscribed — update local state
-        setCombos(prev => prev.map(c =>
-          c.id === comboId ? { ...c, user_subscribed: true } : c
-        ));
-      } else {
-        alert(err.response?.data?.error || 'Failed to subscribe');
-      }
-    }
-  };
-
-  const handleUnsubscribeClick = async (e, comboId) => {
-    e.stopPropagation();
-    try {
-      await combosAPI.unsubscribe(comboId);
-      setCombos(prev => prev.map(c =>
-        c.id === comboId
-          ? { ...c, user_subscribed: false, subscriber_count: Math.max(0, (c.subscriber_count || 1) - 1) }
-          : c
-      ));
-      if (onUnsubscribe) onUnsubscribe(comboId);
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to unsubscribe');
     }
   };
 
@@ -186,11 +152,23 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
             >{'\u2715'}</button>
           )}
         </div>
+        {!isGuest && (
+          <div style={styles.sortToggle}>
+            <button
+              onClick={() => setViewOption('all')}
+              style={viewOption === 'all' ? styles.sortButtonActive : styles.sortButton}
+            >All</button>
+            <button
+              onClick={() => setViewOption('voted')}
+              style={viewOption === 'voted' ? styles.sortButtonActive : styles.sortButton}
+            >Voted</button>
+          </div>
+        )}
         <div style={styles.sortToggle}>
           <button
-            onClick={() => setSortOption('subscribers')}
-            style={sortOption === 'subscribers' ? styles.sortButtonActive : styles.sortButton}
-          >Subscribers</button>
+            onClick={() => setSortOption('votes')}
+            style={sortOption === 'votes' ? styles.sortButtonActive : styles.sortButton}
+          >Votes</button>
           <button
             onClick={() => setSortOption('new')}
             style={sortOption === 'new' ? styles.sortButtonActive : styles.sortButton}
@@ -205,7 +183,9 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
         <div style={styles.emptyState}>
           {debouncedSearch
             ? `No situations matching '${debouncedSearch}'`
-            : 'No situations have been created yet.'}
+            : viewOption === 'voted'
+              ? "You haven't voted for any situations yet."
+              : 'No situations have been created yet.'}
         </div>
       ) : (
         <div style={styles.list}>
@@ -218,21 +198,6 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
               <div style={styles.cardHeader}>
                 <div style={styles.cardTitleArea}>
                   <span style={styles.comboName}>{combo.name}</span>
-                </div>
-                <div style={styles.cardBadges}>
-                  {!isGuest && (
-                    combo.user_subscribed ? (
-                      <button
-                        style={styles.unsubscribeButton}
-                        onClick={(e) => handleUnsubscribeClick(e, combo.id)}
-                      >Unsubscribe</button>
-                    ) : (
-                      <button
-                        style={styles.subscribeButton}
-                        onClick={(e) => handleSubscribeClick(e, combo.id)}
-                      >Subscribe</button>
-                    )
-                  )}
                 </div>
               </div>
               {combo.description && (
@@ -247,7 +212,7 @@ const ComboListView = ({ onBack, isGuest, onSubscribe, onUnsubscribe, comboSubsc
                 <span style={styles.metaDot}>{'\u00B7'}</span>
                 <span>{combo.edge_count || 0} concept{combo.edge_count != 1 ? 's' : ''}</span>
                 <span style={styles.metaDot}>{'\u00B7'}</span>
-                <span>{combo.subscriber_count || 0} subscriber{combo.subscriber_count != 1 ? 's' : ''}</span>
+                <span>{'\u25B2'} {combo.vote_count || 0} vote{combo.vote_count != 1 ? 's' : ''}</span>
               </div>
             </div>
           ))}

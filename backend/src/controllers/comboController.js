@@ -4,28 +4,38 @@ const pool = require('../config/database');
 const listCombos = async (req, res) => {
   try {
     const userId = req.user?.userId || -1;
-    const { search, sort } = req.query;
+    const { search, sort, filter } = req.query;
 
-    let whereClause = '';
+    const conditions = [];
     const params = [userId];
 
     if (search && search.trim()) {
       params.push(`%${search.trim()}%`);
-      whereClause = `WHERE c.name ILIKE $${params.length}`;
+      conditions.push(`c.name ILIKE $${params.length}`);
     }
 
-    const orderBy = sort === 'new' ? 'c.created_at DESC' : 'subscriber_count DESC, c.created_at DESC';
+    // Phase 67: "Voted" view — only situations the current user has voted for.
+    if (filter === 'voted') {
+      conditions.push(
+        `EXISTS (SELECT 1 FROM combo_votes v WHERE v.combo_id = c.id AND v.user_id = $1)`
+      );
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Phase 67: default sort is by votes (replacing subscribers).
+    const orderBy = sort === 'new' ? 'c.created_at DESC' : 'vote_count DESC, c.created_at DESC';
 
     const result = await pool.query(
       `SELECT c.id, c.name, c.description, c.created_by, c.created_at,
               u.username AS creator_username,
               u.orcid_id AS creator_orcid_id,
               (SELECT COUNT(*) FROM combo_edges ce WHERE ce.combo_id = c.id) AS edge_count,
-              (SELECT COUNT(*) FROM combo_subscriptions cs WHERE cs.combo_id = c.id) AS subscriber_count,
-              BOOL_OR(cs_user.user_id IS NOT NULL) AS user_subscribed
+              (SELECT COUNT(*) FROM combo_votes cv WHERE cv.combo_id = c.id) AS vote_count,
+              BOOL_OR(cv_user.user_id IS NOT NULL) AS user_voted
        FROM combos c
        LEFT JOIN users u ON u.id = c.created_by
-       LEFT JOIN combo_subscriptions cs_user ON cs_user.combo_id = c.id AND cs_user.user_id = $1
+       LEFT JOIN combo_votes cv_user ON cv_user.combo_id = c.id AND cv_user.user_id = $1
        ${whereClause}
        GROUP BY c.id, u.username, u.orcid_id
        ORDER BY ${orderBy}`,
@@ -36,8 +46,8 @@ const listCombos = async (req, res) => {
       combos: result.rows.map(r => ({
         ...r,
         edge_count: Number(r.edge_count),
-        subscriber_count: Number(r.subscriber_count),
-        user_subscribed: r.user_subscribed || false,
+        vote_count: Number(r.vote_count),
+        user_voted: r.user_voted || false,
       })),
     });
   } catch (error) {
@@ -56,11 +66,11 @@ const getCombo = async (req, res) => {
       `SELECT c.id, c.name, c.description, c.created_by, c.created_at,
               u.username AS creator_username,
               u.orcid_id AS creator_orcid_id,
-              (SELECT COUNT(*) FROM combo_subscriptions cs WHERE cs.combo_id = c.id) AS subscriber_count,
-              BOOL_OR(cs_user.user_id IS NOT NULL) AS user_subscribed
+              (SELECT COUNT(*) FROM combo_votes cv WHERE cv.combo_id = c.id) AS vote_count,
+              BOOL_OR(cv_user.user_id IS NOT NULL) AS user_voted
        FROM combos c
        LEFT JOIN users u ON u.id = c.created_by
-       LEFT JOIN combo_subscriptions cs_user ON cs_user.combo_id = c.id AND cs_user.user_id = $1
+       LEFT JOIN combo_votes cv_user ON cv_user.combo_id = c.id AND cv_user.user_id = $1
        WHERE c.id = $2
        GROUP BY c.id, u.username, u.orcid_id`,
       [userId, comboId]
@@ -71,8 +81,8 @@ const getCombo = async (req, res) => {
     }
 
     const combo = comboResult.rows[0];
-    combo.subscriber_count = Number(combo.subscriber_count);
-    combo.user_subscribed = combo.user_subscribed || false;
+    combo.vote_count = Number(combo.vote_count);
+    combo.user_voted = combo.user_voted || false;
 
     // Get member edges with concept details
     const edgesResult = await pool.query(
@@ -279,19 +289,63 @@ const unsubscribeFromCombo = async (req, res) => {
       [userId, comboId]
     );
 
-    const delResult = await pool.query(
+    // Phase 67: close-tab is idempotent. Closing a situation tab that is no
+    // longer open (e.g. a double-click race) is a no-op, not a 404 — the old
+    // "Not subscribed to this combo" error surfaced as a confusing popup.
+    await pool.query(
       'DELETE FROM combo_subscriptions WHERE user_id = $1 AND combo_id = $2',
       [userId, comboId]
     );
 
-    if (delResult.rowCount === 0) {
-      return res.status(404).json({ error: 'Not subscribed to this combo' });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error closing situation tab:', error);
+    res.status(500).json({ error: 'Failed to close situation tab' });
+  }
+};
+
+// Phase 67: toggle the current user's vote on a situation (combo). Mirrors
+// tunnelController.toggleTunnelVote — a simple per-row endorsement toggle,
+// independent of which situations the user has open as tabs.
+const toggleComboVote = async (req, res) => {
+  try {
+    const comboId = req.params.id;
+    const userId = req.user.userId;
+
+    const comboCheck = await pool.query('SELECT id FROM combos WHERE id = $1', [comboId]);
+    if (comboCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Combo not found' });
     }
 
-    res.json({ message: 'Unsubscribed from combo' });
+    const existingVote = await pool.query(
+      'SELECT id FROM combo_votes WHERE user_id = $1 AND combo_id = $2',
+      [userId, comboId]
+    );
+
+    let voted;
+    if (existingVote.rows.length > 0) {
+      await pool.query(
+        'DELETE FROM combo_votes WHERE user_id = $1 AND combo_id = $2',
+        [userId, comboId]
+      );
+      voted = false;
+    } else {
+      await pool.query(
+        'INSERT INTO combo_votes (user_id, combo_id) VALUES ($1, $2)',
+        [userId, comboId]
+      );
+      voted = true;
+    }
+
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM combo_votes WHERE combo_id = $1',
+      [comboId]
+    );
+
+    res.json({ voted, vote_count: Number(countResult.rows[0].count) });
   } catch (error) {
-    console.error('Error unsubscribing from combo:', error);
-    res.status(500).json({ error: 'Failed to unsubscribe' });
+    console.error('Error toggling combo vote:', error);
+    res.status(500).json({ error: 'Failed to toggle situation vote' });
   }
 };
 
@@ -479,12 +533,12 @@ const getCombosByEdge = async (req, res) => {
               u.username AS created_by_username,
               u.orcid_id AS created_by_orcid_id,
               (SELECT COUNT(*) FROM combo_edges ce WHERE ce.combo_id = c.id) AS edge_count,
-              (SELECT COUNT(*) FROM combo_subscriptions cs WHERE cs.combo_id = c.id) AS subscriber_count
+              (SELECT COUNT(*) FROM combo_votes cv WHERE cv.combo_id = c.id) AS vote_count
        FROM combos c
        JOIN combo_edges ce_filter ON ce_filter.combo_id = c.id AND ce_filter.edge_id = $1
        LEFT JOIN users u ON u.id = c.created_by
        GROUP BY c.id, u.username, u.orcid_id
-       ORDER BY subscriber_count DESC, c.name ASC`,
+       ORDER BY vote_count DESC, c.name ASC`,
       [edgeId]
     );
 
@@ -495,7 +549,7 @@ const getCombosByEdge = async (req, res) => {
       created_by_username: r.created_by_username || null,
       created_by_orcid_id: r.created_by_orcid_id || null,
       edge_count: Number(r.edge_count),
-      subscriber_count: Number(r.subscriber_count),
+      vote_count: Number(r.vote_count),
     })));
   } catch (error) {
     console.error('Error getting combos by edge:', error);
@@ -571,6 +625,7 @@ module.exports = {
   getComboSubscriptions,
   subscribeToCombo,
   unsubscribeFromCombo,
+  toggleComboVote,
   addEdgeToCombo,
   removeEdgeFromCombo,
   transferOwnership,

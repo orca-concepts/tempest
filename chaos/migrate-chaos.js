@@ -212,6 +212,41 @@ async function migrate() {
       );
     `);
 
+    // ------------------------------------------------------------------------
+    // chaos.md v0.9/v0.10 situation fields (Stage-5 revision). Added as separate
+    // idempotent ADD COLUMN IF NOT EXISTS so an existing dev DB only gains the
+    // new columns (the base table above is untouched on re-run).
+    //
+    //   ideal_anchor        §5 ideal-anchored spine: the single most-central
+    //                       member (the "ideal"). A scalar concept name → TEXT,
+    //                       nullable (a fresh proposal may not designate one yet).
+    //   entrenchment_status §5 ad-hoc→established lifecycle. A small closed set,
+    //                       so a CHECK enum (matches the Phase-65b house style),
+    //                       NOT NULL DEFAULT 'ad-hoc' (every fresh situation
+    //                       starts ad-hoc; the default also back-fills any row
+    //                       that predates this column).
+    //   recurrence_count    P13/P16 situations carry their OWN validation track,
+    //                       distinct from per-concept ledgers. A derived counter
+    //                       snapshot → INTEGER DEFAULT 0.
+    //   precision           P16 sharpness of the situation's standing prediction.
+    //                       NUMERIC, nullable (no track yet on a fresh proposal).
+    //   domain_balance      §5 the four-column spread PLUS an `under_budgeted`
+    //                       flag. This one IS a structured object (keyed counts +
+    //                       a boolean), so JSONB is the right fit — unlike the
+    //                       flat scalar arrays above (reading_list/core_spine/
+    //                       toggleable = TEXT[]). JSONB preserves the keys without
+    //                       inventing five more columns.
+    // ------------------------------------------------------------------------
+    await client.query(`ALTER TABLE chaos_situation_meta ADD COLUMN IF NOT EXISTS ideal_anchor TEXT;`);
+    await client.query(`
+      ALTER TABLE chaos_situation_meta
+        ADD COLUMN IF NOT EXISTS entrenchment_status TEXT NOT NULL DEFAULT 'ad-hoc'
+          CHECK (entrenchment_status IN ('ad-hoc', 'established'));
+    `);
+    await client.query(`ALTER TABLE chaos_situation_meta ADD COLUMN IF NOT EXISTS recurrence_count INTEGER NOT NULL DEFAULT 0;`);
+    await client.query(`ALTER TABLE chaos_situation_meta ADD COLUMN IF NOT EXISTS precision NUMERIC;`);
+    await client.query(`ALTER TABLE chaos_situation_meta ADD COLUMN IF NOT EXISTS domain_balance JSONB;`);
+
     // ========================================================================
     // 5. Chaos seed account (chaos.md §8 "Operational notes"; SCHEMA_NOTES §2d).
     //    A dedicated, login-disabled system user that owns every Chaos-applied
@@ -235,7 +270,7 @@ async function migrate() {
     console.log('  + concept_links.paper_id (nullable FK → papers, ON DELETE SET NULL)');
     console.log('  + chaos_predictions');
     console.log('  + chaos_prediction_events (append-only)');
-    console.log('  + chaos_situation_meta');
+    console.log('  + chaos_situation_meta (+ v0.9/v0.10 cols: ideal_anchor, entrenchment_status, recurrence_count, precision, domain_balance)');
     console.log(`  + seed user "${SEED_USERNAME}" (login disabled) — id = ${seedId}`);
     return seedId;
   } catch (err) {

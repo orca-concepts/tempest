@@ -705,6 +705,14 @@ function reconstructConcepts(integration, perPaper) {
       grounding_papers: groundingPapers,
       confidence: c.confidence || (groundingPapers.length >= 2 ? 'C' : 'S'),
       phi: c.phi || '',
+      // Forward-compatible pass-through of the v0.8 reasoning fields (analytic/
+      // associative edge_character, P15 multi-parent placements, P6/P7 restructure
+      // mentions). The current reasoning contract does not emit these, so they are
+      // absent today and these spreads are no-ops; when a later reasoning phase
+      // emits them they flow through to proposals.json (and apply.js) unchanged.
+      ...(c.edge_character != null ? { edge_character: c.edge_character } : {}),
+      ...(asArray(c.parent_paths).length ? { parent_paths: c.parent_paths.map(asArray) } : {}),
+      ...(asArray(c.restructure_mentions).length ? { restructure_mentions: c.restructure_mentions } : {}),
     };
   });
 }
@@ -729,36 +737,77 @@ function workIdOf(s) {
   return m ? m[0] : null;
 }
 
+// Normalized key for a parent path (root-to-parent concept names). Identity in
+// Orca is path-dependent (P1): the same name under different parents is a distinct
+// CONTEXTUAL entity (multi-parent placement, P15). The merge resolver therefore
+// keys on path, not just (attribute, name), so it never silently collapses two
+// legitimately-distinct same-name placements into one.
+function normPathKey(pp) {
+  return asArray(pp).map(normName).join(' > ');
+}
+
 // Build a resolver from the RAW integration concepts (which carry source_refs):
-// (attribute, [paper_id], any per-paper name the concept was merged from) → the
-// canonical merged concept {attribute, name, parent_path}. Paper-keyed lookups win;
-// the paper-agnostic fallback is suppressed when one source name maps to two canon.
+// (attribute, [paper_id], [parent_path], any per-paper name the concept was merged
+// from) → the canonical merged concept {attribute, name, parent_path}.
+//
+// Lookups go most-specific → least-specific: (paper+path) → (paper) → (path) →
+// (name only). A bucket that holds two DISTINCT canonical concepts (differing by
+// path) is marked AMBIGUOUS; a lookup that lands on an ambiguous bucket WITHOUT a
+// disambiguating path returns null (do not rewrite) rather than guess — this is the
+// "must NOT collapse multi-parent instances" guarantee. With single-parent data
+// every bucket has exactly one canonical, so behavior is unchanged.
 function buildAliasResolver(rawConcepts) {
-  const byPaper = new Map();
-  const noPaper = new Map();
-  const conflict = new Set();
-  const reg = (attr, paperId, name, canon) => {
-    if (paperId != null) byPaper.set(`${attr}|${paperId}|${normName(name)}`, canon);
-    const k = `${attr}|${normName(name)}`;
-    if (noPaper.has(k)) {
-      if (normName(noPaper.get(k).name) !== normName(canon.name)) conflict.add(k);
-    } else {
-      noPaper.set(k, canon);
+  const AMBIGUOUS = Symbol('ambiguous');
+  const byPaperPath = new Map(); // attr|paperId|pathKey|name -> canon
+  const byPaper = new Map();     // attr|paperId|name        -> canon | AMBIGUOUS
+  const byPath = new Map();      // attr|pathKey|name         -> canon | AMBIGUOUS
+  const byName = new Map();      // attr|name                 -> canon | AMBIGUOUS
+
+  // Register, marking a bucket AMBIGUOUS if a second, path-distinct canonical lands in it.
+  const put = (map, k, canon) => {
+    const prev = map.get(k);
+    if (prev === undefined) map.set(k, canon);
+    else if (prev !== AMBIGUOUS && prev !== canon &&
+             normPathKey(prev.parent_path) !== normPathKey(canon.parent_path)) {
+      map.set(k, AMBIGUOUS);
     }
   };
+
   for (const c of asArray(rawConcepts)) {
     const canon = { attribute: c.attribute, name: c.name, parent_path: asArray(c.parent_path) };
-    reg(c.attribute, null, c.name, canon); // a concept is its own canonical identity
-    for (const r of asArray(c.source_refs)) reg(c.attribute, r.paper_id, r.name, canon);
-  }
-  return function resolve(attribute, paperId, name) {
-    if (paperId != null) {
-      const hit = byPaper.get(`${attribute}|${paperId}|${normName(name)}`);
-      if (hit) return hit;
+    const pk = normPathKey(canon.parent_path);
+    put(byPath, `${c.attribute}|${pk}|${normName(c.name)}`, canon);
+    put(byName, `${c.attribute}|${normName(c.name)}`, canon);
+    for (const r of asArray(c.source_refs)) {
+      // source_refs carry {paper_id, name}; if a per-paper ref also carries a path,
+      // key on it, else inherit the canonical's path.
+      const rpk = r.parent_path != null ? normPathKey(r.parent_path) : pk;
+      byPaperPath.set(`${c.attribute}|${r.paper_id}|${rpk}|${normName(r.name)}`, canon);
+      put(byPaper, `${c.attribute}|${r.paper_id}|${normName(r.name)}`, canon);
     }
-    const k = `${attribute}|${normName(name)}`;
-    if (conflict.has(k)) return null;
-    return noPaper.get(k) || null;
+  }
+
+  const hit = (map, k) => {
+    const v = map.get(k);
+    return v && v !== AMBIGUOUS ? v : null;
+  };
+
+  return function resolve(attribute, paperId, name, parentPath) {
+    const nm = normName(name);
+    const pk = parentPath != null ? normPathKey(parentPath) : null;
+    if (paperId != null && pk != null) {
+      const h = byPaperPath.get(`${attribute}|${paperId}|${pk}|${nm}`);
+      if (h) return h;
+    }
+    if (paperId != null) {
+      const h = hit(byPaper, `${attribute}|${paperId}|${nm}`);
+      if (h) return h;
+    }
+    if (pk != null) {
+      const h = hit(byPath, `${attribute}|${pk}|${nm}`);
+      if (h) return h;
+    }
+    return hit(byName, `${attribute}|${nm}`); // null if ambiguous or absent
   };
 }
 
@@ -798,7 +847,9 @@ function rewriteLinks(perPaper, resolve) {
   const out = [];
   for (const p of asArray(perPaper)) {
     for (const l of asArray(p.links)) {
-      const canon = resolve(l.attribute, p.paper_id, l.concept_name);
+      // Links carry their own parent_path — use it so a link to a multi-parent
+      // name resolves to the right contextual concept, not an arbitrary one.
+      const canon = resolve(l.attribute, p.paper_id, l.concept_name, l.parent_path);
       out.push({
         paper_id: p.paper_id,
         attribute: canon ? canon.attribute : l.attribute,
@@ -878,8 +929,76 @@ function normalizeReadingLists(integration, paperMaps) {
   }
 }
 
-// Orchestrates the four fixes in dependency order. resolve is built from RAW
-// integration concepts (before reconstruction strips source_refs). Returns finalLinks.
+// ============================================================================
+// chaos.md v0.9/v0.10 integration/orchestration-ASSIGNABLE fields. These are
+// COMPUTED at integration (from recurrence / graph structure) or KNOWN from the
+// run/sampling plan — they are NOT reasoning-generated, so they require no change
+// to the per-paper / integration prompts (the reasoning-generated v0.9 fields —
+// stance read, association remoteness, cause-effect tunnel rationale — are a
+// separate later phase). The exact policies below (precision curve, surprise
+// heuristic, bootstrapping provenance) are deliberately simple and tunable.
+// ============================================================================
+
+// P16 precision: monotonic in recurrence, low for a one-off, 0 for ungrounded.
+function precisionFromRecurrence(rec) {
+  const r = Number(rec) || 0;
+  if (r <= 0) return 0;
+  return Math.round((r / (r + 1)) * 100) / 100; // 1→0.5, 2→0.67, 3→0.75, …
+}
+
+// P1/P6 surprise: 'parent_unabsorbed' when a concept had to be hung under an
+// ancestor that isn't itself independently grounded (the structure was invented
+// just to place it — the parent could not "absorb" it); otherwise 'local'. Roots
+// (empty parent_path) are 'local'.
+function surpriseLevelOfConcept(c, recByKey) {
+  const pp = asArray(c.parent_path);
+  if (!pp.length) return 'local';
+  const parent = pp[pp.length - 1];
+  const parentRec = recByKey.get(`${c.attribute}|${normName(parent)}`) || 0;
+  return parentRec > 0 ? 'local' : 'parent_unabsorbed';
+}
+
+// Bootstrapping seed runs source papers INDEPENDENTLY (not sampled to confirm a
+// standing prediction), so confirmations are 'independent' and not 'severe', and
+// gaps on an empty graph are 'local'. A later active-sampling (P14) run derives
+// these from its sampling plan instead. Single source of truth for the defaults.
+function runOutcomeDefaults() {
+  return { provenance: 'independent', severe: false, surprise_level: 'local' };
+}
+
+// Mutates integration: annotate concepts (precision, surprise_level) and
+// situations (entrenchment_status, ideal_anchor, recurrence_count, precision,
+// domain_balance.under_budgeted). Idempotent — only fills fields left unset, so a
+// future reasoning phase that emits any of these wins.
+function assignIntegrationFields(integration) {
+  const concepts = asArray(integration.concepts);
+  const recByKey = new Map();
+  for (const c of concepts) recByKey.set(`${c.attribute}|${normName(c.name)}`, Number(c.recurrence) || 0);
+  for (const c of concepts) {
+    if (c.precision == null) c.precision = precisionFromRecurrence(c.recurrence);
+    if (c.surprise_level == null) c.surprise_level = surpriseLevelOfConcept(c, recByKey);
+  }
+  for (const st of asArray(integration.situations)) {
+    if (st.entrenchment_status == null) st.entrenchment_status = 'ad-hoc'; // §5 fresh
+    if (st.ideal_anchor == null) {
+      const spine = asArray(st.core_spine);
+      const members = asArray(st.members);
+      st.ideal_anchor = spine[0] || (members[0] && members[0].name) || null; // most-central
+    }
+    if (st.recurrence_count == null) st.recurrence_count = 0; // no prior round yet
+    if (st.precision === undefined) st.precision = null; // no validation track yet
+    const db = st.domain_balance && typeof st.domain_balance === 'object' ? { ...st.domain_balance } : {};
+    if (db.under_budgeted == null) {
+      const cols = ['value', 'question', 'action', 'tool'];
+      db.under_budgeted = cols.some((k) => !(Number(db[k]) > 0));
+    }
+    st.domain_balance = db;
+  }
+}
+
+// Orchestrates the Stage-5 fixes + v0.9/v0.10 field assignment in dependency
+// order. resolve is built from RAW integration concepts (before reconstruction
+// strips source_refs). Returns finalLinks.
 function finalizeProposals(integration, perPaper, selected) {
   const resolve = buildAliasResolver(integration.concepts); // raw concepts carry source_refs
   integration.concepts = reconstructConcepts(integration, perPaper);
@@ -887,6 +1006,7 @@ function finalizeProposals(integration, perPaper, selected) {
   rewriteTunnels(integration, resolve);
   rewriteSituations(integration, resolve);
   normalizeReadingLists(integration, buildPaperKeyMaps(selected));
+  assignIntegrationFields(integration); // v0.9/v0.10 computed/known fields
   return rewriteLinks(perPaper, resolve);
 }
 
@@ -928,8 +1048,17 @@ function writeJson(integration, perPaper, selected, dist, finalLinks) {
       gaps: asArray(p.prediction_test && p.prediction_test.gaps),
       non_confirmations: asArray(p.prediction_test && p.prediction_test.non_confirmations),
       mis_structures: asArray(p.prediction_test && p.prediction_test.mis_structures),
+      // v0.9/v0.10 outcome annotations, KNOWN from the (bootstrapping) sampling
+      // plan rather than reasoned: provenance/severe on confirmations, surprise on
+      // outcomes. See runOutcomeDefaults().
+      ...runOutcomeDefaults(),
     })),
     links: asArray(finalLinks),
+    // Forward-compatible pass-through: a top-level restructure_mentions array if a
+    // later reasoning phase emits one (absent today → omitted).
+    ...(asArray(integration.restructure_mentions).length
+      ? { restructure_mentions: integration.restructure_mentions }
+      : {}),
   };
   fs.writeFileSync(PROPOSALS_JSON, JSON.stringify(out, null, 2), 'utf8');
 }
@@ -1222,6 +1351,13 @@ module.exports = {
   normalizeReadingLists,
   workIdOf,
   normalizeUrl,
+  // v0.9/v0.10 integration-assignable field helpers (exported for tests):
+  normPathKey,
+  precisionFromRecurrence,
+  surpriseLevelOfConcept,
+  runOutcomeDefaults,
+  assignIntegrationFields,
+  finalizeProposals,
   PHASES,
   ATTRIBUTES,
 };

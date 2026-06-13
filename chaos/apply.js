@@ -33,16 +33,28 @@ const CHAOS_DIR = __dirname;
 const REPO_DIR = path.join(CHAOS_DIR, '..');
 const BACKEND_DIR = path.join(REPO_DIR, 'backend');
 const PAPERS_DIR = path.join(CHAOS_DIR, 'papers');
-const PROPOSALS_PATH = path.join(CHAOS_DIR, 'proposals.json');
 const BACKUPS_DIR = path.join(REPO_DIR, 'backups');
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SEED_USERNAME = 'chaos-seed';
 
+// Optional fixture override: `--proposals <path>` (or `--proposals=<path>`) lets a
+// test run a small self-contained apply without disturbing chaos/proposals.json.
+function argValue(flag) {
+  const i = process.argv.indexOf(flag);
+  if (i !== -1 && process.argv[i + 1]) return process.argv[i + 1];
+  const pre = process.argv.find((a) => a.startsWith(`${flag}=`));
+  return pre ? pre.slice(flag.length + 1) : null;
+}
+const PROPOSALS_PATH = argValue('--proposals') || path.join(CHAOS_DIR, 'proposals.json');
+
 require(require.resolve('dotenv', { paths: [BACKEND_DIR] })).config({
   path: path.join(BACKEND_DIR, '.env'),
 });
 const pool = require(path.join(BACKEND_DIR, 'src', 'config', 'database'));
+// Reuse the backend's mention parser so Chaos-written restructure-mention addenda
+// are indexed exactly like user-written ones (Phase 65b). Same grammar, one source.
+const { parseMentions } = require(path.join(BACKEND_DIR, 'src', 'utils', 'parseMentions'));
 
 // ----------------------------------------------------------------------------
 // Helpers (URL/identity normalization mirrors chaos/source.js)
@@ -56,6 +68,18 @@ function norm(s) {
 }
 function sig(attribute, name) {
   return `${attribute}|${norm(name)}`;
+}
+// Normalized parent-path key (root-to-parent), used to address a specific edge of
+// a multi-parent concept (P15) — mirrors reason.js normPathKey.
+function pathKeyOf(names) {
+  return asArray(names).map(norm).join(' > ');
+}
+// A concept may carry a single parent_path (string[]) or, for multi-parent
+// placement (P15), parent_paths (string[][]) — one path per parent context, each
+// materialized as its own edge. Normalize to a list of paths (always >= 1).
+function parentPathsOf(c) {
+  if (Array.isArray(c.parent_paths) && c.parent_paths.length) return c.parent_paths.map(asArray);
+  return [asArray(c.parent_path)];
 }
 function normalizeUrl(u) {
   if (!u) return null;
@@ -143,10 +167,14 @@ function buildPlan(proposals) {
   const chains = []; // {attribute, names: [...]}
   const ancestorAuto = new Set();
   for (const c of asArray(proposals.concepts)) {
-    const names = [...asArray(c.parent_path), c.name];
-    chains.push({ attribute: c.attribute, names });
-    for (const anc of asArray(c.parent_path)) {
-      if (!conceptBySig.has(sig(c.attribute, anc))) ancestorAuto.add(sig(c.attribute, anc));
+    // Multi-parent placement (P15): one chain per parent path, so each parent
+    // context becomes its own edge. Single-parent concepts yield exactly one chain.
+    for (const pp of parentPathsOf(c)) {
+      const names = [...pp, c.name];
+      chains.push({ attribute: c.attribute, names });
+      for (const anc of pp) {
+        if (!conceptBySig.has(sig(c.attribute, anc))) ancestorAuto.add(sig(c.attribute, anc));
+      }
     }
   }
   for (const k of ancestorAuto) unmapped.push(`ancestor auto-created (not its own proposal): ${k}`);
@@ -176,7 +204,9 @@ function buildPlan(proposals) {
     const dedupeKey = `${s}|${normalizeUrl(l.url)}`;
     if (linkSeen.has(dedupeKey)) continue;
     linkSeen.add(dedupeKey);
-    links.push({ s, url: l.url, comment: l.claim, paperShort: l.paper_id });
+    // Carry the link's parent_path so a link to a multi-parent concept attaches to
+    // the right edge (path-specific), falling back to the primary edge otherwise.
+    links.push({ s, url: l.url, comment: l.claim, paperShort: l.paper_id, parentPath: asArray(l.parent_path) });
   }
 
   // --- tunnels: both endpoints must resolve to a concept edge ---
@@ -221,9 +251,43 @@ function buildPlan(proposals) {
       readingWork, // openalex work ids only
       coreSpine: asArray(st.core_spine),
       toggleable: asArray(st.toggleable),
+      // v0.9/v0.10 situation meta (chaos.md §5; assigned by reason.js, defaulted
+      // here for older/forward proposals).
+      idealAnchor: st.ideal_anchor || null,
+      entrenchment: st.entrenchment_status || 'ad-hoc',
+      recurrenceCount: Number.isFinite(Number(st.recurrence_count)) ? Number(st.recurrence_count) : 0,
+      precision: st.precision == null ? null : Number(st.precision),
+      domainBalance: st.domain_balance && typeof st.domain_balance === 'object' ? st.domain_balance : null,
       // standing prediction: situations carry no `prediction` field — use rationale.
       prediction: st.rationale || '',
     });
+  }
+
+  // --- restructure-mentions (P6/P7): an addendum posted on a superseded concept's
+  //     link, pointing (via an in-orca URL in the body) at the new location, so the
+  //     Phase 65b mention parser backreferences it. Forward-compatible: the current
+  //     reasoning contract emits none, so this is empty today. Shape consumed:
+  //       { target: { attribute, name }, body }   (body should contain the in-orca URL)
+  //     Concept-level c.restructure_mentions[] are folded in with their concept as
+  //     the implicit target. ---
+  const restructureMentions = [];
+  const pushRM = (rm, fallbackTarget) => {
+    const target = rm.target || fallbackTarget || null;
+    const body = String(rm.body || '').trim();
+    if (!target || !body) {
+      unmapped.push(`restructure_mention missing target or body: ${JSON.stringify(rm).slice(0, 80)}`);
+      return;
+    }
+    const s = sig(target.attribute, target.name);
+    if (!conceptBySig.has(s)) {
+      unmapped.push(`restructure_mention target not in concepts: ${target.attribute}:${target.name}`);
+      return;
+    }
+    restructureMentions.push({ s, body });
+  };
+  for (const rm of asArray(proposals.restructure_mentions)) pushRM(rm, null);
+  for (const c of asArray(proposals.concepts)) {
+    for (const rm of asArray(c.restructure_mentions)) pushRM(rm, { attribute: c.attribute, name: c.name });
   }
 
   // --- predictions + events ---
@@ -246,6 +310,7 @@ function buildPlan(proposals) {
     links,
     tunnels,
     situations,
+    restructureMentions,
     conceptPredictions,
     unmapped,
     counts_by_domain: proposals.counts_by_domain || {},
@@ -284,7 +349,8 @@ function printPlan(plan) {
   console.log(`  tunnel_links ............... ${plan.tunnels.length}`);
   console.log(`  combos (situations) ........ ${plan.situations.length}`);
   console.log(`  combo_edges ................ ${plan.situations.reduce((n, s) => n + s.members.length, 0)}`);
-  console.log(`  chaos_situation_meta ....... ${plan.situations.length}  (phase + reading list + spine/toggleable per situation)`);
+  console.log(`  chaos_situation_meta ....... ${plan.situations.length}  (phase + reading list + spine/toggleable + ideal_anchor/entrenchment/recurrence/precision/domain_balance)`);
+  console.log(`  restructure addenda ........ ${plan.restructureMentions.length}  (seed-authored concept_link addenda + indexed mentions)`);
   console.log(`  chaos_predictions .......... ${conceptPredCount + situationPredCount}  (${conceptPredCount} concept + ${situationPredCount} situation; empty predictions skipped)`);
   console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target; reading lists resolved by openalex id)`);
 
@@ -340,6 +406,7 @@ async function apply(plan) {
   const stats = {
     papers: 0, paper_citations: 0, concepts: 0, edges: 0, concept_links: 0,
     tunnel_links: 0, combos: 0, combo_edges: 0, chaos_situation_meta: 0,
+    concept_link_addenda: 0, comment_mentions: 0,
     chaos_predictions: 0, chaos_prediction_events: 0,
   };
   try {
@@ -455,8 +522,13 @@ async function apply(plan) {
       return id;
     }
 
-    // Materialize a full chain (root → leaf); return the LEAF edge id.
-    const leafEdgeBySig = new Map(); // (attr,name) -> leaf edge id
+    // Materialize a full chain (root → leaf); return the LEAF edge id. A concept
+    // placed under multiple parents (P15) produces multiple chains sharing the leaf
+    // name: leafEdgeBySig records the PRIMARY (first) edge for name-only lookups
+    // (members, tunnels, predictions), while leafEdgeByPathSig records every edge
+    // keyed by its parent path so a path-bearing reference resolves precisely.
+    const leafEdgeBySig = new Map(); // (attr,name) -> primary leaf edge id
+    const leafEdgeByPathSig = new Map(); // (attr,name)|pathKey -> that edge id
     async function materializeChain(attribute, names) {
       const aId = attrId.get(attribute);
       if (!aId) throw new Error(`unknown attribute "${attribute}"`);
@@ -469,9 +541,20 @@ async function apply(plan) {
         pathIds.push(childId);
         parentId = childId;
       }
-      leafEdgeBySig.set(sig(attribute, names[names.length - 1]), leafEdge);
+      const s = sig(attribute, names[names.length - 1]);
+      if (!leafEdgeBySig.has(s)) leafEdgeBySig.set(s, leafEdge); // first path = primary
+      leafEdgeByPathSig.set(`${s}|${pathKeyOf(names.slice(0, -1))}`, leafEdge);
       return leafEdge;
     }
+    // Resolve a concept reference to an edge, preferring the path-specific edge when
+    // the reference carries a parent path (multi-parent), else the primary edge.
+    const resolveLeafEdge = (s, parentPath) => {
+      if (parentPath && asArray(parentPath).length >= 0) {
+        const hit = leafEdgeByPathSig.get(`${s}|${pathKeyOf(parentPath)}`);
+        if (hit) return hit;
+      }
+      return leafEdgeBySig.get(s) || null;
+    };
 
     // ---- b. concepts + edges (parents before children via chain order) ----
     for (const ch of plan.chains) {
@@ -480,7 +563,7 @@ async function apply(plan) {
 
     // ---- c. concept_links (comment = exemplification claim; paper_id = grounding) ----
     for (const l of plan.links) {
-      const edgeId = leafEdgeBySig.get(l.s);
+      const edgeId = resolveLeafEdge(l.s, l.parentPath);
       if (!edgeId) continue; // resolved during plan; guard anyway
       const paperId = resolvePaper(l.paperShort);
       const exists = await client.query(
@@ -542,21 +625,73 @@ async function apply(plan) {
         );
         if (res.rowCount) stats.combo_edges += 1;
       }
-      // Situation metadata that combos can't hold (phase, reading list, spine split).
+      // Situation metadata that combos can't hold (phase, reading list, spine split,
+      // and the v0.9/v0.10 fields). domain_balance is JSONB (stringified + cast);
+      // the rest are scalars / TEXT[]. Upsert only when something changed.
       const metaRes = await client.query(
-        `INSERT INTO chaos_situation_meta (combo_id, lifecycle_phase, reading_list, core_spine, toggleable)
-         VALUES ($1,$2,$3,$4,$5)
+        `INSERT INTO chaos_situation_meta
+           (combo_id, lifecycle_phase, reading_list, core_spine, toggleable,
+            ideal_anchor, entrenchment_status, recurrence_count, precision, domain_balance)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
          ON CONFLICT (combo_id) DO UPDATE SET
            lifecycle_phase = EXCLUDED.lifecycle_phase, reading_list = EXCLUDED.reading_list,
-           core_spine = EXCLUDED.core_spine, toggleable = EXCLUDED.toggleable, updated_at = NOW()
+           core_spine = EXCLUDED.core_spine, toggleable = EXCLUDED.toggleable,
+           ideal_anchor = EXCLUDED.ideal_anchor, entrenchment_status = EXCLUDED.entrenchment_status,
+           recurrence_count = EXCLUDED.recurrence_count, precision = EXCLUDED.precision,
+           domain_balance = EXCLUDED.domain_balance, updated_at = NOW()
            WHERE chaos_situation_meta.lifecycle_phase IS DISTINCT FROM EXCLUDED.lifecycle_phase
               OR chaos_situation_meta.reading_list IS DISTINCT FROM EXCLUDED.reading_list
               OR chaos_situation_meta.core_spine IS DISTINCT FROM EXCLUDED.core_spine
               OR chaos_situation_meta.toggleable IS DISTINCT FROM EXCLUDED.toggleable
+              OR chaos_situation_meta.ideal_anchor IS DISTINCT FROM EXCLUDED.ideal_anchor
+              OR chaos_situation_meta.entrenchment_status IS DISTINCT FROM EXCLUDED.entrenchment_status
+              OR chaos_situation_meta.recurrence_count IS DISTINCT FROM EXCLUDED.recurrence_count
+              OR chaos_situation_meta.precision IS DISTINCT FROM EXCLUDED.precision
+              OR chaos_situation_meta.domain_balance IS DISTINCT FROM EXCLUDED.domain_balance
          RETURNING (xmax = 0) AS inserted`,
-        [comboId, st.phase, st.readingWork, st.coreSpine, st.toggleable]
+        [comboId, st.phase, st.readingWork, st.coreSpine, st.toggleable,
+         st.idealAnchor, st.entrenchment, st.recurrenceCount, st.precision,
+         st.domainBalance == null ? null : JSON.stringify(st.domainBalance)]
       );
       if (metaRes.rows[0] && metaRes.rows[0].inserted) stats.chaos_situation_meta += 1;
+    }
+
+    // ---- e2. restructure-mention addenda (P6/P7). Post an addendum (seed-authored)
+    //      on a concept_link of the superseded concept, then index its in-orca URLs
+    //      via the Phase 65b parser into comment_mentions. Idempotent: an identical
+    //      (link, body) addendum is not re-posted. Forward-compatible: empty today. ----
+    for (const rm of asArray(plan.restructureMentions)) {
+      const edgeId = leafEdgeBySig.get(rm.s);
+      if (!edgeId) continue;
+      const linkRow = await client.query(
+        'SELECT id FROM concept_links WHERE edge_id=$1 ORDER BY id LIMIT 1',
+        [edgeId]
+      );
+      if (!linkRow.rows[0]) {
+        plan.unmapped.push(`restructure_mention: no concept_link on edge for ${rm.s} to attach an addendum`);
+        continue;
+      }
+      const linkId = linkRow.rows[0].id;
+      const dup = await client.query(
+        'SELECT id FROM concept_link_addenda WHERE concept_link_id=$1 AND body=$2 LIMIT 1',
+        [linkId, rm.body]
+      );
+      if (dup.rows[0]) continue;
+      const addRes = await client.query(
+        `INSERT INTO concept_link_addenda (concept_link_id, author_id, body)
+         VALUES ($1,$2,$3) RETURNING id`,
+        [linkId, seedId, rm.body]
+      );
+      const addendumId = addRes.rows[0].id;
+      stats.concept_link_addenda += 1;
+      for (const m of parseMentions(rm.body)) {
+        await client.query(
+          `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
+           VALUES ('concept_link_addendum',$1,$2,$3,$4)`,
+          [addendumId, m.targetType, m.targetId, m.targetPath]
+        );
+        stats.comment_mentions += 1;
+      }
     }
 
     // ---- f. prediction ledger ----

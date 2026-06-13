@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const zxcvbn = require('zxcvbn');
 const pool = require('../config/database');
 const { exchangeOrcidCode, fetchOrcidEmails, verifyOrcidExists } = require('../utils/orcid');
+const { isValidOrcid } = require('../utils/orcidValidator');
 const { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 require('dotenv').config();
 
@@ -221,7 +222,7 @@ const authController = {
     }
 
     // Validate ORCID format: 0000-0000-0000-0000 (last char can be X)
-    if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcidId)) {
+    if (!isValidOrcid(orcidId)) {
       return res.status(400).json({ error: 'Invalid ORCID format. Expected: 0000-0000-0000-0000' });
     }
 
@@ -315,7 +316,7 @@ const authController = {
     }
 
     // Validate ORCID format
-    if (!/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(orcidId)) {
+    if (!isValidOrcid(orcidId)) {
       return res.status(400).json({ error: 'Invalid ORCID format' });
     }
 

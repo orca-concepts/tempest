@@ -36,7 +36,7 @@ const PAPERS_DIR = path.join(CHAOS_DIR, 'papers');
 const BACKUPS_DIR = path.join(REPO_DIR, 'backups');
 
 const DRY_RUN = process.argv.includes('--dry-run');
-const SEED_USERNAME = 'chaos-seed';
+const SEED_USERNAME = 'chaos-seed-data';
 
 // Optional fixture override: `--proposals <path>` (or `--proposals=<path>`) lets a
 // test run a small self-contained apply without disturbing chaos/proposals.json.

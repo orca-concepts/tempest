@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { parseMentions } = require('../utils/parseMentions');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 // Insert mention rows parsed from comment/addendum text.
 async function insertMentions(queryable, sourceType, sourceId, text) {
@@ -151,7 +152,7 @@ const tunnelController = {
           comment: row.comment || null,
           createdBy: row.created_by || '[deleted user]',
           createdByUserId: row.created_by_user_id || null,
-          authorOrcidId: row.author_orcid_id || null,
+          authorOrcidId: orcidForDisplay(row.author_orcid_id),
           createdAt: row.created_at,
           addenda: addendaMap[row.tunnel_link_id] || [],
           mentionCount: Number(row.mention_count || 0),

@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 const VALID_TARGET_TYPES = ['concept', 'situation', 'link', 'tunnel'];
 
@@ -106,7 +107,7 @@ const mentionsController = {
           sourceAuthor: {
             id: row.source_author_id,
             username: row.source_author_username,
-            orcidId: row.source_author_orcid_id,
+            orcidId: orcidForDisplay(row.source_author_orcid_id),
           },
           createdAt: row.mention_created_at,
         };

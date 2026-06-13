@@ -160,7 +160,7 @@ snapshot does not read `users`, so this stage cannot confirm or deny a specific 
 flagged as a provisioning gap to settle before any write stage.)
 - **Needed:** one `users` row reserved for Chaos, whose id is the `created_by` /
   `added_by` for every Chaos-applied proposal.
-- **Status:** **RESOLVED (Stage 4)** — seed user `chaos-seed` created (id in §4),
+- **Status:** **RESOLVED (Stage 4)** — seed user `chaos-seed-data` created (id in §4),
   login disabled (non-bcrypt `password_hash`), with a synthetic ≤19-char sentinel
   `orcid_id` (the column is `NOT NULL VARCHAR(19)`). See §4.
 
@@ -240,10 +240,12 @@ The prediction text and its observation log are split:
   built yet — chaos.md §8).
 
 ### Seed account (gap 2d)
-`users` row `username='chaos-seed'`, `email='chaos-seed@orcaconcepts.org'`, login disabled
+`users` row `username='chaos-seed-data'`, `email='chaos-seed-data@orcaconcepts.org'`, login disabled
 (non-bcrypt `password_hash`), sentinel `orcid_id='CHAOS-SEED-ACCOUNT'` (column is NOT NULL
-VARCHAR(19)). **Seed account id: `25`** (this dev DB). Created idempotently (ON CONFLICT on
-username). It will own `created_by`/`added_by` for every Chaos-applied contribution.
+VARCHAR(19); never rendered as an ORCID badge — emit points + `OrcidBadge` validate format).
+**Seed account id: `25`** (this dev DB). Created idempotently; a legacy `chaos-seed` row is
+renamed in place (preserving id + attribution). It owns `created_by`/`added_by` for every
+Chaos-applied contribution.
 
 **Not built (still a file, by design):** the proposal-staging gap (2e) — the review gate
 stays a file (chaos/proposals.md / .json), per chaos.md §8.

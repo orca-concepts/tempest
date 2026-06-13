@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 // List all combos
 const listCombos = async (req, res) => {
@@ -48,6 +49,7 @@ const listCombos = async (req, res) => {
         edge_count: Number(r.edge_count),
         vote_count: Number(r.vote_count),
         user_voted: r.user_voted || false,
+        creator_orcid_id: orcidForDisplay(r.creator_orcid_id),
       })),
     });
   } catch (error) {
@@ -83,6 +85,7 @@ const getCombo = async (req, res) => {
     const combo = comboResult.rows[0];
     combo.vote_count = Number(combo.vote_count);
     combo.user_voted = combo.user_voted || false;
+    combo.creator_orcid_id = orcidForDisplay(combo.creator_orcid_id);
 
     // Get member edges with concept details
     const edgesResult = await pool.query(
@@ -547,7 +550,7 @@ const getCombosByEdge = async (req, res) => {
       name: r.name,
       description: r.description,
       created_by_username: r.created_by_username || null,
-      created_by_orcid_id: r.created_by_orcid_id || null,
+      created_by_orcid_id: orcidForDisplay(r.created_by_orcid_id),
       edge_count: Number(r.edge_count),
       vote_count: Number(r.vote_count),
     })));

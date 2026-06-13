@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usersAPI, authAPI } from '../services/api';
 import { PRIVACY_CONTACT_EMAIL } from '../config/constants';
+import { isValidOrcid } from '../utils/orcidValidator';
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -166,7 +167,7 @@ const ProfilePage = () => {
 
         <h1 style={styles.username}>{profile.username}</h1>
 
-        {profile.orcidId && (
+        {isValidOrcid(profile.orcidId) && (
           <div style={styles.orcidRow}>
             <span style={styles.orcidBadge}>iD</span>
             <a

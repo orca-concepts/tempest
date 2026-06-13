@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
 const { parseMentions } = require('../utils/parseMentions');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 // Insert mention rows parsed from comment/addendum text.
 // Uses the provided queryable (pool or transaction client).
@@ -1533,7 +1534,7 @@ const votesController = {
           title: row.title,
           addedBy: row.added_by,
           addedByUsername: row.added_by_username,
-          authorOrcidId: row.author_orcid_id || null,
+          authorOrcidId: orcidForDisplay(row.author_orcid_id),
           createdAt: row.created_at,
           comment: row.comment,
           updatedAt: row.updated_at,
@@ -1845,7 +1846,7 @@ const votesController = {
             title: row.title,
             addedBy: row.added_by,
             addedByUsername: row.added_by_username,
-            authorOrcidId: row.author_orcid_id || null,
+            authorOrcidId: orcidForDisplay(row.author_orcid_id),
             createdAt: row.link_created_at,
             comment: row.comment,
             updatedAt: row.link_updated_at,

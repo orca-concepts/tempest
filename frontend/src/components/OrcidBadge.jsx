@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
+import { isValidOrcid } from '../utils/orcidValidator';
 
 const OrcidBadge = ({ orcidId }) => {
   const [hovered, setHovered] = useState(false);
 
-  if (!orcidId) return null;
+  // Render nothing for a missing OR non-ORCID-format value (e.g. a system-account
+  // sentinel) — a badge linking to orcid.org/<sentinel> would 400. Defense in depth:
+  // emit points also null these out, but the component guards regardless.
+  if (!isValidOrcid(orcidId)) return null;
 
   return (
     <a

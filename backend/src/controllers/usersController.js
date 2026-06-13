@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { PRIVACY_CONTACT_EMAIL } = require('../config/constants');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 const ORCID_PATTERN = /^\d{4}(-\d{4}){0,2}(-\d{3}[\dX])?$/;
 
@@ -39,7 +40,7 @@ const usersController = {
         users: result.rows.map(r => ({
           id: r.id,
           username: r.username,
-          orcidId: r.orcid_id || null,
+          orcidId: orcidForDisplay(r.orcid_id),
         })),
       });
     } catch (error) {
@@ -76,7 +77,7 @@ const usersController = {
         id: user.id,
         username: user.username,
         email: user.email || null,
-        orcidId: user.orcid_id || null,
+        orcidId: orcidForDisplay(user.orcid_id),
         createdAt: user.created_at,
         comboCount: Number(comboResult.rows[0].count),
       });

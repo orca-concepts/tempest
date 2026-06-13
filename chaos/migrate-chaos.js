@@ -34,8 +34,8 @@ const pool = require(path.join(backendDir, 'src', 'config', 'database'));
 // system account gets a clearly-synthetic sentinel ORCID that cannot collide with a
 // real one. Login is disabled by a non-bcrypt password_hash (bcrypt.compare can
 // never match a string that isn't a $2 hash), since the schema has no is_active flag.
-const SEED_USERNAME = 'chaos-seed';
-const SEED_EMAIL = 'chaos-seed@orcaconcepts.org';
+const SEED_USERNAME = 'chaos-seed-data';
+const SEED_EMAIL = 'chaos-seed-data@orcaconcepts.org';
 // orcid_id is VARCHAR(19) (a real ORCID iD is exactly 19 chars). This sentinel is
 // ≤19 chars and starts with letters, so it can never collide with a real all-digit
 // ORCID and is obviously the system account.
@@ -253,6 +253,13 @@ async function migrate() {
     //    contribution (created_by / added_by), for clean provenance and a clean
     //    handoff when real users arrive. Idempotent via ON CONFLICT on username.
     // ========================================================================
+    // Rename the legacy 'chaos-seed' account in place if present, preserving its id
+    // and every created_by/added_by attribution. Idempotent: 0 rows once renamed or
+    // on a fresh DB (then the INSERT below creates the account).
+    await client.query(
+      `UPDATE users SET username = $1, email = $2 WHERE username = 'chaos-seed'`,
+      [SEED_USERNAME, SEED_EMAIL]
+    );
     await client.query(
       `INSERT INTO users (username, email, password_hash, orcid_id, created_at)
        VALUES ($1, $2, $3, $4, NOW())

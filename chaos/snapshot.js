@@ -134,7 +134,7 @@ async function main() {
 
   // Chaos seed account id (read-only lookup; null if not provisioned). Useful to a
   // later apply stage for created_by / added_by attribution.
-  const seedRow = await pool.query(`SELECT id FROM users WHERE username = 'chaos-seed'`);
+  const seedRow = await pool.query(`SELECT id FROM users WHERE username = 'chaos-seed-data'`);
   const chaosSeedUserId = seedRow.rows[0] ? seedRow.rows[0].id : null;
 
   const snapshot = {

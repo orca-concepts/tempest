@@ -184,6 +184,40 @@ async function migrate() {
         ON chaos_prediction_events (paper_id);
     `);
 
+    // ------------------------------------------------------------------------
+    // chaos.md v0.9/v0.10 prediction-ledger fields (P16 + §10). Added as idempotent
+    // ADD COLUMN IF NOT EXISTS so an existing dev DB gains only these columns.
+    //
+    //   chaos_predictions.precision   — the node's standing confidence (P16). NUMERIC,
+    //                                   nullable (a one-off / ungrounded node has low /
+    //                                   no precision yet). Computed at integration from
+    //                                   recurrence + discipline-diversity.
+    //   chaos_prediction_events.provenance      — was this confirming sample actively
+    //                                   TARGETING this node (P14 active sampling) or
+    //                                   sourced independently? CHECK enum; nullable when
+    //                                   the run has no sampling plan (don't guess).
+    //   chaos_prediction_events.severe          — was it a severe test (high prior risk
+    //                                   of disconfirmation)? BOOLEAN DEFAULT false.
+    //   chaos_prediction_events.surprise_level  — did an existing parent absorb the
+    //                                   proposal ('local') or did it require restructuring
+    //                                   ('parent_unabsorbed', P1/P6)? CHECK enum, nullable.
+    //
+    // Recurrence is NOT stored on chaos_predictions: it is DERIVED by query — COUNT of a
+    // node's non-targeted 'confirmed' events — per chaos.md's "counts are derived, never
+    // stored". (chaos_situation_meta.recurrence_count is a deliberate snapshot exception
+    // for the situation track; the per-concept ledger stays derive-by-query.)
+    // ------------------------------------------------------------------------
+    await client.query(`ALTER TABLE chaos_predictions ADD COLUMN IF NOT EXISTS precision NUMERIC;`);
+    await client.query(`
+      ALTER TABLE chaos_prediction_events
+        ADD COLUMN IF NOT EXISTS provenance TEXT CHECK (provenance IN ('independent', 'targeted'));
+    `);
+    await client.query(`ALTER TABLE chaos_prediction_events ADD COLUMN IF NOT EXISTS severe BOOLEAN DEFAULT false;`);
+    await client.query(`
+      ALTER TABLE chaos_prediction_events
+        ADD COLUMN IF NOT EXISTS surprise_level TEXT CHECK (surprise_level IN ('local', 'parent_unabsorbed'));
+    `);
+
     // ========================================================================
     // 4b. chaos_situation_meta — the situation metadata that the combos schema has
     //     no room for (chaos.md §5; Stage-5 feedback). A situation (= combo) is a
@@ -275,8 +309,8 @@ async function migrate() {
     console.log('  + papers');
     console.log('  + paper_citations');
     console.log('  + concept_links.paper_id (nullable FK → papers, ON DELETE SET NULL)');
-    console.log('  + chaos_predictions');
-    console.log('  + chaos_prediction_events (append-only)');
+    console.log('  + chaos_predictions (+ v0.9/v0.10 col: precision)');
+    console.log('  + chaos_prediction_events (append-only) (+ v0.9/v0.10 cols: provenance, severe, surprise_level)');
     console.log('  + chaos_situation_meta (+ v0.9/v0.10 cols: ideal_anchor, entrenchment_status, recurrence_count, precision, domain_balance)');
     console.log(`  + seed user "${SEED_USERNAME}" (login disabled) — id = ${seedId}`);
     return seedId;

@@ -940,10 +940,50 @@ function normalizeReadingLists(integration, paperMaps) {
 // ============================================================================
 
 // P16 precision: monotonic in recurrence, low for a one-off, 0 for ungrounded.
+// Kept as the no-discipline-data fallback for precisionFor() and for tests.
 function precisionFromRecurrence(rec) {
   const r = Number(rec) || 0;
   if (r <= 0) return 0;
   return Math.round((r / (r + 1)) * 100) / 100; // 1→0.5, 2→0.67, 3→0.75, …
+}
+
+// --- precision_weighting knob (PROVISIONAL — to be calibrated; see chaos.md P16) ---
+// A node's standing confidence grows with how much INDEPENDENT, DISCIPLINARILY-DIVERSE
+// evidence grounds it:
+//   weightedEvidence = Σ over grounding papers of a per-confirmation weight, where an
+//     INDEPENDENT (or unknown-provenance) confirmation counts 1.0 and a TARGETED one
+//     counts TARGETED_WEIGHT (< 1 — a sample aimed at the node is weaker evidence of
+//     its generality than one that hit it unprompted, P16). Bootstrapping runs have no
+//     sampling plan, so every confirmation is treated as independent (weight 1.0).
+//   diversityMult = 1 + DIVERSITY_BONUS·(distinctDisciplines − 1) — cross-field
+//     corroboration is rewarded; single-field grounding gets ×1.
+//   precision = 1 − 1/(1 + weightedEvidence·diversityMult), rounded to 2 dp; 0 if ungrounded.
+// All three constants are the tunable knob — deliberately simple, no opaque magic.
+const TARGETED_WEIGHT = 0.5;
+const DIVERSITY_BONUS = 0.5;
+
+// fieldsByPaper: Map<workId, string[] disciplines>. concept.grounding_papers are
+// openalex ids. targetedSet (optional): Set<workId> of papers that TARGETED this node
+// (none in a bootstrapping run). Falls back to recurrence-only if no discipline data.
+function precisionFor(concept, fieldsByPaper, targetedSet) {
+  const papers = asArray(concept.grounding_papers);
+  const rec = papers.length || Number(concept.recurrence) || 0;
+  if (rec <= 0) return 0;
+  if (!fieldsByPaper || fieldsByPaper.size === 0) return precisionFromRecurrence(rec);
+
+  let weighted = 0;
+  const disciplines = new Set();
+  for (const pid of papers) {
+    const w = workIdOf(pid) || pid;
+    weighted += targetedSet && targetedSet.has(w) ? TARGETED_WEIGHT : 1.0;
+    for (const f of asArray(fieldsByPaper.get(w))) disciplines.add(f);
+  }
+  // Concepts can carry recurrence without an enumerated grounding-paper list; fall back
+  // to recurrence as the confirmation count so precision never under-reports.
+  if (weighted === 0) weighted = rec;
+  const diversityMult = 1 + DIVERSITY_BONUS * Math.max(0, disciplines.size - 1);
+  const evidence = weighted * diversityMult;
+  return Math.round((1 - 1 / (1 + evidence)) * 100) / 100;
 }
 
 // P1/P6 surprise: 'parent_unabsorbed' when a concept had to be hung under an
@@ -970,12 +1010,13 @@ function runOutcomeDefaults() {
 // situations (entrenchment_status, ideal_anchor, recurrence_count, precision,
 // domain_balance.under_budgeted). Idempotent — only fills fields left unset, so a
 // future reasoning phase that emits any of these wins.
-function assignIntegrationFields(integration) {
+function assignIntegrationFields(integration, fieldsByPaper) {
   const concepts = asArray(integration.concepts);
   const recByKey = new Map();
   for (const c of concepts) recByKey.set(`${c.attribute}|${normName(c.name)}`, Number(c.recurrence) || 0);
   for (const c of concepts) {
-    if (c.precision == null) c.precision = precisionFromRecurrence(c.recurrence);
+    // No sampling plan in bootstrapping → no targeted confirmations (targetedSet omitted).
+    if (c.precision == null) c.precision = precisionFor(c, fieldsByPaper);
     if (c.surprise_level == null) c.surprise_level = surpriseLevelOfConcept(c, recByKey);
   }
   for (const st of asArray(integration.situations)) {
@@ -1006,7 +1047,11 @@ function finalizeProposals(integration, perPaper, selected) {
   rewriteTunnels(integration, resolve);
   rewriteSituations(integration, resolve);
   normalizeReadingLists(integration, buildPaperKeyMaps(selected));
-  assignIntegrationFields(integration); // v0.9/v0.10 computed/known fields
+  // discipline tags per grounding paper, for the precision diversity multiplier.
+  const fieldsByPaper = new Map(
+    asArray(selected).map((s) => [workIdOf(s.id) || s.id, asArray(s.fields)])
+  );
+  assignIntegrationFields(integration, fieldsByPaper); // v0.9/v0.10 computed/known fields
   return rewriteLinks(perPaper, resolve);
 }
 
@@ -1354,6 +1399,7 @@ module.exports = {
   // v0.9/v0.10 integration-assignable field helpers (exported for tests):
   normPathKey,
   precisionFromRecurrence,
+  precisionFor,
   surpriseLevelOfConcept,
   runOutcomeDefaults,
   assignIntegrationFields,

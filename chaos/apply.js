@@ -295,6 +295,13 @@ function buildPlan(proposals) {
   const conceptPredictions = asArray(proposals.concepts).map((c) => ({
     s: sig(c.attribute, c.name),
     prediction: c.prediction || '',
+    // v0.9/v0.10 ledger fields. precision → chaos_predictions; the rest → each
+    // confirmation event. provenance/severe come from a sampling plan (null/false
+    // in a bootstrapping run); surprise_level is the concept's structural property.
+    precision: c.precision == null ? null : Number(c.precision),
+    surpriseLevel: c.surprise_level || null,
+    provenance: c.provenance || null,
+    severe: c.severe === true,
     groundingShort: asArray(c.grounding_papers),
   }));
 
@@ -697,7 +704,11 @@ async function apply(plan) {
     // ---- f. prediction ledger ----
     // Append a 'confirmed' event idempotently per run_id (append-only table; a NEW
     // run_id appends a fresh observation round; the same run_id never duplicates).
-    async function addEvent(targetType, targetId, paperId) {
+    // opts carries the v0.9/v0.10 event fields (all null-tolerant): a confirmation
+    // event records the concept's structural surprise_level and, from the sampling
+    // plan, its provenance/severe (null/false when there is no plan).
+    async function addEvent(targetType, targetId, paperId, opts = {}) {
+      const { surpriseLevel = null, provenance = null, severe = false } = opts;
       const exists = await client.query(
         `SELECT 1 FROM chaos_prediction_events
          WHERE target_type=$1 AND target_id=$2 AND run_id=$3 AND event='confirmed'
@@ -706,21 +717,24 @@ async function apply(plan) {
       );
       if (exists.rows[0]) return;
       await client.query(
-        `INSERT INTO chaos_prediction_events (target_type, target_id, run_id, event, paper_id)
-         VALUES ($1,$2,$3,'confirmed',$4)`,
-        [targetType, targetId, plan.runId, paperId]
+        `INSERT INTO chaos_prediction_events
+           (target_type, target_id, run_id, event, paper_id, surprise_level, provenance, severe)
+         VALUES ($1,$2,$3,'confirmed',$4,$5,$6,$7)`,
+        [targetType, targetId, plan.runId, paperId, surpriseLevel, provenance, severe]
       );
       stats.chaos_prediction_events += 1;
     }
-    async function upsertPrediction(targetType, targetId, prediction) {
+    async function upsertPrediction(targetType, targetId, prediction, precision = null) {
       const res = await client.query(
-        `INSERT INTO chaos_predictions (target_type, target_id, prediction, run_id)
-         VALUES ($1,$2,$3,$4)
+        `INSERT INTO chaos_predictions (target_type, target_id, prediction, run_id, precision)
+         VALUES ($1,$2,$3,$4,$5)
          ON CONFLICT (target_type, target_id) DO UPDATE
-           SET prediction = EXCLUDED.prediction, run_id = EXCLUDED.run_id, updated_at = NOW()
+           SET prediction = EXCLUDED.prediction, run_id = EXCLUDED.run_id,
+               precision = EXCLUDED.precision, updated_at = NOW()
            WHERE chaos_predictions.prediction IS DISTINCT FROM EXCLUDED.prediction
+              OR chaos_predictions.precision IS DISTINCT FROM EXCLUDED.precision
          RETURNING (xmax = 0) AS inserted`,
-        [targetType, targetId, prediction, plan.runId]
+        [targetType, targetId, prediction, plan.runId, precision]
       );
       if (res.rows[0] && res.rows[0].inserted) stats.chaos_predictions += 1;
     }
@@ -728,18 +742,25 @@ async function apply(plan) {
     for (const cp of plan.conceptPredictions) {
       const edgeId = leafEdgeBySig.get(cp.s);
       if (!edgeId) continue;
-      if ((cp.prediction || '').trim()) await upsertPrediction('concept', edgeId, cp.prediction);
+      if ((cp.prediction || '').trim()) await upsertPrediction('concept', edgeId, cp.prediction, cp.precision);
       for (const g of cp.groundingShort) {
         const pid = resolvePaper(g);
-        if (pid) await addEvent('concept', edgeId, pid);
+        if (pid) {
+          await addEvent('concept', edgeId, pid, {
+            surpriseLevel: cp.surpriseLevel,
+            provenance: cp.provenance,
+            severe: cp.severe,
+          });
+        }
       }
     }
     for (const st of plan.situations) {
       const comboId = comboIdByName.get(norm(st.name));
       if (!comboId) continue;
-      if ((st.prediction || '').trim()) await upsertPrediction('situation', comboId, st.prediction);
+      if ((st.prediction || '').trim()) await upsertPrediction('situation', comboId, st.prediction, st.precision);
       for (const w of st.readingWork) {
         const pid = resolvePaper(w);
+        // Situation confirmation events carry no per-concept surprise/provenance.
         if (pid) await addEvent('situation', comboId, pid);
       }
     }

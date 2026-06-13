@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.9
+**Version:** 0.10
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -96,6 +96,15 @@ machinery and which parts are load-bearing.
   Barsalou's ad hoc / goal-derived categories (ideal-anchored spine; ad-hoc→established
   entrenchment; situation-as-policy). New proposal type: frontier-concept. New knobs and format
   fields throughout.
+- **v0.10** — Episodic substrate built (no longer a future item). It exists as a committed file
+  store under `chaos/episodic/` — one validated JSON record per run (working set with sampling
+  rationale; proposals with their prediction / precision / provenance / surprise level; outcomes and
+  reasons; reflect notes) — git-tracked so it survives dev-DB rebuilds, the deliberate opposite of
+  the now-gitignored, regenerable `chaos/snapshot.json`. Section 8's learning model and operational
+  notes updated; new run-procedure step 13 (record the run). The *automated* reflect/consolidate loop
+  that reads the store is reframed from "future" to **condition-gated** (gated on Phase B autonomy
+  maturity, like auto-write and frontier concepts) — the *manual* reflect step is available now.
+  Trimmed the stale P8 exception clause that referenced the deferred dialectical tradeoff tunnels.
 
 ---
 
@@ -439,7 +448,10 @@ prediction and error — is P14.
   them for active sampling (P14) and, where warranted, propose them *ahead of* their grounding. This
   is not deferred work or a roadmap item: it is *only possible* once the model is robust, but it is
   **acted on as soon as that condition holds**, automatically, the way Phase B auto-write is gated
-  on validation signals maturing (§8). The trigger is a property of the model, not a date.
+  on validation signals maturing (§8). The trigger is a property of the model, not a date. The
+**automated reflect/consolidate loop** (learning model, below) is the other clear case: the episodic
+store and the *manual* reflect step exist now, but the *self-writing* loop waits on Phase B autonomy
+maturity and switches on then.
 - **The emptiness is a stigmergic signal.** A frontier concept seeded before research has
   instantiated it carries a deliberate **empty grounding** — no exemplar links yet. That emptiness
   is not a defect; it is a **stigmergic trace** (cf. the restructure-mentions of P6/§7): a mark left
@@ -821,6 +833,11 @@ set if the evidence warrants. Do not treat the phases as settled scaffolding.
 12. **Capture feedback** (secondary signal). Each item accepted/rejected/modified, with a
     reason; reasons hone the *reader* — edits to this rubric (Section 0) — and recede over time
     as the research-driven loop (P14) takes over.
+13. **Record the run** (episodic substrate, §8). Finalize a run record — the working set with its
+    sampling rationale, every proposal with its prediction / precision / provenance / surprise level,
+    the outcomes and their reasons, and any reflect notes — validate it against the schema and commit
+    it to `chaos/episodic/`, so the run persists across dev-DB rebuilds and feeds the
+    reflect/consolidate step.
 
 ---
 
@@ -880,14 +897,20 @@ external memory (current agentic practice). Three substrates, kept distinct and 
 - *Semantic* — the graph plus each node's prediction ledger and recurrence-derived confidence.
   This is the dominant, scaling loop: research grows and self-corrects it via prediction error
   (P14).
-- *Episodic* — a persistent record of each run's proposals and outcomes. **Not built yet**; it
-  is what a reflect-and-consolidate step would draw on.
+- *Episodic* — a persistent record of each run's proposals and outcomes. **Built** (v0.10): a
+  committed file store under `chaos/episodic/`, one schema-validated JSON record per run, git-tracked
+  so it survives dev-DB rebuilds. It is what the reflect-and-consolidate step draws on; writing a
+  record is a run-procedure step (§7, step 13).
 
 Reflect after each run, then *consolidate*: convert episodic reasons into procedural edits and
 semantic confidence — but only let a lesson change a principle once it has *recurred* (no
-overfitting to one run). Forgetting is by reversible decay, never deletion. The same loop runs
-across regimes — research in Phase A/B seeding, user contributions after launch — with only the
-input stream changing.
+overfitting to one run). The **manual** reflect step is available now — chat-side Claude reads the
+episodic records and proposes rubric edits and confidence updates. The **automated** reflect/
+consolidate loop (a scheduled step that reads the store and writes its own edits) is
+**condition-gated**, not a future plan: it waits on the same Phase B autonomy maturity as auto-write
+and frontier concepts (the condition-gated note above), and switches on when that holds. Forgetting
+is by reversible decay, never deletion. The same loop runs across regimes — research in Phase A/B
+seeding, user contributions after launch — with only the input stream changing.
 
 **Operational notes.** Chaos's contributions are attributed to a dedicated **seed account**
 (clean provenance, and a clean handoff when real users arrive), not a personal account. In
@@ -898,9 +921,11 @@ are idempotent and transactional — respect the edge uniqueness constraint and 
 (the link table permits duplicate URLs). External DB access uses Railway's public Postgres
 proxy URL. Pre-launch, the dev graph is disposable: a full-capacity pass can be run, inspected
 whole, and redone. The papers/citations migration (per SCHEMA_NOTES) now also carries each
-node's prediction ledger (now including a **precision** value and per-confirmation **provenance**);
-a persistent episodic feedback store is a further table to add when the reflect/consolidate loop is
-automated.
+node's prediction ledger (now including a **precision** value and per-confirmation **provenance**).
+The episodic store is **not** such a table: it is a committed file store under `chaos/episodic/`
+(v0.10), deliberately outside the disposable dev DB so it survives rebuilds; the record format and a
+validating writer exist now, and what remains is to wire the pipeline's emit/review steps to populate
+it automatically, then (condition-gated) the automated reflect step.
 
 ---
 

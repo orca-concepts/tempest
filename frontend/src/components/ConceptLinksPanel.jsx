@@ -11,6 +11,7 @@ const ConceptLinksPanel = ({
   pendingScrollLinkId, onPendingScrollLinkConsumed,
   collapsible = false,
   conceptMentionCount = 0,
+  voteSets = [],
 }) => {
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(collapsible);
@@ -320,6 +321,7 @@ const ConceptLinksPanel = ({
             renderInstanceSnippet={renderInstanceSnippet}
             cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
             conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()}
+            voteSets={voteSets}
             onRemoveSuccess={() => loadLinks()} onAddendumSuccess={() => loadLinks()} />
         ))}
       </>

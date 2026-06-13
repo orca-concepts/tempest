@@ -3,6 +3,7 @@ import CopyLinkPicker from './CopyLinkPicker';
 import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
 import MentionsPanel from './MentionsPanel';
+import { getSetColor } from './VoteSetBar';
 import { votesAPI } from '../services/api';
 
 /**
@@ -29,8 +30,15 @@ const LinkCard = ({
   readOnlyVote = false,
   conceptId, conceptPath, onCopySuccess,
   onRemoveSuccess, onAddendumSuccess,
+  voteSets = [],
 }) => {
   const isCreator = user && link.addedBy === user.id;
+  // Phase 69: a link gets a vote-set's color dot if ≥1 member of that set upvoted
+  // it. Gated naturally — voteSets is empty unless the concept has active sets.
+  const voterIds = link.voterUserIds || [];
+  const linkSetIndices = voteSets
+    .filter((set) => Array.isArray(set.userIds) && set.userIds.some((uid) => voterIds.includes(uid)))
+    .map((set) => set.setIndex);
   const [showCopyPicker, setShowCopyPicker] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [removeError, setRemoveError] = useState(null);
@@ -127,6 +135,20 @@ const LinkCard = ({
               <LinkifiedText text={a.body} lines={3} style={s.commentText} />
             </div>
           ))}
+        </div>
+      )}
+      {linkSetIndices.length > 0 && (
+        <div style={s.voteSetDotsRow}>
+          {linkSetIndices.map((setIndex) => {
+            const color = getSetColor(setIndex);
+            return (
+              <span
+                key={setIndex}
+                style={{ ...s.voteSetDot, backgroundColor: color.hex }}
+                title={`${color.name} vote set`}
+              />
+            );
+          })}
         </div>
       )}
       <div style={s.bottomRow}>
@@ -253,6 +275,8 @@ const s = {
   editBtn: { marginLeft: '8px', fontSize: '12px', color: '#999', cursor: 'pointer', textDecoration: 'underline' },
   textarea: { width: '100%', fontFamily: '"EB Garamond", Georgia, serif', fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
   bottomRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' },
+  voteSetDotsRow: { display: 'flex', gap: '4px', marginTop: '6px' },
+  voteSetDot: { width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block' },
   vote: { fontSize: '12px', fontFamily: '"EB Garamond", Georgia, serif' },
   meta: { fontSize: '12px', color: '#aaa' },
   toggleLink: { fontSize: '11px', color: '#999', cursor: 'pointer', textDecoration: 'underline', fontFamily: '"EB Garamond", Georgia, serif' },

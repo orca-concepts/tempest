@@ -9,6 +9,7 @@ const ConceptGrid = ({
   onCompareChildren,
   onFlag,
   onUnflag,
+  onNavigateNested,
   showVotes = false,
   showAttributeBadge = false,
   path = [],
@@ -17,6 +18,16 @@ const ConceptGrid = ({
 }) => {
   // Phase 14a: Right-click context menu for concept diffing
   const [contextMenu, setContextMenu] = useState(null);
+  // Phase 69: which card's nested-location picker is open (keyed by edge_id)
+  const [openNested, setOpenNested] = useState(null);
+
+  // Close the nested-location picker on any outside click
+  useEffect(() => {
+    if (openNested == null) return;
+    const handleClick = () => setOpenNested(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [openNested]);
 
   const handleCardContextMenu = (e, child) => {
     e.preventDefault();
@@ -83,10 +94,55 @@ const ConceptGrid = ({
                       })}
                     </div>
                   )}
+                  {onNavigateNested && concept.nestedLocations && concept.nestedLocations.length > 0 && (
+                    <div style={styles.nestedFlagWrap}>
+                      <span
+                        style={styles.nestedFlag}
+                        title={
+                          concept.nestedLocations.length === 1
+                            ? `Also nested deeper under ${concept.nestedLocations[0].parentName} — click to go there`
+                            : `Also nested deeper under ${concept.nestedLocations.length} concepts — click to choose`
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (concept.nestedLocations.length === 1) {
+                            onNavigateNested(concept.id, concept.nestedLocations[0].graphPath);
+                          } else {
+                            setOpenNested(openNested === concept.edge_id ? null : concept.edge_id);
+                          }
+                        }}
+                      >
+                        {'↘'}
+                      </span>
+                      {openNested === concept.edge_id && (
+                        <div style={styles.nestedPicker} onClick={(e) => e.stopPropagation()}>
+                          {concept.nestedLocations.map((loc) => (
+                            <div
+                              key={loc.edgeId}
+                              style={styles.nestedPickerItem}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0ece4')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenNested(null);
+                                onNavigateNested(concept.id, loc.graphPath);
+                              }}
+                            >
+                              under {loc.parentName}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {concept.child_count !== undefined && (
+                {(concept.child_count !== undefined || concept.link_count != null) && (
                   <div style={styles.childCount}>
-                    {concept.child_count} {Number(concept.child_count) === 1 ? 'child' : 'children'}
+                    {concept.child_count !== undefined &&
+                      `${concept.child_count} ${Number(concept.child_count) === 1 ? 'child' : 'children'}`}
+                    {concept.child_count !== undefined && concept.link_count != null && ' · '}
+                    {concept.link_count != null &&
+                      `${concept.link_count} ${Number(concept.link_count) === 1 ? 'link' : 'links'}`}
                   </div>
                 )}
                 {concept.flag_count != null && Number(concept.flag_count) > 0 && Number(concept.flag_count) < 10 && (
@@ -267,6 +323,38 @@ const styles = {
     gap: '4px',
     flexShrink: 0,
     paddingTop: '4px',
+  },
+  nestedFlagWrap: {
+    position: 'relative',
+    flexShrink: 0,
+  },
+  nestedFlag: {
+    display: 'inline-block',
+    fontSize: '15px',
+    lineHeight: '1',
+    color: '#999',
+    cursor: 'pointer',
+    padding: '2px',
+  },
+  nestedPicker: {
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    marginTop: '4px',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #d4d0c8',
+    borderRadius: '3px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    zIndex: 10001,
+    minWidth: '160px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontSize: '14px',
+  },
+  nestedPickerItem: {
+    padding: '8px 14px',
+    cursor: 'pointer',
+    color: '#333',
+    whiteSpace: 'nowrap',
   },
   dot: {
     width: '10px',

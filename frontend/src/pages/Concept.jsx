@@ -82,6 +82,10 @@ const Concept = ({
   // Parent edge ID for ranking context (Phase 5f)
   const [parentEdgeId, setParentEdgeId] = useState(null);
 
+  // Phase 69: counts shown on the Flip / Tunnel buttons
+  const [altParentCount, setAltParentCount] = useState(0);
+  const [tunnelLinkCount, setTunnelLinkCount] = useState(0);
+
   // Swap modal state
   const [swapModalEdge, setSwapModalEdge] = useState(null);
 
@@ -159,6 +163,8 @@ const Concept = ({
       setCurrentEdgeVoteCount(response.data.currentEdgeVoteCount);
       setCurrentAttribute(response.data.currentAttribute || null);
       setConceptMentionCount(response.data.mentionCount || 0);
+      setAltParentCount(response.data.altParentCount || 0);
+      setTunnelLinkCount(response.data.tunnelLinkCount || 0);
       setError(null);
 
       // If flip view, load parents too
@@ -311,6 +317,13 @@ const Concept = ({
 
   const handleConceptClick = (childId) => {
     navigateInTab(childId, path, 'children');
+  };
+
+  // Phase 69: jump to a deeper (cross-sibling) occurrence of a child. The nested
+  // location's graph_path IS that occurrence's path-to-parent (see Concept.jsx:459
+  // flip-parent nav for the same convention).
+  const handleNavigateNested = (childId, nestedGraphPath) => {
+    navigateInTab(childId, nestedGraphPath, 'children');
   };
 
   const handleAddConcept = async (name) => {
@@ -669,7 +682,11 @@ const Concept = ({
                 disabled={loadingFlip}
                 title="View and vote on alternative parent contexts that exist for this concept; vote for contexts helpful to explore from this one"
               >
-                {loadingFlip ? 'Loading...' : effectiveViewMode === 'children' ? 'Flip View' : effectiveViewMode === 'tunnel' ? 'Children View' : 'Children View'}
+                {loadingFlip
+                  ? 'Loading...'
+                  : effectiveViewMode === 'children'
+                    ? `Flip View${altParentCount > 0 ? ` · ${altParentCount}` : ''}`
+                    : 'Children View'}
               </button>
             )}
             <div style={styles.shareButtonWrapper}>
@@ -687,7 +704,7 @@ const Concept = ({
                 style={styles.flipButton}
                 title="Attach concepts from other graphs/attributes to this one, to help with graph exploration"
               >
-                Tunnel
+                {`Tunnel${tunnelLinkCount > 0 ? ` · ${tunnelLinkCount}` : ''}`}
               </button>
             )}
             {user && !isGuest && parentEdgeId && ownedCombos.length > 0 && (
@@ -803,6 +820,7 @@ const Concept = ({
                       onCompareChildren={handleCompareChildren}
                       onFlag={isGuest ? undefined : handleFlag}
                       onUnflag={isGuest ? undefined : handleUnflag}
+                      onNavigateNested={handleNavigateNested}
                       showVotes={true}
                       path={path}
                       edgeToSets={edgeToSets}
@@ -818,6 +836,7 @@ const Concept = ({
                     onCompareChildren={handleCompareChildren}
                     onFlag={isGuest ? undefined : handleFlag}
                     onUnflag={isGuest ? undefined : handleUnflag}
+                    onNavigateNested={handleNavigateNested}
                     showVotes={true}
                     path={path}
                     edgeToSets={edgeToSets}
@@ -855,6 +874,7 @@ const Concept = ({
                 conceptName={concept.name}
                 path={effectivePath}
                 currentEdgeId={parentEdgeId}
+                voteSets={voteSets}
                 isGuest={isGuest}
                 viewMode={effectiveViewMode}
                 onRequestLogin={onRequestLogin}

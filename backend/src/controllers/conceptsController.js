@@ -22,7 +22,8 @@ const conceptsController = {
           (SELECT COUNT(DISTINCT rv.user_id) FROM replace_votes rv WHERE rv.edge_id = root_e.id) as swap_count,
           (SELECT COUNT(*) > 0 FROM replace_votes rv WHERE rv.edge_id = root_e.id AND rv.user_id = $1) as user_swapped,
           (SELECT COUNT(*) FROM concept_flags cf WHERE cf.edge_id = root_e.id) as flag_count,
-          (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = root_e.id AND cf.user_id = $1) as user_flagged
+          (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = root_e.id AND cf.user_id = $1) as user_flagged,
+          (SELECT COUNT(*) FROM concept_links cl WHERE cl.edge_id = root_e.id AND cl.legal_hold = false) as link_count
         FROM concepts c
         LEFT JOIN edges child_e ON c.id = child_e.parent_id AND child_e.is_hidden = false
         LEFT JOIN edges root_e ON root_e.child_id = c.id AND root_e.parent_id IS NULL AND root_e.graph_path = '{}' AND root_e.is_hidden = false
@@ -83,7 +84,8 @@ const conceptsController = {
           (SELECT COUNT(DISTINCT rv.user_id) FROM replace_votes rv WHERE rv.edge_id = e.id) as swap_count,
           (SELECT COUNT(*) > 0 FROM replace_votes rv WHERE rv.edge_id = e.id AND rv.user_id = $2) as user_swapped,
           (SELECT COUNT(*) FROM concept_flags cf WHERE cf.edge_id = e.id) as flag_count,
-          (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = e.id AND cf.user_id = $2) as user_flagged
+          (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = e.id AND cf.user_id = $2) as user_flagged,
+          (SELECT COUNT(*) FROM concept_links cl WHERE cl.edge_id = e.id AND cl.legal_hold = false) as link_count
         FROM edges e
         JOIN concepts c ON e.child_id = c.id
         JOIN attributes a ON e.attribute_id = a.id
@@ -100,23 +102,57 @@ const conceptsController = {
         graphPath
       ]);
 
+      // Feature (Phase 69): cross-sibling-descendant flag. For each direct child,
+      // find any occurrence of that same concept DEEPER in this concept's subtree
+      // (a longer graph_path sharing this concept's full path as a prefix). Within
+      // this subtree a deeper occurrence can only sit under a sibling (cycles are
+      // prevented), so this is exactly "also a descendant of one of its siblings".
+      // graphPath here IS the children's graph_path (root-to-this-concept inclusive).
+      const childIds = childrenResult.rows.map((r) => r.id);
+      if (childIds.length > 0) {
+        const nestedResult = await pool.query(
+          `SELECT e.child_id, e.id AS edge_id, e.graph_path, pc.name AS parent_name
+           FROM edges e
+           JOIN concepts pc ON pc.id = e.parent_id
+           WHERE e.graph_path[1:$1] = $2::int[]
+             AND array_length(e.graph_path, 1) > $1
+             AND e.is_hidden = false
+             AND e.child_id = ANY($3::int[])`,
+          [graphPath.length, graphPath, childIds]
+        );
+        const nestedByChild = new Map();
+        for (const row of nestedResult.rows) {
+          if (!nestedByChild.has(row.child_id)) nestedByChild.set(row.child_id, []);
+          nestedByChild.get(row.child_id).push({
+            edgeId: row.edge_id,
+            graphPath: row.graph_path,
+            parentName: row.parent_name,
+          });
+        }
+        for (const child of childrenResult.rows) {
+          child.nestedLocations = nestedByChild.get(child.id) || [];
+        }
+      }
+
       let currentEdgeVoteCount = null;
       let currentAttribute = null;
+      let currentEdgeId = null;
       if (graphPath.length >= 2) {
         const parentId = graphPath[graphPath.length - 2];
         const parentPath = graphPath.slice(0, -1);
 
         const edgeVoteQuery = `
-          SELECT COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
+          SELECT e.id as edge_id, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
           FROM edges e
           JOIN attributes a ON e.attribute_id = a.id
           LEFT JOIN votes v ON e.id = v.edge_id
           WHERE e.parent_id = $1 AND e.child_id = $2 AND e.graph_path = $3
-          GROUP BY a.id, a.name
+          GROUP BY e.id, a.id, a.name
         `;
 
         const edgeVoteResult = await pool.query(edgeVoteQuery, [parentId, id, parentPath]);
         if (edgeVoteResult.rows.length > 0) {
+          currentEdgeId = edgeVoteResult.rows[0].edge_id;
           currentEdgeVoteCount = parseInt(edgeVoteResult.rows[0].vote_count || 0);
           currentAttribute = {
             id: edgeVoteResult.rows[0].attribute_id,
@@ -125,22 +161,46 @@ const conceptsController = {
         }
       } else if (graphPath.length === 1) {
         const edgeVoteQuery = `
-          SELECT COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
+          SELECT e.id as edge_id, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
           FROM edges e
           JOIN attributes a ON e.attribute_id = a.id
           LEFT JOIN votes v ON e.id = v.edge_id
           WHERE e.parent_id IS NULL AND e.child_id = $1 AND e.graph_path = '{}'
-          GROUP BY a.id, a.name
+          GROUP BY e.id, a.id, a.name
         `;
 
         const edgeVoteResult = await pool.query(edgeVoteQuery, [id]);
         if (edgeVoteResult.rows.length > 0) {
+          currentEdgeId = edgeVoteResult.rows[0].edge_id;
           currentEdgeVoteCount = parseInt(edgeVoteResult.rows[0].vote_count || 0);
           currentAttribute = {
             id: edgeVoteResult.rows[0].attribute_id,
             name: edgeVoteResult.rows[0].attribute_name
           };
         }
+      }
+
+      // Feature (Phase 69): counts for the Flip / Tunnel buttons.
+      // altParentCount = other non-root parent contexts for this concept (matches
+      // getConceptParents, which JOINs the parent concept and so excludes root
+      // edges), minus the current context if it is itself a non-root parent.
+      const altParentResult = await pool.query(
+        `SELECT COUNT(*)::int AS cnt FROM edges e
+         WHERE e.child_id = $1 AND e.parent_id IS NOT NULL AND e.is_hidden = false`,
+        [id]
+      );
+      const altParentCount = Math.max(
+        0,
+        (altParentResult.rows[0].cnt || 0) - (graphPath.length >= 2 ? 1 : 0)
+      );
+
+      let tunnelLinkCount = 0;
+      if (currentEdgeId) {
+        const tunnelCountResult = await pool.query(
+          'SELECT COUNT(*)::int AS cnt FROM tunnel_links WHERE origin_edge_id = $1',
+          [currentEdgeId]
+        );
+        tunnelLinkCount = tunnelCountResult.rows[0].cnt || 0;
       }
 
       // Phase 65b-2: mention count for this concept at this path
@@ -174,6 +234,9 @@ const conceptsController = {
         children: childrenResult.rows,
         currentEdgeVoteCount,
         currentAttribute,
+        currentEdgeId,
+        altParentCount,
+        tunnelLinkCount,
         mentionCount
       });
     } catch (error) {

@@ -1480,6 +1480,7 @@ const votesController = {
           cl.updated_at,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted,
+          array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids,
           -- IMPORTANT: This visibility filter must match the one in mentionsController.js.
           -- Both filter out mentions whose source's parent link/tunnel is hidden or legal-held.
           -- If you change one, change all four. See Phase 65b-2-fix for the bug that motivated this.
@@ -1540,6 +1541,7 @@ const votesController = {
           updatedAt: row.updated_at,
           voteCount: parseInt(row.vote_count),
           userVoted: row.user_voted || false,
+          voterUserIds: row.voter_user_ids || [],
           addenda: addendaMap[row.id] || [],
           mentionCount: parseInt(row.mention_count || 0),
         }))

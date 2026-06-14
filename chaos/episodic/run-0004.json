@@ -1,0 +1,2515 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T16:55:36.214Z",
+  "rubric_version": "0.11",
+  "db_run_id": "reason-v0.11-4fd7bfa1",
+  "working_set": [
+    {
+      "paper_ref": "W7164514480",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4402502978",
+      "source_field": "linguistics",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4406460084",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4382619089",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4403345500",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|action|carry an established framework into a harder setting|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep lifting a technique proven for a simple case to a structurally harder one.",
+        "recurrence": 3,
+        "grounding_papers": [
+          "W4402502978",
+          "W4406460084",
+          "W4403345500"
+        ],
+        "confidence": "C",
+        "phi": "High-recurrence hub bridging the generalization disposition to its enacting move across three independent math papers; the most-traversed analytic edge of the math sub-graph.",
+        "precision": 0.86,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep lifting a technique proven for a simple case to a structurally harder one.",
+      "phi_note": "High-recurrence hub bridging the generalization disposition to its enacting move across three independent math papers; the most-traversed analytic edge of the math sub-graph.",
+      "precision": 0.86,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|drawn to generalization|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to generalization",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research will keep reaching for the broadest statement a method can support — here, a universal exponent for *any* 2-dimensional complex rather than a single space.",
+        "recurrence": 3,
+        "grounding_papers": [
+          "W4402502978",
+          "W4406460084",
+          "W4403345500"
+        ],
+        "confidence": "C",
+        "phi": "A disposition independently re-exemplified across three math papers; anchors the cost/benefit tunnels into framework-transfer and concept-loosening, integrating value→action regions.",
+        "precision": 0.86,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep reaching for the broadest statement a method can support — here, a universal exponent for *any* 2-dimensional complex rather than a single space.",
+      "phi_note": "A disposition independently re-exemplified across three math papers; anchors the cost/benefit tunnels into framework-transfer and concept-loosening, integrating value→action regions.",
+      "precision": 0.86,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|recast a problem as a solved one|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep reframing a novel extremal quantity as an instance of an already-tractable one to inherit its machinery.",
+        "recurrence": 3,
+        "grounding_papers": [
+          "W4402502978",
+          "W4406460084",
+          "W4382619089"
+        ],
+        "confidence": "C",
+        "phi": "Recurs across three math papers as the core reduction move; bridges new-problem framing to known-result recovery, a high-traffic analytic edge.",
+        "precision": 0.86,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep reframing a novel extremal quantity as an instance of an already-tractable one to inherit its machinery.",
+      "phi_note": "Recurs across three math papers as the core reduction move; bridges new-problem framing to known-result recovery, a high-traffic analytic edge.",
+      "precision": 0.86,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|drawn to explicit construction|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to explicit construction",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will prefer to pin down exact objects — closed-form invariants, explicit limit sets — over mere existence claims.",
+        "recurrence": 3,
+        "grounding_papers": [
+          "W4406460084",
+          "W4382619089",
+          "W4403345500"
+        ],
+        "confidence": "C",
+        "phi": "Three-paper disposition that differentiates a 'build it' posture from generalization; tunnels to worst-case construction, integrating the value and execution regions.",
+        "precision": 0.86,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will prefer to pin down exact objects — closed-form invariants, explicit limit sets — over mere existence claims.",
+      "phi_note": "Three-paper disposition that differentiates a 'build it' posture from generalization; tunnels to worst-case construction, integrating the value and execution regions.",
+      "precision": 0.86,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|resting-state quantitative eeg|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Resting-state quantitative EEG",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Resting-state qEEG will keep being deployed as a cheap, non-invasive spectral instrument for psychiatric biomarker work.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Bridges connectivity into a region currently sited only as fMRI-bound (Voxel-mirrored homotopic connectivity under Resting-state fMRI) — surfaces that connectivity is not a single-tool region, changing what a researcher at the connectivity end would predict.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Resting-state qEEG will keep being deployed as a cheap, non-invasive spectral instrument for psychiatric biomarker work.",
+      "phi_note": "Bridges connectivity into a region currently sited only as fMRI-bound (Voxel-mirrored homotopic connectivity under Resting-state fMRI) — surfaces that connectivity is not a single-tool region, changing what a researcher at the connectivity end would predict.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|construct a worst-case instance|pin down the fundamental limit",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Construct a worst-case instance",
+        "parent_path": [
+          "Pin down the fundamental limit"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will keep exhibiting an explicit extremal example to show a step of an argument is necessary, not merely convenient.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4402502978",
+          "W4403345500"
+        ],
+        "confidence": "C",
+        "phi": "Two-paper confirmation under the limit-finding parent; the explicit-construction disposition's enacting action, integrating value→execution.",
+        "precision": 0.75,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep exhibiting an explicit extremal example to show a step of an argument is necessary, not merely convenient.",
+      "phi_note": "Two-paper confirmation under the limit-finding parent; the explicit-construction disposition's enacting action, integrating value→execution.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pin down the fundamental limit|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pin down the fundamental limit",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Papers will not only prove a phenomenon holds but locate the exact scale/threshold where it ceases, showing the result is sharp.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4406460084",
+          "W4403345500"
+        ],
+        "confidence": "C",
+        "phi": "Two-paper limit-seeking root; differentiates the extremal-bound region and parents worst-case construction.",
+        "precision": 0.75,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Papers will not only prove a phenomenon holds but locate the exact scale/threshold where it ceases, showing the result is sharp.",
+      "phi_note": "Two-paper limit-seeking root; differentiates the extremal-bound region and parents worst-case construction.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|parsimonious|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Parsimonious",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research will keep prizing shorter, cleaner derivations of known results, not only new theorems.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4402502978",
+          "W4382619089"
+        ],
+        "confidence": "C",
+        "phi": "Two-paper disposition that tunnels to one-argument-many-cases proving; integrates economy-value with proof-architecture action.",
+        "precision": 0.75,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep prizing shorter, cleaner derivations of known results, not only new theorems.",
+      "phi_note": "Two-paper disposition that tunnels to one-argument-many-cases proving; integrates economy-value with proof-architecture action.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|mindful of clinical translatability|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Mindful of clinical translatability",
+        "parent_path": [],
+        "phase": "Sensing the gap",
+        "prediction": "A disposition prizing cheapness, non-invasiveness, and routine usability will recur in biomarker work aimed at the clinic, even at the cost of accuracy.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "New disposition pulling the values forest toward applied/deployability concerns absent from the existing methodological-virtue roots; differentiates a use-facing value region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "A disposition prizing cheapness, non-invasiveness, and routine usability will recur in biomarker work aimed at the clinic, even at the cost of accuracy.",
+      "phi_note": "New disposition pulling the values forest toward applied/deployability concerns absent from the existing methodological-virtue roots; differentiates a use-facing value region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|restrict scope to clinically applicable methods|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Restrict scope to clinically applicable methods",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Reviews aimed at translation will deliberately exclude high-performing but unworkable methods to keep the synthesis usable at the bedside.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Enacts translatability-mindedness by exclusion; a scoping action with no close existing sibling, opening a new design-choice region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Reviews aimed at translation will deliberately exclude high-performing but unworkable methods to keep the synthesis usable at the bedside.",
+      "phi_note": "Enacts translatability-mindedness by exclusion; a scoping action with no close existing sibling, opening a new design-choice region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|prove several cases with one argument|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Prove several cases with one argument",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep building unified arguments that dispatch parallel cases simultaneously rather than proving each separately.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4382619089"
+        ],
+        "confidence": "S",
+        "phi": "The direct enactment of parsimony in proof; bridges the economy-value to proof-structure, distinct from case-by-case methods.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep building unified arguments that dispatch parallel cases simultaneously rather than proving each separately.",
+      "phi_note": "The direct enactment of parsimony in proof; bridges the economy-value to proof-structure, distinct from case-by-case methods.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|relax a symmetric constraint into a directional one|loosen a concept to cover the exceptions",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Relax a symmetric constraint into a directional one",
+        "parent_path": [
+          "Loosen a concept to cover the exceptions"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Research keeps weakening a cyclic/symmetric definition into an acyclic/windowed one and re-examining the extremal question under it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403345500"
+        ],
+        "confidence": "S",
+        "phi": "A specific relaxation move nested under concept-loosening; differentiates 'directional relaxation' from generic exception-covering (mis-structure note flags a possible 'relax a definition' intermediate).",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research keeps weakening a cyclic/symmetric definition into an acyclic/windowed one and re-examining the extremal question under it.",
+      "phi_note": "A specific relaxation move nested under concept-loosening; differentiates 'directional relaxation' from generic exception-covering (mis-structure note flags a possible 'relax a definition' intermediate).",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|reweight the count to tame the worst case|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Reweight the count to tame the worst case",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will keep counting troublesome objects under a non-uniform weighting so that adversarial configurations contribute little and a bound becomes provable.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4402502978"
+        ],
+        "confidence": "S",
+        "phi": "A combinatorial-execution technique distinct from existing roots; specific differentiation of the extremal-bound region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep counting troublesome objects under a non-uniform weighting so that adversarial configurations contribute little and a bound becomes provable.",
+      "phi_note": "A combinatorial-execution technique distinct from existing roots; specific differentiation of the extremal-bound region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|prove existence by a positive-probability argument|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Prove existence by a positive-probability argument",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will keep establishing that a desired structure exists by showing a random construction realizes it with positive probability.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4402502978"
+        ],
+        "confidence": "S",
+        "phi": "Probabilistic-method execution move; a distinct existence-proof strategy with cross-paper reuse potential.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep establishing that a desired structure exists by showing a random construction realizes it with positive probability.",
+      "phi_note": "Probabilistic-method execution move; a distinct existence-proof strategy with cross-paper reuse potential.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|measured|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "A measured disposition will recur wherever a tempting positive result is hedged against its limits rather than oversold.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing disposition reconfirmed via stance reading (heavy hedging around biomarker claims); tunnels to claim-bounding.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "A measured disposition will recur wherever a tempting positive result is hedged against its limits rather than oversold.",
+      "phi_note": "Existing disposition reconfirmed via stance reading (heavy hedging around biomarker claims); tunnels to claim-bounding.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of single-method conclusions|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of single-method conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Findings will be distrusted when they hinge on one analytic choice (absolute vs relative power, band definition, correction method).",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing Rigor leaf reconfirmed; tunnels to cross-study synthesis, integrating value→action in the review-conduct region.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Findings will be distrusted when they hinge on one analytic choice (absolute vs relative power, band definition, correction method).",
+      "phi_note": "Existing Rigor leaf reconfirmed; tunnels to cross-study synthesis, integrating value→action in the review-conduct region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|read across studies for the unbidden pattern|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Read across studies for the unbidden pattern",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Synthesis work will keep surfacing recurring signatures that no single study could establish but that emerge across an independently-conducted literature.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing synthesis root reconfirmed; the enacting action for single-method wariness.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Synthesis work will keep surfacing recurring signatures that no single study could establish but that emerge across an independently-conducted literature.",
+      "phi_note": "Existing synthesis root reconfirmed; the enacting action for single-method wariness.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|resolve the signal by frequency band|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Resolve the signal by frequency band",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Electrophysiological synthesis will keep organizing the signal band by band (delta→gamma) as the unit of comparison and abnormality.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing root reconfirmed in qEEG context; band-wise decomposition action.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Electrophysiological synthesis will keep organizing the signal band by band (delta→gamma) as the unit of comparison and abnormality.",
+      "phi_note": "Existing root reconfirmed in qEEG context; band-wise decomposition action.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|bound claims to what the evidence supports|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Bound claims to what the evidence supports",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Mature biomarker reviews will refuse the strong claim when heterogeneity blocks it, stating explicitly what cannot yet be concluded.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing root reconfirmed; the most direct enactment of being Measured.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Mature biomarker reviews will refuse the strong claim when heterogeneity blocks it, stating explicitly what cannot yet be concluded.",
+      "phi_note": "Existing root reconfirmed; the most direct enactment of being Measured.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of idealized assumptions|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of idealized assumptions",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "A wariness toward imposed, a priori definitions will recur where divergent findings are traced to arbitrary analytic conventions.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing root reconfirmed in a clinical-translatability context, broadening its discipline mix toward applied neuroscience.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "A wariness toward imposed, a priori definitions will recur where divergent findings are traced to arbitrary analytic conventions.",
+      "phi_note": "Existing root reconfirmed in a clinical-translatability context, broadening its discipline mix toward applied neuroscience.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|recover known results as special cases|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Recover known results as special cases",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Researchers will keep confirming a general result by specializing it back to an already-known case.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4382619089"
+        ],
+        "confidence": "S",
+        "phi": "Existing leaf reconfirmed, but two batch papers (W4382619089, W4406460084) frame special-case recovery as a generalization payoff, not self-pressure-testing — a recurring mis-structure signal toward re-homing near generalization.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep confirming a general result by specializing it back to an already-known case.",
+      "phi_note": "Existing leaf reconfirmed, but two batch papers (W4382619089, W4406460084) frame special-case recovery as a generalization payoff, not self-pressure-testing — a recurring mis-structure signal toward re-homing near generalization.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|loosen a concept to cover the exceptions|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Loosen a concept to cover the exceptions",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep relaxing an over-tight object class to escape a barrier the restricted class imposes.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4402502978"
+        ],
+        "confidence": "S",
+        "phi": "Existing root reconfirmed; parents the new directional-relaxation child.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep relaxing an over-tight object class to escape a barrier the restricted class imposes.",
+      "phi_note": "Existing root reconfirmed; parents the new directional-relaxation child.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what survives when structure is taken away?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What survives when structure is taken away?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research keeps asking which extremal guarantees persist once a defining constraint is weakened.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403345500"
+        ],
+        "confidence": "S",
+        "phi": "Existing question root reconfirmed; parents the constraint-relaxation child question.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research keeps asking which extremal guarantees persist once a defining constraint is weakened.",
+      "phi_note": "Existing question root reconfirmed; parents the constraint-relaxation child question.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Which frequency bands carry a disorder's connectivity disruption?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking which spectral bands and coherences carry a psychiatric disorder's distinguishing neurophysiological signature.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "Existing question reconfirmed; the benefit-side anchor of the qEEG-biomarker situation.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep asking which spectral bands and coherences carry a psychiatric disorder's distinguishing neurophysiological signature.",
+      "phi_note": "Existing question reconfirmed; the benefit-side anchor of the qEEG-biomarker situation.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|boundary harmonic measure|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Boundary harmonic measure",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Probabilistic analyses of random walks on groups will keep using the harmonic (Furstenberg) measure on the Gromov boundary as the object that encodes asymptotic trajectory behavior.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4406460084"
+        ],
+        "confidence": "S",
+        "phi": "New analytic tool opening a boundary-dimension region; specific differentiation distinct from existing tool roots.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Probabilistic analyses of random walks on groups will keep using the harmonic (Furstenberg) measure on the Gromov boundary as the object that encodes asymptotic trajectory behavior.",
+      "phi_note": "New analytic tool opening a boundary-dimension region; specific differentiation distinct from existing tool roots.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|bivariate generating function|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Bivariate generating function",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep encoding two-parameter combinatorial counts (size and number of parts) in a single generating function to expose structure.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4382619089"
+        ],
+        "confidence": "S",
+        "phi": "New combinatorial tool; supports the one-argument-many-cases proving action.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep encoding two-parameter combinatorial counts (size and number of parts) in a single generating function to expose structure.",
+      "phi_note": "New combinatorial tool; supports the one-argument-many-cases proving action.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|does a biomarker strengthen as the disease progresses?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Does a biomarker strengthen as the disease progresses?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking whether a candidate marker is absent/subtle early and intensifies with disease duration, distinguishing trait from progression markers.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164514480"
+        ],
+        "confidence": "S",
+        "phi": "New question introducing a temporal/progression axis to the biomarker region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep asking whether a candidate marker is absent/subtle early and intensifies with disease duration, distinguishing trait from progression markers.",
+      "phi_note": "New question introducing a temporal/progression axis to the biomarker region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what is the true growth rate of an extremal bound?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What is the true growth rate of an extremal bound?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Researchers will keep chasing the exact exponent/threshold of a forbidden-structure extremal problem, narrowing the gap between upper and lower bounds.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4402502978"
+        ],
+        "confidence": "S",
+        "phi": "New extremal-asymptotics question anchoring the limit-finding region's benefit side.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep chasing the exact exponent/threshold of a forbidden-structure extremal problem, narrowing the gap between upper and lower bounds.",
+      "phi_note": "New extremal-asymptotics question anchoring the limit-finding region's benefit side.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|can a small change of variable link a new identity to a solved one?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Can a small change of variable link a new identity to a solved one?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Researchers will keep asking whether an unproven identity is secretly a minor reparametrization of an established one.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4382619089"
+        ],
+        "confidence": "S",
+        "phi": "New question pairing with the recast-as-solved action; a reduction-by-substitution benefit anchor.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep asking whether an unproven identity is secretly a minor reparametrization of an established one.",
+      "phi_note": "New question pairing with the recast-as-solved action; a reduction-by-substitution benefit anchor.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|does partial resampling decouple a random walk?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Does partial resampling decouple a random walk?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Work will keep asking whether resampling a fixed fraction of a process's increments drives the perturbed and original trajectories toward independence (sensitivity) or leaves them distinguishable (stability).",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4406460084"
+        ],
+        "confidence": "S",
+        "phi": "New question root opening a noise-stability region; parents two specific child questions.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Work will keep asking whether resampling a fixed fraction of a process's increments drives the perturbed and original trajectories toward independence (sensitivity) or leaves them distinguishable (stability).",
+      "phi_note": "New question root opening a noise-stability region; parents two specific child questions.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|which groups resist noise-induced decoupling?|does partial resampling decouple a random walk?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Which groups resist noise-induced decoupling?",
+        "parent_path": [
+          "Does partial resampling decouple a random walk?"
+        ],
+        "phase": null,
+        "prediction": "Research will keep trying to classify which finitely generated infinite groups admit noise-sensitive versus noise-stable walks.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4406460084"
+        ],
+        "confidence": "S",
+        "phi": "Child question differentiating the decoupling region by group structure.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep trying to classify which finitely generated infinite groups admit noise-sensitive versus noise-stable walks.",
+      "phi_note": "Child question differentiating the decoupling region by group structure.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|do perturbed trajectories shrink in boundary dimension?|does partial resampling decouple a random walk?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Do perturbed trajectories shrink in boundary dimension?",
+        "parent_path": [
+          "Does partial resampling decouple a random walk?"
+        ],
+        "phase": null,
+        "prediction": "Singularity results will keep prompting the finer question of whether the perturbed limiting measure is strictly lower-dimensional than the independent one.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4406460084"
+        ],
+        "confidence": "S",
+        "phi": "Child question linking decoupling to boundary-dimension shrinkage, tying to the boundary-harmonic-measure tool.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Singularity results will keep prompting the finer question of whether the perturbed limiting measure is strictly lower-dimensional than the independent one.",
+      "phi_note": "Child question linking decoupling to boundary-dimension shrinkage, tying to the boundary-harmonic-measure tool.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|does relaxing a constraint enlarge its extremum?|what survives when structure is taken away?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Does relaxing a constraint enlarge its extremum?",
+        "parent_path": [
+          "What survives when structure is taken away?"
+        ],
+        "phase": null,
+        "prediction": "Research keeps testing whether a weaker condition admits strictly larger extremal objects than the strict one.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403345500"
+        ],
+        "confidence": "S",
+        "phi": "Child question pairing with the directional-relaxation action; differentiates the structure-removal region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research keeps testing whether a weaker condition admits strictly larger extremal objects than the strict one.",
+      "phi_note": "Child question pairing with the directional-relaxation action; differentiates the structure-removal region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Wary of single-method conclusions",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pressure-test your own result|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pressure-test your own result",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Recover known results as special cases",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|read across studies for the unbidden pattern|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "action",
+        "concept_name": "Read across studies for the unbidden pattern",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Reads 19 methodologically heterogeneous studies for the qEEG changes that recur across them (delta/theta excess, alpha slowing), establishing a pattern no single study could."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|resolve the signal by frequency band|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "action",
+        "concept_name": "Resolve the signal by frequency band",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Organizes the entire synthesis band by band — delta, theta, alpha, beta, gamma — treating each frequency band as the unit of comparison and abnormality."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|bound claims to what the evidence supports|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "action",
+        "concept_name": "Bound claims to what the evidence supports",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Concludes qEEG 'cannot yet be regarded as a diagnostic biomarker' given methodological heterogeneity, refusing the strong claim the data would not support."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Frames a genuinely novel signature (the theta/alpha 6–9 Hz component) only as 'promising' and 'warranting further investigation', hedging the result against its limits."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|wary of idealized assumptions|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "value",
+        "concept_name": "Wary of idealized assumptions",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Treats arbitrary preset band definitions as a source of false divergence and favors data-driven spectral decomposition that does not assume bands a priori."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|wary of single-method conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "value",
+        "concept_name": "Wary of single-method conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Attributes contradictory alpha and beta findings to differing analytic choices (absolute vs relative power, correction method), declining to credit any single-method conclusion."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "question",
+        "concept_name": "Which frequency bands carry a disorder's connectivity disruption?",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Asks which spectral bands and coherence measures distinguish schizophrenia from health, surveying band-specific power and intra/interhemispheric coherence abnormalities."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|tool|resting-state quantitative eeg|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "tool",
+        "concept_name": "Resting-state quantitative EEG",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Centers on resting eyes-closed qEEG — Fourier-based spectral quantification of band power, peak frequency, and coherence — as a non-invasive diagnostic instrument."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|mindful of clinical translatability|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "value",
+        "concept_name": "Mindful of clinical translatability",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Justifies qEEG over neuroimaging by cost, speed, non-invasiveness, and minimal staff burden, judging every marker by its fitness for routine clinical practice."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|restrict scope to clinically applicable methods|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "action",
+        "concept_name": "Restrict scope to clinically applicable methods",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Excludes AI, evoked-potential, and task-based studies by explicit criteria — even high-accuracy ones — to keep the review focused on classical, deployable qEEG parameters."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|question|does a biomarker strengthen as the disease progresses?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164514480",
+        "attribute": "question",
+        "concept_name": "Does a biomarker strengthen as the disease progresses?",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "claim": "Builds a first-episode-vs-chronic comparison table showing abnormalities subtle/absent early and pronounced later, asking whether the marker reflects progression rather than trait."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|value|drawn to generalization|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "value",
+        "concept_name": "Drawn to generalization",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Proves a single universal exponent (8/3) for the topological Turán number of *any* fixed 2-dimensional simplicial complex, framed against Mader's universal 1-dimensional result."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|value|parsimonious|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "value",
+        "concept_name": "Parsimonious",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Section 5 presents deliberately 'shorter'/'streamlined' proofs of the already-known torus and real-projective-plane bounds using the same disk-coverability lemma."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|recast a problem as a solved one|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Reinterprets ex_hom(n,X) as the ordinary Turán number ex(n,F_X) and reduces 'find a homeomorph' to 'locate disk-coverable cycles and glue disks'."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|loosen a concept to cover the exceptions|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Loosen a concept to cover the exceptions",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Replaces the restrictive 'four triangles at a shared vertex' disks of prior work with a broader, isomorphism-unspecified class of disks, bypassing the octahedron bottleneck."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|carry an established framework into a harder setting|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Extends the admissibility notion from edges (length-1 paths) to length-2 paths P_2, explicitly noted as substantially harder, to upgrade the disk-coverability count."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|construct a worst-case instance|pin down the fundamental limit",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Construct a worst-case instance",
+        "parent_path": [
+          "Pin down the fundamental limit"
+        ],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Exhibits a clique-with-pendant-vertices graph where a (1-o(1))-fraction of P_2's are inadmissible, proving the 1/deg weighting in Lemma 3.4 is unavoidable."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|reweight the count to tame the worst case|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Reweight the count to tame the worst case",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Lemma 3.4 bounds the count of inadmissible length-2 paths only after weighting each by 1/deg(y), without which (as the worst-case instance shows) no useful bound exists."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|action|prove existence by a positive-probability argument|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "action",
+        "concept_name": "Prove existence by a positive-probability argument",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Uses random link selection, random partitions, dependent random choice, and union bounds to show the desired embedding of Γ_t exists with positive probability."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2408.09029|question|what is the true growth rate of an extremal bound?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4402502978",
+        "attribute": "question",
+        "concept_name": "What is the true growth rate of an extremal bound?",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2408.09029",
+        "claim": "Improves the exponent from 3-1/5 to 8/3 while restating the conjecture that the true exponent is 5/2 — the open target of the program."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|value|drawn to generalization|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "value",
+        "concept_name": "Drawn to generalization",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "After Theorem 1.1/1.2 for hyperbolic groups, the authors extend the same proof verbatim to any finitely generated group acting by isometries on a proper hyperbolic space (Theorem 2.13) — reaching for the widest setting the argument tolerates."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|value|drawn to explicit construction|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "value",
+        "concept_name": "Drawn to explicit construction",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The proof explicitly determines the LIL accumulation set as A^{1/2}B(0,1) and computes Cov((φ×φ)_*π^ρ) in closed form, exposing the exact invariant that separates parameters."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|action|carry an established framework into a harder setting|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "action",
+        "concept_name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The single-group winding/limit-law toolkit of [1] is imported and developed into a joint LIL on the product group Γ×Γ, where the original tools do not directly apply."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|action|recast a problem as a solved one|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "action",
+        "concept_name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "Total-variation noise stability, lacking explicit formulas, is recast as the mutual singularity of boundary harmonic measures ν_{π^ρ}, which is then resolved by accumulation-set limit laws."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|action|pin down the fundamental limit|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "action",
+        "concept_name": "Pin down the fundamental limit",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The authors show the linear separation rate is essentially optimal — separation holds for α<λμ but U^{βn}→0 for β>λμ — locating the exact scale at which the phenomenon stops."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|tool|boundary harmonic measure|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "tool",
+        "concept_name": "Boundary harmonic measure",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The argument operates on ν_{π^ρ}, the harmonic measure on (∂Γ)^2, using its measure class and exact-dimensionality as the instrument that distinguishes resampling parameters."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|question|does partial resampling decouple a random walk?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "question",
+        "concept_name": "Does partial resampling decouple a random walk?",
+        "parent_path": [],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The paper's organizing question — whether (w_n, w_n^ρ) becomes independent under per-step resampling probability ρ — is exactly the decoupling-under-noise question, answered negatively (stability) here."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|question|which groups resist noise-induced decoupling?|does partial resampling decouple a random walk?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "question",
+        "concept_name": "Which groups resist noise-induced decoupling?",
+        "parent_path": [
+          "Does partial resampling decouple a random walk?"
+        ],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "The paper advances the open classification of which infinite groups are noise-sensitive vs. stable by establishing noise stability for non-elementary hyperbolic groups with infinite abelianization."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.5802/ahl.273|question|do perturbed trajectories shrink in boundary dimension?|does partial resampling decouple a random walk?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4406460084",
+        "attribute": "question",
+        "concept_name": "Do perturbed trajectories shrink in boundary dimension?",
+        "parent_path": [
+          "Does partial resampling decouple a random walk?"
+        ],
+        "url": "https://doi.org/10.5802/ahl.273",
+        "claim": "From the proven mutual singularity, the authors explicitly raise whether dim ν_{π^ρ} < dim ν_{μ⊗μ} for all ρ<1, posing the dimension-shrinkage question."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|action|recast a problem as a solved one|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "action",
+        "concept_name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "Proves the Capparelli–Meurman–Primc–Primc conjectures by showing their k=1 generating functions are slight variants of the Andrews-Gordon/Bressoud sum sides, so the conjecture inherits the known sum-to-product identity."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|action|recover known results as special cases|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "action",
+        "concept_name": "Recover known results as special cases",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "Setting z=1 in the bivariate P_i(z,q) reproduces the established Andrews-Gordon product (Theorem 2), confirming the new result specializes to the known one."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|value|drawn to explicit construction|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "value",
+        "concept_name": "Drawn to explicit construction",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "The proof builds explicit functional equations and concrete case-by-case 'flipping' arguments on frequency arrays rather than invoking an abstract representation-theoretic mechanism."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|value|parsimonious|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "value",
+        "concept_name": "Parsimonious",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "The entire result turns on a single minimal change (x^{N} to z^{n}) and one argument covering both odd and even companion cases."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|action|prove several cases with one argument|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "action",
+        "concept_name": "Prove several cases with one argument",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "The author proves the odd-row and even-row companion conjectures simultaneously with the same functional-equation system, unlike the prior single-case crystal proof."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|tool|bivariate generating function|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "tool",
+        "concept_name": "Bivariate generating function",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "P_i(z,q) = sum F(i,j,n) z^j q^n simultaneously tracks partition size and part count, the object whose multisum form is matched against known identities."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3842/sigma.2026.046|question|can a small change of variable link a new identity to a solved one?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4382619089",
+        "attribute": "question",
+        "concept_name": "Can a small change of variable link a new identity to a solved one?",
+        "parent_path": [],
+        "url": "https://doi.org/10.3842/sigma.2026.046",
+        "claim": "The paper frames its gap as whether the conjectured identities are minor reparametrizations of Andrews-Gordon/Bressoud reachable by a single substitution."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|value|drawn to generalization|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "value",
+        "concept_name": "Drawn to generalization",
+        "parent_path": [],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Generalizes Seymour's two-family incomparability theorem to arbitrarily long d-exceeding sequences of families."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|value|drawn to explicit construction|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "value",
+        "concept_name": "Drawn to explicit construction",
+        "parent_path": [],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Establishes the existence of long d-exceeding sequences by explicitly cyclically reusing d+1 pairwise incomparable families."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|carry an established framework into a harder setting|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "action",
+        "concept_name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Carries Seymour's incomparable-families bound into the harder regime of long acyclic d-exceeding sequences."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|pin down the fundamental limit|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "action",
+        "concept_name": "Pin down the fundamental limit",
+        "parent_path": [],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Locates the maximum d for arbitrarily long d-exceeding set sequences between (1-o(1))(1/e)2^k and (1/2)2^k - 2."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|construct a worst-case instance|pin down the fundamental limit",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "action",
+        "concept_name": "Construct a worst-case instance",
+        "parent_path": [
+          "Pin down the fundamental limit"
+        ],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Builds explicit arbitrarily-long sequences by cyclic reuse, realizing the lower bound on the limit."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|relax a symmetric constraint into a directional one|loosen a concept to cover the exceptions",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "action",
+        "concept_name": "Relax a symmetric constraint into a directional one",
+        "parent_path": [
+          "Loosen a concept to cover the exceptions"
+        ],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Replaces pairwise (cyclic) incomparability with the acyclic d-exceeding condition indexed by j-i in [d]."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|question|what survives when structure is taken away?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "question",
+        "concept_name": "What survives when structure is taken away?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Shows the (1/4)2^k maximum survives the relaxation of incomparability to a sufficiently long 1-exceeding sequence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1016/j.disc.2026.115255|question|does relaxing a constraint enlarge its extremum?|what survives when structure is taken away?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403345500",
+        "attribute": "question",
+        "concept_name": "Does relaxing a constraint enlarge its extremum?",
+        "parent_path": [
+          "What survives when structure is taken away?"
+        ],
+        "url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "claim": "Tests whether the acyclic relaxation admits larger equal-sized families, finding the same bound for 1-exceeding sequences."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to generalization|action|carry an established framework into a harder setting|https://doi.org/10.5802/ahl.273",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to generalization"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Carry an established framework into a harder setting"
+        },
+        "relation": "The disposition toward the widest statement is paid for by importing a settled apparatus into a structurally harder arena — co-grounded in two independent papers.",
+        "cogrounding_url": "https://doi.org/10.5802/ahl.273",
+        "confidence": "C"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to generalization|action|loosen a concept to cover the exceptions|http://arxiv.org/abs/2408.09029",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to generalization"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Loosen a concept to cover the exceptions"
+        },
+        "relation": "Reaching for generality is enacted by relaxing an over-tight object class until it covers the excluded cases.",
+        "cogrounding_url": "http://arxiv.org/abs/2408.09029",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to explicit construction|action|construct a worst-case instance|https://doi.org/10.1016/j.disc.2026.115255",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to explicit construction"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Construct a worst-case instance"
+        },
+        "relation": "The preference for explicit objects is realized by exhibiting a constructed extremal instance rather than arguing existence abstractly.",
+        "cogrounding_url": "https://doi.org/10.1016/j.disc.2026.115255",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|parsimonious|action|prove several cases with one argument|https://doi.org/10.3842/sigma.2026.046",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Parsimonious"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Prove several cases with one argument"
+        },
+        "relation": "The disposition toward economy is enacted as collapsing parallel cases into a single proof — fewest arguments for most coverage.",
+        "cogrounding_url": "https://doi.org/10.3842/sigma.2026.046",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|action|bound claims to what the evidence supports|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Bound claims to what the evidence supports"
+        },
+        "relation": "A measured disposition is paid for by withholding the strong claim and stating only what the evidence supports — the hedged conclusion is the disposition exercised.",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of single-method conclusions|action|read across studies for the unbidden pattern|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of single-method conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Read across studies for the unbidden pattern"
+        },
+        "relation": "Distrust of any one analytic method is bought by synthesizing across a method-diverse literature rather than trusting a single result.",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|mindful of clinical translatability|action|restrict scope to clinically applicable methods|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Mindful of clinical translatability"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Restrict scope to clinically applicable methods"
+        },
+        "relation": "Caring about bedside usability costs the deliberate exclusion of more powerful but unworkable methods from scope.",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1823040",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|pushing a known result into a harder setting",
+      "type": "situation",
+      "payload": {
+        "name": "Pushing a known result into a harder setting",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Drawn to generalization"
+          },
+          {
+            "attribute": "value",
+            "name": "Drawn to explicit construction"
+          },
+          {
+            "attribute": "value",
+            "name": "Parsimonious"
+          },
+          {
+            "attribute": "action",
+            "name": "Carry an established framework into a harder setting"
+          },
+          {
+            "attribute": "action",
+            "name": "Recast a problem as a solved one"
+          },
+          {
+            "attribute": "action",
+            "name": "Pin down the fundamental limit"
+          },
+          {
+            "attribute": "action",
+            "name": "Construct a worst-case instance"
+          }
+        ],
+        "domain_balance": {
+          "value": 3,
+          "question": 0,
+          "action": 4,
+          "tool": 0,
+          "under_budgeted": true
+        },
+        "reading_list": [
+          "W4402502978",
+          "W4406460084",
+          "W4403345500",
+          "W4382619089"
+        ],
+        "core_spine": [
+          "Drawn to generalization",
+          "Carry an established framework into a harder setting",
+          "Recast a problem as a solved one"
+        ],
+        "toggleable": [
+          "Drawn to explicit construction",
+          "Parsimonious",
+          "Pin down the fundamental limit",
+          "Construct a worst-case instance"
+        ],
+        "rationale": "An entrenched (established) goal-derived moment recurring across four independent math papers: a researcher carries a settled apparatus into a structurally harder regime, reframing the new problem as a solved one, then pins the limit. Question/tool columns are silent — the lens is methodological self-portrait, not a full plan; the absence is informative, not a defect.",
+        "confidence": "C",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Drawn to generalization",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|qeeg as a clinical biomarker",
+      "type": "situation",
+      "payload": {
+        "name": "qEEG as a clinical biomarker",
+        "phase": "Sensing the gap",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Mindful of clinical translatability"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "value",
+            "name": "Wary of single-method conclusions"
+          },
+          {
+            "attribute": "action",
+            "name": "Restrict scope to clinically applicable methods"
+          },
+          {
+            "attribute": "action",
+            "name": "Read across studies for the unbidden pattern"
+          },
+          {
+            "attribute": "action",
+            "name": "Bound claims to what the evidence supports"
+          },
+          {
+            "attribute": "tool",
+            "name": "Resting-state quantitative EEG"
+          },
+          {
+            "attribute": "question",
+            "name": "Which frequency bands carry a disorder's connectivity disruption?"
+          },
+          {
+            "attribute": "question",
+            "name": "Does a biomarker strengthen as the disease progresses?"
+          }
+        ],
+        "domain_balance": {
+          "value": 3,
+          "question": 2,
+          "action": 3,
+          "tool": 1,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7164514480"
+        ],
+        "core_spine": [
+          "Mindful of clinical translatability",
+          "Restrict scope to clinically applicable methods",
+          "Resting-state quantitative EEG",
+          "Which frequency bands carry a disorder's connectivity disruption?"
+        ],
+        "toggleable": [
+          "Measured",
+          "Wary of single-method conclusions",
+          "Read across studies for the unbidden pattern",
+          "Bound claims to what the evidence supports",
+          "Does a biomarker strengthen as the disease progresses?"
+        ],
+        "rationale": "A well-balanced cost/benefit moment from a single review: the benefit is a deployable diagnostic signal (questions + translatability value), the cost is scoping to clinically usable parameters and bounding claims. All four columns populated — reads as a coherent applied-neuroscience self-portrait. Single-doc grounded, so ad-hoc until re-exemplified.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Mindful of clinical translatability",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|resting-state quantitative eeg|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|construct a worst-case instance|pin down the fundamental limit",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pin down the fundamental limit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|mindful of clinical translatability|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|restrict scope to clinically applicable methods|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|prove several cases with one argument|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|relax a symmetric constraint into a directional one|loosen a concept to cover the exceptions",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|reweight the count to tame the worst case|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|prove existence by a positive-probability argument|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of single-method conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|read across studies for the unbidden pattern|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|resolve the signal by frequency band|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|bound claims to what the evidence supports|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of idealized assumptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|recover known results as special cases|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|loosen a concept to cover the exceptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what survives when structure is taken away?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|boundary harmonic measure|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|bivariate generating function|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|does a biomarker strengthen as the disease progresses?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what is the true growth rate of an extremal bound?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|can a small change of variable link a new identity to a solved one?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|does partial resampling decouple a random walk?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|which groups resist noise-induced decoupling?|does partial resampling decouple a random walk?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|do perturbed trajectories shrink in boundary dimension?|does partial resampling decouple a random walk?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|does relaxing a constraint enlarge its extremum?|what survives when structure is taken away?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pressure-test your own result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|read across studies for the unbidden pattern|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|resolve the signal by frequency band|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|bound claims to what the evidence supports|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|wary of idealized assumptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|wary of single-method conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|tool|resting-state quantitative eeg|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|value|mindful of clinical translatability|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|action|restrict scope to clinically applicable methods|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1823040|question|does a biomarker strengthen as the disease progresses?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|loosen a concept to cover the exceptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|construct a worst-case instance|pin down the fundamental limit",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|reweight the count to tame the worst case|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|action|prove existence by a positive-probability argument|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2408.09029|question|what is the true growth rate of an extremal bound?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|action|pin down the fundamental limit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|tool|boundary harmonic measure|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|question|does partial resampling decouple a random walk?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|question|which groups resist noise-induced decoupling?|does partial resampling decouple a random walk?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.5802/ahl.273|question|do perturbed trajectories shrink in boundary dimension?|does partial resampling decouple a random walk?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|action|recover known results as special cases|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|action|prove several cases with one argument|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|tool|bivariate generating function|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3842/sigma.2026.046|question|can a small change of variable link a new identity to a solved one?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|pin down the fundamental limit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|construct a worst-case instance|pin down the fundamental limit",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|action|relax a symmetric constraint into a directional one|loosen a concept to cover the exceptions",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|question|what survives when structure is taken away?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1016/j.disc.2026.115255|question|does relaxing a constraint enlarge its extremum?|what survives when structure is taken away?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to generalization|action|carry an established framework into a harder setting|https://doi.org/10.5802/ahl.273",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to generalization|action|loosen a concept to cover the exceptions|http://arxiv.org/abs/2408.09029",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to explicit construction|action|construct a worst-case instance|https://doi.org/10.1016/j.disc.2026.115255",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|parsimonious|action|prove several cases with one argument|https://doi.org/10.3842/sigma.2026.046",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|action|bound claims to what the evidence supports|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of single-method conclusions|action|read across studies for the unbidden pattern|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|mindful of clinical translatability|action|restrict scope to clinically applicable methods|https://doi.org/10.3389/fpsyt.2026.1823040",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|pushing a known result into a harder setting",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|qeeg as a clinical biomarker",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 5,
+      "paper_citations": 0,
+      "concepts": 16,
+      "edges": 16,
+      "concept_links": 44,
+      "tunnel_links": 7,
+      "combos": 2,
+      "combo_edges": 16,
+      "chaos_situation_meta": 2,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 18,
+      "chaos_prediction_events": 49
+    }
+  },
+  "run_id": 4
+}

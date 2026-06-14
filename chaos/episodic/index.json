@@ -5,5 +5,12 @@
     "rubric_version": "0.11",
     "proposal_count": 100,
     "accept_count": 100
+  },
+  {
+    "run_id": 2,
+    "timestamp": "2026-06-14T15:17:34.683Z",
+    "rubric_version": "0.11",
+    "proposal_count": 74,
+    "accept_count": 74
   }
 ]

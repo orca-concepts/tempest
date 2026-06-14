@@ -1,0 +1,2167 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T15:17:34.683Z",
+  "rubric_version": "0.11",
+  "db_run_id": "reason-v0.11-e9c36ae2",
+  "working_set": [
+    {
+      "paper_ref": "W7154682672",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4404368199",
+      "source_field": "linguistics",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4405957103",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4405033621",
+      "source_field": "philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7161779572",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164579466",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|question|what survives when structure is taken away?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What survives when structure is taken away?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking which classical results persist, fail, or need reworking once an algebraic convenience (here, commutative multiplication) is removed.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4404368199",
+          "W4405957103"
+        ],
+        "confidence": "C",
+        "phi": "High: bridges pure mathematics (dropping commutativity) and AI/signal-recovery (corruption by noise) under one subtextual invariance question — a genuine cross-region tunnel-hub that changes what a planner expects at the other end.",
+        "precision": 0.75,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking which classical results persist, fail, or need reworking once an algebraic convenience (here, commutative multiplication) is removed.",
+      "phi_note": "High: bridges pure mathematics (dropping commutativity) and AI/signal-recovery (corruption by noise) under one subtextual invariance question — a genuine cross-region tunnel-hub that changes what a planner expects at the other end.",
+      "precision": 0.75,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|alive to cross-domain analogy|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Alive to cross-domain analogy",
+        "parent_path": [],
+        "phase": "Sensing the gap",
+        "prediction": "Researchers will keep locating a new problem by recognizing it as the structural twin of a solved one in another field (here: classical conditional expectation, the physics 'replica trick', random-matrix overlaps mapped onto free probability).",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405957103"
+        ],
+        "confidence": "S",
+        "phi": "High: a disposition whose whole function is bridging separate regions; natural source of analogy/metaphor tunnels.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep locating a new problem by recognizing it as the structural twin of a solved one in another field (here: classical conditional expectation, the physics 'replica trick', random-matrix overlaps mapped onto free probability).",
+      "phi_note": "High: a disposition whose whole function is bridging separate regions; natural source of analogy/metaphor tunnels.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|attentive to context|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Attentive to context",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Studies of care, technology, and practice will keep refusing universal definitions and instead read meaning as situated, culturally specific, and locally negotiated.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid-high: links the values forest to a situated-evaluation region (psychology×AI ethics) the graph barely touches.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies of care, technology, and practice will keep refusing universal definitions and instead read meaning as situated, culturally specific, and locally negotiated.",
+      "phi_note": "Mid-high: links the values forest to a situated-evaluation region (psychology×AI ethics) the graph barely touches.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|protective of the vulnerable|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Protective of the vulnerable",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research on care infrastructures will keep foregrounding the well-being of those who carry the burden, treating their safeguarding as a primary concern rather than an afterthought.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: opens the deferred research-ethics region (tension with Transparency); specific and self-anchored.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research on care infrastructures will keep foregrounding the well-being of those who carry the burden, treating their safeguarding as a primary concern rather than an afterthought.",
+      "phi_note": "Mid: opens the deferred research-ethics region (tension with Transparency); specific and self-anchored.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|drawn to generalization|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to generalization",
+        "parent_path": [],
+        "phase": "Sensing the gap",
+        "prediction": "Researchers will repeatedly frame new work as carrying a known structure into a harder or broader setting, treating the unifying extension as intrinsically worth doing.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4404368199"
+        ],
+        "confidence": "S",
+        "phi": "Mid: abstract math disposition; close cousin of Alive-to-analogy but distinct (broaden-the-case vs see-structural-twins).",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will repeatedly frame new work as carrying a known structure into a harder or broader setting, treating the unifying extension as intrinsically worth doing.",
+      "phi_note": "Mid: abstract math disposition; close cousin of Alive-to-analogy but distinct (broaden-the-case vs see-structural-twins).",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|skeptical of received results|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Skeptical of received results",
+        "parent_path": [
+          "Rigor"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep declining to take 'folklore' or commonly-assumed results on faith, treating an unproven-but-accepted claim as still owing a demonstration.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405033621"
+        ],
+        "confidence": "S",
+        "phi": "Mid: differentiates the Skeptical region (received results vs one's own conclusions) without collapsing into the existing node.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Researchers will keep declining to take 'folklore' or commonly-assumed results on faith, treating an unproven-but-accepted claim as still owing a demonstration.",
+      "phi_note": "Mid: differentiates the Skeptical region (received results vs one's own conclusions) without collapsing into the existing node.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|wary of silent confounds|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of silent confounds",
+        "parent_path": [
+          "Rigor"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep flagging that unnoticed handling/condition variables quietly bias results, and treat that wariness as a standing posture rather than a one-off catch.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Mid: specific Rigor leaf grounded in wet-lab biology; complements Skeptical region.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Researchers will keep flagging that unnoticed handling/condition variables quietly bias results, and treat that wariness as a standing posture rather than a one-off catch.",
+      "phi_note": "Mid: specific Rigor leaf grounded in wet-lab biology; complements Skeptical region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|parsimonious|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Parsimonious",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep favoring the leanest account that suffices, reaching for an explanation that needs no extra machinery before adding any.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Mid: maps cleanly onto the accuracy−complexity term; a root-worthy disposition once it recurs.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep favoring the leanest account that suffices, reaching for an explanation that needs no extra machinery before adding any.",
+      "phi_note": "Mid: maps cleanly onto the accuracy−complexity term; a root-worthy disposition once it recurs.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|recast a problem as a solved one|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Papers will keep reducing an open problem to an equivalent instance of an already-tractable one, so existing machinery can be imported (here: free denoising reduced to finding a distribution in a c-free state).",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405957103"
+        ],
+        "confidence": "S",
+        "phi": "High: the operational enactment of cross-domain analogy; reduction across fields raises integration.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Papers will keep reducing an open problem to an equivalent instance of an already-tractable one, so existing machinery can be imported (here: free denoising reduced to finding a distribution in a c-free state).",
+      "phi_note": "High: the operational enactment of cross-domain analogy; reduction across fields raises integration.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|recover known results as special cases|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Recover known results as special cases",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Papers introducing a general formula will keep specializing it to reproduce established results (Tweedie's formula; Ledoit-Péché shrinkage) as a correctness check.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405957103"
+        ],
+        "confidence": "S",
+        "phi": "Mid-high: a severe-test-flavored check; deepens an existing action root.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Papers introducing a general formula will keep specializing it to reproduce established results (Tweedie's formula; Ledoit-Péché shrinkage) as a correctness check.",
+      "phi_note": "Mid-high: a severe-test-flavored check; deepens an existing action root.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|carry an established framework into a harder setting|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Papers will keep re-deriving a familiar theory's machinery (operators, bases, decompositions) under a new and less convenient structure, checking which constructions still hold.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4404368199"
+        ],
+        "confidence": "S",
+        "phi": "Mid: enacts generalization; potential cross-discipline strategy hub.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Papers will keep re-deriving a familiar theory's machinery (operators, bases, decompositions) under a new and less convenient structure, checking which constructions still hold.",
+      "phi_note": "Mid: enacts generalization; potential cross-discipline strategy hub.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|build a minimal model|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Build a minimal model",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep constructing stripped-down mechanistic models that recover a phenomenon from a few rules rather than fitting all observed detail.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Mid: directly enacts parsimony; an action root with children below.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep constructing stripped-down mechanistic models that recover a phenomenon from a few rules rather than fitting all observed detail.",
+      "phi_note": "Mid: directly enacts parsimony; an action root with children below.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|test a single mechanism's sufficiency|build a minimal model",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Test a single mechanism's sufficiency",
+        "parent_path": [
+          "Build a minimal model"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Researchers will keep asking whether one isolated mechanism alone can produce an outcome, removing alternative causes to establish sufficiency.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Mid: differentiates the minimal-model parent; specific sufficiency demonstration.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep asking whether one isolated mechanism alone can produce an outcome, removing alternative causes to establish sufficiency.",
+      "phi_note": "Mid: differentiates the minimal-model parent; specific sufficiency demonstration.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|center the burdened actor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Center the burdened actor",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Design-oriented research will keep reframing the unit of concern around the overloaded human in the system, not only the end beneficiary.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: reframes design around the overloaded human; bridges to the protective/ethics region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Design-oriented research will keep reframing the unit of concern around the overloaded human in the system, not only the end beneficiary.",
+      "phi_note": "Mid: reframes design around the overloaded human; bridges to the protective/ethics region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|evaluate technology through its users' own concerns|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Evaluate technology through its users' own concerns",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Evaluative studies of tools will keep deriving their criteria from practitioners' lived concerns (risk, labour, accountability) rather than imposing preset metrics like accuracy or capability.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: enacts context-attentiveness; situates evaluation rather than essentializing metrics.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Evaluative studies of tools will keep deriving their criteria from practitioners' lived concerns (risk, labour, accountability) rather than imposing preset metrics like accuracy or capability.",
+      "phi_note": "Mid: enacts context-attentiveness; situates evaluation rather than essentializing metrics.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|check interpretations against independent coders|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Check interpretations against independent coders",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Qualitative work will keep guarding interpretation by having multiple analysts code independently and reconcile, rather than trusting a single reading.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: qualitative analogue of robustness-testing; widens the Pressure-test root into qualitative method.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Qualitative work will keep guarding interpretation by having multiple analysts code independently and reconcile, rather than trusting a single reading.",
+      "phi_note": "Mid: qualitative analogue of robustness-testing; widens the Pressure-test root into qualitative method.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|loosen a concept to cover the exceptions|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Loosen a concept to cover the exceptions",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "When an established property fails on a class of cases, research will keep introducing a weakened/generalized notion under which the result is recovered for those cases.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405033621"
+        ],
+        "confidence": "S",
+        "phi": "Low-mid: specific mathematical move; thin grounding.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "When an established property fails on a class of cases, research will keep introducing a weakened/generalized notion under which the result is recovered for those cases.",
+      "phi_note": "Low-mid: specific mathematical move; thin grounding.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|prove what the field left implicit|make the work checkable",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Prove what the field left implicit",
+        "parent_path": [
+          "Make the work checkable"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Research will keep writing out demonstrations of claims the literature uses but never explicitly proves, rather than citing them as assumed.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405033621"
+        ],
+        "confidence": "S",
+        "phi": "Mid: enacts skepticism-of-received-results; deepens the checkability root.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Research will keep writing out demonstrations of claims the literature uses but never explicitly proves, rather than citing them as assumed.",
+      "phi_note": "Mid: enacts skepticism-of-received-results; deepens the checkability root.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|standardize the experimental conditions|make the work checkable",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Standardize the experimental conditions",
+        "parent_path": [
+          "Make the work checkable"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Methods sections will keep specifying fixed media/handling protocols so that a result can be reproduced, with consistency framed as the route to reliability.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Mid: enacts confound-wariness; common wet-lab strategy under the checkability root.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed"
+      },
+      "prediction_made": "Methods sections will keep specifying fixed media/handling protocols so that a result can be reproduced, with consistency framed as the route to reliability.",
+      "phi_note": "Mid: enacts confound-wariness; common wet-lab strategy under the checkability root.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|lay the groundwork before the main result|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Lay the groundwork before the main result",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Theoretical work will keep front-loading a section of auxiliary lemmas explicitly flagged as tools for the later argument before stating its headline results.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4404368199"
+        ],
+        "confidence": "S",
+        "phi": "Low: sub-step serving generalization; weakly differentiated.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Theoretical work will keep front-loading a section of auxiliary lemmas explicitly flagged as tools for the later argument before stating its headline results.",
+      "phi_note": "Low: sub-step serving generalization; weakly differentiated.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|agent-based simulation|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Agent-based simulation",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers studying emergent collective behavior will keep reaching for particle/agent-based simulations where macro-structure arises from local rules.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Mid: cross-disciplinary modeling instrument with reach beyond biology.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers studying emergent collective behavior will keep reaching for particle/agent-based simulations where macro-structure arises from local rules.",
+      "phi_note": "Mid: cross-disciplinary modeling instrument with reach beyond biology.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|framework analysis|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Framework analysis",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Interview studies will keep using framework-style analysis combining deductive and inductive coding to move from transcripts to themes.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Low-mid: qualitative analysis method; opens a qualitative-tool region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Interview studies will keep using framework-style analysis combining deductive and inductive coding to move from transcripts to themes.",
+      "phi_note": "Low-mid: qualitative analysis method; opens a qualitative-tool region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|automated transcription|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Automated transcription",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Qualitative pipelines will keep using automated speech-to-text (then manual correction) as the bridge from recorded interviews to analysable text.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Low: concrete data-prep instrument; narrow.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Qualitative pipelines will keep using automated speech-to-text (then manual correction) as the bridge from recorded interviews to analysable text.",
+      "phi_note": "Low: concrete data-prep instrument; narrow.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|defined culture medium|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Defined culture medium",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Cell-culture studies will keep treating a controlled, specified growth medium as the instrument whose composition is itself a variable to be reported and fixed.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Low: domain-specific instrument; narrow reach.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Cell-culture studies will keep treating a controlled, specified growth medium as the instrument whose composition is itself a variable to be reported and fixed.",
+      "phi_note": "Low: domain-specific instrument; narrow reach.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|how should technology redistribute responsibility?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "How should technology redistribute responsibility?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Design research on AI in fragile human systems will keep asking how a system distributes risk, accountability, and labour rather than only how it scales capacity.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: opens an ethics/design region; pairs with the hidden-labour question.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Design research on AI in fragile human systems will keep asking how a system distributes risk, accountability, and labour rather than only how it scales capacity.",
+      "phi_note": "Mid: opens an ethics/design region; pairs with the hidden-labour question.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|who bears the hidden labour?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Who bears the hidden labour?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research on care, volunteering, and platform work will keep asking where emotional and cognitive labour accumulates and whether it is redistributed or individualised.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Mid: surfaces invisible cost; bridges to the burdened-actor region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research on care, volunteering, and platform work will keep asking where emotional and cognitive labour accumulates and whether it is redistributed or individualised.",
+      "phi_note": "Mid: surfaces invisible cost; bridges to the burdened-actor region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|which assumptions are truly necessary?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Which assumptions are truly necessary?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking, of a sufficient criterion, whether each hypothesis can be dropped while the conclusion survives.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405033621"
+        ],
+        "confidence": "S",
+        "phi": "Mid: kin to the survival question; concerns minimal sufficient conditions.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking, of a sufficient criterion, whether each hypothesis can be dropped while the conclusion survives.",
+      "phi_note": "Mid: kin to the survival question; concerns minimal sufficient conditions.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|which conditions silently shape my results?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Which conditions silently shape my results?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Work will keep asking which untracked aspects of an experimental setup are confounding outcomes — the CARS niche this methods paper occupies.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Mid: enacts confound-wariness as a question; bridges to standardization actions.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Work will keep asking which untracked aspects of an experimental setup are confounding outcomes — the CARS niche this methods paper occupies.",
+      "phi_note": "Mid: enacts confound-wariness as a question; bridges to standardization actions.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what stabilizes proportions in a mixed system?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What stabilizes proportions in a mixed system?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking how a system of heterogeneous components with distinct rates holds steady relative proportions without central control.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Low-mid: specific systems question; narrow but groundable.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking how a system of heterogeneous components with distinct rates holds steady relative proportions without central control.",
+      "phi_note": "Low-mid: specific systems question; narrow but groundable.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Skeptical of received results",
+        "precision": 0,
+        "surprise_level": "local"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pressure-test your own result|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pressure-test your own result",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Recover known results as special cases",
+        "precision": 0,
+        "surprise_level": "local"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|make the work checkable|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Make the work checkable",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Prove what the field left implicit",
+        "precision": 0,
+        "surprise_level": "local"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|attentive to context|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Attentive to context",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "The study centres 'definitional plurality' and cultural/linguistic specificity, refusing a universal definition of peer support and reading practice as situated."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|protective of the vulnerable|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Protective of the vulnerable",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Foregrounds peer supporters as emotionally burdened actors to be safeguarded; obtains IRB approval and compensates participants, treating supporter well-being as a design concern."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|action|evaluate technology through its users' own concerns|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "action",
+        "concept_name": "Evaluate technology through its users' own concerns",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Participants evaluated AI not through empathy or technical capability but through their own concerns about risk, labour, and accountability; the authors let practitioners' framings set the evaluative criteria."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|action|check interpretations against independent coders|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "action",
+        "concept_name": "Check interpretations against independent coders",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Three researchers independently coded transcripts, iteratively refined codes through discussion, and resolved disagreements by consensus before applying them to the full dataset."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|action|center the burdened actor|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "action",
+        "concept_name": "Center the burdened actor",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "The design futures are organised around the peer supporter as an emotionally and cognitively burdened actor within the system, not only the care recipient."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|tool|framework analysis|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "tool",
+        "concept_name": "Framework analysis",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Used framework analysis combining deductive and inductive coding to group codes into higher-level themes."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|tool|automated transcription|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "tool",
+        "concept_name": "Automated transcription",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Interviews were transcribed using WhisperX and then manually corrected."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|question|who bears the hidden labour?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "question",
+        "concept_name": "Who bears the hidden labour?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Surfaces how emotional labour, boundary-setting, and escalation accumulate at the individual supporter level absent organisational scaffolding."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|question|how should technology redistribute responsibility?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "question",
+        "concept_name": "How should technology redistribute responsibility?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Proposes a responsibility-aware ecosystem that redistributes labour and makes accountability explicit, rather than treating AI as a mechanism of scale."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|drawn to generalization|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "value",
+        "concept_name": "Drawn to generalization",
+        "parent_path": [],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "The stated aim — extending 'classical frame theory' to quaternionic Hilbert spaces because they 'offer new avenues for exploration' — exemplifies a disposition to seek the broader case."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|action|carry an established framework into a harder setting|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "action",
+        "concept_name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "The paper re-establishes pre-frame, transform, and frame operators and the natural representation over right H-linear operators, enacting the transport of a known framework into the quaternionic setting."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|action|lay the groundwork before the main result|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "action",
+        "concept_name": "Lay the groundwork before the main result",
+        "parent_path": [],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "An 'Auxiliary results' section proves boundedness, closed-range, and pseudo-inverse lemmas 'which will be utilized in our study' ahead of the frame-coefficient theorems."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|question|what survives when structure is taken away?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "question",
+        "concept_name": "What survives when structure is taken away?",
+        "parent_path": [],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "The work motivates itself by quaternion multiplication being non-commutative and then checks which classical operator and frame results still characterize frames in this setting."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|alive to cross-domain analogy|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "value",
+        "concept_name": "Alive to cross-domain analogy",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "The authors build their entire program as the free-probabilistic counterpart of classical conditional expectation and Tweedie's formula, and explicitly connect to physics 'overlaps'/the replica trick and random-matrix shrinkage — exemplifying a disposition to read one field's problem through another's structure."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|action|recast a problem as a solved one|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "action",
+        "concept_name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "Theorem 1.6 reduces the general free-denoising problem of finding E(a|P(a,b)) to the problem of computing a distribution in conditionally-free random variables — recasting an open problem as one for which methods already exist."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|action|recover known results as special cases|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "action",
+        "concept_name": "Recover known results as special cases",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "The general overlap-measure formulas are specialized (semicircular b; free-Poisson b) to reproduce the additive free Tweedie analogue and the Ledoit-Péché covariance shrinkage estimator — checking the new result against established formulas."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|question|what survives when structure is taken away?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "question",
+        "concept_name": "What survives when structure is taken away?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "The paper's central object — find the best approximation of signal a from its noisy observation a+b (or a^{1/2}ba^{1/2}) — is a direct instance of asking what can be recovered about a signal given a noisy observation."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "The acknowledgments openly credit Tatsuhiko Yagasaki 'for pointing out an error in the proof of Theorem 1.4 in the earlier draft' — disclosing a corrected mistake rather than quietly fixing it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|value|skeptical of received results|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "value",
+        "concept_name": "Skeptical of received results",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "The paper flags several theorems as possibly 'folklore' yet refuses to leave them assumed, insisting the new notion is what makes their proofs clear — distrusting received-but-undemonstrated results."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|action|loosen a concept to cover the exceptions|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "action",
+        "concept_name": "Loosen a concept to cover the exceptions",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "Since universal coverings of transformation groups are not simple, the authors define 'relatively simple' (a group with a maximum proper normal subgroup) — a generalization of simplicity that recovers an analogue on exactly the cases where simplicity failed."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|action|prove what the field left implicit|make the work checkable",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "action",
+        "concept_name": "Prove what the field left implicit",
+        "parent_path": [
+          "Make the work checkable"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "On Theorem 3.3 (Ker(Cal_B) is perfect) the authors state no reference explains it explicitly and supply the proof, rather than invoking it as assumed."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|question|which assumptions are truly necessary?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "question",
+        "concept_name": "Which assumptions are truly necessary?",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "Problem 1.7 explicitly asks whether relative simplicity still follows from conditions (1),(3),(4) alone when condition (2) is dropped — probing the necessity of each hypothesis."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|value|wary of silent confounds|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "value",
+        "concept_name": "Wary of silent confounds",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "She frames her central insight around conditions that 'quietly affect the results of an experiment without researchers noticing' — a standing wariness toward unseen confounds."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|action|standardize the experimental conditions|make the work checkable",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "action",
+        "concept_name": "Standardize the experimental conditions",
+        "parent_path": [
+          "Make the work checkable"
+        ],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "The paper identifies fixed media and protocols for optimal fibroblast growth, arguing 'consistent conditions yield more reliable and reproducible science' — the act of standardizing conditions to make work checkable."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|tool|defined culture medium|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "tool",
+        "concept_name": "Defined culture medium",
+        "parent_path": [],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "Growth medium is the instrument at issue — enriched media introduced lipid-like contamination, so the controlled medium is the tool whose composition governs the model system."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|question|which conditions silently shape my results?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "question",
+        "concept_name": "Which conditions silently shape my results?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "After troubleshooting donor age, sex and genetic background, she found the mundane culprit was the medium — the project's driving question of which hidden conditions were shaping the outcome."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|parsimonious|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "value",
+        "concept_name": "Parsimonious",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "The authors repeatedly frame the result as the minimal sufficient cause — mechanical feedback 'alone', 'in the absence of any codes of adhesion or extrinsic niche signals' — exemplifying a disposition to prefer the leanest account."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|action|build a minimal model|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "action",
+        "concept_name": "Build a minimal model",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "They construct a deliberately spare in-silico system (particle-based mechanics plus a stem/progenitor/differentiated hierarchy with stochastic fate) to recover homeostasis from a few rules."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|action|test a single mechanism's sufficiency|build a minimal model",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "action",
+        "concept_name": "Test a single mechanism's sufficiency",
+        "parent_path": [
+          "Build a minimal model"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "By removing adhesion codes and niche signals and showing mechanical feedback alone stabilizes populations and spatial structure, they test whether one isolated mechanism suffices."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|tool|agent-based simulation|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "tool",
+        "concept_name": "Agent-based simulation",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "Particle-based mechanical models of proliferative tissue are the instrument by which macro-scale renewal units emerge from local cell interactions."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|question|what stabilizes proportions in a mixed system?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "question",
+        "concept_name": "What stabilizes proportions in a mixed system?",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "The introduction names the open puzzle — how tissues of distinct cell types with different proliferation rates keep robust homeostasis of proportions — as the gap the work occupies."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|alive to cross-domain analogy|action|recast a problem as a solved one|https://doi.org/10.1007/s00440-026-01507-8",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Alive to cross-domain analogy"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Recast a problem as a solved one"
+        },
+        "relation": "Seeing structural twins across fields is paid for by re-expressing one's own problem in the other field's solved terms — the analogy operationalized into a reduction.",
+        "cogrounding_url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|action|recover known results as special cases|https://doi.org/10.1007/s00440-026-01507-8",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Recover known results as special cases"
+        },
+        "relation": "Self-skepticism about a fresh derivation is paid for by specializing it to limits where the answer is already known.",
+        "cogrounding_url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|attentive to context|action|evaluate technology through its users' own concerns|https://doi.org/10.1145/3802974.3809470",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Attentive to context"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Evaluate technology through its users' own concerns"
+        },
+        "relation": "Staying attentive to situated context costs surrendering preset metrics — letting users' own concerns define success.",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809470",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|protective of the vulnerable|action|center the burdened actor|https://doi.org/10.1145/3802974.3809470",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Protective of the vulnerable"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Center the burdened actor"
+        },
+        "relation": "The protective disposition is exercised at the cost of reframing design around the overloaded human, foregoing the scale-oriented framing.",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809470",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to generalization|action|carry an established framework into a harder setting|https://doi.org/10.29229/uzmj.2026-2-15",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to generalization"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Carry an established framework into a harder setting"
+        },
+        "relation": "Wanting the broader case is paid for by re-deriving the framework's machinery in the harder setting.",
+        "cogrounding_url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of received results|action|prove what the field left implicit|http://arxiv.org/abs/2412.00839",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of received results"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Prove what the field left implicit"
+        },
+        "relation": "Distrust of accepted-but-undemonstrated claims is paid for by writing out the missing proofs.",
+        "cogrounding_url": "http://arxiv.org/abs/2412.00839",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of silent confounds|action|standardize the experimental conditions|https://doi.org/10.1242/bio.062661",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of silent confounds"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Standardize the experimental conditions"
+        },
+        "relation": "Vigilance toward hidden confounds is made operational by pinning down the very conditions that could quietly bias results.",
+        "cogrounding_url": "https://doi.org/10.1242/bio.062661",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|parsimonious|action|test a single mechanism's sufficiency|https://doi.org/10.64898/2026.06.10.731353",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Parsimonious"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Test a single mechanism's sufficiency"
+        },
+        "relation": "A taste for minimal sufficient explanation is paid for by stripping a model to one cause and showing it is enough.",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.731353",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|evaluating an ai tool through the burden it shifts onto people",
+      "type": "situation",
+      "payload": {
+        "name": "Evaluating an AI tool through the burden it shifts onto people",
+        "phase": "Interpreting",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Attentive to context"
+          },
+          {
+            "attribute": "value",
+            "name": "Protective of the vulnerable"
+          },
+          {
+            "attribute": "action",
+            "name": "Evaluate technology through its users' own concerns"
+          },
+          {
+            "attribute": "action",
+            "name": "Center the burdened actor"
+          },
+          {
+            "attribute": "action",
+            "name": "Check interpretations against independent coders"
+          },
+          {
+            "attribute": "tool",
+            "name": "Framework analysis"
+          },
+          {
+            "attribute": "tool",
+            "name": "Automated transcription"
+          },
+          {
+            "attribute": "question",
+            "name": "Who bears the hidden labour?"
+          },
+          {
+            "attribute": "question",
+            "name": "How should technology redistribute responsibility?"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 2,
+          "action": 3,
+          "tool": 2,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7154682672"
+        ],
+        "core_spine": [
+          "Center the burdened actor",
+          "Protective of the vulnerable",
+          "Who bears the hidden labour?",
+          "Evaluate technology through its users' own concerns"
+        ],
+        "toggleable": [
+          "Framework analysis",
+          "Automated transcription",
+          "Check interpretations against independent coders"
+        ],
+        "rationale": "A well-balanced cost/benefit moment: names what to want (protect the vulnerable, attend to context) and what it costs (center the burdened actor, defer to users' concerns), with the qualitative tooling to enact it. Reads as a recognizable self-portrait of someone evaluating sociotechnical systems by who pays.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Center the burdened actor",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|testing whether one mechanism suffices via minimal modeling",
+      "type": "situation",
+      "payload": {
+        "name": "Testing whether one mechanism suffices via minimal modeling",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Parsimonious"
+          },
+          {
+            "attribute": "action",
+            "name": "Build a minimal model"
+          },
+          {
+            "attribute": "action",
+            "name": "Test a single mechanism's sufficiency"
+          },
+          {
+            "attribute": "tool",
+            "name": "Agent-based simulation"
+          },
+          {
+            "attribute": "question",
+            "name": "What stabilizes proportions in a mixed system?"
+          }
+        ],
+        "domain_balance": {
+          "value": 1,
+          "question": 1,
+          "action": 2,
+          "tool": 1,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7164579466"
+        ],
+        "core_spine": [
+          "Build a minimal model",
+          "Test a single mechanism's sufficiency",
+          "Parsimonious"
+        ],
+        "toggleable": [
+          "Agent-based simulation",
+          "What stabilizes proportions in a mixed system?"
+        ],
+        "rationale": "A tight modeler's moment: the disposition (parsimony) and the action that most directly enacts it (sufficiency-testing) anchored to a concrete simulation tool and the question driving them.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Build a minimal model",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|pushing a result into harder, less-structured terrain",
+      "type": "situation",
+      "payload": {
+        "name": "Pushing a result into harder, less-structured terrain",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Drawn to generalization"
+          },
+          {
+            "attribute": "value",
+            "name": "Alive to cross-domain analogy"
+          },
+          {
+            "attribute": "value",
+            "name": "Skeptical of received results"
+          },
+          {
+            "attribute": "action",
+            "name": "Carry an established framework into a harder setting"
+          },
+          {
+            "attribute": "action",
+            "name": "Recast a problem as a solved one"
+          },
+          {
+            "attribute": "action",
+            "name": "Recover known results as special cases"
+          },
+          {
+            "attribute": "action",
+            "name": "Loosen a concept to cover the exceptions"
+          },
+          {
+            "attribute": "question",
+            "name": "What survives when structure is taken away?"
+          },
+          {
+            "attribute": "question",
+            "name": "Which assumptions are truly necessary?"
+          }
+        ],
+        "domain_balance": {
+          "value": 3,
+          "question": 2,
+          "action": 4,
+          "tool": 0,
+          "under_budgeted": true
+        },
+        "rationale": "Top-down, ad-hoc frame assembled across three mathematics/AI papers sharing the Designing phase and the cross-paper 'what survives' question. A coherent self-portrait of extending results into harder settings — but tool-silent and not co-grounded by a single document, so speculative; reads as an under-tooled aspiration.",
+        "reading_list": [
+          "W4404368199",
+          "W4405957103",
+          "W4405033621"
+        ],
+        "core_spine": [
+          "What survives when structure is taken away?",
+          "Carry an established framework into a harder setting",
+          "Drawn to generalization",
+          "Recast a problem as a solved one"
+        ],
+        "toggleable": [
+          "Loosen a concept to cover the exceptions",
+          "Recover known results as special cases",
+          "Which assumptions are truly necessary?",
+          "Skeptical of received results"
+        ],
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "What survives when structure is taken away?",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|question|what survives when structure is taken away?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|alive to cross-domain analogy|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|attentive to context|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|protective of the vulnerable|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|skeptical of received results|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of silent confounds|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|recover known results as special cases|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|build a minimal model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|test a single mechanism's sufficiency|build a minimal model",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|center the burdened actor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|evaluate technology through its users' own concerns|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|check interpretations against independent coders|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|loosen a concept to cover the exceptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|prove what the field left implicit|make the work checkable",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|standardize the experimental conditions|make the work checkable",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|lay the groundwork before the main result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|agent-based simulation|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|framework analysis|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|automated transcription|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|defined culture medium|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|how should technology redistribute responsibility?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|who bears the hidden labour?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|which assumptions are truly necessary?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|which conditions silently shape my results?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what stabilizes proportions in a mixed system?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pressure-test your own result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|make the work checkable|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|attentive to context|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|protective of the vulnerable|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|action|evaluate technology through its users' own concerns|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|action|check interpretations against independent coders|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|action|center the burdened actor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|tool|framework analysis|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|tool|automated transcription|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|question|who bears the hidden labour?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|question|how should technology redistribute responsibility?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|action|lay the groundwork before the main result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|question|what survives when structure is taken away?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|alive to cross-domain analogy|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|action|recover known results as special cases|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|question|what survives when structure is taken away?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|value|skeptical of received results|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|action|loosen a concept to cover the exceptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|action|prove what the field left implicit|make the work checkable",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|question|which assumptions are truly necessary?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|value|wary of silent confounds|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|action|standardize the experimental conditions|make the work checkable",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|tool|defined culture medium|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|question|which conditions silently shape my results?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|action|build a minimal model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|action|test a single mechanism's sufficiency|build a minimal model",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|tool|agent-based simulation|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|question|what stabilizes proportions in a mixed system?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|alive to cross-domain analogy|action|recast a problem as a solved one|https://doi.org/10.1007/s00440-026-01507-8",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|action|recover known results as special cases|https://doi.org/10.1007/s00440-026-01507-8",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|attentive to context|action|evaluate technology through its users' own concerns|https://doi.org/10.1145/3802974.3809470",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|protective of the vulnerable|action|center the burdened actor|https://doi.org/10.1145/3802974.3809470",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to generalization|action|carry an established framework into a harder setting|https://doi.org/10.29229/uzmj.2026-2-15",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of received results|action|prove what the field left implicit|http://arxiv.org/abs/2412.00839",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of silent confounds|action|standardize the experimental conditions|https://doi.org/10.1242/bio.062661",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|parsimonious|action|test a single mechanism's sufficiency|https://doi.org/10.64898/2026.06.10.731353",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|evaluating an ai tool through the burden it shifts onto people",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|testing whether one mechanism suffices via minimal modeling",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|pushing a result into harder, less-structured terrain",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 6,
+      "paper_citations": 0,
+      "concepts": 30,
+      "edges": 30,
+      "concept_links": 30,
+      "tunnel_links": 7,
+      "combos": 3,
+      "combo_edges": 23,
+      "chaos_situation_meta": 3,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 32,
+      "chaos_prediction_events": 35
+    }
+  },
+  "run_id": 2
+}

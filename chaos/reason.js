@@ -14,19 +14,19 @@
  * proposals file, and a per-paper reasoning cache). Proposals go to files for a
  * human review gate (chaos.md §8 step 7), never to the dev graph.
  *
- * Two phases (chaos.md §8 pipeline steps 3 and 4-5):
+ * Single attribute domain (v0.12): every concept is a researcher VALUE (disposition).
+ * Two stages:
  *   a. Per-paper pass  — one model call per paper. System prompt = chaos.md +
  *      the current graph state (the snapshot). Input = the paper (full text if
- *      present, else abstract). The model does the move-step read of BOTH ends
- *      of the arc (P10 v0.5: intro CARS moves for the early phases + questions;
- *      methods/results for the mid-to-late phases) and returns STRICT JSON:
- *      candidate concepts, links, tunnels, and the per-article prediction test.
- *      Each paper's JSON is cached to chaos/reason_cache/<id>.json and SKIPPED
- *      on re-run (resumable, cost-saving).
+ *      present, else abstract). The model reads the paper for the dispositions its
+ *      conduct and stance reveal (P10: stance/metadiscourse as the primary instrument)
+ *      and returns STRICT JSON: candidate value dispositions, links, value↔value
+ *      associative tunnels, and the per-article prediction test. Each paper's JSON is
+ *      cached to chaos/reason_cache/<id>.json and SKIPPED on re-run (resumable, cost-saving).
  *   b. Integration pass — one model call over the ACCUMULATED candidates
- *      (compact: names/paths/groundings, not the full texts). Merges
- *      near-duplicate concepts and tallies recurrence (P13), composes situations
- *      (§5), finalizes co-grounded tunnels (P8 + P2 directness), phi-ranks the
+ *      (compact: names/paths/groundings, not the full texts). Merges near-duplicate
+ *      dispositions and tallies recurrence (P13), assigns edge character (P15),
+ *      finalizes co-grounded value↔value associative tunnels (P8/P15), phi-ranks the
  *      set (P12), and flags single-grounded items (S).
  *
  * The rubric is NOT hard-coded here — it travels in the prompt. This file is
@@ -75,7 +75,7 @@ const FIELD_FILTER = argValue('--field') || null;
 // rework) auto-invalidates stale pre-change cache entries instead of silently reusing
 // them. The graph-state text is ALSO hashed into the key (see main()), so a run against
 // a grown graph re-reasons even at the same prompt version.
-const PROMPT_VERSION = 'p2-graph-reconcile';
+const PROMPT_VERSION = 'p3-value-only';
 
 // Upper bound on inventory lines shown to the model (graph growth guard). Roots are
 // always included; nested concepts fill the remainder shallow-first; the rest is noted
@@ -95,17 +95,9 @@ const MAX_TOKENS_INTEGRATION_RETRY = 64000;
 const HTTP_TIMEOUT_MS = 420000; // 7 min per call (headroom for the large integration retry)
 const MAX_RETRIES = 3;
 
-// The lifecycle phases (chaos.md §6, provisional). Questions are NOT phase-mapped.
-const PHASES = [
-  'Sensing the gap',
-  'Committing to a question',
-  'Designing the approach',
-  'Executing and wrestling with data',
-  'Interpreting',
-  'Reporting and returning',
-];
-
-const ATTRIBUTES = ['value', 'action', 'tool', 'question'];
+// Single attribute domain (v0.12): every concept Chaos graphs is a researcher value
+// (disposition). The action/tool/question domains and the lifecycle/phase map are retired.
+const ATTRIBUTES = ['value'];
 
 // ----------------------------------------------------------------------------
 // Small helpers
@@ -196,25 +188,16 @@ function selectInventory(entries) {
   return { chosen: roots.concat(nested.slice(0, room)), truncated: Math.max(0, nested.length - room) };
 }
 
-// Render the selected inventory grouped by attribute, roots first within each group.
+// Render the selected inventory, roots first. Single domain (value) post-v0.12, so no
+// per-attribute grouping — just a flat, root-first list of existing value dispositions.
 function renderInventory(chosen) {
-  const byAttr = new Map();
-  for (const e of chosen) {
-    if (!byAttr.has(e.attribute)) byAttr.set(e.attribute, []);
-    byAttr.get(e.attribute).push(e);
-  }
-  const out = [];
-  for (const attr of [...byAttr.keys()].sort()) {
-    out.push(`  [${attr}]`);
-    const list = byAttr.get(attr).sort(
-      (a, b) => (b.isRoot ? 1 : 0) - (a.isRoot ? 1 : 0) || a.depth - b.depth || a.name.localeCompare(b.name)
-    );
-    for (const e of list) {
-      const where = e.isRoot ? '(root)' : `under: ${e.pathNames.join(' › ')}`;
-      out.push(`    · ${e.name}  ${where}`);
-    }
-  }
-  return out;
+  const list = chosen.slice().sort(
+    (a, b) => (b.isRoot ? 1 : 0) - (a.isRoot ? 1 : 0) || a.depth - b.depth || a.name.localeCompare(b.name)
+  );
+  return list.map((e) => {
+    const where = e.isRoot ? '(root)' : `under: ${e.pathNames.join(' › ')}`;
+    return `  · ${e.name}  ${where}`;
+  });
 }
 
 // Compact, human-readable view of the current dev-graph state, derived from the
@@ -232,7 +215,6 @@ function loadGraphState() {
     `  concepts: ${c.concepts ?? 0}`,
     `  edges: ${c.edges ?? 0}`,
     `  concept_links: ${c.concept_links ?? 0}`,
-    `  situations (combos): ${c.combos ?? 0}`,
     `  tunnel_links: ${c.tunnel_links ?? 0}`,
   ];
   const isEmpty = (c.concepts ?? 0) === 0 && (c.edges ?? 0) === 0;
@@ -361,11 +343,9 @@ function paperPromptText(rec) {
 // Prompts (the rubric travels here; no rubric logic is hard-coded in the script)
 // ----------------------------------------------------------------------------
 
-const PHASE_ENUM = PHASES.map((p) => `"${p}"`).join(' | ');
-
 function perPaperSystem(rubric, graphStateText, isEmpty) {
   return [
-    'You are Chaos, a tool that proposes contributions to Orca’s concept graphs.',
+    'You are Chaos, a tool that proposes contributions to Orca’s concept graph.',
     'Your governing brain — the principles, the run procedure, and the formats — is the',
     'rubric below (chaos.md). Obey it exactly. Do not invent rules it does not state.',
     '',
@@ -375,31 +355,29 @@ function perPaperSystem(rubric, graphStateText, isEmpty) {
     '',
     graphStateText,
     '',
-    'YOUR TASK THIS CALL: move-step read ONE article (provided in the user turn).',
-    'Per P10 (v0.5) read BOTH ENDS OF THE ARC:',
-    '  - the introduction’s rhetorical moves (Swales CARS Move 1 = establish a',
-    '    territory, Move 2 = establish the niche / the gap) for the EARLY phases',
-    '    ("Sensing the gap", "Committing to a question") and for open QUESTIONS; and',
-    '  - the conduct in methods/results/discussion for the MID-TO-LATE phases',
-    '    ("Designing the approach", "Executing and wrestling with data",',
-    '    "Interpreting", "Reporting and returning").',
-    'Decompose into candidate concepts across the four domains: value = a disposition',
-    '(who I am), action = what I do, tool = what I use, question = what I ask. Honor P2',
-    '(a disposition is not the behavior that enacts it; when you propose a tunnel, pair',
-    'the disposition with the action that MOST DIRECTLY enacts it), P3 (subtextual, not',
-    'the article’s vocabulary), P9 (self-anchored, a short noun/gerund/imperative',
-    'phrase, never a proposition). Apply the P5 hypothetical-researcher test and the P8',
-    'co-grounding check. Be conservative with the concept budget.',
+    'YOUR TASK THIS CALL: read ONE article (provided in the user turn) for the researcher',
+    'VALUES — the dispositions — its conduct and stance reveal (P10). The graph has a single',
+    'attribute domain: value = a disposition (who the researcher IS). Do NOT graph what the',
+    'researcher does/uses/asks — actions, tools, and questions are retired (P2, v0.12).',
+    'Read for disposition via:',
+    '  - the STANCE / METADISCOURSE profile as the PRIMARY instrument (P10): hedges, boosters,',
+    '    attitude markers, self-mention — how the researcher positions themself toward the claim;',
+    '  - corroborated by the CONDUCT itself: what they tested, disclosed, or refused to overclaim.',
+    'Honor P2 (a disposition is who the researcher is, NEVER the behavior/method that enacts it —',
+    'do not name an action as a value), P3 (subtextual, not the article’s vocabulary), P9',
+    '(self-anchored: a short noun/gerund phrase naming the disposition, NEVER a proposition).',
+    'Apply the P5 hypothetical-researcher test and the P8 co-grounding check. Be conservative',
+    'with the concept budget.',
     '',
-    'RECONCILE AGAINST THE EXISTING GRAPH (operationalizes P1/P6/P13/P17 — the graph',
-    'above is what already exists; do NOT reason as if it were empty):',
-    '  - EXACT re-instantiation → CONFIRM. If a concept you extract is the SAME concept',
-    '    already in the graph (same disposition/action/tool/question in the same context),',
-    '    re-emit it at the SAME attribute + name + parent_path as the existing entry, with',
-    '    this paper as grounding. This is a confirmation (it lets recurrence accrue across',
-    '    runs). Do NOT mint a near-variant name for a concept that already exists.',
+    'RECONCILE AGAINST THE EXISTING GRAPH (operationalizes P1/P6/P13/P17 — the graph above is',
+    'what already exists; do NOT reason as if it were empty):',
+    '  - EXACT re-instantiation → CONFIRM. If a disposition you extract is the SAME as one',
+    '    already in the graph (same disposition in the same context), re-emit it at the SAME',
+    '    name + parent_path as the existing entry, with this paper as grounding. This is a',
+    '    confirmation (it lets recurrence accrue across runs). Do NOT mint a near-variant name',
+    '    for a disposition that already exists.',
     '  - RELATED-BUT-DISTINCT variant → NEST, do not collapse. Keep it distinct from the',
-    '    existing concept (anti-essentialism, P17 — never merge two genuinely different',
+    '    existing disposition (anti-essentialism, P17 — never merge two genuinely different',
     '    contextual concepts into one), and do NOT add it as a new top-level root. Place it',
     '    under the most appropriate EXISTING parent, or, if several new siblings belong',
     '    together, propose a new INTERMEDIATE root to cluster them (integrate by connection,',
@@ -409,7 +387,7 @@ function perPaperSystem(rubric, graphStateText, isEmpty) {
       ? 'The graph is empty this run, so prediction_test.non_confirmations and .mis_structures are []'
         + ' (nothing exists yet to disconfirm or mis-structure).'
       : 'Because the graph is NON-EMPTY, actively TEST it: populate prediction_test.non_confirmations'
-        + ' with existing concepts/predictions listed above that THIS paper fails to confirm, and'
+        + ' with existing dispositions/predictions listed above that THIS paper fails to confirm, and'
         + ' .mis_structures with existing placements this paper suggests are wrong (P6). They are not'
         + ' automatically empty — only an empty graph yields empty lists.',
     '',
@@ -418,36 +396,38 @@ function perPaperSystem(rubric, graphStateText, isEmpty) {
     '{',
     '  "paper_id": string,',
     '  "fields": string[],',
-    '  "conduct_phases": string[],   // which lifecycle phase(s) the paper’s own conduct sits in',
-    '  "concepts": [',
+    '  "concepts": [   // each is a researcher VALUE (disposition); attribute is always "value"',
     '    {',
-    '      "attribute": "value" | "action" | "tool" | "question",',
-    '      "name": string,                 // short, self-anchored, never a proposition',
-    '      "parent_path": string[],        // ancestor concept names, [] for a root',
-    `      "phase": ${PHASE_ENUM} | null,  // null for question concepts only`,
+    '      "attribute": "value",            // the only domain (v0.12)',
+    '      "name": string,                 // short, self-anchored disposition; never a proposition',
+    '      "parent_path": string[],        // ancestor disposition names, [] for a root',
+    '      "edge_character": {             // P15 — how this child relates to its parent (omit/null for a root)',
+    '        "kind": "analytic" | "associative",        // analytic = decomposition; associative = a leap',
+    '        "association": "similarity" | "thematic" | "analogy" | "metaphor" | "affective" | null,  // only when associative',
+    '        "remoteness": "near" | "remote" | null      // only when associative; prize remote (P15)',
+    '      },',
     '      "prediction": string,           // what research should keep instantiating',
     '      "grounding": "single" | "multi",// your read of whether THIS paper alone grounds it',
     '      "rationale": string             // general->specific, subtextual, self-anchored',
     '    }',
     '  ],',
     '  "links": [',
-    '    { "attribute": string, "concept_name": string, "parent_path": string[],',
-    '      "url": string, "claim": string }   // claim = how the conduct EXEMPLIFIES the concept (P5)',
+    '    { "attribute": "value", "concept_name": string, "parent_path": string[],',
+    '      "url": string, "claim": string }   // claim = how the conduct EXEMPLIFIES the disposition (P5)',
     '  ],',
-    '  "tunnels": [',
-    '    { "from": { "attribute": string, "name": string },',
-    '      "to":   { "attribute": string, "name": string },',
-    '      "relation": string,            // a cost/benefit relation',
-    '      "cogrounding_url": string,     // the paper URL when one doc grounds BOTH ends (P8), else ""',
-    '      "directness_note": string }    // why this is the action that most directly enacts the disposition (P2)',
+    '  "tunnels": [   // value↔value ASSOCIATIVE links between dispositions (P8/P15)',
+    '    { "from": { "attribute": "value", "name": string },',
+    '      "to":   { "attribute": "value", "name": string },',
+    '      "relation": "similarity" | "thematic" | "analogy" | "metaphor" | "affective",  // the association KIND (P15), not cost/benefit',
+    '      "cogrounding_url": string }    // the paper URL when one doc grounds BOTH ends (P8), else ""',
     '  ],',
     '  "prediction_test": {',
-    '    "gaps": string[],              // concept names the article instantiates that the graph cannot hold',
+    '    "gaps": string[],              // disposition names the article instantiates that the graph cannot hold',
     '    "non_confirmations": string[], // existing predictions this paper fails to confirm ([] only if the graph is empty)',
     '    "mis_structures": string[]     // existing placements this paper suggests are wrong, P6 ([] only if the graph is empty)',
     '  }',
     '}',
-    'Use the EXACT phase strings listed above. Return only the JSON object.',
+    'Return only the JSON object.',
   ].join('\n');
 }
 
@@ -461,54 +441,52 @@ function integrationSystem(rubric, graphStateText) {
     '',
     graphStateText,
     '',
-    'YOUR TASK THIS CALL: the INTEGRATION pass (chaos.md §8 steps 4–5) over the',
-    'accumulated per-paper candidates (provided in the user turn). Do all of:',
+    'YOUR TASK THIS CALL: the INTEGRATION pass (chaos.md §5 steps 4–8) over the accumulated',
+    'per-paper VALUE (disposition) candidates (provided in the user turn). The graph has a',
+    'single attribute domain: value. Do all of:',
     '  - RECONCILE AGAINST THE EXISTING GRAPH FIRST (P1/P6/P13/P17): for each merged',
-    '    concept, decide whether it is the SAME as a concept already in CURRENT GRAPH STATE',
-    '    (re-emit at the existing attribute + name + parent_path — a cross-run confirmation),',
+    '    disposition, decide whether it is the SAME as one already in CURRENT GRAPH STATE',
+    '    (re-emit at the existing name + parent_path — a cross-run confirmation),',
     '    a RELATED-BUT-DISTINCT variant (keep it distinct — never collapse into the existing',
     '    one, P17 — and place it under an existing parent or a NEW intermediate root rather',
     '    than as a flat new root), or GENUINELY NEW (a new root only if no existing parent',
     '    fits). Prefer nesting/clustering over minting top-level roots.',
-    '  - Merge near-duplicate concepts across papers (same attribute + the same',
-    '    underlying disposition/action/tool/question, even if worded differently) — but only',
-    '    merge WITHIN this batch; do not merge a new concept INTO an existing graph concept',
-    '    (confirm it instead, per the reconcile step above).',
+    '  - Merge near-duplicate dispositions across papers (the same underlying disposition,',
+    '    even if worded differently) — but only merge WITHIN this batch; do not merge a new',
+    '    disposition INTO an existing graph concept (confirm it instead, per the reconcile step).',
+    '  - Assign each child’s EDGE CHARACTER to its parent (P15): analytic (decomposition) or',
+    '    associative (a leap); for associative, name the association kind (similarity, thematic,',
+    '    analogy, metaphor, affective) and its remoteness (prize remote, cross-region).',
     '  - Tally RECURRENCE (P13): how many DISTINCT papers independently exemplify each',
-    '    merged concept. recurrence >= 2 => confidence "C" (confirmed in-batch);',
+    '    merged disposition. recurrence >= 2 => confidence "C" (confirmed in-batch);',
     '    recurrence == 1 => confidence "S" (single-grounded, speculative).',
-    '  - Finalize CO-GROUNDED cost/benefit tunnels (P8); keep the co-grounding doc URL;',
-    '    ensure each pairs a disposition with the action that MOST DIRECTLY enacts it (P2).',
-    '  - Compose SITUATIONS (§5) as cost/benefit moments: cluster member edges by shared',
-    '    grounding documents and shared lifecycle phase; give each a name, a phase, a',
-    '    domain-balance read-out, an intersection reading list (shared doc URLs), and a',
-    '    core-spine vs toggleable split; apply the felt-context test.',
-    '  - PHI-RANK (P12): order the concepts most-integrative-and-differentiated first',
-    '    (bridges previously-separate regions while staying specific); add a short "phi" note.',
+    '  - Finalize CO-GROUNDED value↔value ASSOCIATIVE tunnels (P8/P15): each links two',
+    '    dispositions; its relation is the association KIND (similarity | thematic | analogy |',
+    '    metaphor | affective), NOT a cost/benefit relation; keep the co-grounding doc URL.',
+    '  - PHI-RANK (P12): order the dispositions most-integrative-and-differentiated first',
+    '    (bridge previously-separate regions while staying specific); add a short "phi" note.',
     '',
     'OUTPUT CONTRACT: return STRICT JSON ONLY — no prose, no fences. Keep it COMPACT:',
     'return your MERGE DECISIONS, not a restatement of every input field. Do NOT echo',
-    'each concept’s prediction or rationale — those are reconstructed locally from the',
+    'each disposition’s prediction or rationale — those are reconstructed locally from the',
     'per-paper cache via "source_refs". One object with keys:',
     '{',
-    '  "concepts": [   // one entry per MERGED concept (deduplicated across papers)',
-    '    { "attribute": string, "name": string, "parent_path": string[],',
-    `      "phase": ${PHASE_ENUM} | null,`,
+    '  "concepts": [   // one entry per MERGED disposition (deduplicated across papers)',
+    '    { "attribute": "value", "name": string, "parent_path": string[],',
+    '      "edge_character": {            // P15; omit/null for a root',
+    '        "kind": "analytic" | "associative",',
+    '        "association": "similarity" | "thematic" | "analogy" | "metaphor" | "affective" | null,',
+    '        "remoteness": "near" | "remote" | null',
+    '      },',
     '      "recurrence": number, "confidence": "C" | "S", "phi": string,',
-    '      "source_refs": [ { "paper_id": string, "name": string } ]  // the per-paper concepts you merged into this one',
+    '      "source_refs": [ { "paper_id": string, "name": string } ]  // the per-paper dispositions you merged into this one',
     '    }',
     '  ],',
-    '  "tunnels": [',
-    '    { "from": { "attribute": string, "name": string },',
-    '      "to":   { "attribute": string, "name": string },',
-    '      "relation": string, "cogrounding_url": string, "confidence": "C" | "S" }',
-    '  ],',
-    '  "situations": [',
-    '    { "name": string, "phase": string,',
-    '      "members": [ { "attribute": string, "name": string } ],',
-    '      "domain_balance": { "value": number, "question": number, "action": number, "tool": number },',
-    '      "reading_list": string[], "core_spine": string[], "toggleable": string[],',
-    '      "rationale": string, "confidence": "C" | "S" }',
+    '  "tunnels": [   // value↔value associative links',
+    '    { "from": { "attribute": "value", "name": string },',
+    '      "to":   { "attribute": "value", "name": string },',
+    '      "relation": "similarity" | "thematic" | "analogy" | "metaphor" | "affective",',
+    '      "cogrounding_url": string, "confidence": "C" | "S" }',
     '  ],',
     '  "recurrences": [ { "name": string, "count": number, "papers": string[] } ]',
     '}',
@@ -701,12 +679,11 @@ function compactCandidates(perPaper) {
     title: (p._meta && p._meta.title) || '',
     fields: asArray(p.fields).length ? p.fields : (p._meta && p._meta.fields) || [],
     url: (p._meta && p._meta.url) || '',
-    conduct_phases: asArray(p.conduct_phases),
     concepts: asArray(p.concepts).map((c) => ({
       attribute: c.attribute,
       name: c.name,
       parent_path: asArray(c.parent_path),
-      phase: c.phase ?? null,
+      edge_character: c.edge_character ?? null,
       grounding: c.grounding || '',
     })),
     links: asArray(p.links).map((l) => ({
@@ -746,7 +723,7 @@ async function runIntegration(perPaper, rubric, graphStateText, stateHash) {
       // re-run on corrupt cache
     }
   }
-  console.log('  [integrate] merging candidates, tallying recurrence, composing situations…');
+  console.log('  [integrate] merging dispositions, tallying recurrence, finalizing tunnels…');
   const system = integrationSystem(rubric, graphStateText);
   const userText =
     'ACCUMULATED PER-PAPER CANDIDATES (compact JSON; reason over these, not full texts):\n\n' +
@@ -831,7 +808,6 @@ function reconstructConcepts(integration, perPaper) {
       attribute: c.attribute,
       name: c.name,
       parent_path: asArray(c.parent_path),
-      phase: c.phase ?? (src && src.phase) ?? null,
       prediction: c.prediction || (src && src.prediction) || '',
       recurrence: c.recurrence != null ? c.recurrence : groundingPapers.length,
       grounding_papers: groundingPapers,
@@ -852,8 +828,8 @@ function reconstructConcepts(integration, perPaper) {
 // ============================================================================
 // Stage-5 feedback fixes: merge-rewrite of references, explicit ancestors, and
 // openalex-id normalization of all paper references. These run in main() AFTER
-// reconstructConcepts and rewrite links/tunnels/situations so they follow their
-// (possibly renamed) canonical concepts, and convert reading lists to openalex ids.
+// reconstructConcepts and rewrite links/tunnels so they follow their
+// (possibly renamed) canonical concepts.
 // ============================================================================
 
 function normalizeUrl(u) {
@@ -959,7 +935,6 @@ function addAncestorConcepts(integration) {
         attribute: c.attribute,
         name: pp[i],
         parent_path: pp.slice(0, i),
-        phase: c.attribute === 'question' ? null : c.phase || null,
         prediction: '',
         recurrence: 0,
         grounding_papers: [],
@@ -1009,66 +984,12 @@ function rewriteTunnels(integration, resolve) {
   }
 }
 
-// 1a (cont.): rewrite situation members + the core_spine/toggleable name lists.
-function rewriteSituations(integration, resolve) {
-  for (const st of asArray(integration.situations)) {
-    const rename = new Map(); // norm(oldName) -> canonical name
-    for (const m of asArray(st.members)) {
-      const canon = resolve(m.attribute, null, m.name);
-      if (canon) {
-        rename.set(normName(m.name), canon.name);
-        m.attribute = canon.attribute;
-        m.name = canon.name;
-      }
-    }
-    const fix = (arr) => asArray(arr).map((n) => rename.get(normName(n)) || n);
-    if (st.core_spine) st.core_spine = fix(st.core_spine);
-    if (st.toggleable) st.toggleable = fix(st.toggleable);
-  }
-}
-
-// 1c: corpus maps (paper DOI/url → openalex work id) for normalizing reading lists.
-function buildPaperKeyMaps(selected) {
-  const doiToWork = new Map();
-  const urlToWork = new Map();
-  for (const s of asArray(selected)) {
-    let rec;
-    try {
-      rec = loadPaper(s.id);
-    } catch {
-      continue;
-    }
-    const work = workIdOf(rec.openalex_id) || s.id;
-    if (rec.doi) doiToWork.set(normalizeUrl(rec.doi), work);
-    if (rec.best_oa_url) urlToWork.set(normalizeUrl(rec.best_oa_url), work);
-  }
-  return { doiToWork, urlToWork };
-}
-
-// 1c: convert each situation reading list to openalex work ids; drop out-of-corpus
-// entries (e.g. an arXiv URL for a paper not in this run). Mutates integration.
-function normalizeReadingLists(integration, paperMaps) {
-  for (const st of asArray(integration.situations)) {
-    const out = [];
-    for (const entry of asArray(st.reading_list)) {
-      const w =
-        workIdOf(entry) ||
-        paperMaps.doiToWork.get(normalizeUrl(entry)) ||
-        paperMaps.urlToWork.get(normalizeUrl(entry));
-      if (w && !out.includes(w)) out.push(w);
-    }
-    st.reading_list = out;
-  }
-}
-
 // ============================================================================
-// chaos.md v0.9/v0.10 integration/orchestration-ASSIGNABLE fields. These are
-// COMPUTED at integration (from recurrence / graph structure) or KNOWN from the
-// run/sampling plan — they are NOT reasoning-generated, so they require no change
-// to the per-paper / integration prompts (the reasoning-generated v0.9 fields —
-// stance read, association remoteness, cause-effect tunnel rationale — are a
-// separate later phase). The exact policies below (precision curve, surprise
-// heuristic, bootstrapping provenance) are deliberately simple and tunable.
+// Integration/orchestration-ASSIGNABLE fields. These are COMPUTED at integration (from
+// recurrence / graph structure) or KNOWN from the run/sampling plan — they are NOT
+// reasoning-generated (edge character IS reasoned now, in the prompts above; precision,
+// surprise level, and provenance are computed here). The exact policies below (precision
+// curve, surprise heuristic, bootstrapping provenance) are deliberately simple and tunable.
 // ============================================================================
 
 // P16 precision: monotonic in recurrence, low for a one-off, 0 for ungrounded.
@@ -1137,10 +1058,9 @@ function runOutcomeDefaults() {
   return { provenance: 'independent', severe: false, surprise_level: 'local' };
 }
 
-// Mutates integration: annotate concepts (precision, surprise_level) and
-// situations (entrenchment_status, ideal_anchor, recurrence_count, precision,
-// domain_balance.under_budgeted). Idempotent — only fills fields left unset, so a
-// future reasoning phase that emits any of these wins.
+// Mutates integration: annotate concepts (precision, surprise_level, provenance,
+// severe). Idempotent — only fills fields left unset, so a future reasoning phase that
+// emits any of these wins.
 function assignIntegrationFields(integration, fieldsByPaper) {
   const concepts = asArray(integration.concepts);
   // Confirmation-event defaults live on the CONCEPT object because apply.js reads
@@ -1157,22 +1077,6 @@ function assignIntegrationFields(integration, fieldsByPaper) {
     if (c.provenance == null) c.provenance = defProvenance; // 'independent'
     if (c.severe == null) c.severe = defSevere;             // false
   }
-  for (const st of asArray(integration.situations)) {
-    if (st.entrenchment_status == null) st.entrenchment_status = 'ad-hoc'; // §5 fresh
-    if (st.ideal_anchor == null) {
-      const spine = asArray(st.core_spine);
-      const members = asArray(st.members);
-      st.ideal_anchor = spine[0] || (members[0] && members[0].name) || null; // most-central
-    }
-    if (st.recurrence_count == null) st.recurrence_count = 0; // no prior round yet
-    if (st.precision === undefined) st.precision = null; // no validation track yet
-    const db = st.domain_balance && typeof st.domain_balance === 'object' ? { ...st.domain_balance } : {};
-    if (db.under_budgeted == null) {
-      const cols = ['value', 'question', 'action', 'tool'];
-      db.under_budgeted = cols.some((k) => !(Number(db[k]) > 0));
-    }
-    st.domain_balance = db;
-  }
 }
 
 // Orchestrates the Stage-5 fixes + v0.9/v0.10 field assignment in dependency
@@ -1183,8 +1087,6 @@ function finalizeProposals(integration, perPaper, selected) {
   integration.concepts = reconstructConcepts(integration, perPaper);
   addAncestorConcepts(integration);
   rewriteTunnels(integration, resolve);
-  rewriteSituations(integration, resolve);
-  normalizeReadingLists(integration, buildPaperKeyMaps(selected));
   // discipline tags per grounding paper, for the precision diversity multiplier.
   const fieldsByPaper = new Map(
     asArray(selected).map((s) => [workIdOf(s.id) || s.id, asArray(s.fields)])
@@ -1195,19 +1097,8 @@ function finalizeProposals(integration, perPaper, selected) {
 
 function computeDistributions(integration) {
   const concepts = asArray(integration.concepts);
-  const domain = { value: 0, action: 0, tool: 0, question: 0 };
-  const phase = {};
-  for (const p of PHASES) phase[p] = 0;
-  let questionsUnphased = 0;
-  for (const c of concepts) {
-    if (domain[c.attribute] !== undefined) domain[c.attribute] += 1;
-    if (c.attribute === 'question') {
-      questionsUnphased += 1;
-    } else if (c.phase && phase[c.phase] !== undefined) {
-      phase[c.phase] += 1;
-    }
-  }
-  return { domain, phase, questionsUnphased };
+  // Single domain (value) post-v0.12: the only distribution is the total disposition count.
+  return { total: concepts.length };
 }
 
 function writeJson(integration, perPaper, selected, dist, finalLinks) {
@@ -1218,16 +1109,12 @@ function writeJson(integration, perPaper, selected, dist, finalLinks) {
     rubric_version: rubricVersion(),
     graph_state: 'empty (bootstrapping seed)',
     papers: selected.map((s) => ({ id: s.id, title: s.title, fields: s.fields, full_text: s.full_text })),
-    counts_by_domain: dist.domain,
-    phase_distribution: dist.phase,
-    questions_unphased: dist.questionsUnphased,
+    concept_count: dist.total,
     concepts: asArray(integration.concepts),
     tunnels: asArray(integration.tunnels),
-    situations: asArray(integration.situations),
     recurrences: asArray(integration.recurrences),
     per_article_prediction_test: perPaper.map((p) => ({
       paper_id: p.paper_id,
-      conduct_phases: asArray(p.conduct_phases),
       gaps: asArray(p.prediction_test && p.prediction_test.gaps),
       non_confirmations: asArray(p.prediction_test && p.prediction_test.non_confirmations),
       mis_structures: asArray(p.prediction_test && p.prediction_test.mis_structures),
@@ -1288,7 +1175,7 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
   // Concept proposals
   L.push('# 1. Concept proposals');
   L.push('');
-  L.push('Format (§10): domain + attribute · parent path · new child · lifecycle phase · prediction · recurrence/confidence. **C** = confirmed in-batch (recurs ≥ 2 papers); **S** = single-grounded.');
+  L.push('Format (§8): parent path · new child (disposition) · edge character (P15) · prediction · recurrence/confidence. **C** = confirmed in-batch (recurs ≥ 2 papers); **S** = single-grounded.');
   L.push('');
   for (const attr of ATTRIBUTES) {
     const list = byAttr(attr);
@@ -1300,11 +1187,13 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
       continue;
     }
     for (const c of list) {
-      const phase = attr === 'question' ? '(not phase-mapped)' : c.phase || '(unsorted)';
       const conf = c.confidence === 'C' ? 'C' : 'S';
       const rec = c.recurrence != null ? `recurrence ${c.recurrence}` : '';
       const papers = asArray(c.grounding_papers).join(', ');
-      L.push(`**[${conf}] ${attr} · ${pathLabel(c.parent_path)} › ${c.name}** — phase: ${phase} · ${rec}${papers ? ` · papers: ${papers}` : ''}`);
+      const ec = c.edge_character && c.edge_character.kind
+        ? ` · edge: ${c.edge_character.kind}${c.edge_character.association ? `/${c.edge_character.association}` : ''}`
+        : '';
+      L.push(`**[${conf}] ${pathLabel(c.parent_path)} › ${c.name}** — ${rec}${ec}${papers ? ` · papers: ${papers}` : ''}`);
       if (c.prediction) L.push(`- Prediction: ${c.prediction}`);
       if (c.phi) L.push(`- Phi: ${c.phi}`);
       L.push('');
@@ -1333,10 +1222,10 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
   L.push('---');
   L.push('');
 
-  // Tunnels
-  L.push('# 3. Cost/benefit tunnel proposals');
+  // Tunnels (value↔value associative)
+  L.push('# 3. Tunnel proposals (value↔value associative)');
   L.push('');
-  L.push('Format (§10): from-edge ↔ to-edge · cost/benefit relation · co-grounding document (P8) · directness (P2).');
+  L.push('Format (§8): disposition ↔ disposition · association kind (similarity | thematic | analogy | metaphor | affective, P15) · co-grounding document (P8).');
   L.push('');
   const tunnels = asArray(integration.tunnels);
   if (!tunnels.length) L.push('_(none this run)_');
@@ -1344,43 +1233,21 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
     const from = t.from || {};
     const to = t.to || {};
     const cg = t.cogrounding_url ? `co-grounded: ${t.cogrounding_url}` : 'not co-grounded (speculative)';
-    L.push(`**TUN-${i + 1} [${t.confidence === 'C' ? 'C' : 'S'}]** · ${from.attribute || ''} "${from.name || ''}" ↔ ${to.attribute || ''} "${to.name || ''}"`);
-    L.push(`- ${t.relation || ''} · ${cg}`);
-    L.push('');
-  });
-  L.push('---');
-  L.push('');
-
-  // Situations
-  L.push('# 4. Situation proposals');
-  L.push('');
-  L.push('Format (§10): member edges · name · phase · domain-balance read-out · intersection reading list · core spine vs toggleable · cost/benefit-moment rationale.');
-  L.push('');
-  const sits = asArray(integration.situations);
-  if (!sits.length) L.push('_(none this run)_');
-  sits.forEach((s, i) => {
-    const b = s.domain_balance || {};
-    const members = asArray(s.members).map((m) => `${m.attribute} "${m.name}"`).join(' · ');
-    L.push(`**SIT-${i + 1} [${s.confidence === 'C' ? 'C' : 'S'}] · "${s.name || ''}"** · phase: ${s.phase || ''}`);
-    L.push(`- Members: ${members}`);
-    L.push(`- Domain balance: value ${b.value || 0}, question ${b.question || 0}, action ${b.action || 0}, tool ${b.tool || 0}`);
-    if (asArray(s.reading_list).length) L.push(`- Reading list (shared docs): ${s.reading_list.join(', ')}`);
-    if (asArray(s.core_spine).length) L.push(`- Core spine: ${s.core_spine.join(', ')}`);
-    if (asArray(s.toggleable).length) L.push(`- Toggleable: ${s.toggleable.join(', ')}`);
-    if (s.rationale) L.push(`- Cost/benefit moment: ${s.rationale}`);
+    L.push(`**TUN-${i + 1} [${t.confidence === 'C' ? 'C' : 'S'}]** · "${from.name || ''}" ↔ "${to.name || ''}"`);
+    L.push(`- association: ${t.relation || ''} · ${cg}`);
     L.push('');
   });
   L.push('---');
   L.push('');
 
   // Per-article prediction test
-  L.push('# 5. Per-article prediction-test outcomes (P14)');
+  L.push('# 4. Per-article prediction-test outcomes (P14)');
   L.push('');
-  L.push('Graph was empty, so every concept is a **gap (add)**; no non-confirmations and no mis-structures are possible.');
+  L.push('Each paper scored against what the graph predicted: gaps (add), non-confirmations (decay), mis-structures (restructure).');
   L.push('');
   for (const p of perPaper) {
     const gaps = asArray(p.prediction_test && p.prediction_test.gaps);
-    L.push(`- **${p.paper_id}** — conduct phase(s): ${asArray(p.conduct_phases).join(', ') || '(unspecified)'}. Gaps: ${gaps.join('; ') || '(none reported)'}`);
+    L.push(`- **${p.paper_id}** — Gaps: ${gaps.join('; ') || '(none reported)'}`);
   }
   L.push('');
   // Recurrences
@@ -1396,16 +1263,11 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
   L.push('');
 
   // Counts
-  L.push('# 6. Counts');
+  L.push('# 5. Counts');
   L.push('');
-  const d = dist.domain;
-  L.push(`**Concepts by domain (${d.value + d.action + d.tool + d.question} total):** Values ${d.value} · Actions ${d.action} · Tools ${d.tool} · Questions ${d.question}`);
+  L.push(`**Value dispositions (total):** ${dist.total}`);
   L.push('');
-  L.push('**Phase-mapped concepts (questions excepted):**');
-  for (const ph of PHASES) L.push(`- ${ph}: ${dist.phase[ph]}`);
-  L.push(`- (questions, not phase-mapped: ${dist.questionsUnphased})`);
-  L.push('');
-  L.push(`**Other artifacts:** ${tunnels.length} tunnels · ${sits.length} situations · ${perPaper.reduce((n, p) => n + asArray(p.links).length, 0)} link proposals.`);
+  L.push(`**Other artifacts:** ${tunnels.length} tunnels · ${perPaper.reduce((n, p) => n + asArray(p.links).length, 0)} link proposals.`);
   L.push('');
   const cCount = concepts.filter((c) => c.confidence === 'C').length;
   const sCount = concepts.length - cCount;
@@ -1422,17 +1284,13 @@ function writeMarkdown(integration, perPaper, selected, dist, finalLinks) {
 // ----------------------------------------------------------------------------
 
 function printSummary(integration, dist) {
-  const d = dist.domain;
   console.log('\n================ RUN SUMMARY ================');
   console.log(`model ${MODEL}  effort ${EFFORT}  rubric v${rubricVersion()}`);
-  console.log(`\nConcepts by domain: value ${d.value}, action ${d.action}, tool ${d.tool}, question ${d.question}  (total ${d.value + d.action + d.tool + d.question})`);
-  console.log('\nLifecycle phase distribution (questions excepted):');
-  for (const ph of PHASES) console.log(`  ${ph.padEnd(34)} ${dist.phase[ph]}`);
-  console.log(`  ${'(questions, not phase-mapped)'.padEnd(34)} ${dist.questionsUnphased}`);
+  console.log(`\nValue dispositions (total): ${dist.total}`);
   const recs = asArray(integration.recurrences).filter((r) => (r.count || 0) >= 2);
   console.log(`\nRecurrences (>= 2 papers): ${recs.length}`);
   for (const r of recs) console.log(`  ${r.name} — ${r.count} (${asArray(r.papers).join(', ')})`);
-  console.log(`\nTunnels: ${asArray(integration.tunnels).length}   Situations: ${asArray(integration.situations).length}`);
+  console.log(`\nTunnels: ${asArray(integration.tunnels).length}`);
   console.log('\nAPI usage this run:');
   console.log(`  API calls made:               ${apiCallCount}`);
   console.log(`  input tokens (uncached):      ${usageTotals.input_tokens}`);
@@ -1476,9 +1334,8 @@ async function main() {
   console.log('\nIntegration pass:');
   const integration = await runIntegration(perPaper, rubric, graphStateText, stateHash);
 
-  // Rebuild concepts locally + apply the Stage-5 fixes: merge-rewrite links/tunnels/
-  // situations to canonical names, emit ancestors explicitly, normalize reading lists
-  // to openalex ids. Returns the rewritten flat links array.
+  // Rebuild concepts locally + apply the Stage-5 fixes: merge-rewrite links/tunnels to
+  // canonical names and emit ancestors explicitly. Returns the rewritten flat links array.
   const finalLinks = finalizeProposals(integration, perPaper, selected);
 
   // Emit.
@@ -1533,13 +1390,11 @@ module.exports = {
   reconstructConcepts,
   runIntegration,
   __setCallModelForTest,
-  // Stage-5 merge-rewrite / ancestor / normalization fixes (exported for tests):
+  // Stage-5 merge-rewrite / ancestor fixes (exported for tests):
   buildAliasResolver,
   addAncestorConcepts,
   rewriteLinks,
   rewriteTunnels,
-  rewriteSituations,
-  normalizeReadingLists,
   workIdOf,
   normalizeUrl,
   // v0.9/v0.10 integration-assignable field helpers (exported for tests):
@@ -1556,6 +1411,5 @@ module.exports = {
   selectInventory,
   perPaperSystem,
   integrationSystem,
-  PHASES,
   ATTRIBUTES,
 };

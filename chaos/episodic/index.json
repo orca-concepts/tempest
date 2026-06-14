@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "run_id": 1,
+    "timestamp": "2026-06-14T14:52:21.462Z",
+    "rubric_version": "0.11",
+    "proposal_count": 100,
+    "accept_count": 100
+  }
+]

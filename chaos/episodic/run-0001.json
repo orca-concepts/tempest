@@ -1,0 +1,2943 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T14:52:21.462Z",
+  "rubric_version": "0.11",
+  "db_run_id": "reason-v0.11-bdc90ff2",
+  "working_set": [
+    {
+      "paper_ref": "W7164547648",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7162525420",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4378713459",
+      "source_field": "linguistics, philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164678959",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7162256314",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|value|measured|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Researchers will keep calibrating interpretive claims to what the evidence supports rather than over-reading them.",
+        "recurrence": 4,
+        "grounding_papers": [
+          "W7164547648",
+          "W4378713459",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Highest-phi node in the batch: one disposition recurring across neuroscience, AI, astrophysics, and anthropology — a degeneracy bridge linking four otherwise-separate sub-graphs while staying a specific calibration stance.",
+        "precision": 0.92,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep calibrating interpretive claims to what the evidence supports rather than over-reading them.",
+      "phi_note": "Highest-phi node in the batch: one disposition recurring across neuroscience, AI, astrophysics, and anthropology — a degeneracy bridge linking four otherwise-separate sub-graphs while staying a specific calibration stance.",
+      "precision": 0.92,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Researchers introducing a novel result or method will keep distrusting it until it survives independent cross-checks.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Bridges astrophysics/ML and anthropology/epigenetics; specific self-doubt disposition realized very differently in each field (vary modelling assumptions vs. negative controls), so high differentiation across the bridge.",
+        "precision": 0.75,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers introducing a novel result or method will keep distrusting it until it survives independent cross-checks.",
+      "phi_note": "Bridges astrophysics/ML and anthropology/epigenetics; specific self-doubt disposition realized very differently in each field (vary modelling assumptions vs. negative controls), so high differentiation across the bridge.",
+      "precision": 0.75,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Papers that develop or apply analysis methods will keep displaying dispositions toward thoroughness and resistance to convenient shortcuts.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Root virtue confirmed across astrophysics and anthropology; integrative hook anchoring the skepticism sub-tree.",
+        "precision": 0.75,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Papers that develop or apply analysis methods will keep displaying dispositions toward thoroughness and resistance to convenient shortcuts.",
+      "phi_note": "Root virtue confirmed across astrophysics and anthropology; integrative hook anchoring the skepticism sub-tree.",
+      "precision": 0.75,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|forthcoming|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Forthcoming",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Researchers will keep openly reporting results that don't fit their hypothesis and naming the limitations that weaken their own claims.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W7164547648",
+          "W7164678959"
+        ],
+        "confidence": "C",
+        "phi": "Bridges neuroscience and astrophysics — disclosure disposition surfaced via stance/self-mention in both; tunnels cleanly to a concrete reporting action.",
+        "precision": 0.75,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep openly reporting results that don't fit their hypothesis and naming the limitations that weaken their own claims.",
+      "phi_note": "Bridges neuroscience and astrophysics — disclosure disposition surfaced via stance/self-mention in both; tunnels cleanly to a concrete reporting action.",
+      "precision": 0.75,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|benchmark against an established method|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Benchmark against an established method",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Research will keep measuring a harder/safer variant's cost relative to the vanilla baseline, asking whether the extra requirement changes the sample budget.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4378713459",
+          "W7164678959"
+        ],
+        "confidence": "C",
+        "phi": "Merges AI's 'benchmark against the plain version' with astrophysics' established-likelihood benchmark; bridges a value-side disposition (skepticism) to a reusable validation move across two fields.",
+        "precision": 0.8,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep measuring a harder/safer variant's cost relative to the vanilla baseline, asking whether the extra requirement changes the sample budget.",
+      "phi_note": "Merges AI's 'benchmark against the plain version' with astrophysics' established-likelihood benchmark; bridges a value-side disposition (skepticism) to a reusable validation move across two fields.",
+      "precision": 0.8,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pressure-test your own result|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pressure-test your own result",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Method papers will keep subjecting their headline result to deliberate stress before claiming it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Root strategy that gathers several distinct self-testing children (benchmark, vary assumptions, simulate null); integrative even at single grounding.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Method papers will keep subjecting their headline result to deliberate stress before claiming it.",
+      "phi_note": "Root strategy that gathers several distinct self-testing children (benchmark, vary assumptions, simulate null); integrative even at single grounding.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of idealized assumptions|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of idealized assumptions",
+        "parent_path": [],
+        "phase": "Sensing the gap",
+        "prediction": "Research will keep motivating new methods by distrust of the clean lab/nominal model, anticipating that a policy tuned to ideal conditions fails when deployment drifts.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Distrust-of-the-nominal-model disposition; semantically near the framing-wariness and self-skepticism nodes, a candidate cross-field skepticism hub.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep motivating new methods by distrust of the clean lab/nominal model, anticipating that a policy tuned to ideal conditions fails when deployment drifts.",
+      "phi_note": "Distrust-of-the-nominal-model disposition; semantically near the framing-wariness and self-skepticism nodes, a candidate cross-field skepticism hub.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of neutral-seeming framings|reflexive",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of neutral-seeming framings",
+        "parent_path": [
+          "Reflexive"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Studies will keep showing that supposedly neutral interface or analytic language carries hidden normative commitments worth questioning.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Specific reflexive disposition; potential analogy tunnel to 'wary of idealized assumptions' (both audit hidden commitments) across HCI and AI.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies will keep showing that supposedly neutral interface or analytic language carries hidden normative commitments worth questioning.",
+      "phi_note": "Specific reflexive disposition; potential analogy tunnel to 'wary of idealized assumptions' (both audit hidden commitments) across HCI and AI.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|honesty|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Honesty",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Papers will keep reporting straight — owning limitations and not overstating what was found.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Root virtue parenting Measured/Forthcoming; integrative but single-grounded this batch.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Papers will keep reporting straight — owning limitations and not overstating what was found.",
+      "phi_note": "Root virtue parenting Measured/Forthcoming; integrative but single-grounded this batch.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|build in ways the claim could fail|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Build in ways the claim could fail",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Strong designs will pre-specify negative controls, competing explanations, and an explicit falsification criterion before any data are gathered.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162256314"
+        ],
+        "confidence": "S",
+        "phi": "Falsifiability-by-design move; sibling to 'test against alternative assumptions' — both operationalize self-skepticism in different fields.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Strong designs will pre-specify negative controls, competing explanations, and an explicit falsification criterion before any data are gathered.",
+      "phi_note": "Falsifiability-by-design move; sibling to 'test against alternative assumptions' — both operationalize self-skepticism in different fields.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|test the result against alternative assumptions|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Test the result against alternative assumptions",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Sensitivity/limit studies will keep re-running under varied modelling choices to show the result is not an artifact of one of them.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Robustness-check child of the pressure-test root; enacts the most-recurring value (skepticism).",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Sensitivity/limit studies will keep re-running under varied modelling choices to show the result is not an artifact of one of them.",
+      "phi_note": "Robustness-check child of the pressure-test root; enacts the most-recurring value (skepticism).",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|reflexive|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Reflexive",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep treating their own framings and vocabulary as consequential objects of scrutiny, not neutral descriptions.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Candidate new root for self-auditing dispositions; opens a region not yet covered by Rigor/Honesty/Transparency.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep treating their own framings and vocabulary as consequential objects of scrutiny, not neutral descriptions.",
+      "phi_note": "Candidate new root for self-auditing dispositions; opens a region not yet covered by Rigor/Honesty/Transparency.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|humble|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Humble",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Researchers will keep deferring to the competence of their subjects rather than assuming a deficit.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Root-level disposition crediting others' competence; distinct affective tone from Rigor.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep deferring to the competence of their subjects rather than assuming a deficit.",
+      "phi_note": "Root-level disposition crediting others' competence; distinct affective tone from Rigor.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|credits lived expertise|humble",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Credits lived expertise",
+        "parent_path": [
+          "Humble"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Studies will keep finding that users' own intuitions are sophisticated and that apparent failures are framing mismatches, not literacy gaps.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Specific humility leaf; tunnels to a defamiliarization method, bridging value and HCI elicitation practice.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies will keep finding that users' own intuitions are sophisticated and that apparent failures are framing mismatches, not literacy gaps.",
+      "phi_note": "Specific humility leaf; tunnels to a defamiliarization method, bridging value and HCI elicitation practice.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|account for confounders|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Account for confounders",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep modeling out nuisance variation (motion, demographics, physiology) so group effects aren't artifacts of it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Core design-control action; broad applicability makes it a likely future cross-field recurrer.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep modeling out nuisance variation (motion, demographics, physiology) so group effects aren't artifacts of it.",
+      "phi_note": "Core design-control action; broad applicability makes it a likely future cross-field recurrer.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|report what doesn't fit the hypothesis|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Report what doesn't fit the hypothesis",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Researchers will keep reporting negative and disconfirming sub-results alongside the confirmations.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Directly enacts Forthcoming; the cost-side anchor of a value/action tunnel.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep reporting negative and disconfirming sub-results alongside the confirmations.",
+      "phi_note": "Directly enacts Forthcoming; the cost-side anchor of a value/action tunnel.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|bound claims to what the evidence supports|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Bound claims to what the evidence supports",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Speculative or hypothesis-generating papers will carve explicit boundaries around their claims, separating what is asserted from what is merely possible.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162256314"
+        ],
+        "confidence": "S",
+        "phi": "Direct enactment of Measured; demarcation move likely to recur across fields.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Speculative or hypothesis-generating papers will carve explicit boundaries around their claims, separating what is asserted from what is merely possible.",
+      "phi_note": "Direct enactment of Measured; demarcation move likely to recur across fields.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pin down the fundamental limit|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pin down the fundamental limit",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Research will keep pairing an achievability result (upper bound) with an impossibility result (matching lower bound) so a method can be claimed optimal rather than merely adequate.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Two-sided-bounding action enabling calibrated claims; the action that licenses Measured in theory work.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep pairing an achievability result (upper bound) with an impossibility result (matching lower bound) so a method can be claimed optimal rather than merely adequate.",
+      "phi_note": "Two-sided-bounding action enabling calibrated claims; the action that licenses Measured in theory work.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|simulate the null distribution rather than assume it|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Simulate the null distribution rather than assume it",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep building test-statistic distributions empirically where the usual asymptotic shortcut does not apply.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Computational rigor move; bridges ML practice into the self-testing region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep building test-statistic distributions empirically where the usual asymptotic shortcut does not apply.",
+      "phi_note": "Computational rigor move; bridges ML practice into the self-testing region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|construct a worst-case instance|pin down the fundamental limit",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Construct a worst-case instance",
+        "parent_path": [
+          "Pin down the fundamental limit"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Research will keep building deliberately hard problem instances that any estimator must fail on, to certify a lower bound.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Lower-bound technique child; specific differentiation under the limit-bounding action.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep building deliberately hard problem instances that any estimator must fail on, to certify a lower bound.",
+      "phi_note": "Lower-bound technique child; specific differentiation under the limit-bounding action.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|stage the test from a modern signal to deep time|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Stage the test from a modern signal to deep time",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Ambitious historical/deep-time hypotheses will be made tractable by first establishing a reproducible signal in accessible modern data before extending to harder, distant evidence.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162256314"
+        ],
+        "confidence": "S",
+        "phi": "Distinctive staged-inference design; analogy potential to incremental-validation strategies elsewhere.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Ambitious historical/deep-time hypotheses will be made tractable by first establishing a reproducible signal in accessible modern data before extending to harder, distant evidence.",
+      "phi_note": "Distinctive staged-inference design; analogy potential to incremental-validation strategies elsewhere.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|resolve the signal by frequency band|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Resolve the signal by frequency band",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep disaggregating a signal into frequency-specific components rather than averaging across a broad range that masks structure.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Specific decomposition action; field-bound but a candidate analogy source for spectral methods.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep disaggregating a signal into frequency-specific components rather than averaging across a broad range that masks structure.",
+      "phi_note": "Specific decomposition action; field-bound but a candidate analogy source for spectral methods.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|surface tacit reasoning|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Surface tacit reasoning",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep designing methods to elicit reasoning people cannot easily state directly.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Elicitation strategy root; bridges HCI method to the Humble disposition region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep designing methods to elicit reasoning people cannot easily state directly.",
+      "phi_note": "Elicitation strategy root; bridges HCI method to the Humble disposition region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|defamiliarize the familiar to bypass preconceptions|surface tacit reasoning",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Defamiliarize the familiar to bypass preconceptions",
+        "parent_path": [
+          "Surface tacit reasoning"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Studies will keep removing familiar labels and contexts to free participants from preconceived scripts.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Enacts crediting lived expertise; concrete child of the elicitation strategy.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies will keep removing familiar labels and contexts to free participants from preconceived scripts.",
+      "phi_note": "Enacts crediting lived expertise; concrete child of the elicitation strategy.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|account for both sides of a finding|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Account for both sides of a finding",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Researchers will keep reporting the downsides of an effect alongside its benefits.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Balanced-interpretation action; near-neighbor to Measured's bounding move.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep reporting the downsides of an effect alongside its benefits.",
+      "phi_note": "Balanced-interpretation action; near-neighbor to Measured's bounding move.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|weigh a framing's costs against its benefits|account for both sides of a finding",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Weigh a framing's costs against its benefits",
+        "parent_path": [
+          "Account for both sides of a finding"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Analyses will keep evaluating a framing both for what it makes visible and what it hides.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Enacts wariness of framings; specific cost/benefit audit leaf.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Analyses will keep evaluating a framing both for what it makes visible and what it hides.",
+      "phi_note": "Enacts wariness of framings; specific cost/benefit audit leaf.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|read across studies for the unbidden pattern|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Read across studies for the unbidden pattern",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Researchers will keep finding and reporting patterns that none of their individual studies set out to test.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Cross-study synthesis move; associative-reach action with broad future applicability.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep finding and reporting patterns that none of their individual studies set out to test.",
+      "phi_note": "Cross-study synthesis move; associative-reach action with broad future applicability.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|machine-learning classifier|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Machine-learning classifier",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers across fields will keep using trained classifiers to separate signal-bearing from signal-free data.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Generic instrument crossing AI into astrophysics inference; likely cross-field recurrer.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers across fields will keep using trained classifiers to separate signal-bearing from signal-free data.",
+      "phi_note": "Generic instrument crossing AI into astrophysics inference; likely cross-field recurrer.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|worst-case uncertainty set|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Worst-case uncertainty set",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research will keep operationalizing robustness as optimizing over a divergence ball of perturbed models (TV, chi-squared, other f-divergences) around a nominal one.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Instrument that literally encodes distrust of the nominal model; value/tool tunnel anchor.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep operationalizing robustness as optimizing over a divergence ball of perturbed models (TV, chi-squared, other f-divergences) around a nominal one.",
+      "phi_note": "Instrument that literally encodes distrust of the nominal model; value/tool tunnel anchor.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|simulator-based sampling|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Simulator-based sampling",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research will keep assuming generative-model / simulator access (i.i.d. draws per state-action) to isolate the statistical question from the exploration question.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Generative-model sampling instrument; bridges RL theory and empirical estimation.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep assuming generative-model / simulator access (i.i.d. draws per state-action) to isolate the statistical question from the exploration question.",
+      "phi_note": "Generative-model sampling instrument; bridges RL theory and empirical estimation.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|resting-state fmri|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Resting-state fMRI",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Studies of intrinsic brain coordination will keep relying on task-free BOLD acquisition as their measurement substrate.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Neuroscience instrument root; parents a connectivity-measure leaf.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies of intrinsic brain coordination will keep relying on task-free BOLD acquisition as their measurement substrate.",
+      "phi_note": "Neuroscience instrument root; parents a connectivity-measure leaf.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|voxel-mirrored homotopic connectivity|resting-state fmri",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Voxel-mirrored homotopic connectivity",
+        "parent_path": [
+          "Resting-state fMRI"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Studies of interhemispheric coordination will keep using mirrored-voxel BOLD correlation as their synchronization measure.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Specific connectivity measure; differentiation leaf under rs-fMRI.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies of interhemispheric coordination will keep using mirrored-voxel BOLD correlation as their synchronization measure.",
+      "phi_note": "Specific connectivity measure; differentiation leaf under rs-fMRI.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|qualitative elicitation method|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Qualitative elicitation method",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will keep using structured qualitative methods to elicit users' reasoning about lived experience.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Method-family root parenting fictional inquiry; opens a qualitative-tools region.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep using structured qualitative methods to elicit users' reasoning about lived experience.",
+      "phi_note": "Method-family root parenting fictional inquiry; opens a qualitative-tools region.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|fictional inquiry|qualitative elicitation method",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Fictional inquiry",
+        "parent_path": [
+          "Qualitative elicitation method"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Studies will keep using fictional / co-design framings to defamiliarize a topic and elicit imaginative design ideas.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Specific elicitation instrument enacting defamiliarization.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Studies will keep using fictional / co-design framings to defamiliarize a topic and elicit imaginative design ideas.",
+      "phi_note": "Specific elicitation instrument enacting defamiliarization.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what does robustness cost?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What does robustness cost?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking whether buying a desirable property (here, robustness) exacts a statistical/sample premium relative to not buying it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Cost-side question with a direct benchmarking answer-action; generalizable cost-of-a-property frame.",
+        "precision": 0.6,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking whether buying a desirable property (here, robustness) exacts a statistical/sample premium relative to not buying it.",
+      "phi_note": "Cost-side question with a direct benchmarking answer-action; generalizable cost-of-a-property frame.",
+      "precision": 0.6,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what overlooked exposures shape human regulatory biology?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What overlooked exposures shape human regulatory biology?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Researchers will keep identifying under-recognised, everyday environmental conditions as candidate drivers of gene regulation and stress/immune calibration.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162256314"
+        ],
+        "confidence": "S",
+        "phi": "Broad gap-question bridging anthropology and genomics; parents a concrete sub-question.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Researchers will keep identifying under-recognised, everyday environmental conditions as candidate drivers of gene regulation and stress/immune calibration.",
+      "phi_note": "Broad gap-question bridging anthropology and genomics; parents a concrete sub-question.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|can long-term relationships leave detectable molecular traces?|what overlooked exposures shape human regulatory biology?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Can long-term relationships leave detectable molecular traces?",
+        "parent_path": [
+          "What overlooked exposures shape human regulatory biology?"
+        ],
+        "phase": null,
+        "prediction": "Work will keep asking whether sustained social/ecological relationships are recoverable as regulatory (e.g. methylation) signatures in modern and ancient tissue.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162256314"
+        ],
+        "confidence": "S",
+        "phi": "Specific cross-domain molecular-archaeology question.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Work will keep asking whether sustained social/ecological relationships are recoverable as regulatory (e.g. methylation) signatures in modern and ancient tissue.",
+      "phi_note": "Specific cross-domain molecular-archaeology question.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|how does framing shape privacy reasoning?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "How does framing shape privacy reasoning?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking how interface framing shapes what users can reason about and act on.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Parent framing-effect question; bridges psychology and HCI, parents reveal/hide sub-questions.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking how interface framing shapes what users can reason about and act on.",
+      "phi_note": "Parent framing-effect question; bridges psychology and HCI, parents reveal/hide sub-questions.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what does a framing make imaginable?|how does framing shape privacy reasoning?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What does a framing make imaginable?",
+        "parent_path": [
+          "How does framing shape privacy reasoning?"
+        ],
+        "phase": null,
+        "prediction": "Research will keep asking what design possibilities a given metaphor opens up.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Reveal-side sub-question; pairs with its hide-side sibling for the framing audit.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking what design possibilities a given metaphor opens up.",
+      "phi_note": "Reveal-side sub-question; pairs with its hide-side sibling for the framing audit.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what does a framing hide from view?|how does framing shape privacy reasoning?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What does a framing hide from view?",
+        "parent_path": [
+          "How does framing shape privacy reasoning?"
+        ],
+        "phase": null,
+        "prediction": "Research will keep asking what actors, data flows, or power asymmetries a framing conceals.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Hide-side sub-question enacting the wary-of-framings disposition.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking what actors, data flows, or power asymmetries a framing conceals.",
+      "phi_note": "Hide-side sub-question enacting the wary-of-framings disposition.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|does changing the metaphor change actual disclosure?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Does changing the metaphor change actual disclosure?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep testing whether identical structures under different framings change real disclosure behavior.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Behavioral-test frontier question linking framing theory to measured behavior.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep testing whether identical structures under different framings change real disclosure behavior.",
+      "phi_note": "Behavioral-test frontier question linking framing theory to measured behavior.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|can a learned classifier replace a hand-built test statistic?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Can a learned classifier replace a hand-built test statistic?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Work will keep asking whether data-driven classifiers can match purpose-built statistical tests for inference.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Method-substitution question bridging ML and statistical inference.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Work will keep asking whether data-driven classifiers can match purpose-built statistical tests for inference.",
+      "phi_note": "Method-substitution question bridging ML and statistical inference.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|how far can a next-generation instrument push existing limits?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "How far can a next-generation instrument push existing limits?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Forecasting studies will keep asking how much new parameter space an upcoming facility can newly probe.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164678959"
+        ],
+        "confidence": "S",
+        "phi": "Frontier-pushing question generalizable across instrument-driven fields.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Forecasting studies will keep asking how much new parameter space an upcoming facility can newly probe.",
+      "phi_note": "Frontier-pushing question generalizable across instrument-driven fields.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Which frequency bands carry a disorder's connectivity disruption?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep asking where in the frequency structure of brain signals a pathology's connectivity changes actually localize.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164547648"
+        ],
+        "confidence": "S",
+        "phi": "Field-specific decomposition question; analogy partner to spectral methods elsewhere.",
+        "precision": 0.5,
+        "surprise_level": "local"
+      },
+      "prediction_made": "Research will keep asking where in the frequency structure of brain signals a pathology's connectivity changes actually localize.",
+      "phi_note": "Field-specific decomposition question; analogy partner to spectral methods elsewhere.",
+      "precision": 0.5,
+      "provenance": null,
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|forthcoming|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "The authors report that no significant associations were found between PANSS scores and altered VMHC, and devote a full limitations passage to medication confounds, cross-sectional design, and sample-size constraints — disclosing rather than burying the inconvenient."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "Interpretive claims are consistently hedged ('may impair', 'might contribute', 'may reflect'), keeping conclusions calibrated to the strength of the frequency-resolved evidence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|account for confounders|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "action",
+        "concept_name": "Account for confounders",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "Age, gender, and mean framewise displacement are entered as covariates in the ANCOVA and partial correlations, and participants with FD > 0.2 are excluded — removing alternative explanations for the group effect."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|resolve the signal by frequency band|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "action",
+        "concept_name": "Resolve the signal by frequency band",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "Rather than averaging across a broad temporal band, VMHC is computed separately within slow-4 and slow-5, exposing a group-by-frequency interaction that broadband analysis would have masked."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|report what doesn't fit the hypothesis|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "action",
+        "concept_name": "Report what doesn't fit the hypothesis",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "Section 3.3 states plainly that no significant PANSS–VMHC associations were found, keeping the disconfirming sub-result in the report instead of omitting it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|tool|resting-state fmri|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "tool",
+        "concept_name": "Resting-state fMRI",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "Analysis is built on resting-state fMRI BOLD time series from the SRPBS dataset, preprocessed in DPARSF, as the measurement substrate for all connectivity computations."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|tool|voxel-mirrored homotopic connectivity|resting-state fmri",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "tool",
+        "concept_name": "Voxel-mirrored homotopic connectivity",
+        "parent_path": [
+          "Resting-state fMRI"
+        ],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "VMHC is computed as the Fisher-Z-transformed Pearson correlation between each voxel's time series and its mirror-symmetric counterpart, used here to index interhemispheric synchronization."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "question",
+        "concept_name": "Which frequency bands carry a disorder's connectivity disruption?",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "The introduction frames the open gap that frequency-specific characteristics of VMHC alterations remain poorly understood and that conventional analyses overlook frequency-specific asymmetry — the question this study takes up."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|wary of neutral-seeming framings|reflexive",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Wary of neutral-seeming framings",
+        "parent_path": [
+          "Reflexive"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The provocation argues that words like 'settings' and 'controls' 'sound neutral' yet 'teach users to understand privacy in a particular way,' treating framing choice as a non-neutral, ethical decision."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|credits lived expertise|humble",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Credits lived expertise",
+        "parent_path": [
+          "Humble"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Concludes that 'what surfaces is not a privacy literacy gap'—youth 'reason about disclosure with strong attention to relationship, context, and social norms'—reframing apparent failure as a framing mismatch rather than a deficit."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|action|defamiliarize the familiar to bypass preconceptions|surface tacit reasoning",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "action",
+        "concept_name": "Defamiliarize the familiar to bypass preconceptions",
+        "parent_path": [
+          "Surface tacit reasoning"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Project H used a fictional wizarding frame as a 'defamiliarization strategy': 'avoiding the term \"social media\" allowed participants to reason from felt experience rather than from preconceived ideas about mainstream platforms.'"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|action|weigh a framing's costs against its benefits|account for both sides of a finding",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "action",
+        "concept_name": "Weigh a framing's costs against its benefits",
+        "parent_path": [
+          "Account for both sides of a finding"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The discussion evaluates each metaphor on two questions—'what do they help people imagine?' and 'what do they make harder to see?'—and complicates the positive cases with the relational-misdirection case."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|action|read across studies for the unbidden pattern|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "action",
+        "concept_name": "Read across studies for the unbidden pattern",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The paper synthesizes three prior studies that were not designed to study metaphor: 'the pattern surfaced across them,' and place-based analogies 'emerged on their own' without cueing."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|tool|fictional inquiry|qualitative elicitation method",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "tool",
+        "concept_name": "Fictional inquiry",
+        "parent_path": [
+          "Qualitative elicitation method"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Project H 'used co-design interviews with the Fictional Inquiry (FI) method' with 23 participants imagining how students at a wizarding school might connect with friends."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|question|what does a framing make imaginable?|how does framing shape privacy reasoning?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "question",
+        "concept_name": "What does a framing make imaginable?",
+        "parent_path": [
+          "How does framing shape privacy reasoning?"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The spatial, embodied, and fantastical cases show metaphors expanding 'what counts as the design space'—e.g., a room invites thresholds and guests, a status light invites ambient presence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|question|what does a framing hide from view?|how does framing shape privacy reasoning?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "question",
+        "concept_name": "What does a framing hide from view?",
+        "parent_path": [
+          "How does framing shape privacy reasoning?"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The relational case shows a companion metaphor making interpersonal norms feel applicable while hiding 'institutional actors, data movement, and power asymmetries,' leading youth to over-disclose."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|question|does changing the metaphor change actual disclosure?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "question",
+        "concept_name": "Does changing the metaphor change actual disclosure?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Names the empirical test the provocation invites: 'comparing identical privacy structures under different framings and tracing effects on actual disclosure.'"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|wary of idealized assumptions|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Wary of idealized assumptions",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The motivation section enacts wariness of idealized assumptions: a policy learned in an ideal nominal environment 'might fail catastrophically' under small deployment changes, so the work refuses to trust the nominal kernel."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The results are stated with calibrated reach — 'near-optimal (up to log factors)', tight only when sigma ~ 1 and 'otherwise loose by at most a polynomial factor' — exemplifying disciplined, regime-scoped claiming rather than overclaiming."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|action|pin down the fundamental limit|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "action",
+        "concept_name": "Pin down the fundamental limit",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The paper establishes the first matching minimax upper (Theorem 1/3) and lower (Theorem 2/4) bounds for RMDP sample complexity, sandwiching the quantity to settle the intrinsic difficulty."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|action|construct a worst-case instance|pin down the fundamental limit",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "action",
+        "concept_name": "Construct a worst-case instance",
+        "parent_path": [
+          "Pin down the fundamental limit"
+        ],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The lower bounds are proved by constructing two hard RMDP instances (M0, M1) inspired by the asymmetric structure of RMDPs, on which any estimator must err — a concrete worst-case construction."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|action|benchmark against an established method|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "action",
+        "concept_name": "Benchmark against an established method",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The central interpretation compares RMDP sample complexity directly against standard MDP complexity (SA/(1-gamma)^3 eps^2), concluding TV is never harder while chi-squared can be far harder."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|tool|simulator-based sampling|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "tool",
+        "concept_name": "Simulator-based sampling",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The setup assumes a generative model drawing N i.i.d. samples per (s,a) from the nominal kernel, the instrument that isolates the statistical sample-complexity question."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|tool|worst-case uncertainty set|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "tool",
+        "concept_name": "Worst-case uncertainty set",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "Robustness is operationalized as a divergence ball U(P0) of radius sigma around the nominal kernel — specified via TV distance or chi-squared divergence — over which the worst-case value is optimized."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|question|what does robustness cost?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "question",
+        "concept_name": "What does robustness cost?",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The paper poses and answers exactly the cost-of-a-benefit question — 'is there a statistical premium one needs to pay in quest of additional robustness?' — showing the price depends on the uncertainty set's size and shape."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "The authors refuse to trust their novel ML-classifier limits alone, cross-checking them against an independent likelihood-ratio benchmark and against varied systematic assumptions."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "Claims are deliberately bounded — spectral models are conservatively extended only to 10 TeV, and higher-confidence limits are flagged as less reliable rather than asserted."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|forthcoming|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "The paper volunteers a clear negative finding — that Asimov datasets cannot be reliably used with the ML classifiers — and openly notes the arbitrariness of its hyperparameter choices."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|benchmark against an established method|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "action",
+        "concept_name": "Benchmark against an established method",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "ALP exclusion regions are first derived with the standard likelihood-ratio test as a benchmark, then the new ML-classifier contours are overlaid and compared point by point."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|test the result against alternative assumptions|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "action",
+        "concept_name": "Test the result against alternative assumptions",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "Appendix D re-derives the 2σ sensitivity under halved/doubled energy binning, alternative magnetic-field parameters, and different EBL models to show the conclusions are robust."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|simulate the null distribution rather than assume it|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "action",
+        "concept_name": "Simulate the null distribution rather than assume it",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "Because Wilks' theorem cannot be applied to ALPs, the authors simulate 100/2000 datasets per parameter point to build the test-statistic distribution empirically instead of assuming its shape."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|tool|machine-learning classifier|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "tool",
+        "concept_name": "Machine-learning classifier",
+        "parent_path": [],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "An XGBoost classifier grid is trained on simulated spectra with and without ALP effects, learning which energy bins distinguish the two classes to constrain the parameter space."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|question|can a learned classifier replace a hand-built test statistic?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "question",
+        "concept_name": "Can a learned classifier replace a hand-built test statistic?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "The work directly tests whether ML classifiers yield exclusion regions consistent with the traditional likelihood-ratio test, finding them comparable at 2σ."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|question|how far can a next-generation instrument push existing limits?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "question",
+        "concept_name": "How far can a next-generation instrument push existing limits?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "Simulated CTAO observations of Mrk 501 and PKS 2155-304 project exclusion of a wide, previously unconstrained ALP mass range beyond current experimental limits."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "Throughout, the authors hedge their central hypothesis and explicitly state its limits ('we do not claim genetic canalization', 'we do not expect a dog-specific epigenetic signature'), keeping claims proportionate to evidence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The authors specify a falsification criterion under which their own dog-linked account 'is weakened or rejected', exemplifying willingness to doubt the conclusion they advocate."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|bound claims to what the evidence supports|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "action",
+        "concept_name": "Bound claims to what the evidence supports",
+        "parent_path": [],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The Commentary carefully partitions within-lifetime plasticity, developmental programming, and transgenerational inheritance, asserting only the first two and explicitly disclaiming germline transmission."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|build in ways the claim could fail|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "action",
+        "concept_name": "Build in ways the claim could fail",
+        "parent_path": [],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The framework pre-specifies negative controls, within-site contrasts, a specificity test, competing explanations (diet, mobility, pathogen burden), and an explicit falsification criterion."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|stage the test from a modern signal to deep time|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "action",
+        "concept_name": "Stage the test from a modern signal to deep time",
+        "parent_path": [],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The authors design a two-stage path: first establish a reproducible methylation signal in modern dog-exposure cohorts, then use that baseline to motivate second-stage palaeoepigenetic comparisons."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|question|what overlooked exposures shape human regulatory biology?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "question",
+        "concept_name": "What overlooked exposures shape human regulatory biology?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The introduction frames long-term human-dog co-residence as an 'under-recognised biological exposure' missing from human evolutionary science — naming an overlooked exposure axis."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|question|can long-term relationships leave detectable molecular traces?|what overlooked exposures shape human regulatory biology?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "question",
+        "concept_name": "Can long-term relationships leave detectable molecular traces?",
+        "parent_path": [
+          "What overlooked exposures shape human regulatory biology?"
+        ],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The paper poses whether tens of millennia of dog cohabitation produced detectable context-linked epigenetic signatures recoverable from ancient and modern tissue."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|forthcoming|action|report what doesn't fit the hypothesis|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Report what doesn't fit the hypothesis"
+        },
+        "relation": "The disposition to disclose is paid for by the concrete act of reporting the disconfirming sub-result.",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of neutral-seeming framings|action|weigh a framing's costs against its benefits|https://doi.org/10.1145/3802974.3809449",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of neutral-seeming framings"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Weigh a framing's costs against its benefits"
+        },
+        "relation": "Distrust of a framing's apparent neutrality is discharged by auditing what each framing reveals and hides.",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809449",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|credits lived expertise|action|defamiliarize the familiar to bypass preconceptions|https://doi.org/10.1145/3802974.3809449",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Credits lived expertise"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Defamiliarize the familiar to bypass preconceptions"
+        },
+        "relation": "Trusting subjects' own competence is enacted by stripping familiar labels so their native reasoning surfaces.",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809449",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of idealized assumptions|tool|worst-case uncertainty set|http://arxiv.org/abs/2305.16589",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of idealized assumptions"
+        },
+        "to": {
+          "attribute": "tool",
+          "name": "Worst-case uncertainty set"
+        },
+        "relation": "Distrust of the nominal model is paid for by adopting the uncertainty set that literally encodes the perturbation it worries about.",
+        "cogrounding_url": "http://arxiv.org/abs/2305.16589",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|action|pin down the fundamental limit|http://arxiv.org/abs/2305.16589",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Pin down the fundamental limit"
+        },
+        "relation": "Calibrated claiming is licensed by matching upper and lower bounds rather than overclaiming.",
+        "cogrounding_url": "http://arxiv.org/abs/2305.16589",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|question|what does robustness cost?|action|benchmark against an established method|http://arxiv.org/abs/2305.16589",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "question",
+          "name": "What does robustness cost?"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Benchmark against an established method"
+        },
+        "relation": "The cost question is answered by comparing the robust method's sample complexity against the standard baseline.",
+        "cogrounding_url": "http://arxiv.org/abs/2305.16589",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|action|test the result against alternative assumptions|https://doi.org/10.1140/epjc/s10052-026-15910-x",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Test the result against alternative assumptions"
+        },
+        "relation": "Doubting one's own result is enacted by re-running the analysis under varied modelling assumptions.",
+        "cogrounding_url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|action|benchmark against an established method|https://doi.org/10.1140/epjc/s10052-026-15910-x",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Benchmark against an established method"
+        },
+        "relation": "Not trusting one's novel approach is enacted by reproducing the result with an accepted independent method first.",
+        "cogrounding_url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|action|bound claims to what the evidence supports|https://doi.org/10.1080/15592294.2026.2676911",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Bound claims to what the evidence supports"
+        },
+        "relation": "Staying calibrated is realized by demarcating claim boundaries (plasticity vs. inheritance).",
+        "cogrounding_url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|action|build in ways the claim could fail|https://doi.org/10.1080/15592294.2026.2676911",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Build in ways the claim could fail"
+        },
+        "relation": "Self-skepticism is operationalized by designing explicit falsification criteria and negative controls.",
+        "cogrounding_url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|pressure-testing a novel detection claim",
+      "type": "situation",
+      "payload": {
+        "name": "Pressure-testing a novel detection claim",
+        "phase": "Interpreting",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Skeptical of one's own conclusions"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "value",
+            "name": "Forthcoming"
+          },
+          {
+            "attribute": "action",
+            "name": "Pressure-test your own result"
+          },
+          {
+            "attribute": "action",
+            "name": "Benchmark against an established method"
+          },
+          {
+            "attribute": "action",
+            "name": "Test the result against alternative assumptions"
+          },
+          {
+            "attribute": "tool",
+            "name": "Machine-learning classifier"
+          }
+        ],
+        "domain_balance": {
+          "value": 3,
+          "question": 0,
+          "action": 3,
+          "tool": 1,
+          "under_budgeted": true
+        },
+        "reading_list": [
+          "W7164678959"
+        ],
+        "core_spine": [
+          "Skeptical of one's own conclusions",
+          "Pressure-test your own result",
+          "Benchmark against an established method"
+        ],
+        "toggleable": [
+          "Forthcoming",
+          "Machine-learning classifier"
+        ],
+        "rationale": "A researcher introducing a learned method earns trust by reproducing the limit with an accepted method and stressing it under alternative assumptions before reporting — self-skepticism made concrete; well-balanced cost/benefit.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Skeptical of one's own conclusions",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|bounding the price of a robustness guarantee",
+      "type": "situation",
+      "payload": {
+        "name": "Bounding the price of a robustness guarantee",
+        "phase": "Interpreting",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Wary of idealized assumptions"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "action",
+            "name": "Pin down the fundamental limit"
+          },
+          {
+            "attribute": "action",
+            "name": "Benchmark against an established method"
+          },
+          {
+            "attribute": "tool",
+            "name": "Worst-case uncertainty set"
+          },
+          {
+            "attribute": "tool",
+            "name": "Simulator-based sampling"
+          },
+          {
+            "attribute": "question",
+            "name": "What does robustness cost?"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 1,
+          "action": 2,
+          "tool": 2,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W4378713459"
+        ],
+        "core_spine": [
+          "What does robustness cost?",
+          "Pin down the fundamental limit",
+          "Worst-case uncertainty set"
+        ],
+        "toggleable": [
+          "Simulator-based sampling",
+          "Wary of idealized assumptions"
+        ],
+        "rationale": "Forecasting the cost a guarantee demands: a question about price, matched by limit-bounding and baseline comparison against the instruments that encode the distrust. Fully four-column balanced.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "What does robustness cost?",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|auditing a framing's hidden commitments",
+      "type": "situation",
+      "payload": {
+        "name": "Auditing a framing's hidden commitments",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Wary of neutral-seeming framings"
+          },
+          {
+            "attribute": "value",
+            "name": "Credits lived expertise"
+          },
+          {
+            "attribute": "action",
+            "name": "Weigh a framing's costs against its benefits"
+          },
+          {
+            "attribute": "action",
+            "name": "Defamiliarize the familiar to bypass preconceptions"
+          },
+          {
+            "attribute": "tool",
+            "name": "Fictional inquiry"
+          },
+          {
+            "attribute": "question",
+            "name": "How does framing shape privacy reasoning?"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 1,
+          "action": 2,
+          "tool": 1,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7162525420"
+        ],
+        "core_spine": [
+          "Wary of neutral-seeming framings",
+          "Weigh a framing's costs against its benefits",
+          "How does framing shape privacy reasoning?"
+        ],
+        "toggleable": [
+          "Credits lived expertise",
+          "Fictional inquiry"
+        ],
+        "rationale": "A reflexive moment: distrusting an apparently-neutral framing and auditing what it reveals and hides, using defamiliarizing elicitation to recover subjects' own reasoning. Reads as a recognizable self-portrait of careful qualitative design.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Wary of neutral-seeming framings",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|reporting a disorder's disrupted connectivity straight",
+      "type": "situation",
+      "payload": {
+        "name": "Reporting a disorder's disrupted connectivity straight",
+        "phase": "Reporting and returning",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Forthcoming"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "action",
+            "name": "Report what doesn't fit the hypothesis"
+          },
+          {
+            "attribute": "action",
+            "name": "Account for confounders"
+          },
+          {
+            "attribute": "tool",
+            "name": "Resting-state fMRI"
+          },
+          {
+            "attribute": "tool",
+            "name": "Voxel-mirrored homotopic connectivity"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 0,
+          "action": 2,
+          "tool": 2,
+          "under_budgeted": true
+        },
+        "reading_list": [
+          "W7164547648"
+        ],
+        "core_spine": [
+          "Forthcoming",
+          "Report what doesn't fit the hypothesis",
+          "Voxel-mirrored homotopic connectivity"
+        ],
+        "toggleable": [
+          "Account for confounders",
+          "Resting-state fMRI"
+        ],
+        "rationale": "Disclosing a null sub-result while staying calibrated, with confound control and a specific connectivity instrument — a question-silent reporting moment; the missing benefit column is informative, not a flaw.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Forthcoming",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|staging a deep-time exposure claim",
+      "type": "situation",
+      "payload": {
+        "name": "Staging a deep-time exposure claim",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Skeptical of one's own conclusions"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "action",
+            "name": "Build in ways the claim could fail"
+          },
+          {
+            "attribute": "action",
+            "name": "Bound claims to what the evidence supports"
+          },
+          {
+            "attribute": "action",
+            "name": "Stage the test from a modern signal to deep time"
+          },
+          {
+            "attribute": "question",
+            "name": "What overlooked exposures shape human regulatory biology?"
+          },
+          {
+            "attribute": "question",
+            "name": "Can long-term relationships leave detectable molecular traces?"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 2,
+          "action": 3,
+          "tool": 0,
+          "under_budgeted": true
+        },
+        "reading_list": [
+          "W7162256314"
+        ],
+        "core_spine": [
+          "Skeptical of one's own conclusions",
+          "Build in ways the claim could fail",
+          "Can long-term relationships leave detectable molecular traces?"
+        ],
+        "toggleable": [
+          "Stage the test from a modern signal to deep time",
+          "What overlooked exposures shape human regulatory biology?"
+        ],
+        "rationale": "A speculative cross-domain question pursued with built-in falsifiability and bounded claims; tool column is empty — an under-budgeted, instrument-light aspiration typical of an agenda-setting proposal.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Skeptical of one's own conclusions",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|forthcoming|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|benchmark against an established method|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pressure-test your own result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of idealized assumptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of neutral-seeming framings|reflexive",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|honesty|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|build in ways the claim could fail|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|test the result against alternative assumptions|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|reflexive|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|humble|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|credits lived expertise|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|account for confounders|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|report what doesn't fit the hypothesis|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|bound claims to what the evidence supports|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pin down the fundamental limit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|simulate the null distribution rather than assume it|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|construct a worst-case instance|pin down the fundamental limit",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|stage the test from a modern signal to deep time|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|resolve the signal by frequency band|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|surface tacit reasoning|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|defamiliarize the familiar to bypass preconceptions|surface tacit reasoning",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|account for both sides of a finding|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|weigh a framing's costs against its benefits|account for both sides of a finding",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|read across studies for the unbidden pattern|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|machine-learning classifier|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|worst-case uncertainty set|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|simulator-based sampling|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|resting-state fmri|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|voxel-mirrored homotopic connectivity|resting-state fmri",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|qualitative elicitation method|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|fictional inquiry|qualitative elicitation method",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what does robustness cost?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what overlooked exposures shape human regulatory biology?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|can long-term relationships leave detectable molecular traces?|what overlooked exposures shape human regulatory biology?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|how does framing shape privacy reasoning?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what does a framing make imaginable?|how does framing shape privacy reasoning?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what does a framing hide from view?|how does framing shape privacy reasoning?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|does changing the metaphor change actual disclosure?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|can a learned classifier replace a hand-built test statistic?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|how far can a next-generation instrument push existing limits?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|forthcoming|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|account for confounders|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|resolve the signal by frequency band|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|action|report what doesn't fit the hypothesis|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|tool|resting-state fmri|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|tool|voxel-mirrored homotopic connectivity|resting-state fmri",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|question|which frequency bands carry a disorder's connectivity disruption?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|wary of neutral-seeming framings|reflexive",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|credits lived expertise|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|action|defamiliarize the familiar to bypass preconceptions|surface tacit reasoning",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|action|weigh a framing's costs against its benefits|account for both sides of a finding",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|action|read across studies for the unbidden pattern|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|tool|fictional inquiry|qualitative elicitation method",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|question|what does a framing make imaginable?|how does framing shape privacy reasoning?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|question|what does a framing hide from view?|how does framing shape privacy reasoning?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|question|does changing the metaphor change actual disclosure?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|wary of idealized assumptions|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|action|pin down the fundamental limit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|action|construct a worst-case instance|pin down the fundamental limit",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|action|benchmark against an established method|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|tool|simulator-based sampling|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|tool|worst-case uncertainty set|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|question|what does robustness cost?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|forthcoming|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|benchmark against an established method|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|test the result against alternative assumptions|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|action|simulate the null distribution rather than assume it|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|tool|machine-learning classifier|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|question|can a learned classifier replace a hand-built test statistic?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|question|how far can a next-generation instrument push existing limits?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|bound claims to what the evidence supports|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|build in ways the claim could fail|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|action|stage the test from a modern signal to deep time|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|question|what overlooked exposures shape human regulatory biology?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|question|can long-term relationships leave detectable molecular traces?|what overlooked exposures shape human regulatory biology?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|forthcoming|action|report what doesn't fit the hypothesis|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of neutral-seeming framings|action|weigh a framing's costs against its benefits|https://doi.org/10.1145/3802974.3809449",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|credits lived expertise|action|defamiliarize the familiar to bypass preconceptions|https://doi.org/10.1145/3802974.3809449",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of idealized assumptions|tool|worst-case uncertainty set|http://arxiv.org/abs/2305.16589",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|action|pin down the fundamental limit|http://arxiv.org/abs/2305.16589",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|question|what does robustness cost?|action|benchmark against an established method|http://arxiv.org/abs/2305.16589",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|action|test the result against alternative assumptions|https://doi.org/10.1140/epjc/s10052-026-15910-x",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|action|benchmark against an established method|https://doi.org/10.1140/epjc/s10052-026-15910-x",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|action|bound claims to what the evidence supports|https://doi.org/10.1080/15592294.2026.2676911",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|action|build in ways the claim could fail|https://doi.org/10.1080/15592294.2026.2676911",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|pressure-testing a novel detection claim",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|bounding the price of a robustness guarantee",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|auditing a framing's hidden commitments",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|reporting a disorder's disrupted connectivity straight",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|staging a deep-time exposure claim",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 5,
+      "paper_citations": 0,
+      "concepts": 44,
+      "edges": 44,
+      "concept_links": 41,
+      "tunnel_links": 10,
+      "combos": 5,
+      "combo_edges": 33,
+      "chaos_situation_meta": 5,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 49,
+      "chaos_prediction_events": 56
+    }
+  },
+  "run_id": 1
+}

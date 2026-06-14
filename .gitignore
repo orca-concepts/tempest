@@ -41,6 +41,7 @@ PRELAUNCH.md
 
 # Chaos — local backups and regenerable fetched papers
 backups/
+chaos/backups/
 chaos/papers/
 
 # Chaos — regenerable reasoning outputs (per-paper cache + proposals)

@@ -9,7 +9,7 @@
  *   - pg_dump backup to backups/ BEFORE any write; abort if it fails.
  *   - One transaction; rolls back on any error.
  *   - Idempotent: re-running creates zero new rows and raises no constraint
- *     errors (concepts/edges reused, links/tunnels deduped, combos upserted,
+ *     errors (concepts/edges reused, links/tunnels deduped,
  *     predictions upserted-if-changed, ledger events guarded per run_id).
  *   - --dry-run prints the complete write plan and exits WITHOUT a backup or a
  *     write transaction.
@@ -161,31 +161,8 @@ async function recomputeAllPrecision() {
       );
       cChanged += u.rowCount;
     }
-    // Situations (Part D): recompute from situation events; keep chaos_predictions(situation)
-    // and chaos_situation_meta.precision in step.
-    const sits = (await client.query(
-      `SELECT DISTINCT target_id FROM chaos_prediction_events WHERE target_type = 'situation'`
-    )).rows;
-    let sChanged = 0;
-    for (const r of sits) {
-      const acc = await accumulatedPrecisionFromEvents(client, 'situation', r.target_id);
-      const u1 = await client.query(
-        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
-          WHERE target_type = 'situation' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, r.target_id]
-      );
-      const u2 = await client.query(
-        `UPDATE chaos_situation_meta SET precision = $1, updated_at = NOW()
-          WHERE combo_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, r.target_id]
-      );
-      sChanged += u1.rowCount + u2.rowCount;
-    }
     await client.query('COMMIT');
-    console.log(
-      `Recomputed: ${concepts.length} concept target(s), ${cChanged} changed; ` +
-        `${sits.length} situation target(s), ${sChanged} row(s) changed.`
-    );
+    console.log(`Recomputed: ${concepts.length} concept target(s), ${cChanged} changed.`);
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -347,7 +324,9 @@ function buildPlan(proposals) {
     links.push({ s, url: l.url, comment: l.claim, paperShort: l.paper_id, parentPath: asArray(l.parent_path) });
   }
 
-  // --- tunnels: both endpoints must resolve to a concept edge ---
+  // --- tunnels: value↔value associative links (P8/P15). Both endpoints must resolve to
+  //     a concept edge; `relation` is the association kind (similarity | thematic |
+  //     analogy | metaphor | affective), stored as the tunnel comment. ---
   const tunnels = [];
   for (const t of asArray(proposals.tunnels)) {
     const fromS = sig(t.from.attribute, t.from.name);
@@ -357,48 +336,6 @@ function buildPlan(proposals) {
       continue;
     }
     tunnels.push({ fromS, toS, comment: t.relation });
-  }
-
-  // --- situations: members resolve to edges; combos store only name+description,
-  //     so phase/reading_list/core_spine/toggleable do NOT persist (reported). ---
-  const situations = [];
-  for (const st of asArray(proposals.situations)) {
-    const members = [];
-    for (const m of asArray(st.members)) {
-      const s = sig(m.attribute, m.name);
-      if (conceptBySig.has(s)) members.push(s);
-      else unmapped.push(`situation "${st.name}" member not in concepts: ${m.attribute}:${m.name}`);
-    }
-    // reading_list is normalized to openalex work ids by reason.js (Stage-5). Old-shape
-    // proposals.json may still hold DOI/URL strings — those resolve to no paper; report
-    // rather than fail (regenerate proposals.json to get openalex-id reading lists).
-    const readingRaw = asArray(st.reading_list);
-    const readingWork = readingRaw.map(workIdOf).filter(Boolean);
-    const readingNonOpenalex = readingRaw.filter((e) => !workIdOf(e));
-    if (readingNonOpenalex.length) {
-      unmapped.push(
-        `situation "${st.name}" reading_list has ${readingNonOpenalex.length} non-openalex entr${readingNonOpenalex.length === 1 ? 'y' : 'ies'} ` +
-          `(regenerate proposals.json for openalex-id reading lists): ${readingNonOpenalex.join(', ')}`
-      );
-    }
-    situations.push({
-      name: st.name,
-      description: st.rationale || '',
-      members,
-      phase: st.phase || null,
-      readingWork, // openalex work ids only
-      coreSpine: asArray(st.core_spine),
-      toggleable: asArray(st.toggleable),
-      // v0.9/v0.10 situation meta (chaos.md §5; assigned by reason.js, defaulted
-      // here for older/forward proposals).
-      idealAnchor: st.ideal_anchor || null,
-      entrenchment: st.entrenchment_status || 'ad-hoc',
-      recurrenceCount: Number.isFinite(Number(st.recurrence_count)) ? Number(st.recurrence_count) : 0,
-      precision: st.precision == null ? null : Number(st.precision),
-      domainBalance: st.domain_balance && typeof st.domain_balance === 'object' ? st.domain_balance : null,
-      // standing prediction: situations carry no `prediction` field — use rationale.
-      prediction: st.rationale || '',
-    });
   }
 
   // --- restructure-mentions (P6/P7): an addendum posted on a superseded concept's
@@ -454,11 +391,9 @@ function buildPlan(proposals) {
     edgeKeys,
     links,
     tunnels,
-    situations,
     restructureMentions,
     conceptPredictions,
     unmapped,
-    counts_by_domain: proposals.counts_by_domain || {},
   };
 }
 
@@ -467,49 +402,33 @@ function buildPlan(proposals) {
 // ----------------------------------------------------------------------------
 
 function printPlan(plan) {
-  const byDomain = { value: 0, action: 0, tool: 0, question: 0 };
-  for (const [s] of plan.conceptBySig) {
-    const a = s.split('|')[0];
-    if (byDomain[a] !== undefined) byDomain[a] += 1;
-  }
   // Corpus paper set, keyed by openalex work id (matches apply's resolvePaper).
   const corpusWork = new Set([...plan.byShort.keys()].map(workIdOf).filter(Boolean));
   const conceptPredCount = plan.conceptPredictions.filter((c) => (c.prediction || '').trim()).length;
-  const situationPredCount = plan.situations.filter((s) => (s.prediction || '').trim()).length;
-  const conceptEvents = plan.conceptPredictions.reduce(
+  const eventCount = plan.conceptPredictions.reduce(
     (n, c) => n + c.groundingShort.filter((g) => corpusWork.has(workIdOf(g))).length, 0);
-  const situationEvents = plan.situations.reduce(
-    (n, st) => n + st.readingWork.filter((w) => corpusWork.has(workIdOf(w))).length, 0);
-  const eventCount = conceptEvents + situationEvents;
 
   console.log('================ CHAOS APPLY — DRY RUN (no writes) ================');
   console.log(`run_id: ${plan.runId}`);
   console.log('\nPLAN — rows that WOULD be created/ensured (idempotent):');
   console.log(`  papers ..................... ${plan.papers.length}  (upsert by openalex_id)`);
   console.log(`  paper_citations ............ ${plan.citations.length}  (within-corpus referenced_works pairs)`);
-  console.log(`  concepts (distinct names) .. ${plan.conceptNames.size}`);
+  console.log(`  concepts (value dispositions, distinct names) .. ${plan.conceptNames.size}`);
   console.log(`  edges (distinct) ........... ${plan.edgeKeys.size}`);
   const linkSkipped = plan.unmapped.filter((u) => u.startsWith('link →')).length;
   console.log(`  concept_links .............. ${plan.links.length}  (${plan.links.length + linkSkipped} proposed; ${linkSkipped} unmapped skipped)`);
-  console.log(`  tunnel_links ............... ${plan.tunnels.length}`);
-  console.log(`  combos (situations) ........ ${plan.situations.length}`);
-  console.log(`  combo_edges ................ ${plan.situations.reduce((n, s) => n + s.members.length, 0)}`);
-  console.log(`  chaos_situation_meta ....... ${plan.situations.length}  (phase + reading list + spine/toggleable + ideal_anchor/entrenchment/recurrence/precision/domain_balance)`);
+  console.log(`  tunnel_links ............... ${plan.tunnels.length}  (value↔value associative)`);
   console.log(`  restructure addenda ........ ${plan.restructureMentions.length}  (seed-authored concept_link addenda + indexed mentions)`);
-  console.log(`  chaos_predictions .......... ${conceptPredCount + situationPredCount}  (${conceptPredCount} concept + ${situationPredCount} situation; empty predictions skipped)`);
-  console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target; reading lists resolved by openalex id)`);
+  console.log(`  chaos_predictions .......... ${conceptPredCount}  (concept/disposition; empty predictions skipped)`);
+  console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target)`);
 
-  console.log('\nConcepts by domain (proposed):', JSON.stringify(byDomain),
-    '| proposals.counts_by_domain:', JSON.stringify(plan.counts_by_domain));
+  console.log(`\nValue dispositions (distinct): ${plan.conceptBySig.size}`);
 
   console.log('\nPapers to upsert:');
   for (const r of plan.papers) console.log(`  - ${r.id}  ${(r.title || '').slice(0, 64)}`);
 
   console.log('\nTunnels (from ↔ to):');
   for (const t of plan.tunnels) console.log(`  - ${t.fromS}  ↔  ${t.toS}`);
-
-  console.log('\nSituations (name → member count):');
-  for (const s of plan.situations) console.log(`  - "${s.name}" → ${s.members.length} members`);
 
   console.log('\n---- DID NOT MAP CLEANLY (design feedback) ----');
   if (!plan.unmapped.length) console.log('  (none)');
@@ -550,7 +469,7 @@ async function apply(plan) {
   const client = await pool.connect();
   const stats = {
     papers: 0, paper_citations: 0, concepts: 0, edges: 0, concept_links: 0,
-    tunnel_links: 0, combos: 0, combo_edges: 0, chaos_situation_meta: 0,
+    tunnel_links: 0,
     concept_link_addenda: 0, comment_mentions: 0,
     chaos_predictions: 0, chaos_prediction_events: 0,
   };
@@ -743,65 +662,7 @@ async function apply(plan) {
       stats.tunnel_links += 1;
     }
 
-    // ---- e. situations (combos + combo_edges) ----
-    const comboIdByName = new Map();
-    for (const st of plan.situations) {
-      const key = norm(st.name);
-      let comboId;
-      const found = await client.query('SELECT id FROM combos WHERE LOWER(name) = $1 LIMIT 1', [key]);
-      if (found.rows[0]) {
-        comboId = found.rows[0].id;
-      } else {
-        const ins = await client.query(
-          'INSERT INTO combos (name, description, created_by) VALUES ($1,$2,$3) RETURNING id',
-          [st.name, st.description || null, seedId]
-        );
-        comboId = ins.rows[0].id;
-        stats.combos += 1;
-      }
-      comboIdByName.set(key, comboId);
-      for (const mSig of st.members) {
-        const edgeId = leafEdgeBySig.get(mSig);
-        if (!edgeId) continue;
-        const res = await client.query(
-          `INSERT INTO combo_edges (combo_id, edge_id) VALUES ($1,$2)
-           ON CONFLICT (combo_id, edge_id) DO NOTHING RETURNING 1`,
-          [comboId, edgeId]
-        );
-        if (res.rowCount) stats.combo_edges += 1;
-      }
-      // Situation metadata that combos can't hold (phase, reading list, spine split,
-      // and the v0.9/v0.10 fields). domain_balance is JSONB (stringified + cast);
-      // the rest are scalars / TEXT[]. Upsert only when something changed.
-      const metaRes = await client.query(
-        `INSERT INTO chaos_situation_meta
-           (combo_id, lifecycle_phase, reading_list, core_spine, toggleable,
-            ideal_anchor, entrenchment_status, recurrence_count, precision, domain_balance)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
-         ON CONFLICT (combo_id) DO UPDATE SET
-           lifecycle_phase = EXCLUDED.lifecycle_phase, reading_list = EXCLUDED.reading_list,
-           core_spine = EXCLUDED.core_spine, toggleable = EXCLUDED.toggleable,
-           ideal_anchor = EXCLUDED.ideal_anchor, entrenchment_status = EXCLUDED.entrenchment_status,
-           recurrence_count = EXCLUDED.recurrence_count, precision = EXCLUDED.precision,
-           domain_balance = EXCLUDED.domain_balance, updated_at = NOW()
-           WHERE chaos_situation_meta.lifecycle_phase IS DISTINCT FROM EXCLUDED.lifecycle_phase
-              OR chaos_situation_meta.reading_list IS DISTINCT FROM EXCLUDED.reading_list
-              OR chaos_situation_meta.core_spine IS DISTINCT FROM EXCLUDED.core_spine
-              OR chaos_situation_meta.toggleable IS DISTINCT FROM EXCLUDED.toggleable
-              OR chaos_situation_meta.ideal_anchor IS DISTINCT FROM EXCLUDED.ideal_anchor
-              OR chaos_situation_meta.entrenchment_status IS DISTINCT FROM EXCLUDED.entrenchment_status
-              OR chaos_situation_meta.recurrence_count IS DISTINCT FROM EXCLUDED.recurrence_count
-              OR chaos_situation_meta.precision IS DISTINCT FROM EXCLUDED.precision
-              OR chaos_situation_meta.domain_balance IS DISTINCT FROM EXCLUDED.domain_balance
-         RETURNING (xmax = 0) AS inserted`,
-        [comboId, st.phase, st.readingWork, st.coreSpine, st.toggleable,
-         st.idealAnchor, st.entrenchment, st.recurrenceCount, st.precision,
-         st.domainBalance == null ? null : JSON.stringify(st.domainBalance)]
-      );
-      if (metaRes.rows[0] && metaRes.rows[0].inserted) stats.chaos_situation_meta += 1;
-    }
-
-    // ---- e2. restructure-mention addenda (P6/P7). Post an addendum (seed-authored)
+    // ---- e. restructure-mention addenda (P6/P7). Post an addendum (seed-authored)
     //      on a concept_link of the superseded concept, then index its in-orca URLs
     //      via the Phase 65b parser into comment_mentions. Idempotent: an identical
     //      (link, body) addendum is not re-posted. Forward-compatible: empty today. ----
@@ -896,24 +757,10 @@ async function apply(plan) {
         }
       }
     }
-    const situationTargets = new Set();
-    for (const st of plan.situations) {
-      const comboId = comboIdByName.get(norm(st.name));
-      if (!comboId) continue;
-      if ((st.prediction || '').trim()) await upsertPrediction('situation', comboId, st.prediction, st.precision);
-      for (const w of st.readingWork) {
-        const pid = resolvePaper(w);
-        // Situation confirmation events carry no per-concept surprise/provenance.
-        if (pid) {
-          await addEvent('situation', comboId, pid);
-          situationTargets.add(comboId);
-        }
-      }
-    }
 
     // --- Accumulated precision (Option A) — MUST run AFTER addEvent above ----------
-    // For every target whose evidence changed this run, recompute precision from the
-    // FULL accumulated event history and overwrite the per-run estimate, so stored
+    // For every concept target whose evidence changed this run, recompute precision from
+    // the FULL accumulated event history and overwrite the per-run estimate, so stored
     // precision rises with recurrence (both now derive from the same events).
     for (const edgeId of conceptTargets) {
       const acc = await accumulatedPrecisionFromEvents(client, 'concept', edgeId);
@@ -921,19 +768,6 @@ async function apply(plan) {
         `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
           WHERE target_type = 'concept' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
         [acc, edgeId]
-      );
-    }
-    for (const comboId of situationTargets) {
-      const acc = await accumulatedPrecisionFromEvents(client, 'situation', comboId);
-      await client.query(
-        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
-          WHERE target_type = 'situation' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, comboId]
-      );
-      await client.query(
-        `UPDATE chaos_situation_meta SET precision = $1, updated_at = NOW()
-          WHERE combo_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, comboId]
       );
     }
 

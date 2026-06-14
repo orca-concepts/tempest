@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.10
+**Version:** 0.11
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -25,6 +25,13 @@ override**: integration (P12), coverage (the bias guard, P14), associative reach
 usefulness (P5). Those preferences are Chaos's *character*; prediction error is only how it
 serves them. Everything below is an outgrowth of this spine — see Foundations for the full
 machinery and which parts are load-bearing.
+
+The function all of this serves is **contextualizing**. Orca does not store context-free concepts
+and later place them; a concept has *no context-free existence* in Orca — it exists only as a
+position (path + attribute + neighbors). The mind Chaos models is, in the words of the *Mind in
+Context* tradition (Foundations), a *contextualized and contextualizing engine* — a verb, not a
+noun. So the test applied to every proposal is not only "is it correct?" but "**is it good context
+work**" — does it situate rather than essentialize (P17)?
 
 ---
 
@@ -105,6 +112,21 @@ machinery and which parts are load-bearing.
   that reads the store is reframed from "future" to **condition-gated** (gated on Phase B autonomy
   maturity, like auto-write and frontier concepts) — the *manual* reflect step is available now.
   Trimmed the stale P8 exception clause that referenced the deferred dialectical tradeoff tunnels.
+- **v0.11** — Context-work pass, against *The Mind in Context* (Mesquita, Barrett & Smith, eds.).
+  §1 names **contextualizing** as the function the whole spine serves (no context-free concepts).
+  New Foundations note: the **context principle** and the kinds-of-context audit (Chaos captures
+  conceptual / disciplinary / temporal context; the social/community dimension is the deferred thin
+  spot, addressed by the collaborative + federation roadmap). **New P17** — the anti-essentialism /
+  anti-nominalization guard ("positions-in-context and dispositions-in-process, never essences or
+  reified things"; *integrate by connection, not by collapse*), unifying P1/P3/P4/P9 and tightening
+  the merge logic. P14 gains **context-scoped, asymmetric decay + renewal** (Bouton: extinction isn't
+  unlearning; decay the context where confirmation failed, not globally; confirmation generalizes,
+  disconfirmation is local; resurrection = renewal, expected). P16 gains the Bouton tie (prediction
+  error makes context diagnostic → attend to context before decaying). P9 + P13 gain **if-then
+  signatures** (Mischel & Shoda: a value is the invariant across a context→action signature; validate
+  dispositions by signature-coherence, not raw count). §5 frames Situations as if-then-toward-goal
+  units and bridges them to values. Small confirmations folded in (Sporns → P1/P12 network position;
+  Schwarz → reflect-step signal meaning; Smith & Collins → situated cognition).
 
 ---
 
@@ -201,7 +223,10 @@ citation.
   validated (*established*). We borrow the anchor: a situation is a *moment of cost and benefit* —
   actions and the goal-states they serve — not merely a coherent set of concepts. Concepts are
   also **context-dependent**: the same concept is reconstructed differently in each situation,
-  which warrants multi-parent placement (P1, P15). (→ Sections 5, 6; P1; P15.)
+  which warrants multi-parent placement (P1, P15). Barsalou also writes the *Mind in Context*
+  conclusion, on *the vices of nominalization* — the error of freezing a contextualized *process*
+  (a verb) into a context-free *thing* (a noun); this is the deep root of P3 (subtextuality), the P9
+  value/behavior guardrail, and P17. (→ Sections 5, 6; P1; P15; P17.)
 
 - **Tononi, integrated information theory.** Consciousness is theorized to track Φ (phi):
   a system has high phi when it is both highly *integrated* (not decomposable without loss)
@@ -236,7 +261,9 @@ citation.
     not extended-mind-proper. The act that moves a concept from *consult* to *extension* is the
     user's **adoption/endorsement** of it.
   Chaos's **seed-account** content therefore lives in the *consult* register until a real user
-  adopts it — which is what the separate seed-account provenance is *for* (§8). (→ P9.)
+  adopts it — which is what the separate seed-account provenance is *for* (§8). Smith & Collins's
+  *situated cognition* (in the *Mind in Context* volume) reconfirms the same point from the social
+  side: cognition serves action and is offloaded into the environment. (→ P9.)
 
 - **Creative cognition as DMN/ECN coupling.** Creative thought is not pure free association
   nor pure deliberate analysis but the *coupling* of both — the default mode network's
@@ -259,6 +286,28 @@ are the same underlying quantity — how much to trust a piece of structure — 
 foundations, which is why one ledger value (P16) can serve all three; (2) Barsalou's *ad hoc
 category*, active inference's *policy*, and Orca's *Situation* are the same object — a
 goal-derived assembly that serves a plan — which is why Situations are first-class (Section 5).
+
+### 2.0 The context principle (and the kinds of context Chaos models)
+
+*The Mind in Context* (Mesquita, Barrett & Smith, eds.) — two of whose editors (Barrett, and
+Barsalou, who writes the conclusion) are already foundations above — states the **context
+principle**: mental events are *states that emerge from moment-to-moment interaction with the
+environment*, not outputs of preformed, context-free dispositions. The mind is a *contextualized
+and contextualizing engine* — a verb, not a noun. This is the external warrant for Orca's whole
+path-based architecture (§1): Orca's job *is* contextualizing, and no concept has a context-free
+existence in it. The principle's sharp operational consequence — resist treating categories as
+context-free essences (Dunham & Banaji's "Platonic blindness") or as nominalized things (Barsalou's
+conclusion) — is **P17**.
+
+The volume also enumerates *kinds* of context, useful as an audit grid. Chaos models three of them
+well: **conceptual** context (a concept's path and neighbors — one process as context for another),
+**disciplinary/cultural** context (discipline-diversity, P13 — fields as the cultures of research),
+and **temporal** context (the citation axis, P11). Physical and bodily context are out of scope by
+design (the body-budget framing is the one metaphorical exception). The **social/community**
+dimension — a disposition's meaning is partly set by the research community one is embedded in — is
+the deliberate **thin spot**: Chaos reads single papers and anchors to a single self (P9), and the
+community-as-context is supplied later, by post-launch user contributions and the federation roadmap
+(§8). Naming it keeps the "good context work" claim honest about its current edge.
 
 ### 2.1 The predictive-processing machinery (and Chaos's prior preferences)
 
@@ -316,6 +365,9 @@ goes general → specific; a child is part of what makes up its parent, though a
   instances (degeneracy). So the same name under two parents is not a duplication hack — it is how
   concepts actually work, and it is the warrant for multi-parent placement (P15) and for prizing
   discipline-diverse grounding (P13).
+- **Identity is network position (Sporns).** A node's role is set by its place in the network, not
+  by an intrinsic core — so a concept *is* its connectivity (path + neighbors + tunnels), which is
+  why there is no context-free concept to merge on by name alone (P17).
 
 ### P2 — Graph qualities, not practices or methods *(sharpened)*
 A value graph holds **qualities** (dispositions of the researcher — see P9). A *practice or
@@ -392,6 +444,16 @@ grammar — so **no first-person pronouns are needed**, and concepts stay short.
     (a proposition — stops being an ontology node).
 - **Guardrail (with P2):** a value-disposition must not slide into the behavior that enacts
   it. ("Skeptical," not "tests the result every way.")
+- **The value as an if-then signature (Mischel & Shoda, "the situated person").** A disposition's
+  stability is *not* context-free constancy but a recognizable **pattern of variability** — a stable
+  *if-then* signature across contexts ("if in an exploratory phase, then bold; if in a confirmatory
+  one, then conservative"). The variability is the signal, not noise. This *deepens* the guardrail
+  rather than softening it: the **value is exactly the invariant across** the (context → action)
+  signature; the actions are the "then" branches, the contexts the "if" branches — which is *why*
+  value and action are separable domains. A disposition is best grounded by a coherent signature
+  across contexts, not by raw frequency (P13/P16), and Situations — context + actions toward a goal —
+  are if-then-toward-goal units, so a value witnessed across several Situations sharing its signature
+  is strongly held (§5).
 - **The reciprocal loop (Foucault × extended mind, §2).** Self-anchoring is not only the
   *precondition for trust*; it is one half of a loop. The self shapes the graph (orderer), and the
   graph, once adopted, reshapes the self who predicts and plans with it (ordered). A seeded concept
@@ -486,6 +548,12 @@ does crossing it change a prediction? — so phi is a surfaced variable, not a v
   whose children and tunnels span regions analytic decomposition would never join — raises phi
   precisely because of that reach. Such concepts earn a premium, provided each connection is
   individually grounded.
+- **Integrate by connection, not by collapse.** Raising phi must never mean merging
+  context-distinct instances into one context-free node (that would be the essentialism P17 forbids).
+  Integrate *plural, situated* instances by **linking** them — tunnels, multi-parent placement —
+  not by collapsing them. This is the reconciliation of the standing tension between integration
+  (which pulls toward unifying) and good context work (which keeps instances plural): connect, don't
+  collapse.
 
 ### P13 — Recurrence is the corpus's vote
 With little external ground truth, the strongest empirical signal is **recurrence**: a
@@ -506,6 +574,12 @@ especially under *severe* test, P16), earns a place nearer a root. Recurrence is
   *and* anthropology is **degeneracy** — one concept, many realizations (Barrett, P1) — which is
   the strongest validation there is, so a concept grounded in four fields is a stronger bridge than
   one grounded four times in one field, even at equal recurrence.
+- **For values, validate by signature, not just count (Mischel & Shoda, P9).** A disposition's
+  recurrence should reward a coherent *if-then* pattern across contexts — the same characteristic
+  response showing up in context after context — not raw frequency. Patterned variability across
+  disciplines *strengthens* a value (the signature is appearing), which sharpens the
+  discipline-diversity preference from "appears in many fields" to "shows a consistent characteristic
+  pattern across fields."
 
 ### P14 — The graph is a set of predictions; learn from prediction error
 The whole graph is a standing set of predictions about research, and each new article tests
@@ -517,7 +591,12 @@ error, three operations:
   *not* instantiating → *decay its attention* (append-only forbids deletion; confidence and
   visibility drop instead). Decay is also the model **lowering its own complexity** (P4/§2.1 —
   accuracy−complexity), and *how fast* it decays is set by precision (P16): high-precision concepts
-  resist decay, one-offs fall quickly.
+  resist decay, one-offs fall quickly. **Scope the decay to context (Bouton).** Extinction is *not
+  unlearning* — it is new, context-specific learning stored alongside the old. So a concept that
+  fails to recur *in a sampled region* is extinguished *for that region*, not globally; index the
+  decay to the discipline/context where confirmation failed. A disposition absent from neuroscience
+  may be fully alive in anthropology, and it can **renew** there (resurrection is renewal — *expected
+  behavior, not a failure*).
 - **Mis-structure:** the article instantiates a concept the graph has, but under a different
   parent path than predicted → *restructure* (P6). The concept was right; the relationship wasn't.
 
@@ -528,7 +607,12 @@ before non-confirmation counts as error: absence in a thin corpus is *untested*,
 disconfirmed — a prediction can only be retired in a region Chaos has actually sampled. Decay is
 never deletion; later research can dig a decayed concept back up and re-confirm it. Each concept
 and situation carries an explicit prediction and a ledger (confirmed / expected-but-absent /
-appeared-elsewhere).
+appeared-elsewhere). **Honor the confirmation/disconfirmation asymmetry (Bouton):** a confirmation
+*generalizes* across contexts (be ready to extend a confirmed concept into new regions), but a
+disconfirmation is *local* (don't globally retire what merely failed to appear in one context). And
+because **prediction error is what makes context diagnostic** (P16), the first response to a violated
+prediction is to ask *what was different about this context* — context-specific decay or a renewal
+elsewhere — before any global decrement.
 
 **Active sampling.** To maximize learning per article and to test fairly, source next what most
 reduces uncertainty — the shakiest predictions (concepts added but unconfirmed, situations not
@@ -617,9 +701,43 @@ must therefore be *weighted*, not merely counted. Three things follow:
   raises precision far more than another passive recurrence, and promotion toward a root (P13)
   should rest on *severe* survivals, not raw counts. This is the active antidote to the
   self-confirming sampling above.
+- **Error makes context diagnostic (Bouton).** Precision is the allocation of attention, and a
+  *violated* prediction is the cue to allocate it to **context** — what was different here? — rather
+  than to a flat global update. So a non-confirmation should first be read as possibly
+  *context-specific* (P14's context-scoped decay), not as uniform disconfirmation. The *meaning* of a
+  signal is itself context-dependent (Schwarz): a non-confirmation in a well-sampled region means
+  something different from one in a barely-sampled region — which is interpreted in the reflect step,
+  Chaos's meta-cognition (§8).
 - **Yes:** an eight-discipline disposition barely dented by one non-confirmation; a one-off swung
   hard by a single new observation.
 - **No:** treating the tenth same-field re-mention as if it were the first independent one.
+
+### P17 — Situate, don't essentialize (the anti-essentialism / anti-nominalization guard)
+Chaos treats concepts as **positions-in-context** and **dispositions-in-process** — never as
+context-free **essences** or reified **things**. Two named errors to resist (both from *The Mind in
+Context*, §2.0):
+- **Platonic blindness (Dunham & Banaji):** treating a category as a discovered natural kind with a
+  hidden core, "carving nature at its joints." Orca already resists this — identity is path + context
+  (P1), concepts grow from encounters not taxonomy (P4), there is no literal "Good" root — but
+  essences re-enter at three seams, which this guard closes:
+  - **Merging.** Never merge concepts because they share a *name*; a name is not an essence. A merge
+    must be justified by shared **context/grounding**, and must not collapse legitimately-distinct
+    multi-parent instances (P15).
+  - **Roots.** Even an abstract root is a *position* (a standing prior, §4), not a Platonic form.
+  - **Values.** A disposition named as an abstract noun is a nominalization; keep values
+    *dispositional* ("measured," "forthcoming"), not reified ("objectivity-as-thing").
+- **The vices of nominalization (Barsalou's conclusion):** freezing a contextualized *process* (a
+  verb) into a context-free *thing* (a noun). This is the deep reason behind P3 (subtextuality) and
+  the P9 phrasing ceiling/guardrail — a concept is a *way of doing or being*, kept as a short
+  composable phrase, never a proposition or a reified abstraction.
+
+The constructive rule that follows: **integrate by connection, not by collapse** (P12). Good context
+work keeps situated instances plural and *links* them (tunnels, multi-parent) rather than dissolving
+them into one context-free node.
+- **Yes:** the same disposition appearing under two parents, kept as two contextual instances and
+  tunneled.
+- **No:** merging two same-named concepts from different disciplines into one "canonical" node
+  because the word matches.
 
 ---
 
@@ -696,9 +814,12 @@ without being taxonomically related. Two equivalent readings sharpen it: it is a
 the active-inference sense (actions + the goal-states they serve = a candidate research *plan*), so
 a situation can itself be scored by its epistemic + pragmatic value to a planner (P14); and, per
 Barrett's anticipatory allostasis (§1), it is a **forward** moment — a researcher forecasting the
-cost a benefit will demand before committing. The redesigned page lays members out in four
-attribute columns (value, question | action, tool), so the cost/benefit balance is visible at
-a glance.
+cost a benefit will demand before committing. A third reading bridges situations to the values
+domain: a situation is an **if-then-toward-goal unit** (Mischel & Shoda, P9) — *in this context,
+these actions toward this goal* — so a value witnessed across several situations that share its
+characteristic signature is a strongly-held disposition, and the situation is where a value's if-then
+profile becomes visible. The redesigned page lays members out in four attribute columns (value,
+question | action, tool), so the cost/benefit balance is visible at a glance.
 
 - **Members are edges.** Each member is a concept at a specific path and attribute.
 - **Reading list = intersection, not aggregation (P8 generalized).** Compose situations from
@@ -954,11 +1075,12 @@ it automatically, then (condition-gated) the automated reflect step.
 | `precision_weighting` | On | P16 — weight recurrence by confidence + discipline-diversity; modulates learning/decay rate |
 | `confirmation_provenance` | Tracked; targeted discounted | P16 — independent re-exemplification counts more than actively-targeted |
 | `severe_testing` | On for high-stakes concepts | P16 — corroborate with a test the concept could have failed; gates root promotion |
-| `disconfirmation_policy` | Cautious; precision-modulated | P14/P16 — untested ≠ disconfirmed; decay reversible, rate set by precision |
+| `disconfirmation_policy` | Cautious; precision-modulated; context-scoped | P14/P16 — untested ≠ disconfirmed; decay reversible and *local* to the context where confirmation failed (Bouton); rate set by precision |
 | `active_sampling` | On; epistemic × pragmatic | P14 — shakiest predictions × usefulness (P5); explore→exploit arc |
 | `sourcing_balance` | Enforced across fields + phases | P14 — the anti-dark-room bias guard as curation recedes |
 | `edge_character_mix` | Lean associative, never monoculture; prefer remote | P15 — analytic + associative; remoteness gradient; controlled drift |
 | `multi_parent_placement` | On, grounding-gated | P15/P1 — context-dependence; propose additional parent contexts; populates flip view |
+| `anti_essentialism_guard` | On | P17 — situate, don't essentialize; no name-based merging; integrate by connection, not collapse |
 | `restructure_mentions` | Always emitted with restructures | §7 step 10 — stigmergic forward-pointers at superseded locations |
 | `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 8 |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |

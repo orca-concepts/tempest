@@ -1,0 +1,875 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T21:29:26.169Z",
+  "rubric_version": "0.12",
+  "db_run_id": "reason-v0.12-4d864038",
+  "working_set": [
+    {
+      "paper_ref": "W7164547648",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7162525420",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4378713459",
+      "source_field": "linguistics, philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164678959",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7162256314",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|value|measured|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Researchers will keep hedging interpretations in proportion to the strength of the evidence, declining to overclaim from correlational or cross-sectional findings.",
+        "recurrence": 5,
+        "grounding_papers": [
+          "W7164547648",
+          "W7162525420",
+          "W4378713459",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Recurs across all five fields (neuro, psych, AI/physics, ling/phil, anthro) as a hedged-claim disposition; a specific leaf that bridges every sampled region — highest distance-work for a single node.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.95,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep hedging interpretations in proportion to the strength of the evidence, declining to overclaim from correlational or cross-sectional findings.",
+      "phi_note": "Recurs across all five fields (neuro, psych, AI/physics, ling/phil, anthro) as a hedged-claim disposition; a specific leaf that bridges every sampled region — highest distance-work for a single node.",
+      "precision": 0.95,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|forthcoming|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Researchers will keep disclosing null results and limitations plainly rather than suppressing or burying them.",
+        "recurrence": 5,
+        "grounding_papers": [
+          "W7164547648",
+          "W7162525420",
+          "W4378713459",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Five-field degeneracy on disclosure of limits/disconfirming results; differentiated leaf integrating the Honesty region across disciplines.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.95,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep disclosing null results and limitations plainly rather than suppressing or burying them.",
+      "phi_note": "Five-field degeneracy on disclosure of limits/disconfirming results; differentiated leaf integrating the Honesty region across disciplines.",
+      "precision": 0.95,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Researchers will keep entertaining alternative explanations of their own findings and naming the confounds they could not rule out.",
+        "recurrence": 4,
+        "grounding_papers": [
+          "W7164547648",
+          "W7162525420",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Four-field self-doubt-of-conclusions disposition; specific leaf that anchors the cross-disposition tunnels (co-grounds with both Measured and Forthcoming).",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.91,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep entertaining alternative explanations of their own findings and naming the confounds they could not rule out.",
+      "phi_note": "Four-field self-doubt-of-conclusions disposition; specific leaf that anchors the cross-disposition tunnels (co-grounds with both Measured and Forthcoming).",
+      "precision": 0.91,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "prediction": "Research worth modeling will show care in how strongly conclusions are drawn from the evidence actually obtained.",
+        "recurrence": 5,
+        "grounding_papers": [
+          "W7164547648",
+          "W7162525420",
+          "W4378713459",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Root / standing prior; integrative hub for Measured, Skeptical, Exacting — abstract, low differentiation but high connectivity as a mindset frame.",
+        "precision": 0.95,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research worth modeling will show care in how strongly conclusions are drawn from the evidence actually obtained.",
+      "phi_note": "Root / standing prior; integrative hub for Measured, Skeptical, Exacting — abstract, low differentiation but high connectivity as a mindset frame.",
+      "precision": 0.95,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|honesty|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Honesty",
+        "parent_path": [],
+        "prediction": "Research worth modeling will openly surface what it does not show as well as what it does.",
+        "recurrence": 4,
+        "grounding_papers": [
+          "W7164547648",
+          "W7162525420",
+          "W7164678959",
+          "W7162256314"
+        ],
+        "confidence": "C",
+        "phi": "Root / standing prior anchoring the Forthcoming region; broad mindset hook, abstract.",
+        "precision": 0.91,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research worth modeling will openly surface what it does not show as well as what it does.",
+      "phi_note": "Root / standing prior anchoring the Forthcoming region; broad mindset hook, abstract.",
+      "precision": 0.91,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|attentive to power asymmetries|conscientiousness",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Attentive to power asymmetries",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "prediction": "Research will keep asking, of any design or framing, whose interests it serves and what it makes easy to hide — institutional actors, data movement, power gradients between system and user.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Imports a remote ethics/social region absent from the Rigor–Honesty cluster; high potential phi as a bridge, but single-grounded so speculative until it recurs.",
+        "edge_character": {
+          "kind": "associative",
+          "association": "thematic",
+          "remoteness": "remote"
+        },
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep asking, of any design or framing, whose interests it serves and what it makes easy to hide — institutional actors, data movement, power gradients between system and user.",
+      "phi_note": "Imports a remote ethics/social region absent from the Rigor–Honesty cluster; high potential phi as a bridge, but single-grounded so speculative until it recurs.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|conscientiousness|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Conscientiousness",
+        "parent_path": [],
+        "prediction": "Research will keep treating its choices as carrying ethical weight for those affected — attending to whom the work serves and what it conceals.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7162525420"
+        ],
+        "confidence": "S",
+        "phi": "Candidate new root opening a care/ethics region distinct from Rigor/Honesty; single-grounded, kept distinct (P17) rather than collapsed into Honesty.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep treating its choices as carrying ethical weight for those affected — attending to whom the work serves and what it conceals.",
+      "phi_note": "Candidate new root opening a care/ethics region distinct from Rigor/Honesty; single-grounded, kept distinct (P17) rather than collapsed into Honesty.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|exacting about tightness|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Research grounded here will not rest at a one-sided bound — it will pursue matching upper and lower bounds, minimax optimality, and the closing of any gap left by prior work, and will openly flag where its own bounds remain loose.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4378713459"
+        ],
+        "confidence": "S",
+        "phi": "Specific differentiation under Rigor (insistence on tight bounds); single-grounded, adds depth but little reach yet.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.6,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research grounded here will not rest at a one-sided bound — it will pursue matching upper and lower bounds, minimax optimality, and the closing of any gap left by prior work, and will openly flag where its own bounds remain loose.",
+      "phi_note": "Specific differentiation under Rigor (insistence on tight bounds); single-grounded, adds depth but little reach yet.",
+      "precision": 0.6,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "The authors hedge their interpretations throughout ('may underlie', 'might be associated', 'may reflect') and refuse to overclaim causal or clinical significance from cross-sectional correlational fMRI findings."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "In the discussion they explicitly question whether the observed abnormalities reflect pathophysiology or dynamic disease progression and concede they cannot exclude antipsychotic-medication confounds."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164547648",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "claim": "They state a null finding plainly (no significant PANSS–VMHC associations in either frequency band) and devote a candid limitations passage to unavailable medication dosage data, limited statistical power, and the cross-sectional design."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Authors volunteer that 'none of the studies was designed to investigate metaphor,' flag that participants were U.S.-based and Harry-Potter-fluent, and disclose Google funding and an FTC affiliation — conduct that openly surfaces what undercuts the clean account."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The provocation explicitly declines the strong claim ('does not argue that some metaphors are good and others bad'), labels the synthesis 'interpretive,' and calls for future studies to 'test the empirical claims raised here' — calibrated, non-overclaiming stance."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "Case 4 deliberately complicates the authors' own positive account by showing the praised metaphor mechanism becoming 'a tool for extracting disclosure' — turning a critical eye on their own argument rather than hiding its downside."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809449|value|attentive to power asymmetries|conscientiousness",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162525420",
+        "attribute": "value",
+        "concept_name": "Attentive to power asymmetries",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809449",
+        "claim": "The discussion frames metaphor choice as an ethical decision and foregrounds how a framing 'hides institutional actors, data movement, and power asymmetries,' centering whom a design serves and what it conceals from young users."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|rigor|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Rigor",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The authors take an explicitly 'mostly unsettled' question and discharge it with full proofs (Theorems 1–4 plus a multi-section appendix), treating the matter as not closed until rigorously established."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "They pair every upper bound with a matching minimax lower bound to prove near-optimality across the full range of the uncertainty level, and precisely quantify the factor by which prior upper/lower bounds were loose — a refusal to settle for one-sided guarantees."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The central claim is deliberately conditional — robustness is neither uniformly easier nor harder than standard RL; the verdict is indexed to the divergence metric and the size/shape of the uncertainty set rather than overgeneralized."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2305.16589|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4378713459",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "http://arxiv.org/abs/2305.16589",
+        "claim": "The authors state plainly where their own theory is tight (sigma of order one) and where it remains loose (by a polynomial horizon factor), disclosing the boundary of their contribution instead of obscuring it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "The authors cross-validate their novel ML-classifier sensitivity against the standard likelihood-ratio test as a benchmark, and re-test the result under alternative energy binnings, magnetic-field parameters, and EBL models (Appendix D), treating agreement as something to be earned."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "The authors volunteer that their hyperparameter choice is 'somewhat arbitrary', that Asimov datasets 'cannot be reliably used' with their method, and that higher-confidence (3σ/5σ) limits 'should be regarded as less reliable' — disclosing weaknesses unprompted."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164678959",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1140/epjc/s10052-026-15910-x",
+        "claim": "Spectral models are 'conservatively' extrapolated, results are framed as projected upper limits ('constraining ... rather than discovering'), and conclusions are consistently hedged, keeping claims calibrated to the simulated, model-dependent evidence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The authors construct an explicit falsification criterion ('if signatures are absent, non-specific, or fully accounted for by these covariates... the dog-linked account is weakened or rejected'), plus negative controls, within-site contrasts, specificity tests, and competing explanations — all aimed at how their own hypothesis could fail."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The commentary's stance is heavily hedged and bounded ('may have contributed', 'biologically plausible and testable', 'currently untested in deep-time'), and repeatedly refuses to overclaim ('we do not claim genetic canalization', 'any contribution to genetic evolution... remains speculative'), scaling each claim to the evidence."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7162256314",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "claim": "The authors volunteer the limits of their own proposal — 'this approach comes with caveats' (tissue specificity, only early-development changes recoverable), 'residual confounding effects are inevitable', and 'effect sizes may be modest' — disclosing what qualifies their case rather than concealing it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|value|skeptical of one's own conclusions|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "confidence": "C"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|value|forthcoming|https://doi.org/10.1080/15592294.2026.2676911",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.1080/15592294.2026.2676911",
+        "confidence": "C"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|value|forthcoming|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.3389/fpsyt.2026.1833948",
+        "confidence": "C"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|attentive to power asymmetries|value|forthcoming|https://doi.org/10.1145/3802974.3809449",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Attentive to power asymmetries"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809449",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|honesty|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|attentive to power asymmetries|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|conscientiousness|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fpsyt.2026.1833948|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809449|value|attentive to power asymmetries|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2305.16589|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1140/epjc/s10052-026-15910-x|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1080/15592294.2026.2676911|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|value|skeptical of one's own conclusions|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|value|forthcoming|https://doi.org/10.1080/15592294.2026.2676911",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|value|forthcoming|https://doi.org/10.3389/fpsyt.2026.1833948",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|attentive to power asymmetries|value|forthcoming|https://doi.org/10.1145/3802974.3809449",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 5,
+      "paper_citations": 0,
+      "concepts": 8,
+      "edges": 8,
+      "concept_links": 17,
+      "tunnel_links": 4,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 8,
+      "chaos_prediction_events": 26
+    }
+  },
+  "run_id": 5
+}

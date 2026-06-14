@@ -663,9 +663,6 @@ const Concept = ({
                   currentAttribute={currentAttribute}
                   onBreadcrumbClick={handleBreadcrumbClick}
                 />
-                {currentAttribute && (
-                  <span style={styles.graphAttributeBadge}>{currentAttribute.name}</span>
-                )}
               </>
             ) : (
               <div style={styles.decontextTitle}>

@@ -82,14 +82,9 @@ const ConceptLinksPanel = ({
 
   useEffect(() => { loadLinks(); }, [loadLinks]);
 
-  // Load situations
+  // Situations retired from the UI: never load combos for this edge.
   useEffect(() => {
-    if (!isChildrenView || !currentEdgeId) { setSituations([]); return; }
-    let cancelled = false;
-    combosAPI.getCombosByEdge(currentEdgeId)
-      .then(res => { if (!cancelled) setSituations(res.data || []); })
-      .catch(() => { if (!cancelled) setSituations([]); });
-    return () => { cancelled = true; };
+    setSituations([]);
   }, [currentEdgeId, isChildrenView]);
 
   useEffect(() => {
@@ -354,14 +349,10 @@ const ConceptLinksPanel = ({
         <>
           <div style={styles.tabBar}>
             <span onClick={() => setActiveTab('weblinks')} style={{ ...styles.tab, ...(activeTab === 'weblinks' ? styles.tabActive : {}) }}>Links</span>
-            {situations.length > 0 && (
-              <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('situations')} style={{ ...styles.tab, ...(activeTab === 'situations' ? styles.tabActive : {}) }}>Situations ({situations.length})</span></>
-            )}
             <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('mentions')} style={{ ...styles.tab, ...(activeTab === 'mentions' ? styles.tabActive : {}), ...(conceptMentionCount === 0 && activeTab !== 'mentions' ? { color: '#ccc' } : {}) }}>Mentioned by ({conceptMentionCount})</span></>
           </div>
           <div style={styles.content}>
             {activeTab === 'weblinks' && renderWebLinksTab()}
-            {activeTab === 'situations' && renderSituationsTab()}
             {activeTab === 'mentions' && (
               <MentionsPanel
                 targetType="concept"

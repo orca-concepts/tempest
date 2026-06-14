@@ -33,7 +33,7 @@ const AppShell = () => {
   // Phase 65a-fix-2: suppress default tab activation when the URL is a deep-link.
   // Mount-only — intentionally not reactive (loadAllTabs runs once at mount).
   const hasDeepLinkInUrl = useMemo(() => { // eslint-disable-line react-hooks/exhaustive-deps
-    return /^\/(concept|situation|link|tunnel)\/\d+$/.test(location.pathname);
+    return /^\/(concept|link|tunnel)\/\d+$/.test(location.pathname);
   }, []);
 
   // Phase 30g: Info page detection and header nav
@@ -185,15 +185,9 @@ const AppShell = () => {
       return;
     }
 
-    // /situation/:id
+    // /situation/:id — situations retired from the UI; redirect to home.
     const comboMatch = location.pathname.match(/^\/situation\/(\d+)$/);
     if (comboMatch) {
-      const comboId = parseInt(comboMatch[1]);
-      if (isGuest) {
-        setGuestComboId(comboId);
-      } else {
-        handleOpenSituationTab(comboId, '');
-      }
       navigate('/', { replace: true });
       return;
     }
@@ -342,29 +336,21 @@ const AppShell = () => {
   const loadAllTabs = async () => {
     try {
       setLoading(true);
-      const [graphRes, groupsRes, sidebarRes, comboSubsRes, myCombosRes] = await Promise.all([
+      const [graphRes, groupsRes, sidebarRes] = await Promise.all([
         votesAPI.getGraphTabs().catch(() => ({ data: { graphTabs: [] } })),
         votesAPI.getTabGroups().catch(() => ({ data: { tabGroups: [] } })),
         votesAPI.getSidebarItems().catch(err => {
           console.warn('getSidebarItems failed, sidebar order will be default:', err);
           return { data: { items: [] } };
         }),
-        combosAPI.getSubscriptions().catch(() => ({ data: { subscriptions: [] } })),
-        combosAPI.getMyCombos().catch(() => ({ data: { combos: [] } })),
       ]);
       const loadedGraph = graphRes.data.graphTabs;
       const loadedGroups = groupsRes.data.tabGroups;
-      const loadedComboSubs = (comboSubsRes.data.subscriptions || []).map(sub => ({
-        id: sub.id, // combo ID
-        combo_id: sub.id,
-        name: sub.name,
-        subscriber_count: sub.subscriber_count,
-        group_id: sub.group_id || null,
-      }));
       setGraphTabs(loadedGraph);
       setTabGroups(loadedGroups);
-      setComboSubscriptions(loadedComboSubs);
-      setOwnedCombos(myCombosRes.data.combos || []);
+      // Situations retired from the UI: never populate combo state (backend left intact).
+      setComboSubscriptions([]);
+      setOwnedCombos([]);
       setSidebarItems(sidebarRes.data.items || []);
 
       // Set active tab: prefer first graph tab, then first corpus tab.
@@ -1317,11 +1303,6 @@ const AppShell = () => {
                   title="View your saved concepts and upvoted links"
                 >Votes</button>
               )}
-              <button
-                onClick={() => { setVotesOpen(false); setComboView({ view: 'list' }); }}
-                style={styles.sidebarActionButton}
-                title="Browse and manage situations"
-              >Browse Situations</button>
             </div>
 
             <div style={styles.sidebarDivider} />

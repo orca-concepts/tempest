@@ -17,7 +17,7 @@
  *
  * Derivation:
  *   - working_set[] ← proposals.json.papers
- *   - proposals[]   ← the BASELINE items (concepts/links/tunnels/situations), carrying
+ *   - proposals[]   ← the BASELINE items (value-only: concepts/links/tunnels), carrying
  *                     each item's prediction_made / precision / provenance / surprise_level
  *                     / phi_note where present.
  *   - outcomes[]    ← BASELINE vs FINAL diff, keyed on each item's identity ref:
@@ -107,8 +107,6 @@ function refOf(type, item) {
     case 'tunnel':
       return `tunnel|${norm(item.from && item.from.attribute)}|${norm(item.from && item.from.name)}`
         + `|${norm(item.to && item.to.attribute)}|${norm(item.to && item.to.name)}|${norm(item.cogrounding_url)}`;
-    case 'situation':
-      return `situation|${norm(item.name)}`;
     default:
       return `${type}|${norm(item.name)}`;
   }
@@ -128,12 +126,13 @@ function ledgerOf(item) {
   };
 }
 
-// The proposal arrays in a proposals object, mapped to record `type`s.
+// The proposal arrays in a proposals object, mapped to record `type`s. Value-only
+// (v0.12): concept/link/tunnel only — Situations are retired and no longer derived.
+// (recordSchema.js keeps the 'situation' enum so historical records still validate.)
 const PROPOSAL_ARRAYS = [
   ['concepts', 'concept'],
   ['links', 'link'],
   ['tunnels', 'tunnel'],
-  ['situations', 'situation'],
 ];
 
 // Flatten a proposals object into [{ ref, type, item }], de-duplicating refs (a
@@ -157,14 +156,11 @@ function flatten(proposals) {
   return out;
 }
 
-// --- main ------------------------------------------------------------------
-function main() {
-  const baseline = readJson(BASELINE_PATH, 'baseline (proposals.reasoned.json)');
-  const final = readJson(FINAL_PATH, 'final proposals (proposals.json)');
-  const lastApply = readJson(LAST_APPLY_PATH, 'last-apply.json');
-
-  let notes = {};
-  if (NOTES_PATH) notes = readJson(NOTES_PATH, 'notes');
+// --- derivation (pure: no file I/O, no record write) -----------------------
+// Builds the episodic record object from the baseline/final/last-apply/notes inputs.
+// Exported so it can be exercised in memory (no write) by tests/harnesses.
+function deriveRecord(baseline, final, lastApply, notes) {
+  notes = notes || {};
   const noteReasons = (notes && typeof notes.reasons === 'object' && notes.reasons) || {};
 
   // working_set ← FINAL papers.
@@ -218,7 +214,18 @@ function main() {
     reflect,
   };
 
-  const tally = outcomes.reduce((m, o) => ((m[o.decision] = (m[o.decision] || 0) + 1), m), {});
+  return { record, addedInFinal };
+}
+
+// --- main (reads artifacts, derives, and WRITES the episodic record) --------
+function main() {
+  const baseline = readJson(BASELINE_PATH, 'baseline (proposals.reasoned.json)');
+  const final = readJson(FINAL_PATH, 'final proposals (proposals.json)');
+  const lastApply = readJson(LAST_APPLY_PATH, 'last-apply.json');
+  const notes = NOTES_PATH ? readJson(NOTES_PATH, 'notes') : {};
+
+  const { record, addedInFinal } = deriveRecord(baseline, final, lastApply, notes);
+  const tally = record.outcomes.reduce((m, o) => ((m[o.decision] = (m[o.decision] || 0) + 1), m), {});
   const { run_id, file } = writeRecord(record);
 
   console.log('Chaos record-run — episodic record written.');
@@ -226,15 +233,21 @@ function main() {
   console.log(`  file            : ${path.relative(process.cwd(), file)}`);
   console.log(`  db_run_id       : ${record.db_run_id}`);
   console.log(`  rubric_version  : ${record.rubric_version}`);
-  console.log(`  working_set     : ${working_set.length} paper(s)`);
-  console.log(`  proposals       : ${proposals.length} (from baseline)`);
+  console.log(`  working_set     : ${record.working_set.length} paper(s)`);
+  console.log(`  proposals       : ${record.proposals.length} (from baseline)`);
   console.log(`  outcomes        : accept ${tally.accept || 0} / modify ${tally.modify || 0} / reject ${tally.reject || 0}`);
   if (addedInFinal) console.log(`  note            : ${addedInFinal} item(s) added in final are not in the baseline — not recorded as proposals.`);
 }
 
-try {
-  main();
-} catch (err) {
-  console.error('record-run failed:', err.message);
-  process.exitCode = 1;
+// CLI entry — only runs (and WRITES a record) when invoked directly, so requiring this
+// module (e.g. a test harness) derives without writing into chaos/episodic/.
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    console.error('record-run failed:', err.message);
+    process.exitCode = 1;
+  }
 }
+
+module.exports = { deriveRecord, flatten, refOf };

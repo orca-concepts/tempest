@@ -74,9 +74,6 @@ const ConceptGrid = ({
                   <h3 style={styles.conceptName}>
                     {concept.name}
                   </h3>
-                  {showAttributeBadge && concept.attribute_name && (
-                    <span style={styles.attributeBadge}>{concept.attribute_name}</span>
-                  )}
                   {setIndices.length > 0 && (
                     <div style={styles.dotsContainer}>
                       {setIndices.map((setIndex) => {

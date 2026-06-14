@@ -66,6 +66,19 @@ const EFFORT = argValue('--effort') || 'high'; // low | medium | high | xhigh | 
 const MAX_PAPERS = parseInt(argValue('--max') || '8', 10);
 const FIELD_FILTER = argValue('--field') || null;
 
+// Bumped whenever the prompt TEMPLATES below change in a way that should invalidate
+// cached per-paper / integration results. It is folded into the cache key alongside
+// rubricHash() and the graph-state hash, so a prompt change (like the graph-reconcile
+// rework) auto-invalidates stale pre-change cache entries instead of silently reusing
+// them. The graph-state text is ALSO hashed into the key (see main()), so a run against
+// a grown graph re-reasons even at the same prompt version.
+const PROMPT_VERSION = 'p2-graph-reconcile';
+
+// Upper bound on inventory lines shown to the model (graph growth guard). Roots are
+// always included; nested concepts fill the remainder shallow-first; the rest is noted
+// as truncated rather than silently dropped.
+const MAX_INVENTORY_LINES = 250;
+
 const FULLTEXT_CHAR_CAP = 60000; // bound per-paper input tokens
 
 // Output ceilings. Opus 4.8's hard max_tokens is 128000; these stay well under it
@@ -140,9 +153,72 @@ function loadRubric() {
   return fs.readFileSync(RUBRIC_PATH, 'utf8');
 }
 
+// Build the per-edge concept inventory from the snapshot. Each EDGE is one entry (a
+// concept's contextual placement — the same concept under two parents is two entries,
+// per the path-dependent-identity model, P15/P17), so the model can reconcile against
+// the exact placements that already exist. Note: the snapshot carries no predictions /
+// recurrence, so entries are attribute · name · path only and are prioritized by DEPTH
+// (roots + shallow first), not by recurrence; if the snapshot ever carries the ledger,
+// the selection can prefer low-recurrence / shaky nodes instead.
+function buildInventory(snap) {
+  const nameById = new Map(asArray(snap.concepts).map((c) => [c.id, c.name]));
+  const eba = snap.edges_by_attribute || {};
+  const entries = [];
+  for (const attr of Object.keys(eba)) {
+    for (const e of asArray(eba[attr])) {
+      if (e.is_hidden) continue;
+      entries.push({
+        attribute: attr,
+        name: nameById.get(e.child_id) || `#${e.child_id}`,
+        pathNames: asArray(e.graph_path).map((id) => nameById.get(id) || `#${id}`),
+        isRoot: e.parent_id == null,
+        depth: asArray(e.graph_path).length,
+      });
+    }
+  }
+  return entries;
+}
+
+// Select a bounded slice: ALL roots always (most structurally load-bearing), then
+// nested concepts shallow-first up to the cap. Returns { chosen, truncated }.
+function selectInventory(entries) {
+  const roots = entries.filter((e) => e.isRoot);
+  const nested = entries
+    .filter((e) => !e.isRoot)
+    .sort((a, b) => a.depth - b.depth || a.attribute.localeCompare(b.attribute) || a.name.localeCompare(b.name));
+  if (roots.length >= MAX_INVENTORY_LINES) {
+    return { chosen: roots, truncated: nested.length };
+  }
+  const room = MAX_INVENTORY_LINES - roots.length;
+  return { chosen: roots.concat(nested.slice(0, room)), truncated: Math.max(0, nested.length - room) };
+}
+
+// Render the selected inventory grouped by attribute, roots first within each group.
+function renderInventory(chosen) {
+  const byAttr = new Map();
+  for (const e of chosen) {
+    if (!byAttr.has(e.attribute)) byAttr.set(e.attribute, []);
+    byAttr.get(e.attribute).push(e);
+  }
+  const out = [];
+  for (const attr of [...byAttr.keys()].sort()) {
+    out.push(`  [${attr}]`);
+    const list = byAttr.get(attr).sort(
+      (a, b) => (b.isRoot ? 1 : 0) - (a.isRoot ? 1 : 0) || a.depth - b.depth || a.name.localeCompare(b.name)
+    );
+    for (const e of list) {
+      const where = e.isRoot ? '(root)' : `under: ${e.pathNames.join(' › ')}`;
+      out.push(`    · ${e.name}  ${where}`);
+    }
+  }
+  return out;
+}
+
 // Compact, human-readable view of the current dev-graph state, derived from the
 // snapshot. Deliberately omits the snapshot meta block (connection details) so
-// nothing graph-internal leaks into the prompt or the cached outputs.
+// nothing graph-internal leaks into the prompt or the cached outputs. Now includes the
+// actual concept INVENTORY (names + paths), not just counts, so the model reconciles
+// against what exists instead of re-bootstrapping.
 function loadGraphState() {
   const snap = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
   const c = snap.counts || {};
@@ -164,6 +240,18 @@ function loadGraphState() {
         'article instantiates is therefore a GAP under P14 (there is nothing yet to ' +
         'non-confirm or mis-structure). Be conservative with the concept budget.'
     );
+    return { text: lines.join('\n'), isEmpty };
+  }
+
+  const { chosen, truncated } = selectInventory(buildInventory(snap));
+  lines.push('');
+  lines.push(
+    'EXISTING CONCEPTS — reconcile against these (do NOT re-bootstrap). Each line is one ' +
+      'existing contextual placement: `· name  (root)` or `· name  under: <ancestor path>`.'
+  );
+  lines.push(...renderInventory(chosen));
+  if (truncated > 0) {
+    lines.push(`  … (${truncated} more nested concept(s) not shown — cap ${MAX_INVENTORY_LINES})`);
   }
   return { text: lines.join('\n'), isEmpty };
 }
@@ -272,7 +360,7 @@ function paperPromptText(rec) {
 
 const PHASE_ENUM = PHASES.map((p) => `"${p}"`).join(' | ');
 
-function perPaperSystem(rubric, graphStateText) {
+function perPaperSystem(rubric, graphStateText, isEmpty) {
   return [
     'You are Chaos, a tool that proposes contributions to Orca’s concept graphs.',
     'Your governing brain — the principles, the run procedure, and the formats — is the',
@@ -299,6 +387,28 @@ function perPaperSystem(rubric, graphStateText) {
     'the article’s vocabulary), P9 (self-anchored, a short noun/gerund/imperative',
     'phrase, never a proposition). Apply the P5 hypothetical-researcher test and the P8',
     'co-grounding check. Be conservative with the concept budget.',
+    '',
+    'RECONCILE AGAINST THE EXISTING GRAPH (operationalizes P1/P6/P13/P17 — the graph',
+    'above is what already exists; do NOT reason as if it were empty):',
+    '  - EXACT re-instantiation → CONFIRM. If a concept you extract is the SAME concept',
+    '    already in the graph (same disposition/action/tool/question in the same context),',
+    '    re-emit it at the SAME attribute + name + parent_path as the existing entry, with',
+    '    this paper as grounding. This is a confirmation (it lets recurrence accrue across',
+    '    runs). Do NOT mint a near-variant name for a concept that already exists.',
+    '  - RELATED-BUT-DISTINCT variant → NEST, do not collapse. Keep it distinct from the',
+    '    existing concept (anti-essentialism, P17 — never merge two genuinely different',
+    '    contextual concepts into one), and do NOT add it as a new top-level root. Place it',
+    '    under the most appropriate EXISTING parent, or, if several new siblings belong',
+    '    together, propose a new INTERMEDIATE root to cluster them (integrate by connection,',
+    '    not by collapse).',
+    '  - GENUINELY NEW region → a new root, ONLY when no existing parent fits.',
+    isEmpty
+      ? 'The graph is empty this run, so prediction_test.non_confirmations and .mis_structures are []'
+        + ' (nothing exists yet to disconfirm or mis-structure).'
+      : 'Because the graph is NON-EMPTY, actively TEST it: populate prediction_test.non_confirmations'
+        + ' with existing concepts/predictions listed above that THIS paper fails to confirm, and'
+        + ' .mis_structures with existing placements this paper suggests are wrong (P6). They are not'
+        + ' automatically empty — only an empty graph yields empty lists.',
     '',
     'OUTPUT CONTRACT: return STRICT JSON ONLY — no prose, no markdown fences, no',
     'commentary. A single JSON object with exactly these keys:',
@@ -330,15 +440,15 @@ function perPaperSystem(rubric, graphStateText) {
     '  ],',
     '  "prediction_test": {',
     '    "gaps": string[],              // concept names the article instantiates that the graph cannot hold',
-    '    "non_confirmations": string[], // empty on an empty graph',
-    '    "mis_structures": string[]     // empty on an empty graph',
+    '    "non_confirmations": string[], // existing predictions this paper fails to confirm ([] only if the graph is empty)',
+    '    "mis_structures": string[]     // existing placements this paper suggests are wrong, P6 ([] only if the graph is empty)',
     '  }',
     '}',
     'Use the EXACT phase strings listed above. Return only the JSON object.',
   ].join('\n');
 }
 
-function integrationSystem(rubric) {
+function integrationSystem(rubric, graphStateText) {
   return [
     'You are Chaos. Your governing brain is the rubric below (chaos.md). Obey it exactly.',
     '',
@@ -346,10 +456,21 @@ function integrationSystem(rubric) {
     rubric,
     '================ END chaos.md ================',
     '',
+    graphStateText,
+    '',
     'YOUR TASK THIS CALL: the INTEGRATION pass (chaos.md §8 steps 4–5) over the',
     'accumulated per-paper candidates (provided in the user turn). Do all of:',
+    '  - RECONCILE AGAINST THE EXISTING GRAPH FIRST (P1/P6/P13/P17): for each merged',
+    '    concept, decide whether it is the SAME as a concept already in CURRENT GRAPH STATE',
+    '    (re-emit at the existing attribute + name + parent_path — a cross-run confirmation),',
+    '    a RELATED-BUT-DISTINCT variant (keep it distinct — never collapse into the existing',
+    '    one, P17 — and place it under an existing parent or a NEW intermediate root rather',
+    '    than as a flat new root), or GENUINELY NEW (a new root only if no existing parent',
+    '    fits). Prefer nesting/clustering over minting top-level roots.',
     '  - Merge near-duplicate concepts across papers (same attribute + the same',
-    '    underlying disposition/action/tool/question, even if worded differently).',
+    '    underlying disposition/action/tool/question, even if worded differently) — but only',
+    '    merge WITHIN this batch; do not merge a new concept INTO an existing graph concept',
+    '    (confirm it instead, per the reconcile step above).',
     '  - Tally RECURRENCE (P13): how many DISTINCT papers independently exemplify each',
     '    merged concept. recurrence >= 2 => confidence "C" (confirmed in-batch);',
     '    recurrence == 1 => confidence "S" (single-grounded, speculative).',
@@ -501,15 +622,19 @@ function rubricHash() {
   return _rubricHash;
 }
 
-function cachePathFor(id) {
-  return path.join(CACHE_DIR, `${id}-r${rubricHash()}.json`);
+// stateHash salts the cache key with PROMPT_VERSION + the graph-state text, so a prompt
+// template change OR a changed existing-graph inventory invalidates stale per-paper /
+// integration cache entries (the prompt now embeds the inventory, so a result reasoned
+// against a different graph must not be reused). Combined with rubricHash() in the key.
+function cachePathFor(id, stateHash) {
+  return path.join(CACHE_DIR, `${id}-r${rubricHash()}-s${stateHash}.json`);
 }
 
-async function runPerPaper(selected, systemText) {
+async function runPerPaper(selected, systemText, stateHash) {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
   const results = [];
   for (const entry of selected) {
-    const cp = cachePathFor(entry.id);
+    const cp = cachePathFor(entry.id, stateHash);
     if (fs.existsSync(cp)) {
       try {
         const cached = JSON.parse(fs.readFileSync(cp, 'utf8'));
@@ -602,14 +727,14 @@ function fnv1a(str) {
   return h.toString(16).padStart(8, '0');
 }
 
-function integrationCachePath(compact) {
-  const h = fnv1a(JSON.stringify(compact) + `|${MODEL}|${EFFORT}|r${rubricHash()}`);
+function integrationCachePath(compact, stateHash) {
+  const h = fnv1a(JSON.stringify(compact) + `|${MODEL}|${EFFORT}|r${rubricHash()}|s${stateHash}`);
   return path.join(CACHE_DIR, `integration-${h}.json`);
 }
 
-async function runIntegration(perPaper, rubric) {
+async function runIntegration(perPaper, rubric, graphStateText, stateHash) {
   const compact = compactCandidates(perPaper);
-  const cp = integrationCachePath(compact);
+  const cp = integrationCachePath(compact, stateHash);
   if (fs.existsSync(cp)) {
     console.log(`  [cache] integration  (${path.basename(cp)})`);
     try {
@@ -619,7 +744,7 @@ async function runIntegration(perPaper, rubric) {
     }
   }
   console.log('  [integrate] merging candidates, tallying recurrence, composing situations…');
-  const system = integrationSystem(rubric);
+  const system = integrationSystem(rubric, graphStateText);
   const userText =
     'ACCUMULATED PER-PAPER CANDIDATES (compact JSON; reason over these, not full texts):\n\n' +
     JSON.stringify(compact, null, 2);
@@ -1016,12 +1141,19 @@ function runOutcomeDefaults() {
 // future reasoning phase that emits any of these wins.
 function assignIntegrationFields(integration, fieldsByPaper) {
   const concepts = asArray(integration.concepts);
+  // Confirmation-event defaults live on the CONCEPT object because apply.js reads
+  // c.provenance / c.severe off each concept (not off prediction_test). Without this,
+  // every chaos_prediction_events.provenance was null. No sampling plan in this phase →
+  // confirmations are 'independent' and not 'severe' (targeted sampling is future work).
+  const { provenance: defProvenance, severe: defSevere } = runOutcomeDefaults();
   const recByKey = new Map();
   for (const c of concepts) recByKey.set(`${c.attribute}|${normName(c.name)}`, Number(c.recurrence) || 0);
   for (const c of concepts) {
     // No sampling plan in bootstrapping → no targeted confirmations (targetedSet omitted).
     if (c.precision == null) c.precision = precisionFor(c, fieldsByPaper);
     if (c.surprise_level == null) c.surprise_level = surpriseLevelOfConcept(c, recByKey);
+    if (c.provenance == null) c.provenance = defProvenance; // 'independent'
+    if (c.severe == null) c.severe = defSevere;             // false
   }
   for (const st of asArray(integration.situations)) {
     if (st.entrenchment_status == null) st.entrenchment_status = 'ad-hoc'; // §5 fresh
@@ -1318,7 +1450,11 @@ async function main() {
   console.log(`max=${MAX_PAPERS}${FIELD_FILTER ? `  field=${FIELD_FILTER}` : ''}  model=${MODEL}  effort=${EFFORT}\n`);
 
   const rubric = loadRubric();
-  const { text: graphStateText } = loadGraphState();
+  const { text: graphStateText, isEmpty } = loadGraphState();
+  // Salts both cache layers: PROMPT_VERSION (prompt-template changes) + the graph-state
+  // text (the inventory the prompt now embeds). A grown graph or a bumped prompt version
+  // yields a new stateHash, so stale pre-change cache entries are never reused.
+  const stateHash = fnv1a(`${PROMPT_VERSION}|${graphStateText}`);
   const selected = selectPapers();
   if (!selected.length) {
     console.error('No papers selected. Check chaos/papers/ and any --field filter.');
@@ -1327,8 +1463,8 @@ async function main() {
   console.log(`Selected ${selected.length} paper(s):`);
 
   // Phase a: per-paper.
-  const systemText = perPaperSystem(rubric, graphStateText);
-  const perPaper = await runPerPaper(selected, systemText);
+  const systemText = perPaperSystem(rubric, graphStateText, isEmpty);
+  const perPaper = await runPerPaper(selected, systemText, stateHash);
   if (!perPaper.length) {
     console.error('No per-paper candidates produced. Aborting before integration.');
     process.exit(1);
@@ -1336,7 +1472,7 @@ async function main() {
 
   // Phase b: integration.
   console.log('\nIntegration pass:');
-  const integration = await runIntegration(perPaper, rubric);
+  const integration = await runIntegration(perPaper, rubric, graphStateText, stateHash);
 
   // Rebuild concepts locally + apply the Stage-5 fixes: merge-rewrite links/tunnels/
   // situations to canonical names, emit ancestors explicitly, normalize reading lists
@@ -1412,6 +1548,12 @@ module.exports = {
   runOutcomeDefaults,
   assignIntegrationFields,
   finalizeProposals,
+  // Graph-reconciliation surface (exported for tests / inspection):
+  loadGraphState,
+  buildInventory,
+  selectInventory,
+  perPaperSystem,
+  integrationSystem,
   PHASES,
   ATTRIBUTES,
 };

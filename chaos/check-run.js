@@ -332,7 +332,11 @@ async function main() {
             p.precision,
             COALESCE(r.recurrence, 0)::int AS recurrence
      FROM chaos_predictions p
-     LEFT JOIN concepts c ON c.id = p.target_id
+     -- concept events store target_id = the leaf EDGE id, so hop edge -> child concept
+     -- for the name (joining concepts directly on target_id is only coincidentally right
+     -- while no edge id collides with an unrelated concept id).
+     LEFT JOIN edges e ON e.id = p.target_id
+     LEFT JOIN concepts c ON c.id = e.child_id
      LEFT JOIN (
        SELECT target_id, COUNT(*) AS recurrence
        FROM chaos_prediction_events
@@ -362,7 +366,9 @@ async function main() {
     `SELECT p.target_id, c.name AS concept_name, p.precision,
             COALESCE(ea.cnt, 0)::int AS expected_absent
      FROM chaos_predictions p
-     LEFT JOIN concepts c ON c.id = p.target_id
+     -- concept events store target_id = the leaf EDGE id; hop edge -> child concept for the name.
+     LEFT JOIN edges e ON e.id = p.target_id
+     LEFT JOIN concepts c ON c.id = e.child_id
      LEFT JOIN (
        SELECT target_id, COUNT(*) AS cnt FROM chaos_prediction_events
        WHERE target_type='concept' AND event='expected_absent'

@@ -60,7 +60,10 @@ const looksProd = (s) => PROD_MARKERS.some((m) => String(s || '').toLowerCase().
 // Classification rules.
 //
 // PRESERVE — structural / reference / identity tables. Never truncated.
-//   • attributes              the four seeded attribute domains (reference data)
+//   • attributes              the seeded attribute domain(s) (reference data). Value-only
+//                             post-pivot: `value` is the live domain; the dormant
+//                             action/tool/question rows are still seeded and preserved
+//                             (deleting them is a separate owner step).
 //   • users                   accounts / auth / identity
 //   • *migration* / session   migration-tracking or session tables, if any appear
 //
@@ -212,6 +215,13 @@ async function rowCounts(tables) {
   return out;
 }
 
+// Read the attribute reference rows (id + name). Used both for the pre-flight
+// value-only check and the post-reset preservation check.
+async function fetchAttributes() {
+  const { rows } = await pool.query('SELECT id, name FROM attributes ORDER BY id');
+  return rows;
+}
+
 // Find FKs from a table OUTSIDE the WIPE set into a table INSIDE it. Such an FK would
 // block a no-CASCADE truncate; we report it and abort rather than cascading.
 async function fkBlockers(wipeLive) {
@@ -314,6 +324,32 @@ async function main() {
   guard(conn);
   console.log('Production guard   : PASSED (localhost + concept_hierarchy, no DATABASE_URL, no prod markers)\n');
 
+  // 1b) Attribute-shape check (value-only pivot). The app is value-only via
+  //     ENABLED_ATTRIBUTES=value, but the dormant action/tool/question rows are still
+  //     seeded (deleting them is a separate owner step). We REQUIRE the `value` row to be
+  //     present (it is preserved by the reset); the dormant extras are tolerated. If
+  //     `value` is missing, the app-side state is not what we expect — refuse, BEFORE any
+  //     backup or truncation.
+  const attrRows = await fetchAttributes();
+  const valuePresent = attrRows.some((r) => r.name === 'value');
+  console.log('--- ATTRIBUTES  (preserved as reference data) ------------------------');
+  console.log(`  count: ${attrRows.length}`);
+  for (const r of attrRows) {
+    const tag =
+      r.name === 'value'
+        ? '   <- value-only live domain (required)'
+        : '   (dormant — disabled via ENABLED_ATTRIBUTES; remove in a separate step)';
+    console.log(`  ${String(r.id).padEnd(5)} ${r.name.padEnd(10)}${tag}`);
+  }
+  if (!valuePresent) {
+    console.error('\n*** ATTRIBUTE CHECK FAILED — refusing to run ***');
+    console.error('The `value` attribute row is missing. Expected a value-only graph with the');
+    console.error('`value` domain preserved. No backup was taken, nothing was truncated.');
+    await pool.end();
+    process.exit(1);
+  }
+  console.log('  value attribute    : PRESENT (preserved by the reset)\n');
+
   // 2) Classify the live schema.
   const tables = await liveTables();
   const preserve = [];
@@ -406,7 +442,10 @@ async function main() {
   // 8) Post-reset verification.
   const after = await rowCounts(tables);
   const allZero = wipeLive.every((t) => after[t] === 0);
-  const attrsOk = after.attributes === 4;
+  // Attributes are PRESERVED (reference data), not wiped: the `value` domain must still be
+  // present and no attribute rows may have been lost (count unchanged from the pre-flight).
+  const afterAttrs = await fetchAttributes();
+  const attrsOk = afterAttrs.some((r) => r.name === 'value') && after.attributes === attrRows.length;
   const allPresent = (await liveTables()).length === tables.length;
   // sequence restart check on a representative table that just had rows.
   let seqOk = true;
@@ -422,7 +461,7 @@ async function main() {
 
   console.log('--- POST-RESET CHECK -------------------------------------------------');
   console.log(`  WIPE tables all at 0       : ${allZero ? 'YES' : 'NO'}`);
-  console.log(`  attributes still present   : ${attrsOk ? 'YES (4)' : `NO (${after.attributes})`}`);
+  console.log(`  attributes preserved       : ${attrsOk ? `YES (${after.attributes}, incl. value)` : `NO (${after.attributes})`}`);
   console.log(`  users preserved            : ${after.users} row(s)`);
   console.log(`  every table still present  : ${allPresent ? 'YES' : 'NO'}`);
   console.log(`  sequences restarted        : ${seqOk ? 'YES (concepts.id → 1)' : 'CHECK'}`);

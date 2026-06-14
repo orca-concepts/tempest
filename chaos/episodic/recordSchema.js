@@ -103,6 +103,13 @@ function validate(record) {
     errors.push('reflect must be an object or null');
   }
 
+  // db_run_id: OPTIONAL. apply.js's hash run_id (the `reason-v<rubric>-<hash>` string),
+  // linking this episodic record to the DB rows the run wrote. Absent/null on records
+  // written before this field existed — backward-compatible: only validated when present.
+  if (record.db_run_id !== undefined && record.db_run_id !== null && !isString(record.db_run_id)) {
+    errors.push('db_run_id must be a string or null when present');
+  }
+
   // --- working_set ---
   if (!isArray(record.working_set)) {
     errors.push('working_set must be an array');

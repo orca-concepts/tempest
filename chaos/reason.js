@@ -54,6 +54,10 @@ const MANIFEST_PATH = path.join(PAPERS_DIR, 'index.json');
 const CACHE_DIR = path.join(CHAOS_DIR, 'reason_cache');
 const PROPOSALS_MD = path.join(CHAOS_DIR, 'proposals.md');
 const PROPOSALS_JSON = path.join(CHAOS_DIR, 'proposals.json');
+// Immutable pre-review baseline (an exact copy of proposals.json as reasoned, before
+// any human review). chaos/record-run.js diffs the final proposals.json against this
+// to derive episodic outcomes (accept / reject / modify).
+const PROPOSALS_REASONED_JSON = path.join(CHAOS_DIR, 'proposals.reasoned.json');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';
@@ -1106,6 +1110,10 @@ function writeJson(integration, perPaper, selected, dist, finalLinks) {
       : {}),
   };
   fs.writeFileSync(PROPOSALS_JSON, JSON.stringify(out, null, 2), 'utf8');
+  // Also write the immutable baseline. `out` is the full integration result for the
+  // run, so this reflects the complete reasoned set regardless of per-paper cache
+  // reuse. record-run.js compares the (human-edited) proposals.json against this.
+  fs.writeFileSync(PROPOSALS_REASONED_JSON, JSON.stringify(out, null, 2), 'utf8');
 }
 
 function rubricVersion() {
@@ -1297,7 +1305,7 @@ function printSummary(integration, dist) {
   console.log(`  cache write tokens:           ${usageTotals.cache_creation_input_tokens}`);
   console.log(`  cache read tokens:            ${usageTotals.cache_read_input_tokens}`);
   console.log(`  output tokens:                ${usageTotals.output_tokens}`);
-  console.log('\nWrote chaos/proposals.md and chaos/proposals.json');
+  console.log('\nWrote chaos/proposals.md, chaos/proposals.json, and chaos/proposals.reasoned.json (baseline)');
   console.log('=============================================\n');
 }
 

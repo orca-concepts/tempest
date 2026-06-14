@@ -34,6 +34,9 @@ const REPO_DIR = path.join(CHAOS_DIR, '..');
 const BACKEND_DIR = path.join(REPO_DIR, 'backend');
 const PAPERS_DIR = path.join(CHAOS_DIR, 'papers');
 const BACKUPS_DIR = path.join(REPO_DIR, 'backups');
+// Run-identity sidecar written after a successful apply so chaos/record-run.js can link
+// the episodic record to the DB rows this run wrote (apply's hash run_id + applied counts).
+const LAST_APPLY_PATH = path.join(CHAOS_DIR, 'last-apply.json');
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const SEED_USERNAME = 'chaos-seed-data';
@@ -797,6 +800,18 @@ async function main() {
   console.log('\nApplied. Rows CREATED per table:');
   for (const [t, n] of Object.entries(stats)) console.log(`  ${t.padEnd(26)} ${n}`);
   console.log(`\nAttribution: created_by / added_by = chaos-seed id ${seedId}`);
+
+  // Persist the run identity (additive — apply already computed plan.runId; we only
+  // record it). record-run.js reads this to populate the episodic record's db_run_id,
+  // rubric_version, and applied counts. Written only on a successful apply.
+  const lastApply = {
+    run_id: plan.runId,
+    rubric_version: proposals.rubric_version || null,
+    applied_at: new Date().toISOString(),
+    counts: stats,
+  };
+  fs.writeFileSync(LAST_APPLY_PATH, JSON.stringify(lastApply, null, 2) + '\n', 'utf8');
+  console.log(`Wrote ${path.relative(REPO_DIR, LAST_APPLY_PATH)} (run_id ${plan.runId}).`);
 
   if (plan.unmapped.length) {
     console.log('\n---- DID NOT MAP CLEANLY (design feedback) ----');

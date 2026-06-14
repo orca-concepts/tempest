@@ -206,23 +206,7 @@ async function main() {
     orphanEdges.rowCount === 0 ? 'all edges resolve parent + child'
       : `${orphanEdges.rowCount} edge(s): ${orphanEdges.rows.map((r) => r.id).join(', ')}`);
 
-  // 4. situation_meta completeness — every combo has a meta row with entrenchment_status.
-  const combosMissingMeta = await q(
-    `SELECT c.id, c.name,
-            (m.combo_id IS NULL) AS missing_meta,
-            (m.combo_id IS NOT NULL AND m.entrenchment_status IS NULL) AS null_status
-     FROM combos c
-     LEFT JOIN chaos_situation_meta m ON m.combo_id = c.id
-     WHERE m.combo_id IS NULL OR m.entrenchment_status IS NULL
-     ORDER BY c.id`
-  );
-  const totalCombos = await scalar(`SELECT COUNT(*)::int AS n FROM combos`);
-  check('situation_meta completeness', combosMissingMeta.rowCount === 0,
-    combosMissingMeta.rowCount === 0 ? `${totalCombos} combo(s), all have meta + entrenchment_status`
-      : `${combosMissingMeta.rowCount} combo(s) missing/incomplete: ` +
-        combosMissingMeta.rows.map((r) => `${r.id}:${r.name}${r.missing_meta ? '(no meta)' : '(null status)'}`).join(', '));
-
-  // 5. Ledger fields — FAIL only if columns are ABSENT; report null distribution.
+  // 4. Ledger fields — FAIL only if columns are ABSENT; report null distribution.
   const ledgerCols = [
     ['chaos_predictions', 'precision'],
     ['chaos_prediction_events', 'provenance'],
@@ -262,7 +246,7 @@ async function main() {
     note('chaos_prediction_events.surprise_level', `local ${e.sur_local} / parent_unabsorbed ${e.sur_parent} / null ${e.sur_null}`);
   }
 
-  // 6. Papers — every concept_link paper reference resolves to a papers row w/ openalex_id.
+  // 5. Papers — every concept_link paper reference resolves to a papers row w/ openalex_id.
   const badPaperRefs = await q(
     `SELECT cl.id, cl.paper_id
      FROM concept_links cl
@@ -275,7 +259,7 @@ async function main() {
     badPaperRefs.rowCount === 0 ? `${linkedPaperRefs} paper-linked link(s), all resolve to a paper with openalex_id`
       : `${badPaperRefs.rowCount} bad ref(s): ${badPaperRefs.rows.map((r) => `link ${r.id}->paper ${r.paper_id}`).join(', ')}`);
 
-  // 7. Episodic — a run-*.json record exists for run content. PASS when the graph is
+  // 6. Episodic — a run-*.json record exists for run content. PASS when the graph is
   //    empty and no run has happened yet; FAIL only when the DB holds run content but
   //    no episodic record was written (the real integrity violation this guards).
   const runFiles = listRunFiles();
@@ -298,21 +282,12 @@ async function main() {
   // ====================== DIAGNOSTICS (never fail) =====================
   console.log('\n--- DIAGNOSTICS ------------------------------------------------------');
 
-  // Counts.
-  const conceptsByAttr = await q(
-    `SELECT a.name AS attribute, COUNT(DISTINCT e.child_id)::int AS concepts
-     FROM edges e JOIN attributes a ON a.id = e.attribute_id
-     GROUP BY a.name ORDER BY a.name`
-  );
-  console.log('\n• Concepts by attribute:');
-  printTable(['attribute', 'concepts'], conceptsByAttr.rows.map((r) => [r.attribute, r.concepts]));
-
+  // Counts. (Single attribute domain post-v0.12, so no by-attribute breakdown.)
   const totals = await q(
     `SELECT
        (SELECT COUNT(*) FROM concepts)::int                  AS concepts,
        (SELECT COUNT(*) FROM edges)::int                     AS edges,
        (SELECT COUNT(*) FROM concept_links)::int             AS links,
-       (SELECT COUNT(*) FROM combos)::int                    AS combos,
        (SELECT COUNT(*) FROM tunnel_links)::int              AS tunnels,
        (SELECT COUNT(*) FROM papers)::int                    AS papers,
        (SELECT COUNT(*) FROM chaos_predictions)::int         AS predictions,
@@ -321,8 +296,8 @@ async function main() {
   const t = totals.rows[0];
   console.log('\n• Totals:');
   printTable(
-    ['concepts', 'edges', 'links', 'combos', 'tunnels', 'papers', 'predictions', 'events'],
-    [[t.concepts, t.edges, t.links, t.combos, t.tunnels, t.papers, t.predictions, t.events]]
+    ['concepts', 'edges', 'links', 'tunnels', 'papers', 'predictions', 'events'],
+    [[t.concepts, t.edges, t.links, t.tunnels, t.papers, t.predictions, t.events]]
   );
 
   // Precision × recurrence (recurrence = independent confirmed events). Highlight >= 2.

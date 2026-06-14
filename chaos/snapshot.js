@@ -3,8 +3,9 @@
 /**
  * Chaos — read-only database snapshot.
  *
- * Reads the current Orca dev graph (concepts, edges, links, situations/combos,
- * tunnels) into a single structured object and writes it to chaos/snapshot.json.
+ * Reads the current Orca dev graph (concepts, edges, links, tunnels) into a single
+ * structured object and writes it to chaos/snapshot.json. Single attribute domain
+ * (value) post-v0.12; Situations/combos are retired and no longer loaded.
  *
  * This is the "Snapshot" plumbing stage of the Chaos pipeline (chaos.md §8.1).
  * It is READ-ONLY: every query is a SELECT. It performs no INSERT/UPDATE/DELETE,
@@ -43,7 +44,9 @@ const OUTPUT_PATH = path.join(__dirname, 'snapshot.json');
 async function main() {
   console.log('Chaos snapshot — connecting to the Orca dev database (read-only)...');
 
-  // --- Attributes (the four domains: value, action, tool, question) ---
+  // --- Attributes (single domain post-v0.12: value. The dev DB may still hold the
+  //     legacy action/tool/question rows until a separate reset; we mirror whatever
+  //     is present rather than filtering). ---
   const attributes = (
     await pool.query(`
       SELECT id, name
@@ -73,7 +76,8 @@ async function main() {
     `)
   ).rows;
 
-  // Group edges by attribute name (chaos.md models the graph by domain).
+  // Group edges by attribute name. Generic over attributes — collapses to a single
+  // `value` group once the DB is value-only; mirrors whatever attributes exist now.
   // Edges whose attribute_id has no match land under "unknown".
   const edgesByAttribute = {};
   for (const a of attributes) edgesByAttribute[a.name] = [];
@@ -92,24 +96,7 @@ async function main() {
     `)
   ).rows;
 
-  // --- Situations (combos) and their member edges ---
-  const combos = (
-    await pool.query(`
-      SELECT id, name, description, created_by, created_at
-      FROM combos
-      ORDER BY id
-    `)
-  ).rows;
-
-  const comboEdges = (
-    await pool.query(`
-      SELECT id, combo_id, edge_id, added_at
-      FROM combo_edges
-      ORDER BY id
-    `)
-  ).rows;
-
-  // --- Tunnel links (bidirectional cross-graph connections) ---
+  // --- Tunnel links (value↔value associative connections) ---
   const tunnelLinks = (
     await pool.query(`
       SELECT id, origin_edge_id, linked_edge_id, comment, created_by, created_at
@@ -150,8 +137,6 @@ async function main() {
       concepts: concepts.length,
       edges: edges.length,
       concept_links: conceptLinks.length,
-      combos: combos.length,
-      combo_edges: comboEdges.length,
       tunnel_links: tunnelLinks.length,
       papers: papersCount,
       paper_citations: paperCitationsCount,
@@ -162,8 +147,6 @@ async function main() {
     concepts,
     edges_by_attribute: edgesByAttribute,
     concept_links: conceptLinks,
-    combos,
-    combo_edges: comboEdges,
     tunnel_links: tunnelLinks,
   };
 

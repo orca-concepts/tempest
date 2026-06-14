@@ -1,0 +1,1083 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T22:06:28.077Z",
+  "rubric_version": "0.12",
+  "db_run_id": "reason-v0.12-b3fa61af",
+  "working_set": [
+    {
+      "paper_ref": "W7154682672",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4404368199",
+      "source_field": "linguistics",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4405957103",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4405033621",
+      "source_field": "philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7161779572",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164579466",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|value|exacting about tightness|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Research conduct will keep showing complete, gap-free derivation — every claim earned by full proof, bounds stated tightly (frame bounds, operator norms), nothing assumed that is not established.",
+        "recurrence": 5,
+        "grounding_papers": [
+          "W4404368199",
+          "W4405957103",
+          "W4405033621",
+          "W7161779572",
+          "W7164579466"
+        ],
+        "confidence": "C",
+        "phi": "Five-discipline degeneracy (math, AI, philosophy, anthropology, neuroscience) — strongest cross-region bridge in the batch; one disposition realized across many cultures of research.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.94,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research conduct will keep showing complete, gap-free derivation — every claim earned by full proof, bounds stated tightly (frame bounds, operator norms), nothing assumed that is not established.",
+      "phi_note": "Five-discipline degeneracy (math, AI, philosophy, anthropology, neuroscience) — strongest cross-region bridge in the batch; one disposition realized across many cultures of research.",
+      "precision": 0.94,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|forthcoming|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Research that openly surfaces ambiguity, definitional plurality, and the structural limits of its own subject (rather than papering over messiness) will keep instantiating a forthcoming disposition.",
+        "recurrence": 3,
+        "grounding_papers": [
+          "W7154682672",
+          "W4405957103",
+          "W4405033621"
+        ],
+        "confidence": "C",
+        "phi": "Spans psychology, math/AI, and philosophy; anchors the Honesty region while degeneracy keeps it specific — a confirmed bridge.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.86,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research that openly surfaces ambiguity, definitional plurality, and the structural limits of its own subject (rather than papering over messiness) will keep instantiating a forthcoming disposition.",
+      "phi_note": "Spans psychology, math/AI, and philosophy; anchors the Honesty region while degeneracy keeps it specific — a confirmed bridge.",
+      "precision": 0.86,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|integrative|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Integrative",
+        "parent_path": [],
+        "prediction": "Researchers will keep situating and motivating abstract results by mapping them onto structurally parallel results in other domains, treating cross-domain unity as a goal rather than a coincidence.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405957103"
+        ],
+        "confidence": "S",
+        "phi": "Hub disposition by nature — earns the distance-work premium (P12) since it names connecting separated regions; single-grounded so speculative, but high-reach if it recurs.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep situating and motivating abstract results by mapping them onto structurally parallel results in other domains, treating cross-domain unity as a goal rather than a coincidence.",
+      "phi_note": "Hub disposition by nature — earns the distance-work premium (P12) since it names connecting separated regions; single-grounded so speculative, but high-reach if it recurs.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|measured|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Work that hedges its claims ('suggests', 'may', 'often'), resists totalizing framings, and calibrates conclusions to the limits of its evidence will keep instantiating a measured disposition.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W7154682672",
+          "W4404368199"
+        ],
+        "confidence": "C",
+        "phi": "Confirmed across psychology and math — bridges the empirical and formal cultures within Rigor.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.75,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Work that hedges its claims ('suggests', 'may', 'often'), resists totalizing framings, and calibrates conclusions to the limits of its evidence will keep instantiating a measured disposition.",
+      "phi_note": "Confirmed across psychology and math — bridges the empirical and formal cultures within Rigor.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|drawn to parsimony|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to parsimony",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Research that deliberately shows a single minimal mechanism is *sufficient* — stripping away additional machinery (here, adhesion codes and niche signals) to test whether the bare model suffices — will keep recurring as evidence of a disposition that prizes the simplest explanation that fits.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164579466"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates Rigor downward (parsimony vs. tightness) and sits adjacent to Exacting about tightness; associative-near, so modest phi until it recurs.",
+        "edge_character": {
+          "kind": "associative",
+          "association": "similarity",
+          "remoteness": "near"
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research that deliberately shows a single minimal mechanism is *sufficient* — stripping away additional machinery (here, adhesion codes and niche signals) to test whether the bare model suffices — will keep recurring as evidence of a disposition that prizes the simplest explanation that fits.",
+      "phi_note": "Differentiates Rigor downward (parsimony vs. tightness) and sits adjacent to Exacting about tightness; associative-near, so modest phi until it recurs.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|oriented to human benefit|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Oriented to human benefit",
+        "parent_path": [],
+        "prediction": "Research framed and motivated by its implications for human health and people, with that benefit treated as the point of the work.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Opens a new beneficence/purpose region absent from the current forest; high differentiation, integration pending recurrence.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research framed and motivated by its implications for human health and people, with that benefit treated as the point of the work.",
+      "phi_note": "Opens a new beneficence/purpose region absent from the current forest; high differentiation, integration pending recurrence.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|protective of the vulnerable|conscientiousness",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Protective of the vulnerable",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "prediction": "Research that centres the welfare of an exposed, burdened actor — designing to safeguard them rather than to optimise around them — will keep instantiating a protective disposition.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Extends the Conscientiousness care-region and co-grounds with Attentive to power asymmetries — adds a specific ethical distinction.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research that centres the welfare of an exposed, burdened actor — designing to safeguard them rather than to optimise around them — will keep instantiating a protective disposition.",
+      "phi_note": "Extends the Conscientiousness care-region and co-grounds with Attentive to power asymmetries — adds a specific ethical distinction.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|attentive to power asymmetries|conscientiousness",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Attentive to power asymmetries",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "prediction": "Research foregrounding how authority, responsibility, risk, and labour are unevenly distributed across actors will keep instantiating a disposition that attends to structural asymmetry rather than treating burdens as individual operational facts.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7154682672"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run re-emit; single-grounded this batch but bridges into the care/ethics cluster via the Protective tunnel.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research foregrounding how authority, responsibility, risk, and labour are unevenly distributed across actors will keep instantiating a disposition that attends to structural asymmetry rather than treating burdens as individual operational facts.",
+      "phi_note": "Cross-run re-emit; single-grounded this batch but bridges into the care/ethics cluster via the Protective tunnel.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|modest about one's contribution|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Modest about one's contribution",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Research conduct will keep downplaying the novelty/importance of one's own results, reframing the contribution as clarity rather than claiming priority or breakthrough.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4405033621"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates Honesty alongside Forthcoming (under-claiming vs. disclosing); affectively kin to it, witnessed in a philosophy/math paper.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research conduct will keep downplaying the novelty/importance of one's own results, reframing the contribution as clarity rather than claiming priority or breakthrough.",
+      "phi_note": "Differentiates Honesty alongside Forthcoming (under-claiming vs. disclosing); affectively kin to it, witnessed in a philosophy/math paper.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|curious|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Curious",
+        "parent_path": [],
+        "prediction": "Research conduct that follows unexpected threads, explores across fields, and keeps asking the simple questions rather than narrowing prematurely.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161779572"
+        ],
+        "confidence": "S",
+        "phi": "Opens a new motivational region (the explore-drive); broad latent reach but single-grounded — a hook root awaiting recurrence.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research conduct that follows unexpected threads, explores across fields, and keeps asking the simple questions rather than narrowing prematurely.",
+      "phi_note": "Opens a new motivational region (the explore-drive); broad latent reach but single-grounded — a hook root awaiting recurrence.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Exacting about tightness",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|honesty|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Honesty",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Forthcoming",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|conscientiousness|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Conscientiousness",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Protective of the vulnerable",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|attentive to power asymmetries|conscientiousness",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Attentive to power asymmetries",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "The analysis traces how institutional ambiguity 'redistributes responsibility and emotional risk', concentrating emotional containment, escalation, and self-care at the individual level — reading burnout as a consequence of ambiguous authority, not personal weakness."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "Claims are pervasively hedged and the authors explicitly resist over-claiming, rejecting framings of AI as replacement or mechanism of scale and keeping conclusions proportionate to a 20-participant interview warrant."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "The authors candidly foreground definitional plurality and that limitations 'attributed to AI were not unique to automation but reflected broader challenges of mediated communication', and disclose coding disagreements resolved by consensus plus full participant demographics."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3802974.3809470|value|protective of the vulnerable|conscientiousness",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7154682672",
+        "attribute": "value",
+        "concept_name": "Protective of the vulnerable",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "url": "https://doi.org/10.1145/3802974.3809470",
+        "claim": "The design futures recentre the system on protecting the peer supporter — detecting strain, flagging harassment, safeguarding well-being, and refusing to absorb hidden burdens into the most exposed actor."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "Every theorem and proposition is established by a complete proof from first definitions (e.g., bounded-below ⇒ invertible, closed-range pseudo-inverse, minimal-norm solution), with frame bounds and operator norms carried tightly throughout — conduct exemplifying an exacting insistence on tightness."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4404368199",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "claim": "The author refuses to overclaim generality: the frame decomposition is described as 'generally non-unique', terminology is hedged ('often called the natural representation'), and a counterexample is supplied (Remark 2) rather than asserting uniqueness — conduct exemplifying calibrated, measured claiming."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "The authors repeatedly and unprompted credit prior discovery: the additive Tweedie analogue 'had been spotted in the physics literature, via a method called the replica trick', the multiplicative one 'had also been spotted in previous research literature on random matrices', and the overlap-measure construction 'has been known for a long time in operator algebras' — candidly disclosing the limits of their own priority."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "Each theorem is stated with its exact hypotheses (e.g. 'assume that neither of μ,ν is a point mass') and the measure-theoretic groundwork — cumulative-distribution properties, absolute continuity with respect to the product measure, and uniqueness via a π-system argument — is discharged in full rather than asserted."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|integrative|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405957103",
+        "attribute": "value",
+        "concept_name": "Integrative",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "claim": "The paper frames its entire program as building free-probability analogues of classical results ('Motivation: analogies with classical probability'; 'free analogue of Tweedie's formula'), explicitly mapping across classical and free probability, random matrices, physics, and statistics, and closing the loop by recovering the Ledoit–Péché covariance shrinkage estimator."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "The authors disclose that 'Some of our results... may be folklore', thank a colleague for pointing out an error in an earlier draft of Theorem 1.4, and openly state 'the authors are not aware of any example where G is not relatively simple...' — volunteering the limits and unoriginality of their own work."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "Rather than cite-and-skip, the authors supply omitted proofs: 'The authors know no references explaining Theorem 3.3 explicitly, so we provide its proof', and prove a 'folklore' Proposition 5.8 in full 'for the convenience of the reader' — leaving no step unjustified."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2412.00839|value|modest about one's contribution|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4405033621",
+        "attribute": "value",
+        "concept_name": "Modest about one's contribution",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "http://arxiv.org/abs/2412.00839",
+        "claim": "The authors repeatedly deflate their own novelty — 'these results may be folklore', 'their proofs are similar to the original ones' — and present the worth of the work as 'useful for understanding the proof of these results clearly' rather than as an original breakthrough."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|value|curious|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "value",
+        "concept_name": "Curious",
+        "parent_path": [],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "The researcher narrates a career driven by curiosity — 'took every opportunity to learn more', 'exploring across fields, following unexpected threads and asking the simple questions' — exemplifying inquisitiveness as a standing character trait."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|value|oriented to human benefit|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "value",
+        "concept_name": "Oriented to human benefit",
+        "parent_path": [],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "The researcher repeatedly anchors the work to people — 'always wanted to pursue a career that helps people', 'Drawn to the implications of basic research for human health' — showing a benefit-to-humans orientation guiding choices."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1242/bio.062661|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161779572",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1242/bio.062661",
+        "claim": "The whole reported finding is that subtle media conditions 'quietly affect the results... without researchers noticing', and that controlled, consistent conditions yield reproducible science — conduct exemplifying an exacting concern for the tightness of controls."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|drawn to parsimony|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "value",
+        "concept_name": "Drawn to parsimony",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "The authors construct minimal stochastic-mechanical models and show mechanical feedback 'alone is sufficient' to stabilize populations and form spatial structures 'in the absence of any codes of adhesion or extrinsic niche signals' — conduct that exemplifies a preference for the simplest sufficient mechanism."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164579466",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.731353",
+        "claim": "They 'derive analytically and computationally a phase diagram of possible stable states,' pairing formal derivation with simulation rather than resting on one — conduct exemplifying an insistence on formally tight conclusions."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|attentive to power asymmetries|value|protective of the vulnerable|https://doi.org/10.1145/3802974.3809470",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Attentive to power asymmetries"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Protective of the vulnerable"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.1145/3802974.3809470",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|exacting about tightness|value|measured|https://doi.org/10.29229/uzmj.2026-2-15",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Exacting about tightness"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.29229/uzmj.2026-2-15",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|integrative|value|exacting about tightness|https://doi.org/10.1007/s00440-026-01507-8",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Integrative"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Exacting about tightness"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.1007/s00440-026-01507-8",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|forthcoming|value|modest about one's contribution|http://arxiv.org/abs/2412.00839",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Modest about one's contribution"
+        },
+        "relation": "affective",
+        "cogrounding_url": "http://arxiv.org/abs/2412.00839",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|curious|value|oriented to human benefit|https://doi.org/10.1242/bio.062661",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Curious"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Oriented to human benefit"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.1242/bio.062661",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to parsimony|value|exacting about tightness|https://doi.org/10.64898/2026.06.10.731353",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to parsimony"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Exacting about tightness"
+        },
+        "relation": "similarity",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.731353",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|integrative|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to parsimony|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|oriented to human benefit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|protective of the vulnerable|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|attentive to power asymmetries|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|modest about one's contribution|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|curious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|honesty|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|conscientiousness|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|attentive to power asymmetries|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3802974.3809470|value|protective of the vulnerable|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.29229/uzmj.2026-2-15|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00440-026-01507-8|value|integrative|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2412.00839|value|modest about one's contribution|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|value|curious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|value|oriented to human benefit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1242/bio.062661|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|drawn to parsimony|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.731353|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|attentive to power asymmetries|value|protective of the vulnerable|https://doi.org/10.1145/3802974.3809470",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|exacting about tightness|value|measured|https://doi.org/10.29229/uzmj.2026-2-15",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|integrative|value|exacting about tightness|https://doi.org/10.1007/s00440-026-01507-8",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|forthcoming|value|modest about one's contribution|http://arxiv.org/abs/2412.00839",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|curious|value|oriented to human benefit|https://doi.org/10.1242/bio.062661",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to parsimony|value|exacting about tightness|https://doi.org/10.64898/2026.06.10.731353",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 6,
+      "paper_citations": 0,
+      "concepts": 6,
+      "edges": 6,
+      "concept_links": 17,
+      "tunnel_links": 6,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 6,
+      "chaos_prediction_events": 17
+    }
+  },
+  "run_id": 6
+}

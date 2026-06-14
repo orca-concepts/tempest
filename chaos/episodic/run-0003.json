@@ -1,0 +1,3157 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-14T16:16:29.377Z",
+  "rubric_version": "0.11",
+  "db_run_id": "reason-v0.11-df1aa962",
+  "working_set": [
+    {
+      "paper_ref": "W7164400640",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4403964193",
+      "source_field": "linguistics",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W2949143881",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4283021637",
+      "source_field": "philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7161135634",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164550506",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|value|alive to cross-domain analogy|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Alive to cross-domain analogy",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep noticing that disparate objects share a hidden common structure and let that recognition guide method.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm from algebraic geometry; a high-reach hub disposition bridging math to the analogy/transport region.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep noticing that disparate objects share a hidden common structure and let that recognition guide method.",
+      "phi_note": "Cross-run confirm from algebraic geometry; a high-reach hub disposition bridging math to the analogy/transport region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|carry an established framework into a harder setting|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep importing a construction proven in one tractable case to attack a structurally similar but harder case.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Analogy-transport move; bridges distant fields by reusing structure — high cause-effect work.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep importing a construction proven in one tractable case to attack a structurally similar but harder case.",
+      "phi_note": "Analogy-transport move; bridges distant fields by reusing structure — high cause-effect work.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|recast a problem as a solved one|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "phase": "Committing to a question",
+        "prediction": "Research will keep reframing an unexplained observation as an instance of already-established machinery.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "Reduction-by-analogy; connects an open anomaly to a solved template, integrative across domains.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep reframing an unexplained observation as an instance of already-established machinery.",
+      "phi_note": "Reduction-by-analogy; connects an open anomaly to a solved template, integrative across domains.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of single-method conclusions|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of single-method conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "phase": "Interpreting",
+        "prediction": "This disposition recurs wherever a claim is only trusted once independent modalities agree.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Triangulation disposition; nests under Rigor beside silent-confound wariness, bridging neuroscience method-distrust to the rigor cluster.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "This disposition recurs wherever a claim is only trusted once independent modalities agree.",
+      "phi_note": "Triangulation disposition; nests under Rigor beside silent-confound wariness, bridging neuroscience method-distrust to the rigor cluster.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|corroborate across independent measurement modalities|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Corroborate across independent measurement modalities",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Robust claims will keep being supported by convergent signals from structurally different measurements rather than a single instrument.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates the testing cluster with a multimodal-triangulation variant distinct from null/benchmark testing.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Robust claims will keep being supported by convergent signals from structurally different measurements rather than a single instrument.",
+      "phi_note": "Differentiates the testing cluster with a multimodal-triangulation variant distinct from null/benchmark testing.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|reduce a global claim to a local bundle calculation|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Reduce a global claim to a local bundle calculation",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Researchers will keep converting a hard global statement into checking a few maps are embeddings, which bottoms out in computable local invariants.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Local-reduction strategy; resonates with minimal-model and special-case moves across fields.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep converting a hard global statement into checking a few maps are embeddings, which bottoms out in computable local invariants.",
+      "phi_note": "Local-reduction strategy; resonates with minimal-model and special-case moves across fields.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|even-handed toward unfamiliar worldviews|humble",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Even-handed toward unfamiliar worldviews",
+        "parent_path": [
+          "Humble"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Research will keep documenting beliefs (jinn, evil eye, ritual efficacy) on their own terms, bracketing the researcher's own framework rather than dismissing them.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates Humble with an ethnographic suspension-of-judgment leaf; bridges anthropology to humility.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep documenting beliefs (jinn, evil eye, ritual efficacy) on their own terms, bracketing the researcher's own framework rather than dismissing them.",
+      "phi_note": "Differentiates Humble with an ethnographic suspension-of-judgment leaf; bridges anthropology to humility.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|action|immerse in the community to study it from within|surface tacit reasoning",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Immerse in the community to study it from within",
+        "parent_path": [
+          "Surface tacit reasoning"
+        ],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Ethnographic work will keep using prolonged residency and participant observation to surface the underlying logic governing seemingly spontaneous practices.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Broadens Surface-tacit-reasoning beyond defamiliarization to the opposite move (familiarization/immersion).",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Ethnographic work will keep using prolonged residency and participant observation to surface the underlying logic governing seemingly spontaneous practices.",
+      "phi_note": "Broadens Surface-tacit-reasoning beyond defamiliarization to the opposite move (familiarization/immersion).",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|drawn to explicit construction|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to explicit construction",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers who could settle for an abstract existence result will instead keep building natural, fully explicit constructions a reader can follow step by step.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "New disposition; complements Parsimonious/explicit-evidence region with a constructivist leaning.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers who could settle for an abstract existence result will instead keep building natural, fully explicit constructions a reader can follow step by step.",
+      "phi_note": "New disposition; complements Parsimonious/explicit-evidence region with a constructivist leaning.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|wary of reductive summaries|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Wary of reductive summaries",
+        "parent_path": [],
+        "phase": "Sensing the gap",
+        "prediction": "Research that distrusts a single global score and insists feedback be locatable in the actual performance will keep recurring across evaluation-design and instruction settings.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Distrust of single global scores; pairs to localized-evidence action, kin to Measured/Reflexive.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research that distrusts a single global score and insists feedback be locatable in the actual performance will keep recurring across evaluation-design and instruction settings.",
+      "phi_note": "Distrust of single global scores; pairs to localized-evidence action, kin to Measured/Reflexive.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|derive localized evidence from coarse labels|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Derive localized evidence from coarse labels",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Studies will keep training on cheap aggregate/take-level labels yet extracting fine-grained, time-localized evidence the labels never directly provided.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Weak-supervision move turning global labels into local structure; distinct strategy root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies will keep training on cheap aggregate/take-level labels yet extracting fine-grained, time-localized evidence the labels never directly provided.",
+      "phi_note": "Weak-supervision move turning global labels into local structure; distinct strategy root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|cancel sampling noise with a mirrored draw|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Cancel sampling noise with a mirrored draw",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers estimating an expectation by simulation will keep deliberately introducing negative correlation between paired draws to shrink the variance of the mean rather than insisting on independence.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W2949143881"
+        ],
+        "confidence": "S",
+        "phi": "Variance-reduction by antithetic draw; a sampling-engine action outside the testing cluster.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers estimating an expectation by simulation will keep deliberately introducing negative correlation between paired draws to shrink the variance of the mean rather than insisting on independence.",
+      "phi_note": "Variance-reduction by antithetic draw; a sampling-engine action outside the testing cluster.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|learn the control from a pilot sample|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Learn the control from a pilot sample",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep replacing hand-built, case-specific heuristics with a small pilot run that fits the right control parameter to the instance at hand.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W2949143881"
+        ],
+        "confidence": "S",
+        "phi": "Pilot-driven, class-general procedure; enacts the pull toward generality.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep replacing hand-built, case-specific heuristics with a small pilot run that fits the right control parameter to the instance at hand.",
+      "phi_note": "Pilot-driven, class-general procedure; enacts the pull toward generality.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|build a normative model from healthy controls|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Build a normative model from healthy controls",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Studies will keep training a reference model of 'normal' on healthy populations and scoring patients by their deviation from it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Normative-baseline strategy; complements minimal/null-model actions.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies will keep training a reference model of 'normal' on healthy populations and scoring patients by their deviation from it.",
+      "phi_note": "Normative-baseline strategy; complements minimal/null-model actions.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|resolve a singularity stratum by stratum|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Resolve a singularity stratum by stratum",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers facing a nested singular object will keep peeling it apart by blowing up its singular loci in order, smallest to largest.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Iterative explicit-construction action; new math-rooted strategy.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers facing a nested singular object will keep peeling it apart by blowing up its singular loci in order, smallest to largest.",
+      "phi_note": "Iterative explicit-construction action; new math-rooted strategy.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|replace a singular center with its smooth resolution|resolve a singularity stratum by stratum",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Replace a singular center with its smooth resolution",
+        "parent_path": [
+          "Resolve a singularity stratum by stratum"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "When a needed center is singular and hard to track, researchers will substitute a smooth model that maps onto it and work there instead.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates the new stratum-resolution parent with its core step.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "When a needed center is singular and hard to track, researchers will substitute a smooth model that maps onto it and work there instead.",
+      "phi_note": "Differentiates the new stratum-resolution parent with its core step.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|document inherited knowledge before it fades|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Document inherited knowledge before it fades",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Heritage-oriented research will keep recording oral, elder-held knowledge as preservation against its loss.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Preservation-as-credit action; ties anthropology's salvage labor into the action graph.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Heritage-oriented research will keep recording oral, elder-held knowledge as preservation against its loss.",
+      "phi_note": "Preservation-as-credit action; ties anthropology's salvage labor into the action graph.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|combine thematic depth with descriptive frequencies|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Combine thematic depth with descriptive frequencies",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Qualitative studies will keep pairing thick interpretive analysis with tabulated frequencies of coded themes to show distribution without claiming generalizability.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Mixed qual/quant integration move; bridges interpretive and descriptive methods.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Qualitative studies will keep pairing thick interpretive analysis with tabulated frequencies of coded themes to show distribution without claiming generalizability.",
+      "phi_note": "Mixed qual/quant integration move; bridges interpretive and descriptive methods.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|check interpretations against independent coders|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Check interpretations against independent coders",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Systems that output interpretive highlights will keep validating those highlights against independent human annotators rather than trusting the model's own evidence scores.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; external-coder validation (note: may also fit a validation parent — mis-structure flagged).",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Systems that output interpretive highlights will keep validating those highlights against independent human annotators rather than trusting the model's own evidence scores.",
+      "phi_note": "Cross-run confirm; external-coder validation (note: may also fit a validation parent — mis-structure flagged).",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|parsimonious|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Parsimonious",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep preferring explanations built from the fewest independent parameters when a richer one would fit equally well.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm from physics; core economy disposition.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep preferring explanations built from the fewest independent parameters when a richer one would fit equally well.",
+      "phi_note": "Cross-run confirm from physics; core economy disposition.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|build a minimal model|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Build a minimal model",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Research will keep instantiating single-mediator, few-parameter constructions chosen for their leanness.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; direct enactment of parsimony.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep instantiating single-mediator, few-parameter constructions chosen for their leanness.",
+      "phi_note": "Cross-run confirm; direct enactment of parsimony.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|test a single mechanism's sufficiency|build a minimal model",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Test a single mechanism's sufficiency",
+        "parent_path": [
+          "Build a minimal model"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Research will keep asking whether one posited mechanism alone can reproduce an observation before adding more.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; sufficiency check under minimal model.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep asking whether one posited mechanism alone can reproduce an observation before adding more.",
+      "phi_note": "Cross-run confirm; sufficiency check under minimal model.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|drawn to generalization|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to generalization",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers will keep choosing a procedure that works across all instance classes over a faster one hand-tuned to a single case, even at an efficiency cost.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W2949143881"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm from AI; pull toward what holds across all cases.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep choosing a procedure that works across all instance classes over a faster one hand-tuned to a single case, even at an efficiency cost.",
+      "phi_note": "Cross-run confirm from AI; pull toward what holds across all cases.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|benchmark against an established method|pressure-test your own result",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Benchmark against an established method",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "phase": "Interpreting",
+        "prediction": "A new estimator's worth will keep being shown by head-to-head comparison against the standard baseline on a shared battery of cases.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W2949143881"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; comparative validation.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "A new estimator's worth will keep being shown by head-to-head comparison against the standard baseline on a shared battery of cases.",
+      "phi_note": "Cross-run confirm; comparative validation.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|attentive to context|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Attentive to context",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "Studies will keep reading practices as inseparable from their ecological, historical, and cultural surround rather than as free-standing behaviors.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm from anthropology.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies will keep reading practices as inseparable from their ecological, historical, and cultural surround rather than as free-standing behaviors.",
+      "phi_note": "Cross-run confirm from anthropology.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|credits lived expertise|humble",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Credits lived expertise",
+        "parent_path": [
+          "Humble"
+        ],
+        "phase": "Interpreting",
+        "prediction": "Research will keep treating inherited, orally-transmitted knowledge of non-specialists as legitimate expertise worth documenting.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; lay/elder-knowledge credit under Humble.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep treating inherited, orally-transmitted knowledge of non-specialists as legitimate expertise worth documenting.",
+      "phi_note": "Cross-run confirm; lay/elder-knowledge credit under Humble.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|protective of the vulnerable|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Protective of the vulnerable",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Fieldwork-based research will keep shielding participants from social/identity exposure as a standing concern, not just a compliance box.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; participant-protection disposition.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Fieldwork-based research will keep shielding participants from social/identity exposure as a standing concern, not just a compliance box.",
+      "phi_note": "Cross-run confirm; participant-protection disposition.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|measured|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [],
+        "phase": "Reporting and returning",
+        "prediction": "Reports of contested efficacy will keep being hedged as 'perceived/reported/believed' rather than asserted as fact.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; calibrated claiming.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Reports of contested efficacy will keep being hedged as 'perceived/reported/believed' rather than asserted as fact.",
+      "phi_note": "Cross-run confirm; calibrated claiming.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|qualitative elicitation method|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Qualitative elicitation method",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Ethnographic studies will keep using semi-structured interview guides to elicit narrative accounts of meaning and practice.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; interview/elicitation instrument root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Ethnographic studies will keep using semi-structured interview guides to elicit narrative accounts of meaning and practice.",
+      "phi_note": "Cross-run confirm; interview/elicitation instrument root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|account for confounders|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Account for confounders",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Brain-age work will keep correcting the known age-dependent bias before reporting a gap.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Cross-run confirm; confound-control action.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Brain-age work will keep correcting the known age-dependent bias before reporting a gap.",
+      "phi_note": "Cross-run confirm; confound-control action.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|weakly supervised model|machine-learning classifier",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Weakly supervised model",
+        "parent_path": [
+          "Machine-learning classifier"
+        ],
+        "phase": "Designing the approach",
+        "prediction": "Models trained on aggregate labels to emit clip-level predictions plus evidence scores will recur where dense labels are too costly to collect.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates the ML-classifier root with a weak-label variant.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Models trained on aggregate labels to emit clip-level predictions plus evidence scores will recur where dense labels are too costly to collect.",
+      "phi_note": "Differentiates the ML-classifier root with a weak-label variant.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|tool|high-rate motion capture of the performed act|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "High-rate motion capture of the performed act",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Studies of expertise-dependent motor skill will keep instrumenting the activity with high-sample-rate, audio-synchronized motion sensing.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Behavioral-capture instrument; new tool root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies of expertise-dependent motor skill will keep instrumenting the activity with high-sample-rate, audio-synchronized motion sensing.",
+      "phi_note": "Behavioral-capture instrument; new tool root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|iterated blowup construction|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Iterated blowup construction",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Researchers building embedded resolutions will keep reaching for sequences of blowups whose centers are dictated by a chain of morphisms.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Constructive math instrument; new tool root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers building embedded resolutions will keep reaching for sequences of blowups whose centers are dictated by a chain of morphisms.",
+      "phi_note": "Constructive math instrument; new tool root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|brain-age prediction model|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Brain-age prediction model",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "Aging and disease studies will keep using a fitted brain-age estimator and its corrected age-gap as the readout.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Predictive neuroimaging instrument operationalizing the aging-gap question.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Aging and disease studies will keep using a fitted brain-age estimator and its corrected age-gap as the readout.",
+      "phi_note": "Predictive neuroimaging instrument operationalizing the aging-gap question.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|blood-based neurodegeneration biomarker|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Blood-based neurodegeneration biomarker",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "Studies of brain health will keep reading serum markers (brain-derived tau, GFAP) as peripheral proxies for neural injury.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Molecular-corroboration instrument; new tool root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies of brain health will keep reading serum markers (brain-derived tau, GFAP) as peripheral proxies for neural injury.",
+      "phi_note": "Molecular-corroboration instrument; new tool root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|does chronic inflammation accelerate brain aging?|what overlooked exposures shape human regulatory biology?",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Does chronic inflammation accelerate brain aging?",
+        "parent_path": [
+          "What overlooked exposures shape human regulatory biology?"
+        ],
+        "phase": null,
+        "prediction": "Research will keep asking whether peripheral, systemic disease states leave a measurable signature on the aging brain.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Differentiates the overlooked-exposures question with a neuro-immune child.",
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep asking whether peripheral, systemic disease states leave a measurable signature on the aging brain.",
+      "phi_note": "Differentiates the overlooked-exposures question with a neuro-immune child.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|question|where should a learner focus practice next?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Where should a learner focus practice next?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Feedback-design research will keep asking how to point a learner to the specific passage worth re-inspecting, not just rate the whole take.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Applied formative-feedback question; new root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Feedback-design research will keep asking how to point a learner to the specific passage worth re-inspecting, not just rate the whole take.",
+      "phi_note": "Applied formative-feedback question; new root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|can coarse labels reveal local structure?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Can coarse labels reveal local structure?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Weak-supervision research will keep asking whether aggregate labels suffice to localize the phenomenon they only summarize.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Weak-supervision question; pairs to the localized-evidence action.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Weak-supervision research will keep asking whether aggregate labels suffice to localize the phenomenon they only summarize.",
+      "phi_note": "Weak-supervision question; pairs to the localized-evidence action.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what hidden entity explains the anomaly?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What hidden entity explains the anomaly?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Research will keep positing unobserved entities to account for signals that standard accounts cannot deliver.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "Abductive new-entity question; broad cross-field reach.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep positing unobserved entities to account for signals that standard accounts cannot deliver.",
+      "phi_note": "Abductive new-entity question; broad cross-field reach.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|can correlated samples estimate better than independent ones?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Can correlated samples estimate better than independent ones?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Researchers will keep asking whether deliberately dependent (but still consistent) samples beat independent sampling for estimating an intractable expectation.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W2949143881"
+        ],
+        "confidence": "S",
+        "phi": "Variance-reduction question; new root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep asking whether deliberately dependent (but still consistent) samples beat independent sampling for estimating an intractable expectation.",
+      "phi_note": "Variance-reduction question; new root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|how can an embedded divisor's singularities be resolved explicitly?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "How can an embedded divisor's singularities be resolved explicitly?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Work will keep asking not just for a resolution of a singular variety but for a log resolution of the pair that respects the ambient embedding.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Constructive-resolution question; new root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Work will keep asking not just for a resolution of a singular variety but for a log resolution of the pair that respects the ambient embedding.",
+      "phi_note": "Constructive-resolution question; new root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|why does an inherited practice persist alongside modern alternatives?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "Why does an inherited practice persist alongside modern alternatives?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "Studies will keep asking why traditional practices endure where the access/cost explanation fails — i.e., despite available modern alternatives.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Persistence-of-tradition question; new root.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Studies will keep asking why traditional practices endure where the access/cost explanation fails — i.e., despite available modern alternatives.",
+      "phi_note": "Persistence-of-tradition question; new root.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Wary of single-method conclusions",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|pressure-test your own result|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Pressure-test your own result",
+        "parent_path": [],
+        "phase": "Interpreting",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Corroborate across independent measurement modalities",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|humble|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Humble",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Even-handed toward unfamiliar worldviews",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|action|surface tacit reasoning|",
+      "type": "concept",
+      "payload": {
+        "attribute": "action",
+        "name": "Surface tacit reasoning",
+        "parent_path": [],
+        "phase": "Executing and wrestling with data",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Immerse in the community to study it from within",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|tool|machine-learning classifier|",
+      "type": "concept",
+      "payload": {
+        "attribute": "tool",
+        "name": "Machine-learning classifier",
+        "parent_path": [],
+        "phase": "Designing the approach",
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Weakly supervised model",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|question|what overlooked exposures shape human regulatory biology?|",
+      "type": "concept",
+      "payload": {
+        "attribute": "question",
+        "name": "What overlooked exposures shape human regulatory biology?",
+        "parent_path": [],
+        "phase": null,
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Does chronic inflammation accelerate brain aging?",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|value|wary of reductive summaries|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "value",
+        "concept_name": "Wary of reductive summaries",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "The authors reject 'summarizing a take with a single global score' as hard to act on and build the entire system to surface time-localized passages instead."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|action|derive localized evidence from coarse labels|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "action",
+        "concept_name": "Derive localized evidence from coarse labels",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "Profy is trained only on take-level expert-vs-amateur labels yet produces time-aligned highlight scores, recovering localized evidence the labels never supplied."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|action|check interpretations against independent coders|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "action",
+        "concept_name": "Check interpretations against independent coders",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "On 20 amateur clips the displayed highlight score was checked against passages 21 expert pianists independently marked for review (Pearson r=0.61, ROC-AUC 0.75)."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|tool|weakly supervised model|machine-learning classifier",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "tool",
+        "concept_name": "Weakly supervised model",
+        "parent_path": [
+          "Machine-learning classifier"
+        ],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "A weakly supervised model learns from aggregated listener ratings and outputs clip-level predictions plus evidence scores on a shared model time base."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|tool|high-rate motion capture of the performed act|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "tool",
+        "concept_name": "High-rate motion capture of the performed act",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "Synchronized 1 kHz key-motion and audio were collected from 73 pianists, yielding 1,083 valid takes for modeling and evaluation."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|question|where should a learner focus practice next?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "question",
+        "concept_name": "Where should a learner focus practice next?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "The stated purpose is to help learners 'decide where to inspect next' via scrubbing, looping, and focused replay of localized passages."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|question|can coarse labels reveal local structure?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "question",
+        "concept_name": "Can coarse labels reveal local structure?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "The work tests whether take-level labels alone can train a model that localizes expert-amateur differences without any localized annotation."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|value|parsimonious|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "value",
+        "concept_name": "Parsimonious",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "The author selects the singlet scalar precisely because it gives a minimal dark-matter model with the fewest independent free parameters — an enacted preference for economy."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|action|build a minimal model|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "action",
+        "concept_name": "Build a minimal model",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "A single Z2-stabilized scalar coupled to the SM only through one Higgs-portal term is constructed as the smallest model able to carry the explanation."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|action|test a single mechanism's sufficiency|build a minimal model",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "action",
+        "concept_name": "Test a single mechanism's sufficiency",
+        "parent_path": [
+          "Build a minimal model"
+        ],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "The flux and decay computation tests whether boosted di-photon decay of one scalar alone reproduces the LHAASO event count, finding a best-fit where it does."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|action|recast a problem as a solved one|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "action",
+        "concept_name": "Recast a problem as a solved one",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "The EBL-attenuation puzzle is reframed as a straightforward consequence of established boosted-DM and Higgs-portal physics, converting the anomaly into an instance of known theory."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|question|what hidden entity explains the anomaly?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "question",
+        "concept_name": "What hidden entity explains the anomaly?",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "The paper posits an unobserved singlet scalar whose decay supplies the otherwise-impossible 18 TeV photons of GRB 221009A."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|drawn to generalization|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "value",
+        "concept_name": "Drawn to generalization",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "The authors knowingly forgo faster per-game-class heuristics for a 'silly but general' transformation-finding procedure 'that works in all game classes', exemplifying a preference for breadth of applicability over local efficiency."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|benchmark against an established method|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "action",
+        "concept_name": "Benchmark against an established method",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "Performance is assessed by comparing the ergodic estimator's standard deviation against simple independent random sampling — the natural benchmark — across eight games with different characteristics, reporting up to a 75% improvement."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|cancel sampling noise with a mirrored draw|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "action",
+        "concept_name": "Cancel sampling noise with a mirrored draw",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "The method generates marginal-contribution samples in highly negatively correlated pairs (variance factor (1+rho)) so the paired errors partly cancel, demonstrably reducing the variance of the Shapley-value estimate at the same computational cost."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|learn the control from a pilot sample|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "action",
+        "concept_name": "Learn the control from a pilot sample",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "Algorithm GreedyK2 draws a small m1-size pilot of orders, estimates the empirical covariances of swap-transformed samples, and greedily matches players to fix the variance-minimizing transformation for the given game — learning the device rather than hand-coding a heuristic."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|question|can correlated samples estimate better than independent ones?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "question",
+        "concept_name": "Can correlated samples estimate better than independent ones?",
+        "parent_path": [],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "The introduction frames the driving question as whether non-independent but ergodic (strong-law-obeying) samples can lower the variance of a Monte-Carlo estimate below that of an independent sample of equal cost."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|value|drawn to explicit construction|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "value",
+        "concept_name": "Drawn to explicit construction",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The paper foregrounds giving a 'natural and explicit' log resolution where an abstract existence statement would suffice, demonstrating a worker who values the concrete construction itself."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|value|alive to cross-domain analogy|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "value",
+        "concept_name": "Alive to cross-domain analogy",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The authors notice that matrix-determinant loci, secant varieties, and the theta divisor are all determinantal varieties resolvable by the same successive-blowup procedure, exemplifying analogy-driven method transfer."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|action|resolve a singularity stratum by stratum|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "action",
+        "concept_name": "Resolve a singularity stratum by stratum",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "Theorem A's iterative procedure blows up the Brill–Noether multiplicity strata W^n, W^{n-1}, ... in order from deepest to shallowest, peeling the singularity apart one stratum per step."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|action|replace a singular center with its smooth resolution|resolve a singularity stratum by stratum",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "action",
+        "concept_name": "Replace a singular center with its smooth resolution",
+        "parent_path": [
+          "Resolve a singularity stratum by stratum"
+        ],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "Because the W^r are singular, the authors work instead with the smooth symmetric products C_{g-1-2r} via the Abel–Jacobi maps δ_i, substituting smooth models for the singular centers."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|action|reduce a global claim to a local bundle calculation|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "action",
+        "concept_name": "Reduce a global claim to a local bundle calculation",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "Proving the log-resolution property is recast as checking that certain maps are embeddings (Lemma 1.20), which in turn reduces to computing conormal bundles — a global statement collapsed to local invariants."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|action|carry an established framework into a harder setting|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "action",
+        "concept_name": "Carry an established framework into a harder setting",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "Bertram's chain-of-maps blowup machinery, established for secant varieties, is transported and adapted to the singular hyperelliptic theta divisor."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|tool|iterated blowup construction|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "tool",
+        "concept_name": "Iterated blowup construction",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "Section 1 sets up NCD chains and an inductive embedding criterion; this iterated-blowup-of-a-chain apparatus is the instrument that yields the simple-normal-crossing log resolution."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|question|how can an embedded divisor's singularities be resolved explicitly?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "question",
+        "concept_name": "How can an embedded divisor's singularities be resolved explicitly?",
+        "parent_path": [],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The introduction states the need for a log resolution of the pair (Jac(C), Theta) — one that respects the embedding rather than merely resolving Theta — as the question the paper answers."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|attentive to context|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Attentive to context",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "The analysis ties healing behavior to 'the interaction between ecological context, cultural values, and inherited knowledge systems', refusing to read practices apart from their surround."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|credits lived expertise|humble",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Credits lived expertise",
+        "parent_path": [
+          "Humble"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Participants' inherited, orally-transmitted frankincense knowledge is treated as a coherent therapeutic system worth documenting on its own terms."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|protective of the vulnerable|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Protective of the vulnerable",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "To avoid tribal/social exposure, certain interviews were moved away from home districts, with anonymization at transcription and access-restricted storage."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|measured|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Efficacy claims are consistently hedged as 'perceived', 'reported by participants', and 'believed', never asserted as established fact."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|even-handed toward unfamiliar worldviews|humble",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Even-handed toward unfamiliar worldviews",
+        "parent_path": [
+          "Humble"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "The study explicitly focuses on 'uses, meanings, and perceived effectiveness' rather than evaluating clinical or biomedical efficacy, documenting beliefs in jinn and the evil eye without judging them."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|immerse in the community to study it from within|surface tacit reasoning",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "action",
+        "concept_name": "Immerse in the community to study it from within",
+        "parent_path": [
+          "Surface tacit reasoning"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Through residency and participant observation in frankincense rituals, the researchers showed that practices appearing spontaneous are 'governed by an underlying logic and regulated by certain rules'."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|document inherited knowledge before it fades|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "action",
+        "concept_name": "Document inherited knowledge before it fades",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "The study's broader aim is to preserve intangible cultural heritage by recording therapeutic methods that 'often exist only in the oral memories of the elderly'."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|combine thematic depth with descriptive frequencies|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "action",
+        "concept_name": "Combine thematic depth with descriptive frequencies",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Recurrent themes were coded and then tabulated as frequencies and percentages (Tables 2–5) alongside thick ethnographic interpretation, explicitly without claiming statistical generalization."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|tool|qualitative elicitation method|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "tool",
+        "concept_name": "Qualitative elicitation method",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Data were elicited via semi-structured interviews lasting one to four hours, built on a themed guide mixing open-ended and structured prompts."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|question|why does an inherited practice persist alongside modern alternatives?|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "question",
+        "concept_name": "Why does an inherited practice persist alongside modern alternatives?",
+        "parent_path": [],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "The paper poses the persistence of frankincense healing 'despite the country's advancement in modern medical institutions' as its driving puzzle, rejecting cost/access explanations."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|question|does chronic inflammation accelerate brain aging?|what overlooked exposures shape human regulatory biology?",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "question",
+        "concept_name": "Does chronic inflammation accelerate brain aging?",
+        "parent_path": [
+          "What overlooked exposures shape human regulatory biology?"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "The paper frames its niche around whether RA-driven systemic inflammation is tied to accelerated brain aging, then answers it with a +6.5-year brain-age gap."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|build a normative model from healthy controls|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "action",
+        "concept_name": "Build a normative model from healthy controls",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "A brain-age prediction model is trained in healthy IXI controls and applied to RA patients, scoring each patient by deviation from the healthy norm."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|corroborate across independent measurement modalities|pressure-test your own result",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "action",
+        "concept_name": "Corroborate across independent measurement modalities",
+        "parent_path": [
+          "Pressure-test your own result"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "Structural MRI, serum tau/GFAP, and monocyte transcriptomics are combined so that convergent signals jointly support the accelerated-aging conclusion."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|wary of single-method conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "value",
+        "concept_name": "Wary of single-method conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "The authors withhold a single-modality claim, demanding agreement across imaging, blood biomarkers, and transcriptomics before asserting accelerated brain aging."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|tool|brain-age prediction model|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "tool",
+        "concept_name": "Brain-age prediction model",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "A brain-age estimator yields the corrected brain-age gap (+6.5 years) that is the study's primary structural readout."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|tool|blood-based neurodegeneration biomarker|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "tool",
+        "concept_name": "Blood-based neurodegeneration biomarker",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "Serum brain-derived tau and GFAP are measured as peripheral biomarkers and found elevated in RA, indexing neural injury."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|account for confounders|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "action",
+        "concept_name": "Account for confounders",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "The reported metric is explicitly a corrected brain-age gap, applying the standard correction for the known age-dependent estimation bias before inference."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|alive to cross-domain analogy|action|carry an established framework into a harder setting|https://doi.org/10.14231/ag-2026-014",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Alive to cross-domain analogy"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Carry an established framework into a harder setting"
+        },
+        "relation": "Seeing shared structure (benefit) is paid for by importing and re-proving a framework in a harder setting.",
+        "cogrounding_url": "https://doi.org/10.14231/ag-2026-014",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to explicit construction|action|resolve a singularity stratum by stratum|https://doi.org/10.14231/ag-2026-014",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to explicit construction"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Resolve a singularity stratum by stratum"
+        },
+        "relation": "Wanting a concrete artifact is paid for by the explicit step-by-step blowup.",
+        "cogrounding_url": "https://doi.org/10.14231/ag-2026-014",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of single-method conclusions|action|corroborate across independent measurement modalities|https://doi.org/10.64898/2026.06.10.729182",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of single-method conclusions"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Corroborate across independent measurement modalities"
+        },
+        "relation": "Distrust of any single method is paid for by reconciling several independent measurement streams before claiming.",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.729182",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|wary of reductive summaries|action|derive localized evidence from coarse labels|https://doi.org/10.1145/3800645.3812903",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Wary of reductive summaries"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Derive localized evidence from coarse labels"
+        },
+        "relation": "Distrust of a single global score is paid for by extracting time-localized evidence instead of one number.",
+        "cogrounding_url": "https://doi.org/10.1145/3800645.3812903",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|parsimonious|action|build a minimal model|http://arxiv.org/abs/2410.04742",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Parsimonious"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Build a minimal model"
+        },
+        "relation": "A disposition toward economy is paid for by constructing the leanest viable model.",
+        "cogrounding_url": "http://arxiv.org/abs/2410.04742",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to generalization|action|learn the control from a pilot sample|https://doi.org/10.1007/s00291-026-00863-0",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to generalization"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Learn the control from a pilot sample"
+        },
+        "relation": "The pull toward what holds across all cases is paid for by a pilot-driven, class-general procedure.",
+        "cogrounding_url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|even-handed toward unfamiliar worldviews|action|immerse in the community to study it from within|https://doi.org/10.3389/fsoc.2026.1814421",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Even-handed toward unfamiliar worldviews"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Immerse in the community to study it from within"
+        },
+        "relation": "Suspending one's own framework is paid for by prolonged immersion that lets insiders' meanings be seen from within.",
+        "cogrounding_url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|credits lived expertise|action|document inherited knowledge before it fades|https://doi.org/10.3389/fsoc.2026.1814421",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Credits lived expertise"
+        },
+        "to": {
+          "attribute": "action",
+          "name": "Document inherited knowledge before it fades"
+        },
+        "relation": "Valuing lay/elder expertise is enacted at the cost of documenting a knowledge system before it is lost.",
+        "cogrounding_url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|question|does chronic inflammation accelerate brain aging?|tool|brain-age prediction model|https://doi.org/10.64898/2026.06.10.729182",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "question",
+          "name": "Does chronic inflammation accelerate brain aging?"
+        },
+        "to": {
+          "attribute": "tool",
+          "name": "Brain-age prediction model"
+        },
+        "relation": "Answering the benefit-side question requires the cost of a fitted brain-age estimator to quantify the aging gap.",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.729182",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|triangulating a single-method claim",
+      "type": "situation",
+      "payload": {
+        "name": "Triangulating a single-method claim",
+        "phase": "Interpreting",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Wary of single-method conclusions"
+          },
+          {
+            "attribute": "action",
+            "name": "Corroborate across independent measurement modalities"
+          },
+          {
+            "attribute": "action",
+            "name": "Build a normative model from healthy controls"
+          },
+          {
+            "attribute": "action",
+            "name": "Account for confounders"
+          },
+          {
+            "attribute": "tool",
+            "name": "Brain-age prediction model"
+          },
+          {
+            "attribute": "tool",
+            "name": "Blood-based neurodegeneration biomarker"
+          },
+          {
+            "attribute": "question",
+            "name": "Does chronic inflammation accelerate brain aging?"
+          }
+        ],
+        "domain_balance": {
+          "value": 1,
+          "question": 1,
+          "action": 3,
+          "tool": 2,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7164550506"
+        ],
+        "core_spine": [
+          "Wary of single-method conclusions",
+          "Corroborate across independent measurement modalities",
+          "Brain-age prediction model"
+        ],
+        "toggleable": [
+          "Account for confounders",
+          "Blood-based neurodegeneration biomarker",
+          "Build a normative model from healthy controls",
+          "Does chronic inflammation accelerate brain aging?"
+        ],
+        "rationale": "A moment of converting distrust of any one method into a multimodal aging-gap claim; cost columns well-budgeted against the inflammation question.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Wary of single-method conclusions",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|documenting a fading knowledge system",
+      "type": "situation",
+      "payload": {
+        "name": "Documenting a fading knowledge system",
+        "phase": "Executing and wrestling with data",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Even-handed toward unfamiliar worldviews"
+          },
+          {
+            "attribute": "value",
+            "name": "Credits lived expertise"
+          },
+          {
+            "attribute": "value",
+            "name": "Attentive to context"
+          },
+          {
+            "attribute": "value",
+            "name": "Protective of the vulnerable"
+          },
+          {
+            "attribute": "value",
+            "name": "Measured"
+          },
+          {
+            "attribute": "action",
+            "name": "Immerse in the community to study it from within"
+          },
+          {
+            "attribute": "action",
+            "name": "Document inherited knowledge before it fades"
+          },
+          {
+            "attribute": "action",
+            "name": "Combine thematic depth with descriptive frequencies"
+          },
+          {
+            "attribute": "tool",
+            "name": "Qualitative elicitation method"
+          },
+          {
+            "attribute": "question",
+            "name": "Why does an inherited practice persist alongside modern alternatives?"
+          }
+        ],
+        "domain_balance": {
+          "value": 5,
+          "question": 1,
+          "action": 3,
+          "tool": 1,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7161135634"
+        ],
+        "core_spine": [
+          "Even-handed toward unfamiliar worldviews",
+          "Immerse in the community to study it from within",
+          "Document inherited knowledge before it fades",
+          "Credits lived expertise"
+        ],
+        "toggleable": [
+          "Attentive to context",
+          "Protective of the vulnerable",
+          "Measured",
+          "Combine thematic depth with descriptive frequencies",
+          "Qualitative elicitation method",
+          "Why does an inherited practice persist alongside modern alternatives?"
+        ],
+        "rationale": "An ethnographic salvage moment; value-heavy self-portrait of suspending judgment to preserve inherited knowledge.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Even-handed toward unfamiliar worldviews",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|building the leanest sufficient explanation",
+      "type": "situation",
+      "payload": {
+        "name": "Building the leanest sufficient explanation",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Parsimonious"
+          },
+          {
+            "attribute": "action",
+            "name": "Build a minimal model"
+          },
+          {
+            "attribute": "action",
+            "name": "Test a single mechanism's sufficiency"
+          },
+          {
+            "attribute": "action",
+            "name": "Recast a problem as a solved one"
+          },
+          {
+            "attribute": "question",
+            "name": "What hidden entity explains the anomaly?"
+          }
+        ],
+        "domain_balance": {
+          "value": 1,
+          "question": 1,
+          "action": 3,
+          "tool": 0,
+          "under_budgeted": true
+        },
+        "reading_list": [
+          "W4403964193"
+        ],
+        "core_spine": [
+          "Parsimonious",
+          "Build a minimal model",
+          "What hidden entity explains the anomaly?"
+        ],
+        "toggleable": [
+          "Test a single mechanism's sufficiency",
+          "Recast a problem as a solved one"
+        ],
+        "rationale": "A parsimony moment: name a single hidden entity and show one mechanism suffices. Tool column empty — under-instrumented frame, surfaced honestly.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Parsimonious",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|explicit resolution by analogy transport",
+      "type": "situation",
+      "payload": {
+        "name": "Explicit resolution by analogy transport",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Drawn to explicit construction"
+          },
+          {
+            "attribute": "value",
+            "name": "Alive to cross-domain analogy"
+          },
+          {
+            "attribute": "action",
+            "name": "Resolve a singularity stratum by stratum"
+          },
+          {
+            "attribute": "action",
+            "name": "Replace a singular center with its smooth resolution"
+          },
+          {
+            "attribute": "action",
+            "name": "Reduce a global claim to a local bundle calculation"
+          },
+          {
+            "attribute": "action",
+            "name": "Carry an established framework into a harder setting"
+          },
+          {
+            "attribute": "tool",
+            "name": "Iterated blowup construction"
+          },
+          {
+            "attribute": "question",
+            "name": "How can an embedded divisor's singularities be resolved explicitly?"
+          }
+        ],
+        "domain_balance": {
+          "value": 2,
+          "question": 1,
+          "action": 4,
+          "tool": 1,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W4283021637"
+        ],
+        "core_spine": [
+          "Drawn to explicit construction",
+          "Alive to cross-domain analogy",
+          "Resolve a singularity stratum by stratum",
+          "Carry an established framework into a harder setting"
+        ],
+        "toggleable": [
+          "Replace a singular center with its smooth resolution",
+          "Reduce a global claim to a local bundle calculation",
+          "Iterated blowup construction",
+          "How can an embedded divisor's singularities be resolved explicitly?"
+        ],
+        "rationale": "A constructive-mathematics moment: transport a known framework by analogy and build the resolution explicitly, step by step.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Drawn to explicit construction",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "situation|localized evidence from coarse labels",
+      "type": "situation",
+      "payload": {
+        "name": "Localized evidence from coarse labels",
+        "phase": "Designing the approach",
+        "members": [
+          {
+            "attribute": "value",
+            "name": "Wary of reductive summaries"
+          },
+          {
+            "attribute": "action",
+            "name": "Derive localized evidence from coarse labels"
+          },
+          {
+            "attribute": "action",
+            "name": "Check interpretations against independent coders"
+          },
+          {
+            "attribute": "tool",
+            "name": "Weakly supervised model"
+          },
+          {
+            "attribute": "tool",
+            "name": "High-rate motion capture of the performed act"
+          },
+          {
+            "attribute": "question",
+            "name": "Where should a learner focus practice next?"
+          },
+          {
+            "attribute": "question",
+            "name": "Can coarse labels reveal local structure?"
+          }
+        ],
+        "domain_balance": {
+          "value": 1,
+          "question": 2,
+          "action": 2,
+          "tool": 2,
+          "under_budgeted": false
+        },
+        "reading_list": [
+          "W7164400640"
+        ],
+        "core_spine": [
+          "Wary of reductive summaries",
+          "Derive localized evidence from coarse labels",
+          "Weakly supervised model"
+        ],
+        "toggleable": [
+          "Check interpretations against independent coders",
+          "High-rate motion capture of the performed act",
+          "Where should a learner focus practice next?",
+          "Can coarse labels reveal local structure?"
+        ],
+        "rationale": "A weak-supervision moment: refuse a single global score, mine local structure from coarse labels, and validate against independent coders.",
+        "confidence": "S",
+        "entrenchment_status": "ad-hoc",
+        "ideal_anchor": "Wary of reductive summaries",
+        "recurrence_count": 0,
+        "precision": null
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|value|alive to cross-domain analogy|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of single-method conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|corroborate across independent measurement modalities|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|reduce a global claim to a local bundle calculation|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|even-handed toward unfamiliar worldviews|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|immerse in the community to study it from within|surface tacit reasoning",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|wary of reductive summaries|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|derive localized evidence from coarse labels|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|cancel sampling noise with a mirrored draw|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|learn the control from a pilot sample|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|build a normative model from healthy controls|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|resolve a singularity stratum by stratum|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|replace a singular center with its smooth resolution|resolve a singularity stratum by stratum",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|document inherited knowledge before it fades|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|combine thematic depth with descriptive frequencies|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|check interpretations against independent coders|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|build a minimal model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|test a single mechanism's sufficiency|build a minimal model",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|benchmark against an established method|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|attentive to context|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|credits lived expertise|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|protective of the vulnerable|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|qualitative elicitation method|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|account for confounders|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|weakly supervised model|machine-learning classifier",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|high-rate motion capture of the performed act|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|iterated blowup construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|brain-age prediction model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|blood-based neurodegeneration biomarker|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|does chronic inflammation accelerate brain aging?|what overlooked exposures shape human regulatory biology?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|where should a learner focus practice next?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|can coarse labels reveal local structure?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what hidden entity explains the anomaly?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|can correlated samples estimate better than independent ones?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|how can an embedded divisor's singularities be resolved explicitly?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|why does an inherited practice persist alongside modern alternatives?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|pressure-test your own result|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|humble|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|action|surface tacit reasoning|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|tool|machine-learning classifier|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|question|what overlooked exposures shape human regulatory biology?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|value|wary of reductive summaries|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|action|derive localized evidence from coarse labels|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|action|check interpretations against independent coders|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|tool|weakly supervised model|machine-learning classifier",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|tool|high-rate motion capture of the performed act|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|question|where should a learner focus practice next?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|question|can coarse labels reveal local structure?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|value|parsimonious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|action|build a minimal model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|action|test a single mechanism's sufficiency|build a minimal model",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|action|recast a problem as a solved one|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|question|what hidden entity explains the anomaly?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|drawn to generalization|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|benchmark against an established method|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|cancel sampling noise with a mirrored draw|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|action|learn the control from a pilot sample|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|question|can correlated samples estimate better than independent ones?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|value|drawn to explicit construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|value|alive to cross-domain analogy|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|action|resolve a singularity stratum by stratum|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|action|replace a singular center with its smooth resolution|resolve a singularity stratum by stratum",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|action|reduce a global claim to a local bundle calculation|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|action|carry an established framework into a harder setting|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|tool|iterated blowup construction|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|question|how can an embedded divisor's singularities be resolved explicitly?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|attentive to context|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|credits lived expertise|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|protective of the vulnerable|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|measured|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|even-handed toward unfamiliar worldviews|humble",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|immerse in the community to study it from within|surface tacit reasoning",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|document inherited knowledge before it fades|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|action|combine thematic depth with descriptive frequencies|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|tool|qualitative elicitation method|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|question|why does an inherited practice persist alongside modern alternatives?|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|question|does chronic inflammation accelerate brain aging?|what overlooked exposures shape human regulatory biology?",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|build a normative model from healthy controls|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|corroborate across independent measurement modalities|pressure-test your own result",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|wary of single-method conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|tool|brain-age prediction model|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|tool|blood-based neurodegeneration biomarker|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|action|account for confounders|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|alive to cross-domain analogy|action|carry an established framework into a harder setting|https://doi.org/10.14231/ag-2026-014",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to explicit construction|action|resolve a singularity stratum by stratum|https://doi.org/10.14231/ag-2026-014",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of single-method conclusions|action|corroborate across independent measurement modalities|https://doi.org/10.64898/2026.06.10.729182",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|wary of reductive summaries|action|derive localized evidence from coarse labels|https://doi.org/10.1145/3800645.3812903",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|parsimonious|action|build a minimal model|http://arxiv.org/abs/2410.04742",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to generalization|action|learn the control from a pilot sample|https://doi.org/10.1007/s00291-026-00863-0",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|even-handed toward unfamiliar worldviews|action|immerse in the community to study it from within|https://doi.org/10.3389/fsoc.2026.1814421",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|credits lived expertise|action|document inherited knowledge before it fades|https://doi.org/10.3389/fsoc.2026.1814421",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|question|does chronic inflammation accelerate brain aging?|tool|brain-age prediction model|https://doi.org/10.64898/2026.06.10.729182",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|triangulating a single-method claim",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|documenting a fading knowledge system",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|building the leanest sufficient explanation",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|explicit resolution by analogy transport",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "situation|localized evidence from coarse labels",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 6,
+      "paper_citations": 0,
+      "concepts": 27,
+      "edges": 27,
+      "concept_links": 42,
+      "tunnel_links": 9,
+      "combos": 5,
+      "combo_edges": 37,
+      "chaos_situation_meta": 5,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 32,
+      "chaos_prediction_events": 47
+    }
+  },
+  "run_id": 3
+}

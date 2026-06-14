@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.11
+**Version:** 0.12
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -127,50 +127,70 @@ work**" — does it situate rather than essentialize (P17)?
   dispositions by signature-coherence, not raw count). §5 frames Situations as if-then-toward-goal
   units and bridges them to values. Small confirmations folded in (Sporns → P1/P12 network position;
   Schwarz → reflect-step signal meaning; Smith & Collins → situated cognition).
+- **v0.12 — The value-only refocus (major).** Orca is narrowing to a single attribute domain:
+  **`[value]`** — researcher *dispositions*, in the disposition register. The `[action]`, `[tool]`,
+  and `[question]` domains are removed from the app, and Chaos now develops **only value
+  categories**. The goal is adoptability: a focused ontology of research dispositions is far more
+  legible to a new user than a four-domain graph with cross-domain compositions. **Dropped:**
+  Situations (§5) and combos — they were inherently cross-domain; the four-domain cost/benefit frame
+  (§1); the Actions / Tools / Questions domain notes (§4); the lifecycle map (§6) — its main job was
+  seeding Situations; and the CARS/phase apparatus in P10. **Reworked to value-only:** §1 (the model
+  is the researcher's dispositional self, not a cost/benefit landscape); P2 (only the value graph
+  exists — a practice/method is the *behavior* a disposition enacts, not graphed); P5 (the usefulness
+  lens, minus cost/benefit); P8 (co-grounding now witnesses value↔value tunnels); P9 (self-anchoring,
+  the phrasing ceiling, the disposition guardrail, and the if-then signature, minus the value/action
+  contrast); P10 (the stance/metadiscourse read becomes the primary instrument; conduct is read as
+  evidence of disposition); the run procedure, knobs, and formats. **Kept intact** (all
+  domain-agnostic): the predictive-processing spine, the reconciliation work and the anti-essentialism
+  guard (P1/P17 — now *central*, since clustering value families is the whole game), the
+  recurrence / precision / provenance ledger, subtextuality (P3), grow-from-encounters (P4),
+  the phi/integration principle and tunnels (P12/P15), prediction-error learning (P14), the context
+  principle (§2.0), frontier concepts (P11), six-field cross-disciplinary sourcing, and the episodic
+  substrate + reflect loop. A possible future successor to Situations — a **value constellation**
+  (a coherent cluster of co-occurring dispositions, a "research character") — is noted as
+  condition-gated on a rich value hierarchy, not built.
 
 ---
 
 ## 1. Purpose
 
-Orca's four domains together model a **cost/benefit analysis of research**:
+Orca models the researcher's **dispositional self** — the standing **values** that characterize how
+a researcher works: *who they are* as a researcher, not what research is (P9). Chaos's single job is
+to build and continually revise a graph of these dispositions, grounded in real research. **The
+tool's meta-objective is usefulness to a researcher** — not completeness, not taxonomic tidiness.
+("Usefulness" is therefore not a value node; it is the lens every proposal is judged against — P5.)
 
-- **Benefit — what to move toward:** *values* and *open questions*.
-- **Cost — what pursuing them takes:** *actions* and *tools*.
+A value is **aspirational**: it names who a researcher wants to be. The dispositions are the
+researcher's character — the invariants that hold across the changing contexts of their work
+(the if-then signature, P9). Earlier drafts framed this as one column of a four-domain cost/benefit
+landscape (values/questions as benefit, actions/tools as cost); that frame is **retired** (v0.12).
+Chaos now graphs *only* the dispositional layer.
 
-A researcher planning new work navigates this landscape. **The tool's meta-objective is
-usefulness to a researcher-planner** — not completeness, not taxonomic tidiness. ("Usefulness"
-is therefore not a value node; it is the lens every proposal is judged against — P5.)
+Why dispositions are the right thing to anchor on draws on what Lisa Feldman Barrett writes about
+cognition as anchored by **body budgeting** — the brain's categories are shaped by an economy of
+finite energy and the decisions made with it, and that budgeting is **allostatic** (*anticipatory*,
+not reactive): the brain predicts before it provisions. A researcher's dispositions are exactly the
+anticipatory stances that economy settles into — the characteristic ways they lean *before* a
+situation demands it. That is what makes a disposition a *standing prediction* (P14) and not a
+momentary act.
 
-The cost/benefit frame has two faces of one self: the benefit side (values, questions) is
-the **aspirational self** — who I want to be, what I want to know; the cost side (actions,
-tools) is the **enacting self** — what I do and use to get there.
-
-The cost/benefit frame reflects what Lisa Feldman Barrett writes about cognition and conscious 
-experience as anchored by body budgeting, interoceptive activities in the brain. The 
-categorical mechanisms of the brain are thus anchored by questions of finite energy and the 
-decisions to be made with it. Crucially, body-budgeting is **allostatic** — *anticipatory*, not
-reactive: the brain predicts and provisions for a cost *before* it arrives. So the cost/benefit
-landscape is not a static ledger but a **forward** one — a researcher-planner forecasts the cost a
-benefit will demand before committing to it. (This is why Situations are most faithful to Barrett
-when read as anticipatory moments — Section 5.)
-
-**The experiential north star: sharing a big research brain.** What the mechanics serve is a
-felt experience — navigating Orca should feel like traveling the neural pathways of research's
-conceptual domains: descending a graph follows a pathway deeper; tunnels and situations are the
-long-range fibers that associate distant regions; exemplar links are where a pathway touches
-the world. This is the extended-mind commitment (§2) made experiential, and the phi principle
-(P12) is its structural measure — integration across differentiated regions is what makes a
-brain a brain rather than a filing cabinet. In predictive-processing terms Orca is a **designer
-environment that installs predictions** (Clark, §2): descending a path is acquiring a prior,
-crossing a tunnel imports a remote prediction, an exemplar link is where a prediction touches the
-world. The goal of seeding is therefore not "store knowledge" but *install good research priors
-that make the research world more navigable.* Proposals should be judged partly by whether they
-make the brain feel more *travelable*: depth to descend into, bridges to cross, hooks that
-invite the journey. Travel itself has **two gears** (P15): executive descent — deliberate,
-stepwise movement down analytic edges — and default-mode drift — associative jumps across
-tunnels, flips to alternate parents, thematic leaps between siblings. The drift is **controlled**,
-not loose: every associative leap is scaffolded by analytic structure and witnessed by grounding
-(P8), which is the executive control on the leap. The graph should reward both gears.
+**The experiential north star: sharing a big research brain.** What the mechanics serve is a felt
+experience — navigating Orca should feel like traveling the neural pathways of research's
+dispositional landscape: descending a graph follows a pathway from a broad virtue deeper into its
+specific dispositions; tunnels are the long-range fibers that associate distant regions; exemplar
+links are where a disposition touches real research. This is the extended-mind commitment (§2) made
+experiential, and the phi principle (P12) is its structural measure — integration across
+differentiated regions is what makes a brain a brain rather than a filing cabinet. In
+predictive-processing terms Orca is a **designer environment that installs predictions** (Clark, §2):
+descending a path is acquiring a prior, crossing a tunnel imports a remote prediction, an exemplar
+link is where a prediction touches the world. The goal of seeding is therefore not "store knowledge"
+but *install good research priors that make a researcher's character more navigable.* Proposals
+should be judged partly by whether they make the brain feel more *travelable*: depth to descend into,
+bridges to cross, hooks that invite the journey. Travel itself has **two gears** (P15): executive
+descent — deliberate, stepwise movement down analytic edges — and default-mode drift — associative
+jumps across tunnels, flips to alternate parents, thematic leaps between siblings. The drift is
+**controlled**, not loose: every associative leap is scaffolded by analytic structure and witnessed
+by grounding (P8), which is the executive control on the leap. The graph should reward both gears.
 
 ---
 
@@ -188,8 +208,10 @@ citation.
 
 - **Campbell's monomyth (the hero's journey).** A cyclical event-structure — departure,
   initiation, return — that recurs across stories as a lens for interpreting them.
-  **Commitment:** treat the research life cycle as a *cycle* with recognizable stages, and
-  read papers as episodes within it. (→ Section 6.)
+  **Commitment:** treat research as having a recognizable temporal arc and read papers as
+  episodes within it — a researcher's dispositions show differently at different points in that
+  arc (the if-then signature, P9). Chaos tracks the arc through citation progression rather than a
+  separate phase map. (→ P9, P11.)
 
 - **Foucault, *The Order of Things*.** Knowledge is produced through situated acts of
   categorization, with the individual knower at the center as both the one who orders and a
@@ -207,26 +229,18 @@ citation.
   **Commitment:** Chaos is one such model of the researcher, revised as it reads. The graph it
   maintains is a set of *predictions* about research, and each new article tests them —
   prediction error is the primary learning signal. The model must also acquire temporal depth,
-  tracking research as it unfolds. (→ P11, P14, Section 6.)
+  tracking research as it unfolds. (→ P11, P14.)
 
-- **Barsalou, the Situated Action Cycle — and ad hoc / goal-derived categories.** Concepts are
-  not abstract tokens; they develop *within situations of action* that integrate self,
-  environment, action, and outcome, and they function to support predictions for action. The
-  sharper construct for Situations is Barsalou's **ad hoc category** (1983): a category assembled
-  *to serve a goal*, whose members need **not** share features ("things to take from a burning
-  house" spans wallet, photos, pet), with internal structure graded around an **ideal** that best
-  serves the goal rather than around a central tendency. Repeated use **entrenches** an ad hoc
-  category into a well-established **goal-derived** one. **Commitment:** Orca's Situations *are* ad
-  hoc / goal-derived categories in this exact sense — which is why their members legitimately span
-  all four attribute columns without being taxonomically related, why membership is graded around
-  an ideal, and why repeated re-exemplification promotes a situation from speculative (*ad hoc*) to
-  validated (*established*). We borrow the anchor: a situation is a *moment of cost and benefit* —
-  actions and the goal-states they serve — not merely a coherent set of concepts. Concepts are
-  also **context-dependent**: the same concept is reconstructed differently in each situation,
-  which warrants multi-parent placement (P1, P15). Barsalou also writes the *Mind in Context*
-  conclusion, on *the vices of nominalization* — the error of freezing a contextualized *process*
-  (a verb) into a context-free *thing* (a noun); this is the deep root of P3 (subtextuality), the P9
-  value/behavior guardrail, and P17. (→ Sections 5, 6; P1; P15; P17.)
+- **Barsalou, situated conceptualization — and the vices of nominalization.** Concepts are not
+  abstract tokens; they develop *within situations of action* that integrate self, environment,
+  action, and outcome, and they function to support predictions for action. Two consequences are
+  load-bearing for Chaos. First, concepts are **context-dependent**: the same concept is
+  reconstructed differently in each context it's used in, and one disposition is realized by many
+  different instances (degeneracy) — which is the warrant for multi-parent placement and for prizing
+  discipline-diverse grounding (P1, P15, P13). Second, Barsalou's *Mind in Context* conclusion names
+  *the vices of nominalization* — the error of freezing a contextualized *process* (a verb) into a
+  context-free *thing* (a noun); this is the deep root of P3 (subtextuality), the P9 phrasing
+  ceiling / disposition guardrail, and P17. (→ P1; P3; P9; P15; P17.)
 
 - **Tononi, integrated information theory.** Consciousness is theorized to track Φ (phi):
   a system has high phi when it is both highly *integrated* (not decomposable without loss)
@@ -261,7 +275,7 @@ citation.
     not extended-mind-proper. The act that moves a concept from *consult* to *extension* is the
     user's **adoption/endorsement** of it.
   Chaos's **seed-account** content therefore lives in the *consult* register until a real user
-  adopts it — which is what the separate seed-account provenance is *for* (§8). Smith & Collins's
+  adopts it — which is what the separate seed-account provenance is *for* (§6). Smith & Collins's
   *situated cognition* (in the *Mind in Context* volume) reconfirms the same point from the social
   side: cognition serves action and is offloaded into the environment. (→ P9.)
 
@@ -274,18 +288,13 @@ citation.
   has an executive gear and a default-mode gear (§1). Orca leans associative by character —
   cross-domain tunnels, subtextual concepts — but the lean is a gradient, not a monoculture.
 
-A convergence worth noting: Campbell's narrative cycle and Barsalou's Situated Action Cycle
-arrive independently at the same shape — situated, sequential, self-centered episodes. The
-lifecycle map sits on that shared foundation. And four of these commitments form one spine:
-the mind models the world (predictive processing, beneath active inference), updates that
-model through action and perception (active inference), extends it into trusted technology
-(extended mind), and is worth more the more integrated the model becomes (integrated
-information). Chaos grows that extended, integrated model. Two further convergences earn their
-keep: (1) *precision* (PP), *recurrence-confidence* (P13), and the inverse of *phi-noise* (P12)
-are the same underlying quantity — how much to trust a piece of structure — seen from three
-foundations, which is why one ledger value (P16) can serve all three; (2) Barsalou's *ad hoc
-category*, active inference's *policy*, and Orca's *Situation* are the same object — a
-goal-derived assembly that serves a plan — which is why Situations are first-class (Section 5).
+A convergence worth noting: four of these commitments form one spine — the mind models the world
+(predictive processing, beneath active inference), updates that model through action and perception
+(active inference), extends it into trusted technology (extended mind), and is worth more the more
+integrated the model becomes (integrated information). Chaos grows that extended, integrated model.
+And one further convergence earns its keep: *precision* (PP), *recurrence-confidence* (P13), and the
+inverse of *phi-noise* (P12) are the same underlying quantity — how much to trust a piece of
+structure — seen from three foundations, which is why one ledger value (P16) can serve all three.
 
 ### 2.0 The context principle (and the kinds of context Chaos models)
 
@@ -307,7 +316,7 @@ design (the body-budget framing is the one metaphorical exception). The **social
 dimension — a disposition's meaning is partly set by the research community one is embedded in — is
 the deliberate **thin spot**: Chaos reads single papers and anchors to a single self (P9), and the
 community-as-context is supplied later, by post-launch user contributions and the federation roadmap
-(§8). Naming it keeps the "good context work" claim honest about its current edge.
+(§6). Naming it keeps the "good context work" claim honest about its current edge.
 
 ### 2.1 The predictive-processing machinery (and Chaos's prior preferences)
 
@@ -369,16 +378,19 @@ goes general → specific; a child is part of what makes up its parent, though a
   by an intrinsic core — so a concept *is* its connectivity (path + neighbors + tunnels), which is
   why there is no context-free concept to merge on by name alone (P17).
 
-### P2 — Graph qualities, not practices or methods *(sharpened)*
-A value graph holds **qualities** (dispositions of the researcher — see P9). A *practice or
-strategy* belongs in the **action** graph; an *instrument or method* in the **tool** graph.
-- **The disposition-vs-behavior line:** a value is a *standing quality*; the action is its
-  *exercise*. They tunnel; they are not the same node. When you tunnel them, pair the
-  disposition with the action that *most directly* enacts it (Skeptical ↔ cross-check;
-  Measured ↔ calibrated reporting) — not with whatever action the same paper happens to ground.
+### P2 — Dispositions, not practices or methods *(sharpened)*
+The graph holds **dispositions** — standing qualities of the researcher (see P9). A *practice or
+strategy*, an *instrument or method*, a *step you take* — these are the **behaviors a disposition
+enacts**, and Chaos no longer graphs them (the action/tool/question domains are retired, v0.12). They
+still matter as *evidence*: a paper's practices and methods are read as signs of the disposition
+behind them (P10), but the node is always the disposition, never the behavior.
+- **The disposition-vs-behavior line:** a value is a *standing quality*; the practice is its
+  *exercise*. Keep the node on the quality. The discipline holds even without an action domain to
+  send the behavior to — a disposition that has slid into the behavior that enacts it has stopped
+  being a disposition.
 - **Yes:** "Skeptical of one's own conclusions" (disposition).
-- **No:** "Run every defensible version of the analysis" as a *value* — that is the action
-  the disposition drives.
+- **No:** "Run every defensible version of the analysis" as a value — that is the *behavior* the
+  disposition drives, not the disposition.
 
 ### P3 — Subtextual, not terminological
 Graph the researcher's lived, tacit conceptualization, not the article's vocabulary. The
@@ -399,12 +411,13 @@ first-person and resists drift into a technical ontology.
   budget under one principle — additions earn their complexity — and is the principled footing for
   decay-as-complexity-reduction (P14).
 
-### P5 — The cost/benefit lens & the hypothetical-researcher test
-Before proposing anything, simulate a researcher planning new work. Ask: would landing on
-this concept, and this exemplar document, help them see a benefit (value/question) or a cost
-(action/tool) *instantiated in actual research* in a way that informs their plan? If not,
-don't propose it. A linked document must be an **exemplar that demonstrates the concept**,
-not one that merely discusses it. (Co-grounding, the engine of tunnels, is now P8.)
+### P5 — The usefulness lens & the hypothetical-researcher test
+Before proposing anything, simulate a researcher reflecting on how they work. Ask: would landing on
+this disposition, and this exemplar document, help them recognize or sharpen a value *instantiated
+in actual research* in a way that informs who they are as a researcher? If not, don't propose it. A
+linked document must be an **exemplar that demonstrates the disposition** — research whose conduct
+*shows* the disposition at work — not one that merely discusses it. (Co-grounding, the engine of
+tunnels, is now P8.)
 
 ### P6 — Don't be a prisoner of existing structure
 Be willing to insert a concept between an existing parent and child. Under append-only you
@@ -420,27 +433,24 @@ prediction-error handling, not mere tidying.
 This rubric is the *brain* (how to decide). The database is the *state* (what's decided).
 The rubric never hard-codes the current graph.
 
-### P8 — Co-grounding *(promoted to first-class)*
-A cross-domain connection is strongest when a **single document instantiates all of its
-ends** — then the relationship is witnessed, not guessed. Two applications:
-- **Cost/benefit tunnels:** prefer tunnels where one paper exemplifies both the value (or
-  question) and the action (or tool) it connects to.
-- **Situations:** compose them from member edges that share grounding documents; the
-  intersection reading list (Section 5) then falls out for free.
-- A connection that no single document grounds on every end is more speculative — propose
-  it more cautiously.
+### P8 — Co-grounding *(first-class)*
+A tunnel between two dispositions is strongest when a **single document instantiates both ends** —
+then the association is witnessed, not guessed. When one paper exemplifies both dispositions a
+tunnel connects (e.g. a paper whose conduct shows *both* "Skeptical of one's own conclusions" and
+"Measured"), the tunnel is co-grounded and trustworthy. A tunnel that no single document grounds on
+both ends is more speculative — propose it more cautiously. Co-grounding is the executive control on
+the associative leap (P15): "lean associative" never means "lean loose."
 
 ### P9 — The researcher as fulcrum (self-anchoring)
-Every concept is a predicate of the researcher's **self**, which is what gives a concept its
-felt, "this is mine" quality. Intimacy comes from the *referent* (a person), not from
-grammar — so **no first-person pronouns are needed**, and concepts stay short.
-- **Values** = *who I am* (dispositions). **Actions** = *what I do*. **Tools** = *what I
-  use*. **Questions** = *what I ask*. Voice differs in form across domains, but the anchor —
-  the self — is uniform, which is what lets a Situation read as a coherent self-portrait.
+Every disposition is a predicate of the researcher's **self**, which is what gives a concept its
+felt, "this is mine" quality. Intimacy comes from the *referent* (a person), not from grammar — so
+**no first-person pronouns are needed**, and concepts stay short. A value names *who I am*; the
+anchor — the self — is what lets the graph read as a coherent self-portrait of a researcher's
+character.
 - **The phrasing ceiling (composability discipline):** a concept must remain a noun, gerund,
   or short imperative *phrase* that can take a parent and children and read general →
   specific. It may **never** become a declarative clause with a truth value.
-  - **Yes:** "Letting others check my work." **No:** "Open data improves reproducibility"
+  - **Yes:** "Skeptical of one's own conclusions." **No:** "Open data improves reproducibility"
     (a proposition — stops being an ontology node).
 - **Guardrail (with P2):** a value-disposition must not slide into the behavior that enacts
   it. ("Skeptical," not "tests the result every way.")
@@ -448,75 +458,66 @@ grammar — so **no first-person pronouns are needed**, and concepts stay short.
   stability is *not* context-free constancy but a recognizable **pattern of variability** — a stable
   *if-then* signature across contexts ("if in an exploratory phase, then bold; if in a confirmatory
   one, then conservative"). The variability is the signal, not noise. This *deepens* the guardrail
-  rather than softening it: the **value is exactly the invariant across** the (context → action)
-  signature; the actions are the "then" branches, the contexts the "if" branches — which is *why*
-  value and action are separable domains. A disposition is best grounded by a coherent signature
-  across contexts, not by raw frequency (P13/P16), and Situations — context + actions toward a goal —
-  are if-then-toward-goal units, so a value witnessed across several Situations sharing its signature
-  is strongly held (§5).
+  rather than softening it: the **value is exactly the invariant across** the (context → conduct)
+  signature — the disposition is the standing leaning, the conduct in each context is how it shows.
+  So a disposition is best grounded by a coherent signature across contexts, not by raw frequency
+  (P13/P16): a value witnessed behaving the same characteristic way in field after field is strongly
+  held.
 - **The reciprocal loop (Foucault × extended mind, §2).** Self-anchoring is not only the
   *precondition for trust*; it is one half of a loop. The self shapes the graph (orderer), and the
-  graph, once adopted, reshapes the self who predicts and plans with it (ordered). A seeded concept
-  therefore helps *constitute* its adopter — so prefer dispositions and framings you'd want a
-  researcher to be *formed by*. A concept only crosses from social resource to genuine cognitive
-  extension when the user **adopts/endorses** it; Chaos's seed content sits in the *consult*
-  register until then (extended-mind commitment, §2).
+  graph, once adopted, reshapes the self who predicts and plans with it (ordered). A seeded
+  disposition therefore helps *constitute* its adopter — so prefer dispositions and framings you'd
+  want a researcher to be *formed by*. A concept only crosses from social resource to genuine
+  cognitive extension when the user **adopts/endorses** it; Chaos's seed content sits in the
+  *consult* register until then (extended-mind commitment, §2).
 
-### P10 — Read conduct as move-step analysis
-Read a paper for the research *process and effort* it represents — which phase of the life
-cycle (Section 6) its conduct instantiates, and what was at stake and traded off there — not
-for the words on the page. A paper is a record of *moves a researcher made*. This is the
-reading method that produces good exemplars and locates papers in the lifecycle map.
-- **Read both ends of the arc.** The conduct in methods/results/discussion documents the
-  *mid-to-late* phases (Designing → Reporting). The *early* phases and most *questions* live
-  only in the introduction's rhetorical moves — read all three of Swales' CARS moves:
-  - **Move 1 (establish a territory) and Move 2 (establish a niche / the gap)** → *Sensing the
-    gap*, and the questions themselves.
-  - **Move 3 (occupy the niche)** — the announced purpose, the stated hypotheses, the
-    preregistration, the "here we test…" — → *Committing to a question*. The question is the
-    *content* of the commitment; Committing-phase concepts are the dispositions and actions of
-    *locking in* (e.g. "Commit before you look," stating hypotheses up front).
-  Read all three moves, or the front of the life cycle stays empty.
-- **Read the stance for the values (Hyland's metadiscourse).** Conduct-reading systematically
-  under-populates the *values* domain — dispositions barely surface in methods/results (this is the
-  v0.5 problem; CARS gave *phase*, not disposition). The missing instrument is **interactional
-  metadiscourse**, especially the *stance* system: **hedges** (might, suggests), **boosters**
-  (clearly, demonstrate), **attitude markers** (surprisingly, importantly), and **self-mention**.
-  Stance is how a writer encodes dispositional posture, so read the paper's stance profile as
-  evidence of the researcher's dispositions:
+### P10 — Read conduct as evidence of disposition
+Read a paper for the **dispositions** its conduct reveals — not for the words on the page. A paper
+is a record of choices a researcher made, and those choices are evidence of standing character: what
+they hedged, what they disclosed, what they tested, what they refused to overclaim. The node is
+always the disposition; the conduct is the sign.
+- **Stance is the primary instrument (Hyland's metadiscourse).** Dispositions barely surface in the
+  literal content of methods/results — they live in **interactional metadiscourse**, especially the
+  *stance* system: **hedges** (might, suggests), **boosters** (clearly, demonstrate), **attitude
+  markers** (surprisingly, importantly), and **self-mention**. Stance is how a writer encodes
+  dispositional posture, so read the paper's stance profile as evidence of the researcher's
+  dispositions:
   - heavy hedging around a strong result → **Measured**;
   - explicit self-mentioned reporting of disconfirming results → **Forthcoming**;
-  - hedged self-citation / concessive engagement with one's own conclusions → **Skeptical of
-    one's own conclusions**.
-  So "read both ends of the arc" gains a third thread: conduct (phase), CARS (front of the cycle
-  and questions), and **stance (the values)**.
+  - hedged, concessive engagement with one's own conclusions → **Skeptical of one's own
+    conclusions**.
+- **Conduct as corroboration.** The practices and methods in the paper (preregistering, running
+  every defensible analysis, depositing data) are not themselves nodes (P2), but they corroborate
+  the disposition behind them — a paper that *both* hedges its claims *and* runs robustness checks
+  is double evidence for a cautious, self-skeptical character. Read conduct and stance together; the
+  disposition is what they jointly point to.
+- Works with P3 and P9: P3 pushes away from the paper's vocabulary toward the lived disposition;
+  P9 anchors that disposition to the self.
 
 ### P11 — One evolving model, with temporal depth
-Chaos maintains and revises a *single* model of the researcher as it consumes research
-(active inference). There is one value system — Orca's researcher-dispositions (Section 4);
-the lifecycle map (Section 6) is no longer a parallel system but a phase index over those same
-concepts. The model needs **temporal depth**: a paper sits between prior work it advances and
-future work that advances from it, and Chaos tracks this through citation relationships among
-linked papers (Section 7), building a progression axis. *How* the model learns from research —
+Chaos maintains and revises a *single* model of the researcher's dispositions as it consumes
+research (active inference). The model needs **temporal depth**: a paper sits between prior work it
+advances and future work that advances from it, and Chaos tracks this through citation relationships
+among linked papers (Section 5), building a progression axis. *How* the model learns from research —
 prediction and error — is P14.
 
 - **The citation network is a *predictive* temporal model.** A deep temporal model doesn't only
   record a sequence, it **predicts the next state**: given a trajectory A→B→C, what advances next?
-  The citation axis is the substrate for predicting *research trajectories*, and the lifecycle map
-  (a phase sequence) is itself such a model of the research process.
+  The citation axis is the substrate for predicting *research trajectories* — and thus for the
+  frontier dispositions a trajectory is heading toward.
 - **Frontier concepts (a condition-gated capability, not a future plan).** Once the citation model
   is **robust enough to be genuinely predictive**, Chaos can surface **frontier concepts** — places
   the trajectory is clearly heading but where groundings are still sparse or absent — and prioritize
   them for active sampling (P14) and, where warranted, propose them *ahead of* their grounding. This
   is not deferred work or a roadmap item: it is *only possible* once the model is robust, but it is
   **acted on as soon as that condition holds**, automatically, the way Phase B auto-write is gated
-  on validation signals maturing (§8). The trigger is a property of the model, not a date. The
+  on validation signals maturing (§6). The trigger is a property of the model, not a date. The
 **automated reflect/consolidate loop** (learning model, below) is the other clear case: the episodic
 store and the *manual* reflect step exist now, but the *self-writing* loop waits on Phase B autonomy
 maturity and switches on then.
 - **The emptiness is a stigmergic signal.** A frontier concept seeded before research has
   instantiated it carries a deliberate **empty grounding** — no exemplar links yet. That emptiness
-  is not a defect; it is a **stigmergic trace** (cf. the restructure-mentions of P6/§7): a mark left
+  is not a defect; it is a **stigmergic trace** (cf. the restructure-mentions of P6/§5): a mark left
   in the environment that coordinates future action, here inviting researchers (or a later Chaos
   run) to **find or create the research that fills it**. The unfilled link slot is the call; a
   later grounding is the response that confirms the frontier prediction (P13, P16).
@@ -587,7 +588,7 @@ them. This — not human feedback — is the primary learning signal; the aim is
 is learned from every article and to lean on curation as little as possible. Three forms of
 error, three operations:
 - **Gap (under-prediction):** the article instantiates something the graph cannot hold → *add* it.
-- **Non-confirmation (doesn't bear out):** the graph holds a concept or situation research keeps
+- **Non-confirmation (doesn't bear out):** the graph holds a disposition research keeps
   *not* instantiating → *decay its attention* (append-only forbids deletion; confidence and
   visibility drop instead). Decay is also the model **lowering its own complexity** (P4/§2.1 —
   accuracy−complexity), and *how fast* it decays is set by precision (P16): high-precision concepts
@@ -606,7 +607,7 @@ Recurrence (P13) is the confirmation signal; phi (P12) judges what is worth addi
 before non-confirmation counts as error: absence in a thin corpus is *untested*, not
 disconfirmed — a prediction can only be retired in a region Chaos has actually sampled. Decay is
 never deletion; later research can dig a decayed concept back up and re-confirm it. Each concept
-and situation carries an explicit prediction and a ledger (confirmed / expected-but-absent /
+carries an explicit prediction and a ledger (confirmed / expected-but-absent /
 appeared-elsewhere). **Honor the confirmation/disconfirmation asymmetry (Bouton):** a confirmation
 *generalizes* across contexts (be ready to extend a confirmed concept into new regions), but a
 disconfirmation is *local* (don't globally retire what merely failed to appear in one context). And
@@ -615,9 +616,9 @@ prediction is to ask *what was different about this context* — context-specifi
 elsewhere — before any global decrement.
 
 **Active sampling.** To maximize learning per article and to test fairly, source next what most
-reduces uncertainty — the shakiest predictions (concepts added but unconfirmed, situations not
-yet co-grounded), the regions a prediction must be sampled in before it can be retired, and (once
-the citation model is robust) the **frontier concepts** the trajectory points toward (P11).
+reduces uncertainty — the shakiest predictions (dispositions added but unconfirmed), the regions a
+prediction must be sampled in before it can be retired, and (once the citation model is robust)
+the **frontier dispositions** the trajectory points toward (P11).
 Scoring is **expected free energy** (§2.1): rank each candidate region by **epistemic value** (how
 much it reduces uncertainty — how shaky the prediction there) **× pragmatic value** (how useful
 that region is to a researcher-planner — P5). A purely epistemic sampler would burn effort reducing
@@ -665,8 +666,8 @@ loose."
   even if unalike to define.
 
 **Discipline:** an associative edge is grounded differently, not less. It must still pass the
-hypothetical-researcher test (P5), carry an exemplar, and respect the domain boundary (P2) —
-association licenses the *placement*, never the existence, of a concept.
+hypothetical-researcher test (P5) and carry an exemplar — association licenses the *placement*,
+never the existence, of a concept.
 
 **Multi-parent placement.** Associative concepts naturally belong in several parent contexts.
 When a concept's groundings support more than one placement, propose the additional contexts —
@@ -681,7 +682,7 @@ No prediction error is taken at face value. In predictive processing each error 
 ones barely — attention *is* the allocation of precision (§2.1). P13's recurrence and P14's decay
 must therefore be *weighted*, not merely counted. Three things follow:
 
-- **Precision as a ledger value.** Each concept/situation carries a **precision** distinct from raw
+- **Precision as a ledger value.** Each concept carries a **precision** distinct from raw
   recurrence count. Precision rises with recurrence **and** discipline-diversity (degeneracy, P13)
   **and** consistency of how it's instantiated. Precision **modulates the learning rate**: the
   higher the precision, the *less* one new confirmation or non-confirmation moves the concept, and
@@ -707,7 +708,7 @@ must therefore be *weighted*, not merely counted. Three things follow:
   *context-specific* (P14's context-scoped decay), not as uniform disconfirmation. The *meaning* of a
   signal is itself context-dependent (Schwarz): a non-confirmation in a well-sampled region means
   something different from one in a barely-sampled region — which is interpreted in the reflect step,
-  Chaos's meta-cognition (§8).
+  Chaos's meta-cognition (§6).
 - **Yes:** an eight-discipline disposition barely dented by one non-confirmation; a one-off swung
   hard by a single new observation.
 - **No:** treating the tenth same-field re-mention as if it were the first independent one.
@@ -743,55 +744,39 @@ them into one context-free node.
 
 ## 4. Domain notes
 
-**Roots are hooks.** The root level — browsed across all domains or within one attribute — is
-a distinct part of the user experience: it's the storefront, and it should intrigue. A good
-root is a short, category-opening name that makes a visitor curious what lives beneath it.
-New abstract roots may be proposed sparingly when recurrence supports a genuinely new region
-(P13), and judged partly as invitations: does this root promise an interesting descent? In PP
-terms (§2.1) a root is also the **standing prior / "mindset"** — the coarsest gist that pre-frames
-every descent beneath it. So a root isn't only an intriguing label; it's the prior the whole
-sub-tree is read against, which is why getting roots right matters out of proportion to their
-count.
+There is a single attribute domain: **`[value]`** (v0.12). Everything Chaos graphs is a researcher
+disposition.
 
-### Values *(active focus)* — dispositions of the researcher
-Values describe *who the researcher is*, not what research is (P9). Roots are broad virtues;
-leaves are specific dispositions; children define the parent. The forest of independent
-roots stands (no literal "Good" node). **The values domain is the hardest to populate from
-conduct alone** — dispositions barely surface in methods/results. The instrument that fixes this
-is the **stance/metadiscourse sub-read** (P10): a paper's hedges, boosters, attitude markers, and
-self-mention encode the researcher's dispositional posture, and that is where most value leaves are
-actually found.
+**Roots are hooks.** The root level is a distinct part of the user experience: it's the storefront,
+and it should intrigue. A good root is a short, category-opening name that makes a visitor curious
+what lives beneath it. New abstract roots may be proposed sparingly when recurrence supports a
+genuinely new region (P13), and judged partly as invitations: does this root promise an interesting
+descent? In PP terms (§2.1) a root is also the **standing prior / "mindset"** — the coarsest gist
+that pre-frames every descent beneath it. So a root isn't only an intriguing label; it's the prior
+the whole sub-tree is read against, which is why getting roots right matters out of proportion to
+their count.
 
-- **Current roots:** Transparency, Rigor, Honesty — already person-describing, so the
-  disposition reframe barely moves them. It bites at the leaves, where earlier drafts
-  described the *work*. Re-voicings:
+### Values — dispositions of the researcher
+Values describe *who the researcher is*, not what research is (P9). Roots are broad virtues; leaves
+are specific dispositions; children define the parent. The forest of independent roots stands (no
+literal "Good" node). Dispositions are **hard to populate from a paper's literal content** — they
+barely surface in methods/results. The instrument that finds them is the **stance/metadiscourse
+read** (P10): a paper's hedges, boosters, attitude markers, and self-mention encode the researcher's
+dispositional posture, and that is where most value leaves are actually found, corroborated by the
+conduct itself.
+
+- **Example roots:** Transparency, Rigor, Honesty — already person-describing. The disposition
+  discipline bites at the leaves, where earlier drafts described the *work* rather than the standing
+  quality. Re-voicings:
   - "Inspectability of evidence" → **Open to scrutiny**
   - "Calibrated claims" → **Measured**
-  - "Robustness to analytic choices" → **Skeptical of one's own conclusions** (the *testing*
-    lives in the action graph)
-  - "Reporting disconfirming results" → **Forthcoming** (this one was already action-shaped;
-    the reframe sends the *act* of reporting to the action graph and keeps the disposition
-    here — so self-anchoring doubles as a detector for value leaves that were secretly actions)
-- **Candidate root (emerged, not yet seeded):** Protecting participants / research ethics —
-  in genuine tension with Transparency, which is a feature.
-
-### Actions *(cost side)* — what I do
-Abstractions read as strategies; concrete steps sit beneath. Current roots from the seed:
-
-- **Make the work checkable** → Publish the materials to re-run the analysis (→ Deposit your
-  data and code openly); Record your decisions as you go (→ Document where you departed from
-  the plan); Disclose what could bias the work.
-- **Commit before you look** → Register hypotheses and design before collecting data.
-- **Pressure-test your own result** → Run every defensible version of the analysis (→ Sample
-  the space when too large to enumerate); Check the result against chance.
-- **Report it straight** → Report findings that cut against your hypothesis; Anchor effect
-  sizes to familiar comparisons.
-
-### Open questions *(benefit side, not yet built)*
-A parent question is answered by answering its more concrete child questions.
-
-### Tools *(cost side, not yet built)*
-Generic tool concepts connect more concrete examples of actual tools.
+  - "Robustness to analytic choices" → **Skeptical of one's own conclusions** (the *testing* itself
+    is the behavior the disposition drives, not a node — P2)
+  - "Reporting disconfirming results" → **Forthcoming** (this one was secretly behavior-shaped; the
+    reframe keeps the disposition and drops the *act* — so self-anchoring doubles as a detector for
+    value leaves that were really behaviors)
+- **Candidate root (emerged, not yet seeded):** Protecting participants / research ethics — in
+  genuine tension with Transparency, which is a feature.
 
 ### Corpus and cross-disciplinarity
 Pull from across the cognitive sciences — **neuroscience, psychology, linguistics, AI,
@@ -801,160 +786,62 @@ likely to be a deep, lived, subtextual concept than a discipline-bound term.
 
 ---
 
-## 5. Situations (composition over the graph)
+## 5. Run procedure
 
-A Situation (the app feature, backed by `combos`/`combo_edges`) is a **composed research
-lens**: a curated set of member *edges* — concept-in-context, not bare concepts — assembled
-into a coherent slice of context, read through against source material. More than a coherent
-set of concepts, a situation is a **moment of cost and benefit** — actions and the goal-states
-they serve (the Barsalou anchor). Precisely, a situation is an **ad hoc / goal-derived category**
-(Barsalou 1983; §2): a category assembled *to serve a goal*, whose members need **not** share
-features — which is exactly why a situation's members legitimately span all four attribute columns
-without being taxonomically related. Two equivalent readings sharpen it: it is also a **policy** in
-the active-inference sense (actions + the goal-states they serve = a candidate research *plan*), so
-a situation can itself be scored by its epistemic + pragmatic value to a planner (P14); and, per
-Barrett's anticipatory allostasis (§1), it is a **forward** moment — a researcher forecasting the
-cost a benefit will demand before committing. A third reading bridges situations to the values
-domain: a situation is an **if-then-toward-goal unit** (Mischel & Shoda, P9) — *in this context,
-these actions toward this goal* — so a value witnessed across several situations that share its
-characteristic signature is a strongly-held disposition, and the situation is where a value's if-then
-profile becomes visible. The redesigned page lays members out in four attribute columns (value,
-question | action, tool), so the cost/benefit balance is visible at a glance.
-
-- **Members are edges.** Each member is a concept at a specific path and attribute.
-- **Reading list = intersection, not aggregation (P8 generalized).** Compose situations from
-  edges that *share grounding documents*; those shared documents then surface across multiple
-  members and form an intersection-rich reading list under the app's aggregation, with no app
-  change required. A document touching several members is evidence they belong in one frame.
-- **Composition is hybrid.** Build both directions: **bottom-up** (cluster edges by shared
-  grounding documents and let the frame crystallize) and **top-down** (name a research context
-  a researcher would recognize, then assemble members and a reading list to fit). Reconcile
-  the two — in reality these are built with feedback from both sides.
-- **Domain-balance read-out.** Every proposed situation reports its spread across the four
-  columns in cost/benefit terms. Lopsidedness is *informative*, not forbidden — surface and
-  interpret it ("names what to want and one way to pursue it, but is silent on tooling cost").
-  A deliberately one-sided frame (all open questions = an unexplored frontier) is legitimate.
-  Under the **anticipatory** reading (§1), a benefit-heavy situation with thin cost columns reads
-  as an **under-budgeted aspiration** — it wants something without having forecast its cost; that
-  is a specific allostatic read, not mere lopsidedness, and it ties the situation to the
-  *Committing* phase.
-- **Felt-context test.** Beyond "do these make sense together," ask: read across its columns,
-  does this situation feel like *a self-portrait a researcher recognizes in themselves* doing
-  this kind of work? (P9 delivers this at the situation level.)
-- **Ideal-anchored spine vs. graded periphery.** An ad hoc category is graded around an **ideal**
-  that best serves its goal (Barsalou), not around a central tendency — so a situation has a
-  most-central member (the ideal) with typicality falling off from there. Design the **spine** as
-  the *ideal-proximal* members (not merely the well-co-grounded ones), plus a few periphery members
-  that sharpen or pivot the lens when toggled (the page lets anyone hide/show member cards,
-  excluding their links from the reading list).
-- **Entrenchment status: ad-hoc → established.** Give situations their own recurrence/precision
-  track (P13, P16). A situation proposed once is **ad hoc** (speculative, novel-goal); one
-  re-exemplified across the literature becomes **goal-derived / established** (validated). Carry the
-  status as a field.
-- **Same-phase clustering (Section 6).** Concepts sharing a lifecycle phase are natural
-  co-members — a situation is usually a moment *within* one phase, so phase is a composition
-  heuristic alongside shared-document co-grounding.
-- **Situations learn too.** Chaos looks for *exemplars* of a situation in the literature (a
-  paper that instantiates the whole moment) and proposes *latent* situations it detects under
-  the surface of the text (the move-step read, P10) — not only situations composed from
-  concepts already in the graph.
-
----
-
-## 6. The lifecycle map *(internal to Chaos — for now)*
-
-A structure Chaos builds and hones as it reads: a map of the **research life cycle** as a
-*cycle* of phases (Campbell + Barsalou), used to **sort the concepts Chaos adds into phases**
-and, mainly, to seed situations from same-phase concepts. It is **internal to the tool and not
-part of the Orca app at present**, though there's no deep barrier to it entering Orca later,
-since Chaos aims to build the graphs real researchers would make. It is **built incrementally**,
-and — importantly — its phases are **flexible**: as more research is consumed, revise the phase
-set if the evidence warrants. Do not treat the phases as settled scaffolding.
-
-- **It is a phase index over the real concepts, not a separate value system.** Each value,
-  action, and tool Chaos adds is sorted into a phase. *Questions are not phase-mapped* — they
-  don't belong to a single phase of research.
-- **Primary use: seeding situations.** Concepts sharing a phase are natural co-members of a
-  situation (a moment within that phase). This is the map's main job (Section 5).
-- **Phases (provisional, illustrative).** Sensing the gap → Committing to a question →
-  Designing the approach → Executing and wrestling with data → Interpreting → Reporting and
-  returning → (back to sensing). Revisable from evidence.
-- **The move-step lens (P10).** Each paper's conduct is read for which phase it instantiates —
-  which is how concepts get their phase, and how the phase set itself gets tested and revised.
-- **Value tradeoffs are deferred.** The earlier idea of abstract Good-values in dialectical
-  tradeoff tunnels (Speed ↔ Rigor, etc.) is *not* part of the build. It may return later as
-  interesting metadata, but it is not a current target.
-
----
-
-## 7. Run procedure
-
-1. **Load state.** Read the current graph (concepts, edges, links, situations, citation
-   relationships, prediction ledgers) from the dev database; load this rubric.
+1. **Load state.** Read the current graph (concepts, edges, links, citation relationships,
+   prediction ledgers) from the dev database; load this rubric.
 2. **Assemble the working set of papers** (active sampling, P14, P16). Source to *test the graph's
-   shakiest predictions* — unconfirmed concepts, situations not yet co-grounded, regions a
-   prediction must be sampled in before it can be retired, and (once the citation model is robust)
-   the **frontier concepts** the trajectory points toward (P11). Rank candidates by **epistemic ×
-   pragmatic value** (P14): uncertainty reduced × usefulness to a planner. Where a concept is
-   high-stakes, include a **severe test** — a region where it *must* appear if genuine and *won't*
-   if a reading-list artifact (P16). Keep coverage balanced across the six fields and the phases
-   (the anti-dark-room bias guard).
-   - *Revisit:* re-read already-linked documents — a grown graph may now offer concepts they
+   shakiest predictions* — unconfirmed dispositions, regions a prediction must be sampled in before
+   it can be retired, and (once the citation model is robust) the **frontier dispositions** the
+   trajectory points toward (P11). Rank candidates by **epistemic × pragmatic value** (P14):
+   uncertainty reduced × usefulness to a researcher. Where a disposition is high-stakes, include a
+   **severe test** — a region where it *must* appear if genuine and *won't* if a reading-list
+   artifact (P16). Keep coverage balanced across the six fields (the anti-dark-room bias guard).
+   - *Revisit:* re-read already-linked documents — a grown graph may now offer dispositions they
      did not have on their last pass.
    - *Fetch:* pull a batch of new open-access papers spanning the cognitive sciences
      (neuroscience, psychology, linguistics, AI, philosophy, anthropology), preferring full
      text and cross-disciplinary material.
-3. **Move-step read & prediction test** (P10, P14, P16). For each paper, read *all three threads*:
-   the conduct in methods/results for the mid-to-late phases; the introduction's CARS moves —
-   territory and niche (→ Sensing, questions), occupying the niche (→ Committing); and the
-   **stance/metadiscourse** (hedges, boosters, attitude markers, self-mention) for the *values*
-   (P10). Place its conduct at a phase; read it for the dispositions/questions (benefit) and
-   actions/tools (cost) it instantiates. Score it *against what the graph predicted it would
-   contain*: record gaps (add), non-confirmations (toward decay), and mis-structures (restructure)
-   — and for each, note the **level** the surprise lives at (local → add a child; parent can't
-   absorb → restructure, P6) and the **provenance** of any confirmation (actively-targeted vs.
-   independent, P16). Apply P2, P3, P9.
-4. **Concept-driven pass.** For each new/recent concept, scan existing linked documents that
+3. **Disposition read & prediction test** (P10, P14, P16). For each paper, read it for the
+   **dispositions its conduct and stance reveal** (P10): the **stance/metadiscourse** profile
+   (hedges, boosters, attitude markers, self-mention) as the primary instrument, corroborated by the
+   conduct itself (what the researcher tested, disclosed, or refused to overclaim). Score it
+   *against what the graph predicted it would contain*: record gaps (add), non-confirmations (toward
+   decay), and mis-structures (restructure) — and for each, note the **level** the surprise lives at
+   (local → add a child; parent can't absorb → restructure, P6) and the **provenance** of any
+   confirmation (actively-targeted vs. independent, P16). Apply P2, P3, P9.
+4. **Concept-driven pass.** For each new/recent disposition, scan existing linked documents that
    should now connect to it; note tunnel candidates.
 5. **Hypothetical-researcher test** (P5) and **co-grounding check** (P8) on every candidate
-   link, concept, and tunnel.
-6. **Situation-composition pass** (Section 5). Cluster edges by shared grounding documents and
-   by shared lifecycle phase; build situations hybrid (bottom-up + top-down); also surface
-   *exemplar* and *latent* situations found in the text. Produce a balance read-out (flag
-   under-budgeted aspirations), an intersection reading list, an **ideal-anchored spine** / graded
-   periphery split, and an **entrenchment status** (ad-hoc → established); apply the felt-context
-   test.
-7. **Lifecycle phase-sorting** (Section 6). Sort each new value/action/tool concept into a
-   phase (questions excepted), and revise the phase set itself if the evidence warrants. No
-   tradeoff tunnels — deferred.
-8. **Citation tracking** (P11). Record citation relationships among linked papers to build the
+   link, disposition, and tunnel.
+6. **Citation tracking** (P11). Record citation relationships among linked papers to build the
    temporal progression axis as a *predictive* temporal model. Once it is robust enough to be
-   predictive, surface **frontier concepts** (trajectory heading there, groundings sparse/absent)
+   predictive, surface **frontier dispositions** (trajectory heading there, groundings sparse/absent)
    as active-sampling targets and, where warranted, as proposals carrying a deliberate empty
    grounding — a stigmergic call for research (P11).
-9. **Ledger, recurrence, precision & phi pass** (P12, P13, P14, P16). Update each concept's and
-   situation's prediction ledger from this run (confirmations, expected-but-absent,
-   appeared-elsewhere), and update **precision** — weighting recurrence by discipline-diversity and
-   consistency, discounting confirmations that arrived only in actively-targeted samples, and
-   crediting severe-test survivals (P16). Decay only what's been fairly sampled and still
-   unconfirmed, reversibly, at a rate set by precision. Then rank the candidate set by its
-   contribution to integrated information — the familiar↔novel balance, judged as **cause-effect
-   work** not bare connectivity (P12) — preferring well-grounded additions that bridge
-   previously-separate regions and **change a prediction** over those that thicken dense ones, and
-   applying the accuracy−complexity test (P4): each addition must pay its structural cost.
-10. **Structure check** (P6, P15). Consider mid-path insertions / restructurings, including the
-    mis-structures surfaced in step 3, and multi-parent placements for concepts whose groundings
-    span contexts. Check child sets for analytic/associative balance, preferring **remote** over
-    near associations (P15). **Every restructure proposal includes its mention**: a stigmergic
-    addendum at the superseded location carrying the in-orca URL of the new one ("this is now more
-    fully held at …"), so old paths point forward instead of dead-ending — and the new location
-    accrues "Mentioned by" traces.
-11. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
-    to the database without review.
-12. **Capture feedback** (secondary signal). Each item accepted/rejected/modified, with a
+7. **Ledger, recurrence, precision & phi pass** (P12, P13, P14, P16). Update each disposition's
+   prediction ledger from this run (confirmations, expected-but-absent, appeared-elsewhere), and
+   update **precision** — weighting recurrence by discipline-diversity and consistency, discounting
+   confirmations that arrived only in actively-targeted samples, and crediting severe-test survivals
+   (P16). Decay only what's been fairly sampled and still unconfirmed, reversibly, at a rate set by
+   precision. Then rank the candidate set by its contribution to integrated information — the
+   familiar↔novel balance, judged as **cause-effect work** not bare connectivity (P12) — preferring
+   well-grounded additions that bridge previously-separate regions and **change a prediction** over
+   those that thicken dense ones, and applying the accuracy−complexity test (P4): each addition must
+   pay its structural cost.
+8. **Structure check** (P6, P15). Consider mid-path insertions / restructurings, including the
+   mis-structures surfaced in step 3, and multi-parent placements for dispositions whose groundings
+   span contexts. Check child sets for analytic/associative balance, preferring **remote** over
+   near associations (P15). **Every restructure proposal includes its mention**: a stigmergic
+   addendum at the superseded location carrying the in-orca URL of the new one ("this is now more
+   fully held at …"), so old paths point forward instead of dead-ending — and the new location
+   accrues "Mentioned by" traces.
+9. **Emit proposals** in the formats below, within the concept-creation budget. Write nothing
+   to the database without review.
+10. **Capture feedback** (secondary signal). Each item accepted/rejected/modified, with a
     reason; reasons hone the *reader* — edits to this rubric (Section 0) — and recede over time
     as the research-driven loop (P14) takes over.
-13. **Record the run** (episodic substrate, §8). Finalize a run record — the working set with its
+11. **Record the run** (episodic substrate, §6). Finalize a run record — the working set with its
     sampling rationale, every proposal with its prediction / precision / provenance / surprise level,
     the outcomes and their reasons, and any reflect notes — validate it against the schema and commit
     it to `chaos/episodic/`, so the run persists across dev-DB rebuilds and feeds the
@@ -962,9 +849,9 @@ set if the evidence warrants. Do not treat the phases as settled scaffolding.
 
 ---
 
-## 8. Architecture & operation
+## 6. Architecture & operation
 
-How Chaos is *built and run*, distinct from *what* it reasons (Section 7).
+How Chaos is *built and run*, distinct from *what* it reasons (Section 5).
 
 **Shape.** Chaos is a **staged pipeline orchestrated as a Claude Code skill** — not an
 autonomous agent swarm. Deterministic plumbing is small, testable scripts; reasoning stages
@@ -972,13 +859,13 @@ are Claude calls guided by this file. The separation keeps the tool legible and 
 database write from ever depending on an opaque agent loop.
 
 **The pipeline:**
-1. *Snapshot* (code) — read the dev DB into a compact structured state (concepts, edges by
-   domain, links, situations, citation edges, lifecycle map).
+1. *Snapshot* (code) — read the dev DB into a compact structured state (concepts, edges,
+   links, citation edges, prediction ledgers).
 2. *Source* (code/API) — fetch open-access papers across the six fields; full text; dedupe
    against already-linked papers; pull citation metadata.
-3. *Read & decompose* (Claude) — move-step read each paper into candidate concepts, links,
-   tunnels, a phase placement, and a prediction test against the current graph.
-4. *Compose & integrate* (Claude) — situations, tunnels, phase-sorting, citation edges.
+3. *Read & decompose* (Claude) — read each paper for the dispositions its conduct and stance
+   reveal, into candidate concepts, links, tunnels, and a prediction test against the current graph.
+4. *Integrate* (Claude) — tunnels, multi-parent placements, citation edges.
 5. *Ledger, recurrence & phi rank* (Claude + code metrics) — update prediction ledgers and
    recurrence; rank the candidate set by the integration / differentiation balance.
 6. *Emit* (code) — write proposals to a review file, never directly to the DB.
@@ -993,8 +880,8 @@ this rubric as their instructions.
 - *Phase A (now, through honing):* every run is human-gated — Chaos proposes, you review,
   accepted items are written. This is where the rubric hardens.
 - *Phase B (after honing):* scheduled runs may auto-write **low-risk** outputs (links,
-  citation edges) while still queuing **high-risk** outputs (new concepts, roots, situations,
-  lifecycle changes) for review, because append-only makes concept creation sticky. The
+  citation edges) while still queuing **high-risk** outputs (new dispositions, roots) for review,
+  because append-only makes concept creation sticky. The
   trigger to loosen the gate is the validation signals maturing (consistent acceptance plus
   rising recurrence).
 
@@ -1021,7 +908,7 @@ external memory (current agentic practice). Three substrates, kept distinct and 
 - *Episodic* — a persistent record of each run's proposals and outcomes. **Built** (v0.10): a
   committed file store under `chaos/episodic/`, one schema-validated JSON record per run, git-tracked
   so it survives dev-DB rebuilds. It is what the reflect-and-consolidate step draws on; writing a
-  record is a run-procedure step (§7, step 13).
+  record is a run-procedure step (§5, step 11).
 
 Reflect after each run, then *consolidate*: convert episodic reasons into procedural edits and
 semantic confidence — but only let a lesson change a principle once it has *recurred* (no
@@ -1050,48 +937,46 @@ it automatically, then (condition-gated) the automated reflect step.
 
 ---
 
-## 9. Knobs (current settings)
+## 7. Knobs (current settings)
 
 | Knob | Current setting | Notes |
 |---|---|---|
 | `corpus_focus` | Cognitive sciences across six fields | Neuroscience, psychology, linguistics, AI, philosophy, anthropology |
-| `cross_disciplinary_preference` | High | Concepts recurring across fields are especially valued |
+| `cross_disciplinary_preference` | High | Dispositions recurring across fields are especially valued |
 | `papers_per_run` | 5–10 new + revisit set | |
 | `concept_creation_budget` | Conservative | Calibrate from feedback; the accuracy−complexity test (P4) is its principle |
-| `domain_boundary_strictness` | Firm | P2, incl. disposition-vs-behavior |
-| `concept_voice` | Researcher-anchored | Dispositions for values; my-actions/tools/questions (P9) |
+| `disposition_discipline` | Firm | P2 — keep the node on the standing quality, never the behavior that enacts it |
+| `concept_voice` | Researcher-anchored | Dispositions — *who I am* (P9) |
 | `phrasing_ceiling` | Short, composable phrase; never a proposition | P9 |
 | `subtextuality_strictness` | Firm but soft-edged | P3 |
-| `stance_reading` | On | P10 — read hedges/boosters/attitude/self-mention for the *values* domain |
+| `stance_reading` | On (primary instrument) | P10 — read hedges/boosters/attitude/self-mention as the main evidence of disposition |
 | `exemplar_verification` | Trust the claim | Flip to verify-the-artifact at time cost |
-| `cogrounding_preference` | Preferred | P8 — tunnels and situations |
-| `tunnel_types` | Cost/benefit (Orca, doc-grounded) | Dialectical tradeoff tunnels deferred (§6) |
-| `situation_composition` | Hybrid; ad-hoc/goal-derived | §5 — bottom-up cluster + top-down frame; ideal-anchored spine; entrenchment status |
-| `citation_tracking` | On | P11 — predictive temporal model; substrate for frontier concepts |
+| `cogrounding_preference` | Preferred | P8 — value↔value tunnels witnessed by a shared document |
+| `tunnel_types` | Value↔value associative (doc-grounded) | P8/P15 — the long-range fibers between dispositions |
+| `citation_tracking` | On | P11 — predictive temporal model; substrate for frontier dispositions |
 | `frontier_seeking` | Off (gated) | P11 — activates automatically once the citation model is robust; not scheduled |
-| `lifecycle_map` | Internal phase index; flexible phases | Sorts concepts into phases; seeds same-phase situations; tradeoffs deferred |
 | `phi_balance` | Prefer integrative + differentiated | P12 — weak IIT; cause-effect *work* not connectivity; distinctions + relations |
 | `recurrence_tracking` | On | P13 — confirmation signal; seclusion-limited (P16) |
 | `precision_weighting` | On | P16 — weight recurrence by confidence + discipline-diversity; modulates learning/decay rate |
 | `confirmation_provenance` | Tracked; targeted discounted | P16 — independent re-exemplification counts more than actively-targeted |
-| `severe_testing` | On for high-stakes concepts | P16 — corroborate with a test the concept could have failed; gates root promotion |
+| `severe_testing` | On for high-stakes dispositions | P16 — corroborate with a test the concept could have failed; gates root promotion |
 | `disconfirmation_policy` | Cautious; precision-modulated; context-scoped | P14/P16 — untested ≠ disconfirmed; decay reversible and *local* to the context where confirmation failed (Bouton); rate set by precision |
 | `active_sampling` | On; epistemic × pragmatic | P14 — shakiest predictions × usefulness (P5); explore→exploit arc |
-| `sourcing_balance` | Enforced across fields + phases | P14 — the anti-dark-room bias guard as curation recedes |
+| `sourcing_balance` | Enforced across fields | P14 — the anti-dark-room bias guard as curation recedes |
 | `edge_character_mix` | Lean associative, never monoculture; prefer remote | P15 — analytic + associative; remoteness gradient; controlled drift |
 | `multi_parent_placement` | On, grounding-gated | P15/P1 — context-dependence; propose additional parent contexts; populates flip view |
 | `anti_essentialism_guard` | On | P17 — situate, don't essentialize; no name-based merging; integrate by connection, not collapse |
-| `restructure_mentions` | Always emitted with restructures | §7 step 10 — stigmergic forward-pointers at superseded locations |
-| `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 8 |
+| `restructure_mentions` | Always emitted with restructures | §5 step 8 — stigmergic forward-pointers at superseded locations |
+| `autonomy_phase` | A (human-gated) | Phase B (low-risk auto-write) after honing — see Section 6 |
 | `restructuring_willingness` | High in proposals, low once applied | P6 |
 | `root_abstractness` | Mid | |
 | `revisit_policy` | Every run | |
 
 ---
 
-## 10. Proposal & feedback formats
+## 8. Proposal & feedback formats
 
-- **Concept proposal:** graph + attribute; parent path; new child; lifecycle phase; edge
+- **Concept (disposition) proposal:** parent path; new child; edge
   character (analytic | associative, with the association kind *and remoteness* if the latter —
   P15); rationale (general → specific, subtextual, self-anchored); the prediction it makes (what
   research should keep instantiating); starting **precision** (low for a one-off) and the **surprise
@@ -1105,18 +990,14 @@ it automatically, then (condition-gated) the automated reflect step.
   re-homing proposal (P6, P14 mis-structure, P15 multi-parent consolidation).
 - **Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
   claim (how the conduct instantiates the concept).
-- **Cost/benefit tunnel proposal:** from-edge ↔ to-edge; rationale as a cost/benefit relation;
-  the co-grounding document where one exists (P8); the **cause-effect work** it does (what crossing
-  it changes about a prediction — P12).
+- **Tunnel proposal:** from-edge ↔ to-edge (disposition ↔ disposition); rationale as the
+  association kind (similarity, thematic, analogy, metaphor, affective — P15); the co-grounding
+  document where one exists (P8); the **cause-effect work** it does (what crossing it changes about a
+  prediction — P12).
 - **Prediction-test outcome (per article):** gaps (add), non-confirmations (toward decay),
   mis-structures (restructure) — the article scored against what the graph predicted; each tagged
   with the **surprise level** and, for confirmations, **provenance** (independent vs.
   actively-targeted) and whether it was a **severe** test (P14, P16).
-- **Situation proposal:** member edges; suggested name; lifecycle phase; domain-balance
-  read-out (flag under-budgeted aspirations); intersection reading list (shared documents);
-  **ideal-anchored spine** vs. graded-periphery (toggleable) members; **entrenchment status**
-  (ad-hoc | established); cost/benefit-moment rationale (actions + the goal-states they serve), read
-  as a policy.
 - **Citation relationship:** paper A advances paper B (A cites B) → a progression edge.
 - **Mid-path insertion:** the existing edge refined; the new intermediate; the resulting
   Parent → X → child path.

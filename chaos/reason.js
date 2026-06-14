@@ -41,6 +41,9 @@
 
 const path = require('path');
 const fs = require('fs');
+// Shared P16 precision math — one source of truth (also used by apply.js for the
+// authoritative accumulated recompute). reason.js uses it for the per-run estimate.
+const { TARGETED_WEIGHT, precisionFromEvidence } = require('./precision');
 
 // ----------------------------------------------------------------------------
 // Config
@@ -1087,9 +1090,10 @@ function precisionFromRecurrence(rec) {
 //   diversityMult = 1 + DIVERSITY_BONUS·(distinctDisciplines − 1) — cross-field
 //     corroboration is rewarded; single-field grounding gets ×1.
 //   precision = 1 − 1/(1 + weightedEvidence·diversityMult), rounded to 2 dp; 0 if ungrounded.
-// All three constants are the tunable knob — deliberately simple, no opaque magic.
-const TARGETED_WEIGHT = 0.5;
-const DIVERSITY_BONUS = 0.5;
+// The constants and the final curve live in chaos/precision.js (shared with apply.js);
+// this function only assembles THIS RUN's evidence (weighted papers + disciplines) and
+// hands it to precisionFromEvidence. apply.js assembles the ACCUMULATED evidence and
+// calls the same curve, so its value is authoritative and overwrites this estimate.
 
 // fieldsByPaper: Map<workId, string[] disciplines>. concept.grounding_papers are
 // openalex ids. targetedSet (optional): Set<workId> of papers that TARGETED this node
@@ -1110,9 +1114,7 @@ function precisionFor(concept, fieldsByPaper, targetedSet) {
   // Concepts can carry recurrence without an enumerated grounding-paper list; fall back
   // to recurrence as the confirmation count so precision never under-reports.
   if (weighted === 0) weighted = rec;
-  const diversityMult = 1 + DIVERSITY_BONUS * Math.max(0, disciplines.size - 1);
-  const evidence = weighted * diversityMult;
-  return Math.round((1 - 1 / (1 + evidence)) * 100) / 100;
+  return precisionFromEvidence(weighted, disciplines.size);
 }
 
 // P1/P6 surprise: 'parent_unabsorbed' when a concept had to be hung under an

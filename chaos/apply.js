@@ -23,6 +23,7 @@
  * Usage:
  *   node chaos/apply.js --dry-run
  *   node chaos/apply.js
+ *   node chaos/apply.js --recompute-precision   # dev-only guarded precision backfill
  */
 
 const path = require('path');
@@ -58,6 +59,140 @@ const pool = require(path.join(BACKEND_DIR, 'src', 'config', 'database'));
 // Reuse the backend's mention parser so Chaos-written restructure-mention addenda
 // are indexed exactly like user-written ones (Phase 65b). Same grammar, one source.
 const { parseMentions } = require(path.join(BACKEND_DIR, 'src', 'utils', 'parseMentions'));
+// Shared P16 precision curve — same source of truth reason.js uses. apply.js feeds it
+// the ACCUMULATED evidence (all runs) so the stored precision is authoritative.
+const { TARGETED_WEIGHT, precisionFromEvidence } = require(path.join(CHAOS_DIR, 'precision'));
+
+// --recompute-precision: dev-only guarded backfill that recomputes precision for ALL
+// existing targets from their accumulated events (repairs values clobbered by the old
+// per-run overwrite). Runs instead of a normal apply. See recomputeAllPrecision().
+const RECOMPUTE_PRECISION = process.argv.includes('--recompute-precision');
+
+// Accumulated precision (Option A / P16): a target's precision computed from its FULL
+// confirmation-event history (chaos_prediction_events), not just the current run's
+// proposal. Distinct grounding papers each weighted by provenance (independent/unknown
+// = 1.0, targeted = TARGETED_WEIGHT), scaled by discipline diversity from
+// papers.discipline_tags. Same curve as reason.js (shared precision module), so this
+// value rises monotonically with recurrence (both read the same accumulated events).
+async function accumulatedPrecisionFromEvents(client, targetType, targetId) {
+  const { rows } = await client.query(
+    `SELECT e.paper_id, e.provenance, pp.discipline_tags
+       FROM chaos_prediction_events e
+       LEFT JOIN papers pp ON pp.id = e.paper_id
+      WHERE e.target_type = $1 AND e.target_id = $2 AND e.event = 'confirmed'`,
+    [targetType, targetId]
+  );
+  const byPaper = new Map(); // distinct grounding paper_id -> { nonTargeted }
+  const disciplines = new Set();
+  let confirmedCount = 0;
+  for (const r of rows) {
+    confirmedCount += 1;
+    for (const d of asArray(r.discipline_tags)) disciplines.add(d);
+    if (r.paper_id == null) continue;
+    if (!byPaper.has(r.paper_id)) byPaper.set(r.paper_id, { nonTargeted: false });
+    // A paper confirmed independently (or unknown-provenance) in ANY run is full weight.
+    if (r.provenance !== 'targeted') byPaper.get(r.paper_id).nonTargeted = true;
+  }
+  let weighted = 0;
+  for (const rec of byPaper.values()) weighted += rec.nonTargeted ? 1.0 : TARGETED_WEIGHT;
+  // Confirmed events with no paper_id still attest the target; fall back to the event
+  // count so precision never under-reports (mirrors reason.js's recurrence fallback).
+  if (weighted === 0) weighted = confirmedCount;
+  return precisionFromEvidence(weighted, disciplines.size);
+}
+
+// Dev guard for the destructive backfill — refuse anything that isn't the local dev DB
+// (mirrors the reset/check scripts: localhost + concept_hierarchy, no DATABASE_URL, no
+// production markers). Returns { host, database } or throws to abort.
+function assertDevDb(action) {
+  const o = pool.options || {};
+  let host;
+  let database;
+  if (o.connectionString) {
+    try {
+      const u = new URL(o.connectionString);
+      host = u.hostname || '';
+      database = decodeURIComponent((u.pathname || '').replace(/^\//, '')) || '';
+    } catch {
+      host = '(unparseable)';
+      database = '(unknown)';
+    }
+  } else {
+    host = o.host || 'localhost';
+    database = o.database || 'concept_hierarchy';
+  }
+  const PROD = ['switchback.proxy.rlwy.net', 'rlwy.net', 'railway'];
+  const marked = (s) => PROD.some((m) => String(s || '').toLowerCase().includes(m));
+  if (
+    process.env.DATABASE_URL ||
+    marked(host) ||
+    !['localhost', '127.0.0.1'].includes(String(host)) ||
+    String(database) !== 'concept_hierarchy'
+  ) {
+    throw new Error(
+      `${action} refused by dev guard — resolved host="${host}" db="${database}". ` +
+        'This is dev-only: requires localhost/127.0.0.1 + concept_hierarchy via discrete DB_* vars (no DATABASE_URL, no production markers).'
+    );
+  }
+  return { host, database };
+}
+
+// Part C — historical correction. Recompute precision for EVERY existing target from its
+// accumulated events (same computation as the live apply pass), repairing values the old
+// per-run overwrite clobbered. Guarded (dev-only), idempotent, backed up before writing.
+async function recomputeAllPrecision() {
+  const { host, database } = assertDevDb('--recompute-precision');
+  console.log('============ CHAOS — RECOMPUTE PRECISION (dev backfill, Option A) ============');
+  console.log(`DB: ${database} @ ${host}`);
+  backup(); // pg_dump before any write; aborts on failure
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const concepts = (await client.query(
+      `SELECT target_id FROM chaos_predictions WHERE target_type = 'concept'`
+    )).rows;
+    let cChanged = 0;
+    for (const r of concepts) {
+      const acc = await accumulatedPrecisionFromEvents(client, 'concept', r.target_id);
+      const u = await client.query(
+        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
+          WHERE target_type = 'concept' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, r.target_id]
+      );
+      cChanged += u.rowCount;
+    }
+    // Situations (Part D): recompute from situation events; keep chaos_predictions(situation)
+    // and chaos_situation_meta.precision in step.
+    const sits = (await client.query(
+      `SELECT DISTINCT target_id FROM chaos_prediction_events WHERE target_type = 'situation'`
+    )).rows;
+    let sChanged = 0;
+    for (const r of sits) {
+      const acc = await accumulatedPrecisionFromEvents(client, 'situation', r.target_id);
+      const u1 = await client.query(
+        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
+          WHERE target_type = 'situation' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, r.target_id]
+      );
+      const u2 = await client.query(
+        `UPDATE chaos_situation_meta SET precision = $1, updated_at = NOW()
+          WHERE combo_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, r.target_id]
+      );
+      sChanged += u1.rowCount + u2.rowCount;
+    }
+    await client.query('COMMIT');
+    console.log(
+      `Recomputed: ${concepts.length} concept target(s), ${cChanged} changed; ` +
+        `${sits.length} situation target(s), ${sChanged} row(s) changed.`
+    );
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 
 // ----------------------------------------------------------------------------
 // Helpers (URL/identity normalization mirrors chaos/source.js)
@@ -742,6 +877,9 @@ async function apply(plan) {
       if (res.rows[0] && res.rows[0].inserted) stats.chaos_predictions += 1;
     }
 
+    // The per-run estimate from cp.precision is written here so the prediction row
+    // exists; the accumulated value below (computed AFTER events) overwrites it.
+    const conceptTargets = new Set();
     for (const cp of plan.conceptPredictions) {
       const edgeId = leafEdgeBySig.get(cp.s);
       if (!edgeId) continue;
@@ -754,9 +892,11 @@ async function apply(plan) {
             provenance: cp.provenance,
             severe: cp.severe,
           });
+          conceptTargets.add(edgeId);
         }
       }
     }
+    const situationTargets = new Set();
     for (const st of plan.situations) {
       const comboId = comboIdByName.get(norm(st.name));
       if (!comboId) continue;
@@ -764,8 +904,37 @@ async function apply(plan) {
       for (const w of st.readingWork) {
         const pid = resolvePaper(w);
         // Situation confirmation events carry no per-concept surprise/provenance.
-        if (pid) await addEvent('situation', comboId, pid);
+        if (pid) {
+          await addEvent('situation', comboId, pid);
+          situationTargets.add(comboId);
+        }
       }
+    }
+
+    // --- Accumulated precision (Option A) — MUST run AFTER addEvent above ----------
+    // For every target whose evidence changed this run, recompute precision from the
+    // FULL accumulated event history and overwrite the per-run estimate, so stored
+    // precision rises with recurrence (both now derive from the same events).
+    for (const edgeId of conceptTargets) {
+      const acc = await accumulatedPrecisionFromEvents(client, 'concept', edgeId);
+      await client.query(
+        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
+          WHERE target_type = 'concept' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, edgeId]
+      );
+    }
+    for (const comboId of situationTargets) {
+      const acc = await accumulatedPrecisionFromEvents(client, 'situation', comboId);
+      await client.query(
+        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
+          WHERE target_type = 'situation' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, comboId]
+      );
+      await client.query(
+        `UPDATE chaos_situation_meta SET precision = $1, updated_at = NOW()
+          WHERE combo_id = $2 AND precision IS DISTINCT FROM $1`,
+        [acc, comboId]
+      );
     }
 
     await client.query('COMMIT');
@@ -783,6 +952,13 @@ async function apply(plan) {
 // ----------------------------------------------------------------------------
 
 async function main() {
+  // Part C backfill path: recompute accumulated precision for all targets, then stop.
+  // Independent of proposals.json — runs the dev-guarded historical correction only.
+  if (RECOMPUTE_PRECISION) {
+    await recomputeAllPrecision();
+    return;
+  }
+
   const proposals = loadProposals();
   const plan = buildPlan(proposals);
 

@@ -208,7 +208,11 @@ function renderInventory(chosen) {
 function loadGraphState() {
   const snap = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
   const c = snap.counts || {};
-  const attrs = asArray(snap.attributes).map((a) => a.name).join(', ');
+  // Derive the displayed domain list from the same ATTRIBUTES constant that governs
+  // emission (value-only, v0.12) — NOT from snap.attributes, which mirrors every row
+  // still seeded in the DB (action/tool/question included) and would otherwise feed the
+  // model a four-domain line that contradicts the rest of this value-only prompt.
+  const attrs = ATTRIBUTES.join(', ');
   const lines = [
     'CURRENT GRAPH STATE (the dev snapshot you are reasoning against):',
     `  attributes: ${attrs || '(none)'}`,

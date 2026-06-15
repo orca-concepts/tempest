@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.13
+**Version:** 0.12
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -149,19 +149,6 @@ work**" — does it situate rather than essentialize (P17)?
   substrate + reflect loop. A possible future successor to Situations — a **value constellation**
   (a coherent cluster of co-occurring dispositions, a "research character") — is noted as
   condition-gated on a rich value hierarchy, not built.
-- **v0.13 — Value-only audit corrections.** Two fixes from auditing the v0.12 pivot against v0.11.
-  (1) **Research phase restored as a context axis** (a reading lens, *not* a structure). P9's
-  if-then signature now runs on **two** explicit "if" axes — **research phase** (where in the
-  inquiry's arc the conduct sits: exploratory → confirmatory → reporting) and **discipline** —
-  reconciling the dangling phase example that survived after the lifecycle map was dropped. Updated
-  to match: the Campbell foundation (the *field's* arc is tracked by citations, P11; the
-  *researcher's* phase within the arc is the if-then "if", P9), P13's signature-validation, the run
-  procedure's read step (note the phase the conduct sits in), and a new `phase_signature_axis` knob.
-  Phase here is purely a lens for reading **how one disposition varies** — emphatically *not* the
-  retired concept-sorting lifecycle map / Situations seeder (v0.12). (2) **Swales foundation
-  de-orphaned**: slimmed to its one surviving commitment (read *conduct*, not surface terminology —
-  now → P3/P10) after P10 dropped the CARS move apparatus in v0.12, so no foundation points at a
-  principle that no longer implements it.
 
 ---
 
@@ -212,23 +199,19 @@ by grounding (P8), which is the executive control on the leap. The graph should 
 Eight bodies of thought Chaos is built to honor. Each is stated as a *commitment*, not a
 citation.
 
-- **Genre analysis (Swales' CARS tradition).** Genre analysts read research writing not for its
-  surface terminology but for what each part is *doing* — the rhetorical work it performs in the act
-  of claiming research space. **Commitment:** Chaos reads a document for what its *conduct* is
-  doing — the choices it embodies, the posture it takes — not for the words on its surface. (An
-  earlier draft borrowed CARS's specific *move sequence* to populate research phases and questions;
-  with those retired in v0.12, what stays load-bearing is the conduct-over-terminology stance
-  itself.) (→ P3, P10.)
+- **Move-step analysis (Swales' CARS model).** Genre analysts read research writing as a
+  sequence of rhetorical *moves* (establish a territory → establish a niche → occupy it)
+  and finer *steps*, each performing a communicative function in the act of claiming
+  research space. **Commitment:** Chaos reads a document for what its *conduct* is doing in
+  the arc of producing research — the move it represents, the choices it embodies — not for
+  the terminology on its surface. (→ P10.)
 
 - **Campbell's monomyth (the hero's journey).** A cyclical event-structure — departure,
   initiation, return — that recurs across stories as a lens for interpreting them.
   **Commitment:** treat research as having a recognizable temporal arc and read papers as
   episodes within it — a researcher's dispositions show differently at different points in that
-  arc (the if-then signature, P9). The arc is used **two ways, kept distinct**: the *field's*
-  progression is tracked through citations (temporal depth, frontier dispositions — P11), and the
-  *researcher's* phase within the arc (exploratory → confirmatory → reporting) is a **context axis**
-  for reading how a disposition varies (the "if" of the if-then signature, P9) — a reading lens,
-  not the retired concept-sorting phase map. (→ P9, P11.)
+  arc (the if-then signature, P9). Chaos tracks the arc through citation progression rather than a
+  separate phase map. (→ P9, P11.)
 
 - **Foucault, *The Order of Things*.** Knowledge is produced through situated acts of
   categorization, with the individual knower at the center as both the one who orders and a
@@ -473,21 +456,13 @@ character.
   it. ("Skeptical," not "tests the result every way.")
 - **The value as an if-then signature (Mischel & Shoda, "the situated person").** A disposition's
   stability is *not* context-free constancy but a recognizable **pattern of variability** — a stable
-  *if-then* signature across contexts. The variability is the signal, not noise. This *deepens* the
-  guardrail rather than softening it: the **value is exactly the invariant across** the (context →
-  conduct) signature — the disposition is the standing leaning, the conduct in each context is how it
-  shows.
-  - **The "if" runs on two context axes, kept distinct.** *Research phase* — where in the inquiry's
-    arc the conduct sits (exploratory → confirmatory → reporting and the like): "if exploratory,
-    then bold; if confirmatory, then conservative." And *discipline* — the field the conduct comes
-    from. They are complementary: phase captures how a disposition shifts across the stages of one
-    inquiry; discipline captures how it holds across fields. **Phase here is a reading lens only** —
-    a way of locating the conduct so a signature can be read — *not* a structure Chaos builds or
-    sorts concepts into (the lifecycle map is retired, v0.12). The phase set is illustrative and
-    revisable, never settled scaffolding.
-  - So a disposition is best grounded by a **coherent signature across both axes**, not by raw
-    frequency (P13/P16): a value that bends the same characteristic way across phases *and* recurs
-    across fields is the most strongly held.
+  *if-then* signature across contexts ("if in an exploratory phase, then bold; if in a confirmatory
+  one, then conservative"). The variability is the signal, not noise. This *deepens* the guardrail
+  rather than softening it: the **value is exactly the invariant across** the (context → conduct)
+  signature — the disposition is the standing leaning, the conduct in each context is how it shows.
+  So a disposition is best grounded by a coherent signature across contexts, not by raw frequency
+  (P13/P16): a value witnessed behaving the same characteristic way in field after field is strongly
+  held.
 - **The reciprocal loop (Foucault × extended mind, §2).** Self-anchoring is not only the
   *precondition for trust*; it is one half of a loop. The self shapes the graph (orderer), and the
   graph, once adopted, reshapes the self who predicts and plans with it (ordered). A seeded
@@ -602,12 +577,10 @@ especially under *severe* test, P16), earns a place nearer a root. Recurrence is
   one grounded four times in one field, even at equal recurrence.
 - **For values, validate by signature, not just count (Mischel & Shoda, P9).** A disposition's
   recurrence should reward a coherent *if-then* pattern across contexts — the same characteristic
-  response showing up in context after context — not raw frequency. The contexts run on P9's two
-  axes: **research phase** (the same characteristic bend across the stages of an inquiry) and
-  **discipline** (the same characteristic showing across fields). Patterned variability that holds on
-  both *strengthens* a value (the signature is appearing), which sharpens the discipline-diversity
-  preference from "appears in many fields" to "shows a consistent characteristic pattern across
-  fields *and* phases."
+  response showing up in context after context — not raw frequency. Patterned variability across
+  disciplines *strengthens* a value (the signature is appearing), which sharpens the
+  discipline-diversity preference from "appears in many fields" to "shows a consistent characteristic
+  pattern across fields."
 
 ### P14 — The graph is a set of predictions; learn from prediction error
 The whole graph is a standing set of predictions about research, and each new article tests
@@ -832,9 +805,7 @@ likely to be a deep, lived, subtextual concept than a discipline-bound term.
 3. **Disposition read & prediction test** (P10, P14, P16). For each paper, read it for the
    **dispositions its conduct and stance reveal** (P10): the **stance/metadiscourse** profile
    (hedges, boosters, attitude markers, self-mention) as the primary instrument, corroborated by the
-   conduct itself (what the researcher tested, disclosed, or refused to overclaim). Note the
-   **research phase** the conduct sits in (exploratory → confirmatory → reporting) as the "if"
-   context for P9's signature — a reading lens, not a structure. Score it
+   conduct itself (what the researcher tested, disclosed, or refused to overclaim). Score it
    *against what the graph predicted it would contain*: record gaps (add), non-confirmations (toward
    decay), and mis-structures (restructure) — and for each, note the **level** the surprise lives at
    (local → add a child; parent can't absorb → restructure, P6) and the **provenance** of any
@@ -979,7 +950,6 @@ it automatically, then (condition-gated) the automated reflect step.
 | `phrasing_ceiling` | Short, composable phrase; never a proposition | P9 |
 | `subtextuality_strictness` | Firm but soft-edged | P3 |
 | `stance_reading` | On (primary instrument) | P10 — read hedges/boosters/attitude/self-mention as the main evidence of disposition |
-| `phase_signature_axis` | On (reading lens) | P9/P13 — research phase as the "if" context for a disposition's if-then signature; a lens for reading variation, **not** a concept-sorting phase map |
 | `exemplar_verification` | Trust the claim | Flip to verify-the-artifact at time cost |
 | `cogrounding_preference` | Preferred | P8 — value↔value tunnels witnessed by a shared document |
 | `tunnel_types` | Value↔value associative (doc-grounded) | P8/P15 — the long-range fibers between dispositions |

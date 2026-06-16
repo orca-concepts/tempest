@@ -3,10 +3,17 @@
 /**
  * Chaos — paper-sourcing layer (Stage 2, full-text-yield upgrade).
  *
- * Fetches a batch of open-access cognitive-science papers across all six fields
- * (chaos.md §4: neuroscience, psychology, linguistics, AI, philosophy, anthropology),
+ * Fetches a batch of open-access papers across a configurable set of research fields,
  * with metadata, abstract, full text, citations (referenced_works), and discipline
  * tags. Stores each paper as chaos/papers/<id>.json plus an index manifest.
+ *
+ * Corpus breadth: the default field set is the six cognitive-science fields (chaos.md §4:
+ * neuroscience, psychology, linguistics, AI, philosophy, anthropology) PLUS nine broader
+ * disciplines (physics, mathematics, biology, chemistry, computer science, medicine,
+ * economics, sociology, history). The corpus is deliberately wide because Chaos grounds
+ * researcher *dispositions* (rigor, parsimony, etc.) — which show just as clearly in a
+ * physics or pure-math paper as in a psychology one. The field set is configurable per run
+ * via the CHAOS_FIELDS env var (see FIELD_CONCEPT_IDS / getFields below).
  *
  * Design (chaos.md §8.2, §7 step 2; P14 bias guard):
  *   - OpenAlex stays the DISCOVERY backbone — it gives citations, discipline tags, and
@@ -32,9 +39,10 @@
  * extraction as an arXiv fallback below the HTML paths.
  *
  * Usage:
- *   node chaos/source.js                      # default 5 papers/field (~30 total)
+ *   node chaos/source.js                      # default 5 papers/field, all 15 default fields
  *   node chaos/source.js --per-field=15       # 15/field
  *   set CHAOS_PER_FIELD=8 && node chaos/source.js
+ *   set CHAOS_FIELDS=physics,history && node chaos/source.js   # only these fields
  *   set CHAOS_MAILTO=you@example.com && node chaos/source.js
  */
 
@@ -79,15 +87,59 @@ const RETRIEVABLE_SOURCE_IDS = [
   'S4306402567', // bioRxiv
 ];
 
-// OpenAlex level-0/1 concept IDs for the six cognitive-science fields (chaos.md §4).
-const FIELDS = [
-  { field: 'neuroscience', conceptId: 'C169760540' },
-  { field: 'psychology', conceptId: 'C15744967' },
-  { field: 'linguistics', conceptId: 'C41895202' },
-  { field: 'artificial_intelligence', conceptId: 'C154945302' },
-  { field: 'philosophy', conceptId: 'C138885662' },
-  { field: 'anthropology', conceptId: 'C19165224' },
-];
+// OpenAlex concept IDs keyed by field label — the single source of truth for both the
+// default field set and the CHAOS_FIELDS env override. The first six are the original
+// cognitive-science fields (chaos.md §4, level-0/1 concepts); the remaining nine broaden
+// the corpus to other disciplines (all level-0 OpenAlex concepts). Every id below was
+// resolved + verified against the live OpenAlex API (concepts search + a works query
+// under the same filter set fetchFieldWorks uses).
+const FIELD_CONCEPT_IDS = {
+  // Original six cognitive-science fields (chaos.md §4).
+  neuroscience: 'C169760540',
+  psychology: 'C15744967',
+  linguistics: 'C41895202',
+  artificial_intelligence: 'C154945302',
+  philosophy: 'C138885662',
+  anthropology: 'C19165224',
+  // Wider corpus (level-0 OpenAlex concepts).
+  physics: 'C121332964',
+  mathematics: 'C33923547',
+  biology: 'C86803240',
+  chemistry: 'C185592680',
+  computer_science: 'C41008148',
+  medicine: 'C71924100',
+  economics: 'C162324750',
+  sociology: 'C144024400',
+  history: 'C95457728',
+};
+
+// Resolve the active field set. With CHAOS_FIELDS set (comma-separated labels, e.g.
+// `physics,history`), source only those fields, resolved against FIELD_CONCEPT_IDS;
+// unknown labels are warned + skipped (never fatal). Unset => the full default set.
+function getFields() {
+  const all = Object.entries(FIELD_CONCEPT_IDS).map(([field, conceptId]) => ({ field, conceptId }));
+  const raw = (process.env.CHAOS_FIELDS || '').trim();
+  if (!raw) return all;
+
+  const out = [];
+  for (const label of raw.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const conceptId = FIELD_CONCEPT_IDS[label];
+    if (!conceptId) {
+      console.warn(
+        `(warn) CHAOS_FIELDS: unknown field "${label}" — skipping. ` +
+          `Known fields: ${Object.keys(FIELD_CONCEPT_IDS).join(', ')}`
+      );
+      continue;
+    }
+    out.push({ field: label, conceptId });
+  }
+  if (!out.length) {
+    console.warn('(warn) CHAOS_FIELDS resolved to no known fields — nothing to source.');
+  }
+  return out;
+}
+
+const FIELDS = getFields();
 
 // Recency window for "new" papers.
 const FROM_DATE = (() => {

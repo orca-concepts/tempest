@@ -40,5 +40,12 @@
     "rubric_version": "0.12",
     "proposal_count": 36,
     "accept_count": 36
+  },
+  {
+    "run_id": 7,
+    "timestamp": "2026-06-16T12:40:50.629Z",
+    "rubric_version": "0.14",
+    "proposal_count": 46,
+    "accept_count": 46
   }
 ]

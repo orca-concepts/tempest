@@ -1,0 +1,1370 @@
+{
+  "record_schema_version": "1",
+  "timestamp": "2026-06-16T12:40:50.629Z",
+  "rubric_version": "0.14",
+  "db_run_id": "reason-v0.14-2692418d",
+  "working_set": [
+    {
+      "paper_ref": "W7164400640",
+      "source_field": "psychology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4403964193",
+      "source_field": "linguistics",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W2949143881",
+      "source_field": "artificial_intelligence",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W4283021637",
+      "source_field": "philosophy",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7161135634",
+      "source_field": "anthropology",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    },
+    {
+      "paper_ref": "W7164550506",
+      "source_field": "neuroscience",
+      "sampling_rationale": {
+        "epistemic": "",
+        "pragmatic": ""
+      }
+    }
+  ],
+  "proposals": [
+    {
+      "ref": "concept|value|respectful of other ways of knowing|curious",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Respectful of other ways of knowing",
+        "parent_path": [
+          "Curious"
+        ],
+        "prediction": "Researchers documenting unfamiliar or non-dominant knowledge systems will grant them epistemic standing on their own terms — bracketing external (e.g. biomedical) judgment and reconstructing meaning from the insider's perspective rather than ranking it against the dominant frame.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "New, remote: bridges Curious into anthropology/other-epistemics, a region the graph did not reach; high differentiation but single-grounded.",
+        "edge_character": {
+          "kind": "associative",
+          "association": "thematic",
+          "remoteness": "remote"
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers documenting unfamiliar or non-dominant knowledge systems will grant them epistemic standing on their own terms — bracketing external (e.g. biomedical) judgment and reconstructing meaning from the insider's perspective rather than ranking it against the dominant frame.",
+      "phi_note": "New, remote: bridges Curious into anthropology/other-epistemics, a region the graph did not reach; high differentiation but single-grounded.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|drawn to anomalies|curious",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to anomalies",
+        "parent_path": [
+          "Curious"
+        ],
+        "prediction": "Research will keep being motivated by an unexplained, puzzling observation that resists existing accounts, with the researcher leaning toward the outlier rather than away from it.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4403964193"
+        ],
+        "confidence": "S",
+        "phi": "New child differentiating Curious; co-grounded with Integrative in physics, importing a previously-absent region.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep being motivated by an unexplained, puzzling observation that resists existing accounts, with the researcher leaning toward the outlier rather than away from it.",
+      "phi_note": "New child differentiating Curious; co-grounded with Integrative in physics, importing a previously-absent region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|open to scrutiny|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Open to scrutiny",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Researchers will keep preferring inspectable, evidence-exposing outputs over opaque summary scores, designing work whose reasoning can be examined passage-by-passage.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "New child under Honesty; tunnels out to both Measured and Oriented to human benefit, linking transparency to benefit regions.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep preferring inspectable, evidence-exposing outputs over opaque summary scores, designing work whose reasoning can be examined passage-by-passage.",
+      "phi_note": "New child under Honesty; tunnels out to both Measured and Oriented to human benefit, linking transparency to benefit regions.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|integrative|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Integrative",
+        "parent_path": [],
+        "prediction": "Research will keep stitching together mechanisms from separate sub-fields (particle theory, cosmology, astrophysics, detector phenomenology) into one connected explanatory chain rather than treating them in isolation.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W4403964193",
+          "W7164550506"
+        ],
+        "confidence": "C",
+        "phi": "Hub root confirmed across physics and neuroscience; high cause-effect reach via analogy tunnels to Skeptical and anomaly-seeking.",
+        "precision": 0.75,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research will keep stitching together mechanisms from separate sub-fields (particle theory, cosmology, astrophysics, detector phenomenology) into one connected explanatory chain rather than treating them in isolation.",
+      "phi_note": "Hub root confirmed across physics and neuroscience; high cause-effect reach via analogy tunnels to Skeptical and anomaly-seeking.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|measured|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Researchers will calibrate claims to exactly what was shown — bounding by worst case and reporting partial success rather than generalizing.",
+        "recurrence": 4,
+        "grounding_papers": [
+          "W7164400640",
+          "W2949143881",
+          "W7161135634",
+          "W7164550506"
+        ],
+        "confidence": "C",
+        "phi": "Strongest cross-disciplinary bridge this batch (AI, anthropology, neuroscience, psychology/AI); high precision, anchors many tunnels.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.91,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will calibrate claims to exactly what was shown — bounding by worst case and reporting partial success rather than generalizing.",
+      "phi_note": "Strongest cross-disciplinary bridge this batch (AI, anthropology, neuroscience, psychology/AI); high precision, anchors many tunnels.",
+      "precision": 0.91,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|forthcoming|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Researchers will openly disclose the limitations and unflattering results of their own methods rather than burying them.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W2949143881",
+          "W7161135634"
+        ],
+        "confidence": "C",
+        "phi": "Confirmed across AI and anthropology; tunneled to Measured and Modest, integrating Honesty with Rigor.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.75,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will openly disclose the limitations and unflattering results of their own methods rather than burying them.",
+      "phi_note": "Confirmed across AI and anthropology; tunneled to Measured and Modest, integrating Honesty with Rigor.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Research that re-tests its central effect in independent cohorts before accepting it, guarding against a single-sample artifact.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164550506"
+        ],
+        "confidence": "S",
+        "phi": "Single-grounded this batch but analogy-tunneled to Integrative — bridges Rigor to a root region.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Research that re-tests its central effect in independent cohorts before accepting it, guarding against a single-sample artifact.",
+      "phi_note": "Single-grounded this batch but analogy-tunneled to Integrative — bridges Rigor to a root region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|exacting about tightness|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Researchers will demand fully proved foundations and stress-test a method across deliberately varied cases before trusting it.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W2949143881",
+          "W4283021637"
+        ],
+        "confidence": "C",
+        "phi": "Confirmed across AI and mathematics; differentiates Rigor, paired with Drawn to parsimony.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.75,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will demand fully proved foundations and stress-test a method across deliberately varied cases before trusting it.",
+      "phi_note": "Confirmed across AI and mathematics; differentiates Rigor, paired with Drawn to parsimony.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|modest about one's contribution|honesty",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Modest about one's contribution",
+        "parent_path": [
+          "Honesty"
+        ],
+        "prediction": "Researchers will frame their contribution as one step among many, crediting others and deferring open problems to future work.",
+        "recurrence": 2,
+        "grounding_papers": [
+          "W2949143881",
+          "W7161135634"
+        ],
+        "confidence": "C",
+        "phi": "Confirmed across AI and anthropology; affective tunnel to Forthcoming thickens Honesty cluster.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.75,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will frame their contribution as one step among many, crediting others and deferring open problems to future work.",
+      "phi_note": "Confirmed across AI and anthropology; affective tunnel to Forthcoming thickens Honesty cluster.",
+      "precision": 0.75,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|drawn to parsimony|rigor",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Drawn to parsimony",
+        "parent_path": [
+          "Rigor"
+        ],
+        "prediction": "Researchers will keep seeking the most natural, explicit, simplest construction that answers a question, and will flag a 'simple-minded procedure' as a virtue.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W4283021637"
+        ],
+        "confidence": "S",
+        "phi": "Single-grounded (mathematics); thickens an already-dense Rigor region — low novelty.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers will keep seeking the most natural, explicit, simplest construction that answers a question, and will flag a 'simple-minded procedure' as a virtue.",
+      "phi_note": "Single-grounded (mathematics); thickens an already-dense Rigor region — low novelty.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|protective of the vulnerable|conscientiousness",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Protective of the vulnerable",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "prediction": "Researchers handling socially sensitive disclosures will take active, sometimes costly measures — anonymization, confidentiality, altered interview settings — to shield participants from exposure or harm.",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7161135634"
+        ],
+        "confidence": "S",
+        "phi": "Single-grounded (anthropology); but tunnels to the new Respectful concept, bridging Conscientiousness to epistemic-humility region.",
+        "edge_character": {
+          "kind": "analytic",
+          "association": null,
+          "remoteness": null
+        },
+        "precision": 0.5,
+        "surprise_level": "parent_unabsorbed",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "Researchers handling socially sensitive disclosures will take active, sometimes costly measures — anonymization, confidentiality, altered interview settings — to shield participants from exposure or harm.",
+      "phi_note": "Single-grounded (anthropology); but tunnels to the new Respectful concept, bridging Conscientiousness to epistemic-humility region.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "parent_unabsorbed"
+    },
+    {
+      "ref": "concept|value|oriented to human benefit|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Oriented to human benefit",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 1,
+        "grounding_papers": [
+          "W7164400640"
+        ],
+        "confidence": "S",
+        "phi": "Root re-confirmed once (psychology/AI); tunneled from Open to scrutiny, linking benefit to transparency.",
+        "precision": 0.5,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "Root re-confirmed once (psychology/AI); tunneled from Open to scrutiny, linking benefit to transparency.",
+      "precision": 0.5,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|curious|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Curious",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Respectful of other ways of knowing",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|honesty|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Honesty",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Open to scrutiny",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|rigor|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Rigor",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Measured",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "concept|value|conscientiousness|",
+      "type": "concept",
+      "payload": {
+        "attribute": "value",
+        "name": "Conscientiousness",
+        "parent_path": [],
+        "prediction": "",
+        "recurrence": 0,
+        "grounding_papers": [],
+        "confidence": "S",
+        "phi": "",
+        "ancestor_of": "Protective of the vulnerable",
+        "precision": 0,
+        "surprise_level": "local",
+        "provenance": "independent",
+        "severe": false
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": 0,
+      "provenance": "independent",
+      "surprise_level": "local"
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|value|oriented to human benefit|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "value",
+        "concept_name": "Oriented to human benefit",
+        "parent_path": [],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "The system is framed around making practice feedback actionable for learners — 'helps learners decide where to inspect next' — the conduct of a researcher whose stance leans, before the situation demands, toward serving the person who will use the work."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "Rather than summarizing a take with a single global score, the authors report concrete, moderate metrics (Pearson r=0.61, ROC-AUC 0.75) and hedge ('despite training without localized labels') — calibrated reporting that declines to overclaim a still-imperfect alignment."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1145/3800645.3812903|value|open to scrutiny|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164400640",
+        "attribute": "value",
+        "concept_name": "Open to scrutiny",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1145/3800645.3812903",
+        "claim": "The model emits clip-level predictions together with per-passage evidence scores on a shared visualizable time base, and the contribution is the interpretable exposure of where expert/amateur differences lie — conduct that insists the basis of a judgment be inspectable, not hidden."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|value|drawn to anomalies|curious",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "value",
+        "concept_name": "Drawn to anomalies",
+        "parent_path": [
+          "Curious"
+        ],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "Frames an unexplained '18 TeV' detection as the central puzzle ('one of the cosmological puzzles', 'LHAASO puzzling observation') and devotes the work to chasing that outlier rather than well-behaved cases — the disposition leaning toward the anomaly before any framework demands it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|http://arxiv.org/abs/2410.04742|value|integrative|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4403964193",
+        "attribute": "value",
+        "concept_name": "Integrative",
+        "parent_path": [],
+        "url": "http://arxiv.org/abs/2410.04742",
+        "claim": "Connects Higgs-portal scalar dark matter, relic-density constraints, cosmic-ray boosting during extragalactic propagation, diphoton decay, and LHAASO detection into one coherent explanatory pipeline — instantiating a disposition to link separate sub-fields into a single account."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "The authors openly state their algorithm 'in the present form is not efficient' and that an improvement is 'not impressive', disclosing the method's weaknesses rather than concealing them."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "Claims are bounded to exactly what was demonstrated — 'in the worst case ... asymptotically the same standard deviation', 'at least as low variance', improvement 'in five test games' — leaning into careful calibration before the situation forces it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|modest about one's contribution|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "value",
+        "concept_name": "Modest about one's contribution",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "The general transformation-finding procedure is presented as 'silly but general', with optimal transformations explicitly deferred to 'later research', framing the contribution as a modest step and crediting referees and colleagues."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|exacting about tightness|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W2949143881",
+        "attribute": "value",
+        "concept_name": "Exacting about tightness",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "claim": "A new ergodicity theorem is proved in full measure-theoretic rigor and the method is exercised across eight deliberately varied games to map exactly where the variance reduction holds and where it does not."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|value||rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "value",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The authors refuse to rest on the suggestive heuristic that blowing up Brill-Noether subvarieties 'should' resolve the pair, conceding it 'requires quite a bit of work to prove rigorously that it works,' then constructing a chain of inductive embedding criteria (Lemmas 1.11–1.20) to nail every transversality and conormal-bundle condition — conduct that exemplifies an exacting insistence on tightness, leaning into the hard proof before the structure demands it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|value||rigor#2",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "value",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The authors frame their goal as a 'natural and explicit' log resolution and approvingly call the iterated-blowup approach a 'simple-minded procedure,' preferring the most economical construction that does the work — conduct exemplifying a disposition drawn to parsimony."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.14231/ag-2026-014|value||honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W4283021637",
+        "attribute": "value",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.14231/ag-2026-014",
+        "claim": "The authors openly disclose the limits and division of their work — deferring vanishing-cycle computation to 'another paper,' flagging that the odd-genus proof is given in full while even genus 'requires a few changes in the notation,' and noting an 'inconvenient point' where the natural diagram 'is not Cartesian' — candidly surfacing the awkward and incomplete parts rather than papering over them."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Throughout, therapeutic effects are reported with consistent hedging — 'perceived', 'believed by participants', 'thought to' — and the authors explicitly scope the study away from evaluating biomedical efficacy, refusing claims their ethnographic design cannot support."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|forthcoming|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Forthcoming",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "A dedicated limitations passage volunteers that convenience and snowball sampling restrict representativeness, that the results cannot be generalized beyond North Al-Batinah, and that reliance on self-reported data may introduce subjective bias."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|modest about one's contribution|honesty",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Modest about one's contribution",
+        "parent_path": [
+          "Honesty"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "Findings are repeatedly confined to the studied community and 'this specific socio-cultural context', framed as valuable but bounded insight filling a documentation gap rather than as a general or definitive result."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|protective of the vulnerable|conscientiousness",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Protective of the vulnerable",
+        "parent_path": [
+          "Conscientiousness"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "To shield participants from social or tribal exposure, interviews on sensitive healing beliefs were conducted away from their home districts, with anonymization and coded identifiers — an active, anticipatory protection leaning in before any harm was demanded by the situation."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|respectful of other ways of knowing|curious",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7161135634",
+        "attribute": "value",
+        "concept_name": "Respectful of other ways of knowing",
+        "parent_path": [
+          "Curious"
+        ],
+        "url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "claim": "The authors deliberately bracket biomedical evaluation, documenting frankincense healing through its 'uses, meanings, and perceived effectiveness within their socio-cultural context' and immersing to 'see what they see and feel what they feel' — granting the community's own explanatory models epistemic standing on their own terms."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|integrative|",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "value",
+        "concept_name": "Integrative",
+        "parent_path": [],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "Combines MRI-derived brain-age, serum brain-derived tau and GFAP, and peripheral monocyte transcriptomics into one converging picture, exemplifying a disposition to integrate distinct evidence streams."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|skeptical of one's own conclusions|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "value",
+        "concept_name": "Skeptical of one's own conclusions",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "Tests the elevated brain-age gap in two independent patient cohorts rather than one, leaning to verify the result against itself before claiming it."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|measured|rigor",
+      "type": "link",
+      "payload": {
+        "paper_id": "W7164550506",
+        "attribute": "value",
+        "concept_name": "Measured",
+        "parent_path": [
+          "Rigor"
+        ],
+        "url": "https://doi.org/10.64898/2026.06.10.729182",
+        "claim": "Reports the +6.5-year gap with a 95% CI and frames conclusions as 'associated with' and 'consistent with' accelerated aging, calibrating the claim to a correlational design."
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|value|forthcoming|https://doi.org/10.1007/s00291-026-00863-0",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "relation": "similarity",
+        "cogrounding_url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "confidence": "C"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|integrative|value|skeptical of one's own conclusions|https://doi.org/10.64898/2026.06.10.729182",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Integrative"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "relation": "analogy",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.729182",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|measured|value|respectful of other ways of knowing|https://doi.org/10.3389/fsoc.2026.1814421",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Respectful of other ways of knowing"
+        },
+        "relation": "analogy",
+        "cogrounding_url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|drawn to anomalies|value|integrative|http://arxiv.org/abs/2410.04742",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Drawn to anomalies"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Integrative"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "http://arxiv.org/abs/2410.04742",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|open to scrutiny|value|oriented to human benefit|https://doi.org/10.1145/3800645.3812903",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Open to scrutiny"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Oriented to human benefit"
+        },
+        "relation": "thematic",
+        "cogrounding_url": "https://doi.org/10.1145/3800645.3812903",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|open to scrutiny|value|measured|https://doi.org/10.1145/3800645.3812903",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Open to scrutiny"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.1145/3800645.3812903",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|protective of the vulnerable|value|respectful of other ways of knowing|https://doi.org/10.3389/fsoc.2026.1814421",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Protective of the vulnerable"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Respectful of other ways of knowing"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.3389/fsoc.2026.1814421",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|skeptical of one's own conclusions|value|measured|https://doi.org/10.64898/2026.06.10.729182",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Skeptical of one's own conclusions"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Measured"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.64898/2026.06.10.729182",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|forthcoming|value|modest about one's contribution|https://doi.org/10.1007/s00291-026-00863-0",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Forthcoming"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Modest about one's contribution"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.1007/s00291-026-00863-0",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    },
+    {
+      "ref": "tunnel|value|exacting about tightness|value|drawn to parsimony|https://doi.org/10.14231/ag-2026-014",
+      "type": "tunnel",
+      "payload": {
+        "from": {
+          "attribute": "value",
+          "name": "Exacting about tightness"
+        },
+        "to": {
+          "attribute": "value",
+          "name": "Drawn to parsimony"
+        },
+        "relation": "affective",
+        "cogrounding_url": "https://doi.org/10.14231/ag-2026-014",
+        "confidence": "S"
+      },
+      "prediction_made": "",
+      "phi_note": "",
+      "precision": null,
+      "provenance": null,
+      "surprise_level": null
+    }
+  ],
+  "outcomes": [
+    {
+      "proposal_ref": "concept|value|respectful of other ways of knowing|curious",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to anomalies|curious",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|open to scrutiny|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|integrative|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|modest about one's contribution|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|drawn to parsimony|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|protective of the vulnerable|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|oriented to human benefit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|curious|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|honesty|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|rigor|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "concept|value|conscientiousness|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|value|oriented to human benefit|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1145/3800645.3812903|value|open to scrutiny|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|value|drawn to anomalies|curious",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|http://arxiv.org/abs/2410.04742|value|integrative|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|modest about one's contribution|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.1007/s00291-026-00863-0|value|exacting about tightness|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|value||rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|value||rigor#2",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.14231/ag-2026-014|value||honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|forthcoming|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|modest about one's contribution|honesty",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|protective of the vulnerable|conscientiousness",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.3389/fsoc.2026.1814421|value|respectful of other ways of knowing|curious",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|integrative|",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|skeptical of one's own conclusions|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "link|https://doi.org/10.64898/2026.06.10.729182|value|measured|rigor",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|value|forthcoming|https://doi.org/10.1007/s00291-026-00863-0",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|integrative|value|skeptical of one's own conclusions|https://doi.org/10.64898/2026.06.10.729182",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|measured|value|respectful of other ways of knowing|https://doi.org/10.3389/fsoc.2026.1814421",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|drawn to anomalies|value|integrative|http://arxiv.org/abs/2410.04742",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|open to scrutiny|value|oriented to human benefit|https://doi.org/10.1145/3800645.3812903",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|open to scrutiny|value|measured|https://doi.org/10.1145/3800645.3812903",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|protective of the vulnerable|value|respectful of other ways of knowing|https://doi.org/10.3389/fsoc.2026.1814421",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|skeptical of one's own conclusions|value|measured|https://doi.org/10.64898/2026.06.10.729182",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|forthcoming|value|modest about one's contribution|https://doi.org/10.1007/s00291-026-00863-0",
+      "decision": "accept",
+      "reason": ""
+    },
+    {
+      "proposal_ref": "tunnel|value|exacting about tightness|value|drawn to parsimony|https://doi.org/10.14231/ag-2026-014",
+      "decision": "accept",
+      "reason": ""
+    }
+  ],
+  "run_notes": "",
+  "reflect": {
+    "applied_counts": {
+      "papers": 6,
+      "paper_citations": 0,
+      "concepts": 3,
+      "edges": 3,
+      "concept_links": 17,
+      "tunnel_links": 9,
+      "concept_link_addenda": 0,
+      "comment_mentions": 0,
+      "chaos_predictions": 3,
+      "chaos_prediction_events": 19
+    }
+  },
+  "run_id": 7
+}

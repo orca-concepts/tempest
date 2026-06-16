@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.14
+**Version:** 0.15
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -175,6 +175,16 @@ work**" — does it situate rather than essentialize (P17)?
   format (§8) notes that an exemplification claim may make the **anticipatory/allostatic** read explicit
   — naming the conduct as the disposition *leaning in before the situation demands it* (the body-budget
   logic of §1), which is where the retired cost/benefit note now surfaces.
+- **v0.15 — Corpus widening.** The source corpus is broadened from the six cognitive-science fields
+  to a configurable cross-disciplinary set (the original six plus physics, mathematics, biology,
+  chemistry, computer science, medicine, economics, sociology, history — fifteen by default, tunable
+  via the `CHAOS_FIELDS` knob). Rationale: dispositions are **field-agnostic** (a researcher's rigor
+  or parsimony shows as clearly in a physics paper as a psychology one), so a wider corpus grounds
+  the same disposition graph in more varied research and *strengthens* the degeneracy / cross-field
+  recurrence signal (P13) rather than diluting it. Updated to match the shipped `source.js` change:
+  the `corpus_focus` knob, §4, and the "six fields" phrasing in P14 / run-procedure step 2 / the §6
+  pipeline now read as "the (configured) field set." The anti-dark-room balance guard is unchanged in
+  force — it now balances across whatever fields are sampled, not specifically six.
 
 ---
 
@@ -675,9 +685,9 @@ This induces an **explore→exploit arc** across the seeding lifecycle: bootstra
 researchers actually plan in — which is the principled trigger for the v0.7 deepening drive, P12:
 deepen where pragmatic value is high *and* epistemic value is nearly exhausted). A region is "done
 enough" when its epistemic value is exhausted *in the regions that carry pragmatic value*;
-elsewhere, leave it thin on purpose. Because curation recedes, *balanced* sourcing across the six
-fields and the phases remains the load-bearing **anti-dark-room** guard (§2.1) against the graph
-merely mirroring its own reading list.
+elsewhere, leave it thin on purpose. Because curation recedes, *balanced* sourcing across the
+configured field set and the phases remains the load-bearing **anti-dark-room** guard (§2.1) against
+the graph merely mirroring its own reading list.
 
 **Division of labor.** Curation hones the *reader* (this rubric — how Chaos reads and judges) and
 recedes; research grows and self-corrects the *knowledge* (the graph) and scales. The loop is the
@@ -826,10 +836,15 @@ conduct itself.
   genuine tension with Transparency, which is a feature.
 
 ### Corpus and cross-disciplinarity
-Pull from across the cognitive sciences — **neuroscience, psychology, linguistics, AI,
-philosophy, anthropology**. **Cross-disciplinary concepts are especially valuable:** a
-disposition or strategy that recurs across, say, neuroscience and anthropology is more
-likely to be a deep, lived, subtextual concept than a discipline-bound term.
+Pull **broadly across research** — the cognitive-science core (neuroscience, psychology,
+linguistics, AI, philosophy, anthropology) plus physics, mathematics, biology, chemistry, computer
+science, medicine, economics, sociology, and history; the active field set is configurable (the
+`CHAOS_FIELDS` knob). Dispositions are **field-agnostic** — a researcher's rigor or parsimony shows
+as clearly in a physics or pure-mathematics paper as in a psychology one — which is *why* the corpus
+can widen without diluting the disposition voice. **Cross-disciplinary concepts are especially
+valuable:** a disposition that recurs across, say, neuroscience and anthropology — or now physics and
+history — is more likely a deep, lived, subtextual concept than a discipline-bound term, and the
+wider the field set, the stronger that degeneracy signal becomes (P13).
 
 ---
 
@@ -843,13 +858,13 @@ likely to be a deep, lived, subtextual concept than a discipline-bound term.
    trajectory points toward (P11). Rank candidates by **epistemic × pragmatic value** (P14):
    uncertainty reduced × usefulness to a researcher. Where a disposition is high-stakes, include a
    **severe test** — a region where it *must* appear if genuine and *won't* if a reading-list
-   artifact (P16). Keep coverage balanced across the six fields **and the phases** (exploratory →
+   artifact (P16). Keep coverage balanced across the sampled fields **and the phases** (exploratory →
    confirmatory → reporting) — the anti-dark-room bias guard (P14); sampling the whole arc is what
    lets each disposition's if-then signature (P9) be read across it, not just where the corpus clusters.
    - *Revisit:* re-read already-linked documents — a grown graph may now offer dispositions they
      did not have on their last pass.
-   - *Fetch:* pull a batch of new open-access papers spanning the cognitive sciences
-     (neuroscience, psychology, linguistics, AI, philosophy, anthropology), preferring full
+   - *Fetch:* pull a batch of new open-access papers spanning the configured field set
+     (the cognitive-science core plus the broader disciplines — §4), preferring full
      text and cross-disciplinary material.
 3. **Disposition read & prediction test** (P10, P14, P16). For each paper, read it for the
    **dispositions its conduct and stance reveal** (P10): the **stance/metadiscourse** profile
@@ -912,8 +927,8 @@ database write from ever depending on an opaque agent loop.
 **The pipeline:**
 1. *Snapshot* (code) — read the dev DB into a compact structured state (concepts, edges,
    links, citation edges, prediction ledgers).
-2. *Source* (code/API) — fetch open-access papers across the six fields; full text; dedupe
-   against already-linked papers; pull citation metadata.
+2. *Source* (code/API) — fetch open-access papers across the configured field set (§4); full text;
+   dedupe against already-linked papers; pull citation metadata.
 3. *Read & decompose* (Claude) — read each paper for the dispositions its conduct and stance
    reveal, into candidate concepts, links, tunnels, and a prediction test against the current graph.
 4. *Integrate* (Claude) — tunnels, multi-parent placements, citation edges.
@@ -992,7 +1007,7 @@ it automatically, then (condition-gated) the automated reflect step.
 
 | Knob | Current setting | Notes |
 |---|---|---|
-| `corpus_focus` | Cognitive sciences across six fields | Neuroscience, psychology, linguistics, AI, philosophy, anthropology |
+| `corpus_focus` | Cross-disciplinary; 15 fields by default, configurable | Cognitive-science core (neuroscience, psychology, linguistics, AI, philosophy, anthropology) + physics, mathematics, biology, chemistry, computer science, medicine, economics, sociology, history; set per run via `CHAOS_FIELDS` |
 | `cross_disciplinary_preference` | High | Dispositions recurring across fields are especially valued |
 | `papers_per_run` | 5–10 new + revisit set | |
 | `concept_creation_budget` | Conservative | Calibrate from feedback; the accuracy−complexity test (P4) is its principle |

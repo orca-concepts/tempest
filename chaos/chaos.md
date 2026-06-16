@@ -1,6 +1,6 @@
 # Chaos — the ORCA Graph-Seeding Tool Rubric
 
-**Version:** 0.13
+**Version:** 0.14
 **Purpose of this file:** This is the tool's *brain* — the principles, the run procedure,
 and the tunable knobs Chaos uses to propose contributions to Orca's concept graphs. It is
 meant to be read, argued with, and edited; every run is an opportunity to refine it. It
@@ -162,6 +162,19 @@ work**" — does it situate rather than essentialize (P17)?
   de-orphaned**: slimmed to its one surviving commitment (read *conduct*, not surface terminology —
   now → P3/P10) after P10 dropped the CARS move apparatus in v0.12, so no foundation points at a
   principle that no longer implements it.
+- **v0.14 — Planning-experience pass.** Three small refinements from translating a researcher's
+  *plan-the-next-move* use-case into the value-only frame — no new machinery, and the action-domain
+  framing of the same intuition stays retired (v0.12). (1) **Phase coverage reconciled.** Run-procedure
+  step 2 now samples "across the six fields **and the phases**," matching P14's anti-dark-room
+  commitment, which step 2 had under-stated (fields only). Phase stays a **sampling-balance and reading
+  axis**, never a structure — the retired lifecycle map is *not* reintroduced. (2) **Planning named as a
+  target experience.** §1's north star and P5's usefulness lens now name *planning the next research
+  move* explicitly: a researcher locates their phase in the inquiry's arc, descends to the disposition
+  that bears on it, and reads the if-then signature (P9) and exemplar groundings as what that
+  disposition looks like, lived, at that phase. (3) **Anticipatory link-comments.** The link-comment
+  format (§8) notes that an exemplification claim may make the **anticipatory/allostatic** read explicit
+  — naming the conduct as the disposition *leaning in before the situation demands it* (the body-budget
+  logic of §1), which is where the retired cost/benefit note now surfaces.
 
 ---
 
@@ -199,7 +212,11 @@ descending a path is acquiring a prior, crossing a tunnel imports a remote predi
 link is where a prediction touches the world. The goal of seeding is therefore not "store knowledge"
 but *install good research priors that make a researcher's character more navigable.* Proposals
 should be judged partly by whether they make the brain feel more *travelable*: depth to descend into,
-bridges to cross, hooks that invite the journey. Travel itself has **two gears** (P15): executive
+bridges to cross, hooks that invite the journey. One thing this travel is *for*: a researcher mulling
+a next move can locate their phase in the inquiry's arc (P9), descend to the disposition that bears on
+it, and read its if-then signature and exemplar groundings as what that disposition looks like, lived,
+at that phase — planning as navigation of one's own dispositional character. Travel itself has **two
+gears** (P15): executive
 descent — deliberate, stepwise movement down analytic edges — and default-mode drift — associative
 jumps across tunnels, flips to alternate parents, thematic leaps between siblings. The drift is
 **controlled**, not loose: every associative leap is scaffolded by analytic structure and witnessed
@@ -431,8 +448,11 @@ first-person and resists drift into a technical ontology.
 ### P5 — The usefulness lens & the hypothetical-researcher test
 Before proposing anything, simulate a researcher reflecting on how they work. Ask: would landing on
 this disposition, and this exemplar document, help them recognize or sharpen a value *instantiated
-in actual research* in a way that informs who they are as a researcher? If not, don't propose it. A
-linked document must be an **exemplar that demonstrates the disposition** — research whose conduct
+in actual research* in a way that informs who they are as a researcher? If not, don't propose it. The
+sharpest form of this test is the researcher *planning a next move* — would landing here help them see
+how a disposition they aspire to actually shows at the phase they are entering (P9), with research that
+proves it can be done? A linked document must be an **exemplar that demonstrates the disposition** —
+research whose conduct
 *shows* the disposition at work — not one that merely discusses it. (Co-grounding, the engine of
 tunnels, is now P8.)
 
@@ -823,7 +843,9 @@ likely to be a deep, lived, subtextual concept than a discipline-bound term.
    trajectory points toward (P11). Rank candidates by **epistemic × pragmatic value** (P14):
    uncertainty reduced × usefulness to a researcher. Where a disposition is high-stakes, include a
    **severe test** — a region where it *must* appear if genuine and *won't* if a reading-list
-   artifact (P16). Keep coverage balanced across the six fields (the anti-dark-room bias guard).
+   artifact (P16). Keep coverage balanced across the six fields **and the phases** (exploratory →
+   confirmatory → reporting) — the anti-dark-room bias guard (P14); sampling the whole arc is what
+   lets each disposition's if-then signature (P9) be read across it, not just where the corpus clusters.
    - *Revisit:* re-read already-linked documents — a grown graph may now offer dispositions they
      did not have on their last pass.
    - *Fetch:* pull a batch of new open-access papers spanning the cognitive sciences
@@ -1019,7 +1041,8 @@ it automatically, then (condition-gated) the automated reflect step.
   location; a one-line addendum text pointing forward. Emitted with every restructure /
   re-homing proposal (P6, P14 mis-structure, P15 multi-parent consolidation).
 - **Link proposal:** target edge; URL; title (auto-fetched); comment = the exemplification
-  claim (how the conduct instantiates the concept).
+  claim (how the conduct instantiates the concept) — which may make the **anticipatory/allostatic**
+  read explicit, naming the conduct as the disposition *leaning in before the situation demands it* (§1).
 - **Tunnel proposal:** from-edge ↔ to-edge (disposition ↔ disposition); rationale as the
   association kind (similarity, thematic, analogy, metaphor, affective — P15); the co-grounding
   document where one exists (P8); the **cause-effect work** it does (what crossing it changes about a

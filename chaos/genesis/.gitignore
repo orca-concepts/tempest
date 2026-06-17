@@ -1,0 +1,4 @@
+# Regenerable model-response cache for chaos/categorizer.js genesis runs.
+# The reviewable proposal.json / proposal.md are intentionally NOT ignored —
+# they are the artifacts under review.
+genesis_cache/

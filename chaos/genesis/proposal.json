@@ -1,0 +1,731 @@
+{
+  "generated_by": "chaos/categorizer.js",
+  "mode": "genesis",
+  "model": "claude-opus-4-8",
+  "effort": "high",
+  "prompt_version": "g1-genesis",
+  "rubric_version": "1.0",
+  "graph_state": "empty (genesis — authored fresh from scholarship, no DB access)",
+  "domain": [
+    "value"
+  ],
+  "node_count": 46,
+  "skeleton_count": 8,
+  "hook_count": 38,
+  "nodes": [
+    {
+      "name": "Honesty",
+      "role": "skeleton",
+      "conduct": "the disposition not to mislead — about data, methods, or yourself",
+      "parent_paths": [],
+      "basis": "Merton CUDOS (disinterestedness); research integrity codes",
+      "frontiers": [
+        "differentiate: honesty toward others vs. honesty with oneself"
+      ]
+    },
+    {
+      "name": "Rigor",
+      "role": "skeleton",
+      "conduct": "the disposition to subject claims to the severest available test",
+      "parent_paths": [],
+      "basis": "Kuhn theory-choice virtues (accuracy, consistency); Mayo severe testing",
+      "frontiers": [
+        "differentiate: rigor of measurement vs. rigor of inference"
+      ]
+    },
+    {
+      "name": "Care",
+      "role": "skeleton",
+      "conduct": "the disposition to attend to those affected by the inquiry",
+      "parent_paths": [],
+      "basis": "ethics of care; research-ethics traditions",
+      "frontiers": [
+        "differentiate: care for participants vs. care for downstream users of the result"
+      ]
+    },
+    {
+      "name": "Courage",
+      "role": "skeleton",
+      "conduct": "the disposition to bear cost for the sake of the inquiry",
+      "parent_paths": [],
+      "basis": "Roberts & Wood, Intellectual Virtues",
+      "frontiers": [
+        "differentiate: courage against the field vs. courage against one's own past self"
+      ]
+    },
+    {
+      "name": "Openness",
+      "role": "skeleton",
+      "conduct": "the disposition to make the work available to scrutiny and reuse",
+      "parent_paths": [],
+      "basis": "Merton communism; open-science movement",
+      "frontiers": [
+        "differentiate: openness of artifacts vs. openness of reasoning"
+      ]
+    },
+    {
+      "name": "Humility",
+      "role": "skeleton",
+      "conduct": "the disposition to track the limits of what one knows",
+      "parent_paths": [],
+      "basis": "Baehr, The Inquiring Mind; intellectual humility literature",
+      "frontiers": [
+        "differentiate: humility about evidence vs. humility about standing to speak"
+      ]
+    },
+    {
+      "name": "Justice",
+      "role": "skeleton",
+      "conduct": "the disposition to distribute epistemic credit and burden fairly",
+      "parent_paths": [],
+      "basis": "Fricker, epistemic injustice; Longino on social knowledge",
+      "frontiers": [
+        "differentiate: testimonial vs. hermeneutical justice in research practice"
+      ]
+    },
+    {
+      "name": "Autonomy",
+      "role": "skeleton",
+      "conduct": "the disposition to let evidence, not incentive, govern the question",
+      "parent_paths": [],
+      "basis": "Merton organized skepticism; Longino on independence of judgment",
+      "frontiers": [
+        "differentiate: autonomy from funders vs. autonomy from disciplinary fashion"
+      ]
+    },
+    {
+      "name": "Reporting null and disconfirming results",
+      "role": "hook",
+      "conduct": "when the data refuse your favored hypothesis, you write them up as prominently as you would a confirmation",
+      "parent_paths": [
+        [
+          "Honesty"
+        ],
+        [
+          "Courage"
+        ],
+        [
+          "Rigor"
+        ]
+      ],
+      "basis": "publication-bias / file-drawer metascience; Merton disinterestedness",
+      "frontiers": [
+        "differentiate: nulls in confirmatory vs. exploratory designs"
+      ]
+    },
+    {
+      "name": "Owning the load-bearing assumption",
+      "role": "hook",
+      "conduct": "you name the single assumption your result depends on, and state what breaks if it is false, before a reviewer finds it",
+      "parent_paths": [
+        [
+          "Honesty"
+        ],
+        [
+          "Humility"
+        ]
+      ],
+      "basis": "Douglas on inductive risk; intellectual-humility literature",
+      "frontiers": [
+        "differentiate: assumptions you can test now vs. assumptions you defer"
+      ]
+    },
+    {
+      "name": "Sharing the messy pipeline, not just the clean result",
+      "role": "hook",
+      "conduct": "you release the analysis with its dead ends and judgment calls intact, not a sanitized rerun built for the camera",
+      "parent_paths": [
+        [
+          "Openness"
+        ],
+        [
+          "Honesty"
+        ]
+      ],
+      "basis": "open-science reproducibility; researcher-degrees-of-freedom work",
+      "frontiers": [
+        "differentiate: disclosing process vs. disclosing artifacts"
+      ]
+    },
+    {
+      "name": "Crediting the unseen labor",
+      "role": "hook",
+      "conduct": "you name the technician, student, or community whose work the result rests on in author position, not a footnote",
+      "parent_paths": [
+        [
+          "Justice"
+        ],
+        [
+          "Care"
+        ],
+        [
+          "Honesty"
+        ]
+      ],
+      "basis": "Fricker testimonial justice; authorship-ethics scholarship",
+      "frontiers": [
+        "differentiate: visible co-authors vs. structurally invisible contributors"
+      ]
+    },
+    {
+      "name": "Auditing your own method for the failure you'd hate to find",
+      "role": "hook",
+      "conduct": "you run the analysis designed to break your conclusion, not the one that flatters it",
+      "parent_paths": [
+        [
+          "Rigor"
+        ],
+        [
+          "Humility"
+        ]
+      ],
+      "basis": "Mayo severe testing; Popperian self-criticism",
+      "frontiers": [
+        "differentiate: internal robustness checks vs. inviting external attack"
+      ]
+    },
+    {
+      "name": "Calibrating confidence to evidence",
+      "role": "hook",
+      "conduct": "your stated certainty in the abstract tracks the strength of the actual test, not the importance of the claim",
+      "parent_paths": [
+        [
+          "Honesty"
+        ],
+        [
+          "Rigor"
+        ],
+        [
+          "Humility"
+        ]
+      ],
+      "basis": "Kuhn accuracy; calibration / forecasting literature",
+      "frontiers": [
+        "differentiate: calibration of point estimates vs. of scope conditions"
+      ]
+    },
+    {
+      "name": "Protecting the vulnerable participant beyond the consent form",
+      "role": "hook",
+      "conduct": "you weigh harms the IRB checkbox doesn't cover and stop a procedure that is technically permitted but wrong",
+      "parent_paths": [
+        [
+          "Care"
+        ],
+        [
+          "Justice"
+        ]
+      ],
+      "basis": "research-ethics; Belmont principles beyond compliance",
+      "frontiers": [
+        "differentiate: individual harm vs. collective/community harm"
+      ]
+    },
+    {
+      "name": "Pursuing the question that won't fund itself",
+      "role": "hook",
+      "conduct": "you commit to the problem the field considers unfashionable because the evidence, not the incentive, points there",
+      "parent_paths": [
+        [
+          "Courage"
+        ],
+        [
+          "Autonomy"
+        ]
+      ],
+      "basis": "Merton organized skepticism; Polanyi on independent inquiry",
+      "frontiers": [
+        "differentiate: career-risk questions vs. funding-structure-orphaned questions"
+      ]
+    },
+    {
+      "name": "Letting the anomaly redirect the program",
+      "role": "hook",
+      "conduct": "when a stray result contradicts the framework you built a career on, you follow it instead of explaining it away",
+      "parent_paths": [
+        [
+          "Openness"
+        ],
+        [
+          "Courage"
+        ],
+        [
+          "Humility"
+        ]
+      ],
+      "basis": "Kuhn on anomaly; Longino on accommodating dissent",
+      "frontiers": [
+        "differentiate: anomaly from others vs. anomaly in your own replication"
+      ]
+    },
+    {
+      "name": "Making the work reproducible by a stranger",
+      "role": "hook",
+      "conduct": "you write the methods so a competitor with no access to you could rebuild the result from scratch",
+      "parent_paths": [
+        [
+          "Rigor"
+        ],
+        [
+          "Openness"
+        ]
+      ],
+      "basis": "reproducibility / replication metascience",
+      "frontiers": [
+        "differentiate: computational reproducibility vs. methodological replicability"
+      ]
+    },
+    {
+      "name": "Centering the knowledge the discipline overlooks",
+      "role": "hook",
+      "conduct": "you treat practitioner and indigenous accounts as evidence to be tested, not anecdote to be displaced",
+      "parent_paths": [
+        [
+          "Justice"
+        ],
+        [
+          "Openness"
+        ]
+      ],
+      "basis": "Fricker epistemic injustice; Haraway situated knowledge",
+      "frontiers": [
+        "differentiate: admitting overlooked evidence vs. sharing back with its source"
+      ]
+    },
+    {
+      "name": "Choosing the simpler model only when it pays its way",
+      "role": "hook",
+      "conduct": "you adopt the leaner explanation when it predicts as well, and you say so when you kept complexity only to fit data you already saw",
+      "parent_paths": [
+        [
+          "Rigor"
+        ],
+        [
+          "Honesty"
+        ]
+      ],
+      "basis": "Kuhn simplicity; model-selection / overfitting literature",
+      "frontiers": [
+        "differentiate: parsimony as predictive virtue vs. parsimony as honesty about overfitting"
+      ]
+    },
+    {
+      "name": "Disclosing a null that undercuts your own prior published claim",
+      "role": "hook",
+      "conduct": "you flag, in the new paper, that the null reverses something you previously asserted in print",
+      "parent_paths": [
+        [
+          "Honesty",
+          "Reporting null and disconfirming results"
+        ]
+      ],
+      "basis": "self-correction norms; Merton disinterestedness",
+      "frontiers": [
+        "someone find this: self-retraction-via-new-evidence cases"
+      ]
+    },
+    {
+      "name": "Publishing a finding that sinks your grant-renewal story",
+      "role": "hook",
+      "conduct": "you report the disconfirming result even though it weakens the narrative your next funding round depends on",
+      "parent_paths": [
+        [
+          "Courage",
+          "Reporting null and disconfirming results"
+        ]
+      ],
+      "basis": "research-integrity under incentive pressure",
+      "frontiers": [
+        "differentiate: funding cost vs. reputational cost of the null"
+      ]
+    },
+    {
+      "name": "Pre-committing to report whatever the outcome",
+      "role": "hook",
+      "conduct": "you register the analysis plan and the intent to publish before seeing the data, removing the option to bury a null",
+      "parent_paths": [
+        [
+          "Rigor",
+          "Reporting null and disconfirming results"
+        ],
+        [
+          "Openness",
+          "Making the work reproducible by a stranger"
+        ]
+      ],
+      "basis": "pre-registration / registered-reports movement",
+      "frontiers": [
+        "differentiate: pre-registration vs. registered report as commitment devices"
+      ]
+    },
+    {
+      "name": "Naming the assumption that, if false, reverses the conclusion",
+      "role": "hook",
+      "conduct": "you isolate the one premise whose failure would flip the result, and you state it explicitly in the paper",
+      "parent_paths": [
+        [
+          "Honesty",
+          "Owning the load-bearing assumption"
+        ]
+      ],
+      "basis": "Douglas inductive risk; sensitivity-analysis practice",
+      "frontiers": [
+        "differentiate: load-bearing modeling vs. measurement assumptions"
+      ]
+    },
+    {
+      "name": "Flagging the assumption you currently cannot test",
+      "role": "hook",
+      "conduct": "you mark, as an open limit, the premise you are relying on but have no present means to check",
+      "parent_paths": [
+        [
+          "Humility",
+          "Owning the load-bearing assumption"
+        ]
+      ],
+      "basis": "intellectual humility; limits-of-evidence reporting",
+      "frontiers": [
+        "someone find this: papers that flag untestable premises as standing limits"
+      ]
+    },
+    {
+      "name": "Releasing raw data with the cleaning steps logged",
+      "role": "hook",
+      "conduct": "you publish the unprocessed data alongside an auditable record of every exclusion and transformation",
+      "parent_paths": [
+        [
+          "Openness",
+          "Sharing the messy pipeline, not just the clean result"
+        ]
+      ],
+      "basis": "open-data / data-provenance standards",
+      "frontiers": [
+        "differentiate: raw-data release vs. provenance-trail release"
+      ]
+    },
+    {
+      "name": "Reporting the analyses you ran and discarded",
+      "role": "hook",
+      "conduct": "you list the specifications you tried and dropped, so readers can see the garden of forking paths you walked",
+      "parent_paths": [
+        [
+          "Honesty",
+          "Sharing the messy pipeline, not just the clean result"
+        ],
+        [
+          "Rigor",
+          "Calibrating confidence to evidence"
+        ]
+      ],
+      "basis": "researcher-degrees-of-freedom; multiverse analysis",
+      "frontiers": [
+        "differentiate: disclosing discarded analyses vs. reporting a full multiverse"
+      ]
+    },
+    {
+      "name": "Naming the technician in author position, not acknowledgments",
+      "role": "hook",
+      "conduct": "you move the person who built the apparatus or ran the assays into authorship where their work warrants it",
+      "parent_paths": [
+        [
+          "Justice",
+          "Crediting the unseen labor"
+        ],
+        [
+          "Honesty",
+          "Crediting the unseen labor"
+        ]
+      ],
+      "basis": "authorship-ethics; CRediT contributor taxonomy",
+      "frontiers": [
+        "differentiate: technical labor vs. interpretive labor in credit allocation"
+      ]
+    },
+    {
+      "name": "Co-authoring with the community whose knowledge you used",
+      "role": "hook",
+      "conduct": "you bring the source community into authorship and analysis rather than mining them for data and moving on",
+      "parent_paths": [
+        [
+          "Care",
+          "Crediting the unseen labor"
+        ],
+        [
+          "Justice",
+          "Centering the knowledge the discipline overlooks"
+        ]
+      ],
+      "basis": "Haraway situated knowledge; community-based participatory research",
+      "frontiers": [
+        "someone find this: co-authorship with non-academic knowledge-holders"
+      ]
+    },
+    {
+      "name": "Running the robustness check most likely to overturn the headline",
+      "role": "hook",
+      "conduct": "you choose the stress test that would most embarrass your main claim, and report it whichever way it falls",
+      "parent_paths": [
+        [
+          "Rigor",
+          "Auditing your own method for the failure you'd hate to find"
+        ]
+      ],
+      "basis": "Mayo severe testing; robustness-analysis practice",
+      "frontiers": [
+        "differentiate: specification robustness vs. data-perturbation robustness"
+      ]
+    },
+    {
+      "name": "Inviting an adversarial collaborator to attack the design",
+      "role": "hook",
+      "conduct": "you recruit a skeptic of your hypothesis into the study so the protocol survives a hostile reading before it runs",
+      "parent_paths": [
+        [
+          "Humility",
+          "Auditing your own method for the failure you'd hate to find"
+        ]
+      ],
+      "basis": "adversarial collaboration literature",
+      "frontiers": [
+        "someone find this: documented adversarial-collaboration designs"
+      ]
+    },
+    {
+      "name": "Treating a replication failure of your own work as signal",
+      "role": "hook",
+      "conduct": "when your own result fails to replicate, you investigate it as information rather than defending the original",
+      "parent_paths": [
+        [
+          "Humility",
+          "Letting the anomaly redirect the program"
+        ],
+        [
+          "Rigor",
+          "Auditing your own method for the failure you'd hate to find"
+        ]
+      ],
+      "basis": "replication crisis; self-correction norms",
+      "frontiers": [
+        "differentiate: failed self-replication vs. failed independent replication"
+      ]
+    },
+    {
+      "name": "Inviting the rival explanation into your own paper",
+      "role": "hook",
+      "conduct": "you build the strongest competing account of your data into your own discussion and test it head-to-head",
+      "parent_paths": [
+        [
+          "Openness",
+          "Letting the anomaly redirect the program"
+        ],
+        [
+          "Rigor",
+          "Auditing your own method for the failure you'd hate to find"
+        ]
+      ],
+      "basis": "strong inference; Longino on accommodating critique",
+      "frontiers": [
+        "differentiate: steelmanning rivals vs. formal model comparison"
+      ]
+    },
+    {
+      "name": "Widening error bars to include model uncertainty, not just sampling noise",
+      "role": "hook",
+      "conduct": "your reported uncertainty absorbs the choice of model and analyst, not only the variance within one fixed model",
+      "parent_paths": [
+        [
+          "Rigor",
+          "Calibrating confidence to evidence"
+        ]
+      ],
+      "basis": "model-uncertainty / ensemble-uncertainty methods",
+      "frontiers": [
+        "differentiate: model uncertainty vs. analyst (many-analysts) uncertainty"
+      ]
+    },
+    {
+      "name": "Stating the conditions under which you'd be wrong",
+      "role": "hook",
+      "conduct": "you specify in advance the observations that would defeat your claim, not just the ones that would support it",
+      "parent_paths": [
+        [
+          "Humility",
+          "Calibrating confidence to evidence"
+        ]
+      ],
+      "basis": "Popper falsifiability; intellectual humility",
+      "frontiers": [
+        "differentiate: defeating evidence vs. scope-limiting conditions"
+      ]
+    },
+    {
+      "name": "Refusing to overclaim significance you didn't pre-specify",
+      "role": "hook",
+      "conduct": "you present a post-hoc finding as exploratory, declining to dress it in confirmatory language",
+      "parent_paths": [
+        [
+          "Honesty",
+          "Calibrating confidence to evidence"
+        ]
+      ],
+      "basis": "HARKing critique; confirmatory/exploratory distinction",
+      "frontiers": [
+        "someone find this: papers that label findings exploratory at cost to impact"
+      ]
+    },
+    {
+      "name": "Abandoning a framework you are known for when it fails a clean test",
+      "role": "hook",
+      "conduct": "you retire the theory your reputation rests on once it loses a decisive, pre-specified test",
+      "parent_paths": [
+        [
+          "Courage",
+          "Letting the anomaly redirect the program"
+        ]
+      ],
+      "basis": "Kuhn paradigm-shift; intellectual courage literature",
+      "frontiers": [
+        "differentiate: abandoning vs. publicly revising a signature framework"
+      ]
+    },
+    {
+      "name": "Stopping a permitted procedure that is causing distress",
+      "role": "hook",
+      "conduct": "you halt a study step that participants are tolerating but visibly suffering, even though consent technically covers it",
+      "parent_paths": [
+        [
+          "Care",
+          "Protecting the vulnerable participant beyond the consent form"
+        ]
+      ],
+      "basis": "ethics of care; beneficence beyond compliance",
+      "frontiers": [
+        "differentiate: acute distress vs. cumulative burden as stopping triggers"
+      ]
+    },
+    {
+      "name": "Refusing a design that extracts from a community without return",
+      "role": "hook",
+      "conduct": "you decline a study that takes data or samples from a community and gives nothing back to them",
+      "parent_paths": [
+        [
+          "Justice",
+          "Protecting the vulnerable participant beyond the consent form"
+        ]
+      ],
+      "basis": "research-justice; data-sovereignty frameworks",
+      "frontiers": [
+        "someone find this: refusals or redesigns on extraction grounds"
+      ]
+    },
+    {
+      "name": "Continuing a line your senior collaborators have written off",
+      "role": "hook",
+      "conduct": "you keep pursuing a result your advisors and co-authors have declared a dead end, because the evidence isn't settled",
+      "parent_paths": [
+        [
+          "Courage",
+          "Pursuing the question that won't fund itself"
+        ]
+      ],
+      "basis": "intellectual courage; hierarchy and dissent in labs",
+      "frontiers": [
+        "differentiate: dissent within a lab vs. dissent against the field"
+      ]
+    },
+    {
+      "name": "Declining the fundable reframing that distorts the question",
+      "role": "hook",
+      "conduct": "you turn down the grant-friendly framing that would bend the inquiry away from what you actually want to know",
+      "parent_paths": [
+        [
+          "Autonomy",
+          "Pursuing the question that won't fund itself"
+        ]
+      ],
+      "basis": "autonomy of inquiry; funding-shaping-of-science critique",
+      "frontiers": [
+        "someone find this: documented refusals of distorting reframings"
+      ]
+    },
+    {
+      "name": "Specifying every parameter a reanalysis would need",
+      "role": "hook",
+      "conduct": "you report seeds, versions, and settings so a reanalyst needs nothing from you to reproduce the numbers",
+      "parent_paths": [
+        [
+          "Rigor",
+          "Making the work reproducible by a stranger"
+        ]
+      ],
+      "basis": "computational-reproducibility standards",
+      "frontiers": [
+        "differentiate: parameter completeness vs. environment completeness"
+      ]
+    },
+    {
+      "name": "Sharing code and environment, not just describing them",
+      "role": "hook",
+      "conduct": "you ship the runnable code and a captured environment, rather than a prose description a reader must reconstruct",
+      "parent_paths": [
+        [
+          "Openness",
+          "Making the work reproducible by a stranger"
+        ],
+        [
+          "Rigor",
+          "Making the work reproducible by a stranger"
+        ]
+      ],
+      "basis": "containerization / reproducible-environments practice",
+      "frontiers": [
+        "differentiate: code release vs. full environment capture"
+      ]
+    },
+    {
+      "name": "Publishing in the language and venue the source community can access",
+      "role": "hook",
+      "conduct": "you make the findings reachable to the people studied, not only to the journal's paywalled readership",
+      "parent_paths": [
+        [
+          "Openness",
+          "Centering the knowledge the discipline overlooks"
+        ]
+      ],
+      "basis": "knowledge-justice; open-access and translation practice",
+      "frontiers": [
+        "someone find this: parallel community-facing publication of findings"
+      ]
+    },
+    {
+      "name": "Penalizing added parameters against out-of-sample prediction",
+      "role": "hook",
+      "conduct": "you keep a parameter only if it improves prediction on data you hadn't seen, not the fit on data you had",
+      "parent_paths": [
+        [
+          "Rigor",
+          "Choosing the simpler model only when it pays its way"
+        ]
+      ],
+      "basis": "cross-validation; information-criterion model selection",
+      "frontiers": [
+        "differentiate: cross-validation vs. information-criterion penalties"
+      ]
+    },
+    {
+      "name": "Admitting when complexity was added post hoc to fit observed data",
+      "role": "hook",
+      "conduct": "you disclose that an extra term was introduced after seeing the data, rather than presenting it as principled a priori",
+      "parent_paths": [
+        [
+          "Honesty",
+          "Choosing the simpler model only when it pays its way"
+        ]
+      ],
+      "basis": "overfitting critique; HARKing transparency",
+      "frontiers": [
+        "someone find this: explicit disclosures of post-hoc model complexity"
+      ]
+    }
+  ]
+}

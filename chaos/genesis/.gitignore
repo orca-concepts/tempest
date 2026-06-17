@@ -2,3 +2,6 @@
 # The reviewable proposal.json / proposal.md are intentionally NOT ignored —
 # they are the artifacts under review.
 genesis_cache/
+
+# Transient transform fed to apply.js --proposals by write.js (removed after each run).
+.genesis-apply.tmp.json

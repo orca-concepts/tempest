@@ -29,7 +29,7 @@ Legend: `[S]` = skeleton (abstract integration ceiling) · `[H]` = hook (basic-l
   · conduct: the disposition to attend to those affected by the inquiry
   · basis: ethics of care; research-ethics traditions
   · frontiers: differentiate: care for participants vs. care for downstream users of the result
-  - [H] **Crediting the unseen labor**  ⇄ also under: Justice | Honesty
+  - [H] **Crediting the unseen labor**  ⇄ also under: Justice
     · conduct: you name the technician, student, or community whose work the result rests on in author position, not a footnote
     · basis: Fricker testimonial justice; authorship-ethics scholarship
     · frontiers: differentiate: visible co-authors vs. structurally invisible contributors
@@ -103,14 +103,6 @@ Legend: `[S]` = skeleton (abstract integration ceiling) · `[H]` = hook (basic-l
       · conduct: you list the specifications you tried and dropped, so readers can see the garden of forking paths you walked
       · basis: researcher-degrees-of-freedom; multiverse analysis
       · frontiers: differentiate: disclosing discarded analyses vs. reporting a full multiverse
-  - [H] **Crediting the unseen labor**  ⇄ also under: Justice | Care
-    · conduct: you name the technician, student, or community whose work the result rests on in author position, not a footnote
-    · basis: Fricker testimonial justice; authorship-ethics scholarship
-    · frontiers: differentiate: visible co-authors vs. structurally invisible contributors
-    - [H] **Naming the technician in author position, not acknowledgments**  ⇄ also under: Justice › Crediting the unseen labor
-      · conduct: you move the person who built the apparatus or ran the assays into authorship where their work warrants it
-      · basis: authorship-ethics; CRediT contributor taxonomy
-      · frontiers: differentiate: technical labor vs. interpretive labor in credit allocation
   - [H] **Calibrating confidence to evidence**  ⇄ also under: Rigor | Humility
     · conduct: your stated certainty in the abstract tracks the strength of the actual test, not the importance of the claim
     · basis: Kuhn accuracy; calibration / forecasting literature
@@ -169,11 +161,11 @@ Legend: `[S]` = skeleton (abstract integration ceiling) · `[H]` = hook (basic-l
   · conduct: the disposition to distribute epistemic credit and burden fairly
   · basis: Fricker, epistemic injustice; Longino on social knowledge
   · frontiers: differentiate: testimonial vs. hermeneutical justice in research practice
-  - [H] **Crediting the unseen labor**  ⇄ also under: Care | Honesty
+  - [H] **Crediting the unseen labor**  ⇄ also under: Care
     · conduct: you name the technician, student, or community whose work the result rests on in author position, not a footnote
     · basis: Fricker testimonial justice; authorship-ethics scholarship
     · frontiers: differentiate: visible co-authors vs. structurally invisible contributors
-    - [H] **Naming the technician in author position, not acknowledgments**  ⇄ also under: Honesty › Crediting the unseen labor
+    - [H] **Naming the technician in author position, not acknowledgments**
       · conduct: you move the person who built the apparatus or ran the assays into authorship where their work warrants it
       · basis: authorship-ethics; CRediT contributor taxonomy
       · frontiers: differentiate: technical labor vs. interpretive labor in credit allocation

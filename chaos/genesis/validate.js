@@ -15,9 +15,9 @@
  *     multi-parented node must differentiate DIFFERENTLY under each parent, not share
  *     one child set — that is duplication, not integration);
  *   - frontier coverage (§5.5: every carve emits ≥1 frontier);
- *   - obviousness flags (§6/§7: any hook whose conduct is a bare virtue-word or too
- *     generic — "too obvious = non-generative");
- *   - skeleton-vs-hook counts (§7);
+ *   - adjective-form lint (§7: heuristic — flags noun-form names like "Honesty",
+ *     prefers the adjective "Honest"; warns, does not gate);
+ *   - node + root counts;
  *   - structural integrity (dangling parent references, duplicate names, cycles).
  *
  * Usage:
@@ -53,55 +53,23 @@ function pct(n, d) {
 }
 
 // ----------------------------------------------------------------------------
-// Heuristic obviousness lexicon (§6/§7). A hook's conduct must be lived and
-// non-obvious; a bare virtue-word is non-generative. This list is the "abstract
-// virtue word" set the SKELETON is allowed to be named with but a HOOK's conduct
-// must not collapse to. Heuristic, intentionally tunable — it flags for human review,
-// it does not auto-reject.
+// Adjective-form lint (chaos.md §7). v2.0 nodes are BARE QUALITY-ADJECTIVES in
+// adjective form ("Honest", not "Honesty"). This heuristic flags names whose head
+// word ends in a common nominalization suffix so a human can eyeball them. It is a
+// backstop, not a gate: false positives are fine (a legitimate adjectival phrase may
+// trip it), it warns, it does not fail the structural verdict.
 // ----------------------------------------------------------------------------
-const VIRTUE_WORDS = new Set([
-  'honesty', 'honest', 'rigor', 'rigour', 'rigorous', 'care', 'careful', 'caring',
-  'integrity', 'transparency', 'transparent', 'openness', 'open', 'humility', 'humble',
-  'courage', 'courageous', 'brave', 'bravery', 'curiosity', 'curious', 'skepticism',
-  'scepticism', 'skeptical', 'objectivity', 'objective', 'fairness', 'fair', 'accuracy',
-  'accurate', 'precision', 'precise', 'diligence', 'diligent', 'prudence', 'prudent',
-  'creativity', 'creative', 'originality', 'original', 'reproducibility', 'reproducible',
-  'accountability', 'accountable', 'responsibility', 'responsible', 'trustworthiness',
-  'trustworthy', 'modesty', 'modest', 'charity', 'charitable', 'autonomy', 'autonomous',
-  'collegiality', 'collegial', 'generosity', 'generous', 'patience', 'patient',
-  'thoroughness', 'thorough', 'conscientiousness', 'conscientious', 'impartiality',
-  'impartial', 'sincerity', 'sincere', 'wisdom', 'wise', 'discipline', 'disciplined',
-  'perseverance', 'persistence', 'persistent', 'tenacity', 'reflexivity', 'reflexive',
-]);
-const STOPWORDS = new Set([
-  'a', 'an', 'the', 'of', 'to', 'and', 'or', 'in', 'on', 'with', 'for', 'be', 'being',
-  'is', 'as', 'your', 'you', 'their', 'its', 'that', 'this', 'about', 'toward', 'towards',
-]);
+const NOMINALIZATION_SUFFIXES = ['ity', 'ness', 'tion', 'sion', 'ment', 'ance', 'ence', 'ism', 'cy'];
 
-function words(s) {
-  return String(s || '')
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
-}
-
-// Returns a reason string if the hook's conduct fails the obviousness bar, else null.
-function obviousnessReason(node) {
-  const conduct = String(node.conduct || '').trim();
-  if (!conduct) return 'no conduct rendering (a hook must have lived conduct)';
-  const w = words(conduct);
-  const content = w.filter((x) => !STOPWORDS.has(x));
-  if (normName(conduct) === normName(node.name)) {
-    return 'conduct merely restates the name';
-  }
-  if (content.length <= 1 || (content.length === 1 && VIRTUE_WORDS.has(content[0]))) {
-    return `bare/near-bare: reduces to "${content.join(' ') || conduct}"`;
-  }
-  if (content.every((x) => VIRTUE_WORDS.has(x))) {
-    return `only virtue-words ("${content.join(' ')}") — no situated conduct`;
-  }
-  if (w.length <= 3) {
-    return `too short to be a situated if-then conduct (${w.length} words: "${conduct}")`;
+// Returns the matched suffix if the node name's LAST word looks like a noun-form
+// nominalization, else null. Judges the head (last whitespace-delimited token) so a
+// tight adjectival phrase is assessed on its governing word.
+function nominalizationSuffix(name) {
+  const tokens = String(name || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const word = (tokens[tokens.length - 1] || '').replace(/[^a-z]+$/i, '');
+  if (word.length < 5) return null; // too short to confidently call a nominalization
+  for (const suf of NOMINALIZATION_SUFFIXES) {
+    if (word.endsWith(suf)) return suf;
   }
   return null;
 }
@@ -139,8 +107,6 @@ function normalizeNodes(data) {
       pp = asArray(pp).map((p) => asArray(p).map(String)).filter((p) => p.length);
       return {
         name: n.name.trim(),
-        role: n.role === 'skeleton' ? 'skeleton' : 'hook',
-        conduct: typeof n.conduct === 'string' ? n.conduct : '',
         parent_paths: pp,
         basis: typeof n.basis === 'string' ? n.basis : '',
         frontiers: asArray(n.frontiers).map(String).filter((f) => f.trim()),
@@ -212,14 +178,10 @@ function main() {
   );
   L.push('');
 
-  // --- 1. Skeleton vs hook counts (§7) ---
-  const skeleton = nodes.filter((n) => n.role === 'skeleton');
-  const hooks = nodes.filter((n) => n.role === 'hook');
+  // --- 1. Counts ---
   const roots = nodes.filter((n) => !n.parent_paths.length);
-  L.push('## 1. Counts (§7)');
-  L.push(`  total nodes:   ${nodes.length}`);
-  L.push(`  skeleton [S]:  ${skeleton.length}`);
-  L.push(`  hooks [H]:     ${hooks.length}`);
+  L.push('## 1. Counts');
+  L.push(`  total nodes:   ${nodes.length}  (bare quality-adjectives)`);
   L.push(`  roots:         ${roots.length}  (${roots.map((r) => r.name).join(', ') || '—'})`);
   L.push('');
 
@@ -340,24 +302,23 @@ function main() {
   });
   L.push('');
 
-  // --- 6. Obviousness flags on hooks (§6/§7) ---
-  const flagged = [];
-  for (const h of hooks) {
-    const reason = obviousnessReason(h);
-    if (reason) flagged.push({ name: h.name, conduct: h.conduct, reason });
+  // --- 6. Adjective-form lint (§7 — bare quality-adjectives, not nouns) [heuristic] ---
+  const nominalized = [];
+  for (const n of nodes) {
+    const suf = nominalizationSuffix(n.name);
+    if (suf) nominalized.push({ name: n.name, suf });
   }
-  L.push('## 6. Obviousness flags on hooks (§6/§7 — "too obvious = non-generative") [heuristic]');
-  L.push(`  hooks flagged: ${flagged.length} / ${hooks.length} (${pct(flagged.length, hooks.length)})`);
-  for (const f of flagged.slice(0, 40)) {
-    L.push(`    ⚠ "${f.name}" — ${f.reason}`);
+  L.push('## 6. Adjective-form lint (§7 — adjective form, not noun form) [heuristic]');
+  L.push(`  nodes flagged (noun-like suffix): ${nominalized.length} / ${nodes.length} (${pct(nominalized.length, nodes.length)})`);
+  for (const f of nominalized.slice(0, 40)) {
+    L.push(`    ⚠ "${f.name}" — ends in "-${f.suf}" (noun form?); prefer the adjective ("Honest", not "Honesty")`);
   }
-  if (flagged.length > 40) L.push(`    … and ${flagged.length - 40} more`);
-  // This is heuristic, so it informs but does not by itself fail the structural verdict;
-  // surface it as a soft target.
+  if (nominalized.length > 40) L.push(`    … and ${nominalized.length - 40} more`);
+  // Heuristic: informs review, does not fail the verdict (false positives expected).
   verdicts.push({
-    label: 'Hooks clear the obviousness bar [heuristic]',
-    ok: flagged.length === 0,
-    note: flagged.length === 0 ? 'no hooks reduce to bare virtue-words' : `${flagged.length} hook(s) flagged for review (heuristic)`,
+    label: 'Adjective form (not noun form) [heuristic]',
+    ok: nominalized.length === 0,
+    note: nominalized.length === 0 ? 'no node names look like nominalizations' : `${nominalized.length} node name(s) flagged for review (heuristic)`,
     soft: true,
   });
   L.push('');
@@ -421,4 +382,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { obviousnessReason, fullPathsOf, normName, pathKey };
+module.exports = { nominalizationSuffix, fullPathsOf, normName, pathKey };

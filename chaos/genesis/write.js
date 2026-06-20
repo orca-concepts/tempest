@@ -30,13 +30,15 @@
  *     apply.js also takes a pg_dump backup before its transaction.
  *
  * NOT WRITTEN THIS BUILD (deliberately out of scope — see TODOs in the plan output):
- *   - conduct  → the concepts table has NO descriptive/body column (it is
- *     (id, name, created_by, created_at)); conduct has no destination field. It is
- *     reported, never silently dropped, and never shoehorned into a link comment.
  *   - frontiers / basis → carried in the proposal; first-class frontiers likely need
- *     schema and get their own build.
- *   - role (skeleton/hook) → no display field exists; deferred to a later display pass.
+ *     schema and get their own build. basis is review-only metadata, never DB-bound.
  *   - instantiation (papers, concept→paper links) → the Instantiator, a later build.
+ *
+ * v2.0 NOTE (chaos.md §7, settled decision 7): nodes are BARE QUALITY-ADJECTIVES. There
+ * is no conduct / "lived rendering" face and no skeleton/hook role — so the v1.0 "conduct
+ * has no destination column" concern is settled by design: there is no conduct to write
+ * and no such column is wanted. The proposal node shape is { name, parent_paths,
+ * frontiers, basis }.
  *
  * Usage:
  *   node chaos/genesis/write.js                 # dry run (default) — no DB writes
@@ -100,8 +102,6 @@ function normalizeNodes(data) {
       pp = asArray(pp).map((p) => asArray(p).map(String)).filter((p) => p.length);
       return {
         name: n.name.trim(),
-        role: n.role === 'skeleton' ? 'skeleton' : 'hook',
-        conduct: typeof n.conduct === 'string' ? n.conduct.trim() : '',
         parent_paths: pp,
         basis: typeof n.basis === 'string' ? n.basis : '',
         frontiers: asArray(n.frontiers).map(String).filter((f) => f.trim()),
@@ -145,7 +145,6 @@ function buildPlan(nodes) {
   }
 
   const multiParent = nodes.filter((n) => n.parent_paths.length > 1);
-  const withConduct = nodes.filter((n) => n.conduct);
   const withFrontiers = nodes.filter((n) => n.frontiers.length);
 
   return {
@@ -156,7 +155,6 @@ function buildPlan(nodes) {
     rootEdges,
     childEdges: edgeKeys.size - rootEdges,
     multiParent,
-    withConduct,
     withFrontiers,
     dangling: [...dangling],
   };
@@ -165,8 +163,8 @@ function buildPlan(nodes) {
 // Transform genesis nodes -> the proposals shape apply.js consumes. Faithful: adds the
 // implied attribute, carries parent_paths (multi-parent) verbatim, and includes NOTHING
 // else (no papers/links/tunnels/predictions => apply.js inserts only concepts + edges).
-// conduct/basis/frontiers/role are intentionally omitted — apply.js has no destination
-// for them (see the file header).
+// basis/frontiers are intentionally omitted — apply.js has no destination for them
+// (basis is review-only; frontiers are a later build — see the file header).
 function toApplyProposals(nodes, proposal) {
   return {
     generated_by: 'chaos/genesis/write.js (transformed from genesis proposal.json)',
@@ -249,15 +247,9 @@ function printPlan(plan, proposal, graphState) {
   console.log(`  total placements (chains) ......... ${plan.chains.length}`);
   console.log(`  multi-parent nodes (>1 parent) .... ${plan.multiParent.length}   (each becomes that many path-dependent placements)`);
   console.log('');
-  console.log('CONDUCT-FIELD MAPPING (chaos.md §1 lived rendering):');
-  console.log(`  conduct → (NO DESTINATION FIELD)   ${plan.withConduct.length}/${plan.nodes.length} nodes carry conduct`);
-  console.log('    The concepts table is (id, name, created_by, created_at) — no description/body column.');
-  console.log('    Conduct is NOT written this build and is NOT shoehorned into a link comment. SCHEMA DECISION NEEDED.');
-  console.log('');
   console.log('CARRIED BUT NOT WRITTEN (deliberately out of scope this build):');
   console.log(`  frontiers ... ${plan.withFrontiers.length} nodes carry ≥1 — TODO: first-class frontier objects (likely need schema; own build).`);
-  console.log('  basis ....... carried per node — not written (citeability metadata; future).');
-  console.log('  role ........ skeleton/hook — no display field exists; TODO: later display pass.');
+  console.log('  basis ....... carried per node — review-only citeability metadata, never DB-bound.');
   console.log('');
   console.log('CONSUMER SAFETY (investigated — readers handle this):');
   console.log('  multi-parent: SAFE. edges UNIQUE(parent_id,child_id,graph_path,attribute_id) allows the same');
@@ -405,7 +397,7 @@ async function main() {
     cleanupTemp();
   }
   console.log('\nGenesis write complete (concepts + edges materialized via apply.js).');
-  console.log('NOTE: conduct, frontiers, basis, and role were NOT written (see plan above).');
+  console.log('NOTE: frontiers and basis were NOT written (see plan above).');
 }
 
 main()

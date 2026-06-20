@@ -3,12 +3,12 @@
 /**
  * Chaos — the Categorizer (genesis mode).
  *
- * First engine of the category-first redesign (see chaos.md). In GENESIS MODE it
- * authors the INITIAL research-values taxonomy from the scholarship (chaos.md §3)
- * into an empty graph: a thin abstract SKELETON (the virtue-word integration
- * ceilings, §7), the basic-level HOOKS beneath it (each rendered as lived research
- * conduct, §7), their first differentiations, pervasive context-differentiated
- * MULTI-PARENT placement (§5.3, §8), and a FRONTIER on every carve (§5.5).
+ * First engine of the category-first redesign (see chaos.md, v2.0). In GENESIS MODE
+ * it authors the INITIAL research-values taxonomy from the scholarship (chaos.md §3)
+ * into an empty graph: a hierarchy of BARE QUALITY-ADJECTIVES ("Honest", "Reproducible")
+ * carved by respect-and-standard (§4), with pervasive context-differentiated MULTI-PARENT
+ * placement (§5.3, §8) and a FRONTIER on every node (§5.5). There is no conduct / "lived"
+ * face and no skeleton/hook role — nodes are one thing; meaning lives in the path (§7).
  *
  * READ-ONLY w.r.t. the Orca dev graph, and in fact it does not touch the graph at
  * all: it opens no Postgres connection, runs no migration, reads no snapshot, and
@@ -23,9 +23,10 @@
  * The rubric is NOT hard-coded here — it travels in the prompt. This file is
  * plumbing only; all categorizing logic lives in chaos.md and the model. Structural
  * judgement of the OUTPUT (depth, multi-parent coverage, frontier coverage,
- * obviousness) lives in the companion chaos/genesis/validate.js.
+ * adjective-form) lives in the companion chaos/genesis/validate.js.
  *
- * Single attribute domain: every node is a researcher VALUE (chaos.md §9).
+ * Single attribute domain: every node is a quality-adjective describing good research
+ * (the [value] domain, read broadly in v2.0 — chaos.md §9).
  *
  * Usage:
  *   set ANTHROPIC_API_KEY=sk-ant-...
@@ -63,14 +64,14 @@ const NO_CACHE = process.argv.includes('--no-cache');
 // the cached genesis output. Folded into the cache key alongside rubricHash(), so a
 // rubric edit OR a prompt change auto-invalidates a stale cached taxonomy instead of
 // silently reusing it (same discipline as reason.js).
-const PROMPT_VERSION = 'g1-genesis';
+const PROMPT_VERSION = 'g2-adjective';
 
 // Single attribute domain (chaos.md §9): every node Chaos graphs is a researcher value.
 const ATTRIBUTES = ['value'];
 
 // Output ceilings. Opus 4.8's hard max_tokens is 128000; these stay well under it
 // while leaving generous headroom for adaptive-thinking tokens plus the JSON. A full
-// genesis taxonomy (skeleton + hooks + first differentiations + frontiers) is larger
+// genesis taxonomy (roots + differentiations + multi-parent placements + frontiers) is larger
 // than one paper's candidate set, so the base is generous with a one-shot retry at
 // double if the model still truncates.
 const MAX_TOKENS_GENESIS = 40000;
@@ -146,9 +147,9 @@ function rubricVersion() {
 
 function genesisSystem(rubric) {
   return [
-    'You are Chaos, the CATEGORIZER, running in GENESIS MODE.',
+    'You are Chaos, the CATEGORIZER (Ouranos), running in GENESIS MODE.',
     'Your governing brain — the principles, the architecture, and the targets — is the',
-    'rubric below (chaos.md). Obey it exactly. Do not invent rules it does not state.',
+    'rubric below (chaos.md, v2.0). Obey it exactly. Do not invent rules it does not state.',
     '',
     '================ BEGIN chaos.md ================',
     rubric,
@@ -156,82 +157,104 @@ function genesisSystem(rubric) {
     '',
     'YOUR TASK THIS CALL: author the INITIAL research-values taxonomy from the',
     'scholarship (chaos.md §3) into an EMPTY graph (§9, §11). This is genesis — a single',
-    'authoring pass. The graph has one attribute domain: value (a researcher disposition).',
+    'authoring pass. The graph has one attribute domain: value, read in v2.0 as',
+    'QUALITY-ADJECTIVES describing good research (§9), NOT dispositions of the researcher.',
     '',
-    'WHAT GENESIS PRODUCES (it need not build the whole deep graph — later frontier-driven',
-    'runs deepen it; §11):',
-    '  - a THIN abstract SKELETON: the virtue-word integration ceilings (Honesty, Rigor,',
-    '    Care, …) that things multi-parent UNDER (§7). These are role="skeleton":',
-    '    de-emphasized, providing orientation and the multi-parent ceiling — NOT the',
-    '    featured entry points. Keep the skeleton thin; do not delete the virtue-words,',
-    '    do not feature them.',
-    '  - the basic-level HOOKS beneath the skeleton: role="hook", each rendered as LIVED',
-    '    RESEARCH CONDUCT via the value-conduct translation (§7). The conduct rendering is',
-    '    the if-then / situated-conduct signature — what the disposition looks like in the',
-    '    act of research. Rendering a value as conduct does double duty: it moves the node',
-    '    from obvious-abstract to lived-basic (so it hooks) AND makes it instantiable.',
-    '    Example (§7): "Honesty" (inert) → "owning the load-bearing assumption your result',
-    '    depends on, before a reviewer finds it".',
-    '  - the FIRST differentiations beneath the hooks where a real, expectation-changing',
-    '    distinction exists (depth comes from genuine differentiation, never padding).',
+    'THE NODE — what every node IS (§7):',
+    '  - A BARE QUALITY-ADJECTIVE: a predicate the user applies to research under the',
+    '    implicit frame "good research is ___". "Good" is the implicit unifying predicate —',
+    '    it is NOT a stored node, just the frame.',
+    '  - ADJECTIVE FORM, never noun form: "Honest" not "Honesty", "Reproducible" not',
+    '    "Reproducibility", "Transparent" not "Transparency". This reinforces the predicate',
+    '    reading and the fill-in-the-blank stance.',
+    '  - AS SHORT AS THE QUALITY ALLOWS: prefer a single adjective; allow a tight adjectival',
+    '    phrase ONLY when no single word names the quality. Shorter = more reusable = more',
+    '    multi-parentable, which is the whole integration engine.',
+    '  - ONE THING ONLY. There is NO second "lived" / conduct face, NO if-then or situated',
+    '    string, NO skeleton/hook role, NO per-node gloss or description. Comprehension comes',
+    '    later from the research that aggregates beneath a node (§2, §7); you do NOT author it.',
+    '    Meaning is COMPOSITIONAL — it lives in the PATH, not the node.',
     '',
-    'THE FORCING FUNCTIONS — these are hard targets, not aspirations (§5, §6):',
-    '  1. CHANGES-EXPECTATIONS gate (§5.1): carve a sub-kind ONLY if having the distinction',
+    'HOW TO DIFFERENTIATE — respect and standard (§4):',
+    '  Your one move is "good in WHAT RESPECT, by WHAT STANDARD?". Each child is a quality-',
+    '  DIMENSION along which the parent quality is realized — e.g. "Rigorous" → rigorous in',
+    '  control of confounds ("Controlled"), in measurement ("Calibrated"), in inference',
+    '  ("Warranted"). The differentiating context IS THE PARENT ADJECTIVE itself: "Careful"',
+    '  means one thing under "Honest", another under "Rigorous" — so context lives in the',
+    '  path, never baked into the node. A path reads as a near-sentence ("good research that',
+    '  is Rigorous, by way of Controlled, by way of Blinded").',
+    '',
+    'THE FORCING FUNCTIONS — hard targets, not aspirations (§5):',
+    '  1. CONTRASTIVE-SEPARABILITY gate (§5.1) — the PRIMARY discipline. Bare adjectives',
+    '     invite a thesaurus (Honest / Truthful / Candid / Forthright piling up as synonyms).',
+    '     Admit a child ONLY if BOTH hold:',
+    '       - research can be {parent} BUT NOT {child}  (the child names something the parent',
+    '         does not entail), AND',
+    '       - research can be {child} BUT NOT {sibling}  (the child is pull-apart-able from',
+    '         each of its siblings).',
+    '     If two siblings cannot be pulled apart, they are ONE node — merge them. This synonym',
+    '     guardrail is the v2.0 analog of the old flattening problem and is more acute, because',
+    '     evaluative adjectives are dense with near-synonyms.',
+    '  2. CHANGES-EXPECTATIONS (§4, §5.1): carve a sub-adjective only if having the distinction',
     '     changes what you expect of the instances. No padding, no decorative splits.',
-    '  2. DEPTH BEYOND TWO LAYERS (§0, §1): the old tool failed by producing a flat',
-    '     two-layer tree. Genesis MUST exceed two layers — skeleton → hook → first',
-    '     differentiation is three layers and is the floor, not the ceiling, wherever the',
-    '     distinctions are real.',
-    '  3. PERVASIVE CONTEXT-DIFFERENTIATED MULTI-PARENT (§5.3, §8): multi-parenthood is the',
-    '     PRIMARY integration mechanism, central to your work, not an afterthought. MOST',
-    '     concepts should end up with at least one child that ALSO has an alternate parent.',
-    '     This is natural here: the same lived conduct expresses several virtues at once —',
-    '     e.g. "reporting null results" is a kind-of Honesty, Courage, AND Rigor. A node',
+    '  3. DEPTH BEYOND TWO LAYERS (§0, §1): the old tool failed by producing a flat two-layer',
+    '     tree. Genesis MUST exceed two layers wherever the distinctions are real; a deep',
+    '     composed path is what makes a leaf specific enough to ground later.',
+    '  4. PERVASIVE CONTEXT-DIFFERENTIATED MULTI-PARENT (§5.3, §8): multi-parenthood is the',
+    '     PRIMARY integration mechanism, central to your work from the start. MOST concepts',
+    '     should end up with at least one child that ALSO has an alternate parent. This is',
+    '     natural for bare adjectives: the same word expresses several qualities at once —',
+    '     e.g. "reporting null results" is a kind-of Honest, Courageous, AND Rigorous. A node',
     '     counts as genuinely integrative only when it has ≥2 parents AND DIFFERENTIATES',
-    '     DIFFERENTLY under each (different children per parent context) — two parents with',
-    '     the same children is duplication, not integration. The context-differentiation is',
-    '     the demanding part; do it deliberately.',
-    '  4. ABSTRACTION MUST BRIDGE (§5.4): any abstract node must connect ≥2 previously-',
-    '     separate regions. An abstraction atop a single branch is a branch label, not an',
-    '     abstraction.',
-    '  5. FRONTIER OBLIGATION (§5.5): EVERY carve must emit at least one frontier — a short',
-    '     string naming what could be differentiated or grounded next at this node. The',
-    '     graph cannot close into a finished catalog; productive incompleteness is',
-    '     structural. Frontier kinds (§5): "differentiate further" here; an ungroundable',
-    '     proposed distinction held as "someone find this"; or a resemblance with no shared',
-    '     parent ("what is the missing abstraction?").',
-    '  6. THE OBVIOUSNESS BAR (§6): "too obvious" = "non-generative". Every HOOK must hand',
-    '     the researcher a distinction or framing they did not already have, in LIVED terms.',
-    '     A bare virtue-word ("Honesty", "Be rigorous") is NOT a hook — it expands nothing.',
-    '     Skeleton nodes ARE the virtue-words (that is their job); hooks must not be.',
+    '     DIFFERENTLY under each (different children per parent context) — two parents with the',
+    '     same children is duplication, not integration. The context-differentiation is the',
+    '     demanding part; do it deliberately.',
+    '  5. ABSTRACTION MUST BRIDGE; SPECIALIZATION MUST COMPOSE (§5.4): a new abstract node must',
+    '     connect ≥2 previously-separate regions (an abstraction atop a single branch is a',
+    '     branch label). A child must read as a genuine NARROWING of the parent-as-read-in-',
+    '     context, keeping the path a legible composition.',
+    '  6. FRONTIER OBLIGATION (§5.5): EVERY node must emit at least one frontier — a short',
+    '     string naming what could be differentiated or grounded next here. The graph cannot',
+    '     close into a finished catalog; productive incompleteness is structural. Frontier',
+    '     kinds (§5): "differentiate further"; an ungroundable proposed distinction held as',
+    '     "someone find this"; or a resemblance with no shared parent ("what is the missing',
+    '     abstraction?").',
     '',
     'BE BOLD (§2): differentiate AHEAD of the documented literature — carve distinctions the',
-    'values scholarship implies but has not named — held honest only by the two gates (§5:',
-    'changes-expectations, and instantiable-in-principle). Productive incompleteness over a',
-    'tidy mirror of consensus.',
+    'values scholarship implies but has not named — held honest by the gates (§5: separability',
+    '+ changes-expectations). Productive incompleteness over a tidy mirror of consensus. Do',
+    'NOT aim for any fixed node count; let real, separable distinctions and the gates determine',
+    'the size. Boldness is calibrated later by review of the real graph (§2, §10).',
+    '',
+    'KEEP THE ABSTRACT ADJECTIVES for orientation (§7 caution): the top-level virtue-words',
+    '(Honest, Rigorous, Careful, Open, …) are the de-emphasized navigational skeleton — the',
+    'multi-parent ceilings things sit UNDER. They are the SAME kind of node as everything',
+    'else, just the top layers; do not delete them and do not feature them. Do not let every',
+    'node become a deep specific, or the top level becomes a pile of micro-distinctions with',
+    'no map.',
     '',
     'OUTPUT CONTRACT: return STRICT JSON ONLY — no prose, no markdown fences, no commentary.',
     'A single JSON object with exactly this shape:',
     '{',
     '  "nodes": [',
     '    {',
-    '      "name": string,            // the STRUCTURAL identity: an abstract value name (skeleton)',
-    '                                 //   or a short noun/gerund phrase naming the value-kind (hook).',
-    '                                 //   NEVER a proposition or a full sentence.',
-    '      "role": "skeleton" | "hook",',
-    '      "conduct": string,         // the LIVED rendering — the research-conduct / if-then signature.',
-    '                                 //   REQUIRED and non-obvious for hooks; an OPTIONAL short gloss for',
-    '                                 //   skeleton nodes (may be "" for skeleton).',
-    '      "parent_paths": string[][],// MULTI-PARENT from the start, ALWAYS plural. Each inner array is',
-    '                                 //   one root-to-parent path of ANCESTOR NAMES (e.g. ["Honesty"] or',
-    '                                 //   ["Rigor","Methodological self-scrutiny"]). [] (empty outer',
-    '                                 //   array) = a root. Every name used in a path MUST itself be a',
-    '                                 //   node in this output.',
-    '      "basis": string,           // the scholarship tradition / source informing the node (§3),',
-    '                                 //   for citeability (e.g. "Merton CUDOS", "Kuhn theory-choice',
-    '                                 //   virtues", "Fricker, epistemic injustice", "Rosch basic-level").',
-    '      "frontiers": string[]      // ≥1 per node (the §5.5 frontier obligation): short strings, each',
-    '                                 //   naming a differentiation or grounding invited here.',
+    '      "name": string,            // a BARE QUALITY-ADJECTIVE in adjective form ("Honest",',
+    '                                 //   "Reproducible", "Pre-registered"). NEVER a noun',
+    '                                 //   ("Honesty"), NEVER a proposition / full sentence,',
+    '                                 //   NEVER a conduct or if-then phrase.',
+    '      "parent_paths": string[][],// MULTI-PARENT from the start, ALWAYS plural. Each inner',
+    '                                 //   array is one root-to-parent path of ANCESTOR NAMES',
+    '                                 //   (e.g. ["Honest"] or ["Rigorous","Controlled"]). []',
+    '                                 //   (empty outer array) = a root. Every name used in a',
+    '                                 //   path MUST itself be a node in this output.',
+    '      "frontiers": string[],     // ≥1 per node (the §5.5 frontier obligation): short',
+    '                                 //   strings, each naming a differentiation or grounding',
+    '                                 //   invited here.',
+    '      "basis": string            // the scholarship tradition / source informing the node',
+    '                                 //   (§3), for REVIEW citeability only — NOT written to the',
+    '                                 //   database (e.g. "Merton CUDOS", "Kuhn theory-choice',
+    '                                 //   virtues", "Fricker, epistemic injustice",',
+    '                                 //   "Gärdenfors conceptual spaces").',
     '    }',
     '  ]',
     '}',
@@ -246,13 +269,15 @@ function genesisUser() {
   return [
     'Author the genesis taxonomy now.',
     '',
-    'Targets to clear (the validator will check these):',
-    '  - depth EXCEEDS two layers (at least skeleton → hook → first differentiation);',
+    'Targets to clear (the validator will check the structural ones):',
+    '  - ADJECTIVE FORM — every node is a bare quality-adjective ("Honest", not "Honesty");',
+    '  - depth EXCEEDS two layers wherever the distinctions are real;',
     '  - SUBSTANTIAL multi-parent coverage — most concepts that have children should have at',
     '    least one child with an alternate parent — and multi-parented nodes that differentiate',
     '    must differentiate DIFFERENTLY under each parent;',
-    '  - a FRONTIER on every node;',
-    '  - every HOOK clears the obviousness bar (lived conduct, never a bare virtue-word).',
+    '  - every child passes the CONTRASTIVE-SEPARABILITY gate (pull-apart-able from its parent',
+    '    AND from each sibling); collapse near-synonyms into one node;',
+    '  - a FRONTIER on every node.',
     '',
     'Return the single JSON object specified in the contract. No prose.',
   ].join('\n');
@@ -396,7 +421,7 @@ async function runGenesis(rubric) {
     if (res.stop_reason === 'max_tokens') {
       throw new Error(
         `Genesis pass still truncated at ${MAX_TOKENS_GENESIS_RETRY} tokens. ` +
-          'Lower the scope (the model can be asked for a thinner skeleton) and re-run.'
+          'Lower the scope (the model can be asked for a shallower taxonomy) and re-run.'
       );
     }
     parsed = extractJson(res.text);
@@ -432,8 +457,6 @@ function normalizeNodes(raw) {
       .filter((p) => p.length); // drop empty inner paths (a root is the OUTER array being empty)
     out.push({
       name: n.name.trim(),
-      role: n.role === 'skeleton' ? 'skeleton' : 'hook',
-      conduct: typeof n.conduct === 'string' ? n.conduct : '',
       parent_paths: pp,
       basis: typeof n.basis === 'string' ? n.basis : '',
       frontiers: asArray(n.frontiers).map((f) => String(f)).filter((f) => f.trim()),
@@ -476,18 +499,16 @@ function buildChildIndex(nodes) {
 function writeMarkdown(nodes) {
   const L = [];
   const { childrenByParentFullPath, roots } = buildChildIndex(nodes);
-  const skeleton = nodes.filter((n) => n.role === 'skeleton').length;
-  const hooks = nodes.length - skeleton;
 
   L.push('# Chaos — Genesis taxonomy proposal (the Categorizer)');
   L.push('');
   L.push(`**Generated by:** chaos/categorizer.js (genesis mode) · model ${MODEL} · effort ${EFFORT} · rubric v${rubricVersion()}`);
   L.push('**Write target:** this file + chaos/genesis/proposal.json. No Orca dev-graph access of any kind was performed; nothing was instantiated.');
-  L.push(`**Totals:** ${nodes.length} nodes — ${skeleton} skeleton · ${hooks} hooks · ${roots.length} roots.`);
+  L.push(`**Totals:** ${nodes.length} quality-adjective nodes · ${roots.length} roots.`);
   L.push('**Review next:** `node chaos/genesis/validate.js`');
   L.push('');
-  L.push('Legend: `[S]` = skeleton (abstract integration ceiling) · `[H]` = hook (basic-level, lived conduct). ');
-  L.push('`⇄ also under:` marks a multi-parent placement (the same value-kind as a distinct contextual entity).');
+  L.push('Each node is a bare quality-adjective; meaning is read along the path (chaos.md §7). ');
+  L.push('`⇄ also under:` marks a multi-parent placement (the same adjective as a distinct contextual entity).');
   L.push('');
   L.push('---');
   L.push('');
@@ -502,7 +523,6 @@ function writeMarkdown(nodes) {
   function render(node, depth, arrivedViaKey, lineageNames) {
     rendered.add(normName(node.name));
     const indent = '  '.repeat(depth);
-    const tag = node.role === 'skeleton' ? '[S]' : '[H]';
 
     // Other parents (multi-parent marking): all parent paths except the one we arrived via.
     const others = node.parent_paths
@@ -510,8 +530,7 @@ function writeMarkdown(nodes) {
       .map((pp) => (pp.length ? pp.join(' › ') : '(root)'));
     const alsoUnder = others.length ? `  ⇄ also under: ${others.join(' | ')}` : '';
 
-    L.push(`${indent}- ${tag} **${node.name}**${alsoUnder}`);
-    if (node.conduct) L.push(`${indent}  · conduct: ${node.conduct}`);
+    L.push(`${indent}- **${node.name}**${alsoUnder}`);
     if (node.basis) L.push(`${indent}  · basis: ${node.basis}`);
     if (node.frontiers.length) L.push(`${indent}  · frontiers: ${node.frontiers.join(' ⌁ ')}`);
 
@@ -528,10 +547,8 @@ function writeMarkdown(nodes) {
     }
   }
 
-  // Roots first; skeleton roots before hook roots, then alphabetical, for a stable read.
-  const orderedRoots = roots.slice().sort(
-    (a, b) => (a.role === 'skeleton' ? 0 : 1) - (b.role === 'skeleton' ? 0 : 1) || a.name.localeCompare(b.name)
-  );
+  // Roots alphabetical, for a stable read.
+  const orderedRoots = roots.slice().sort((a, b) => a.name.localeCompare(b.name));
   for (const r of orderedRoots) {
     render(r, 0, '', new Set());
     L.push('');
@@ -546,9 +563,7 @@ function writeMarkdown(nodes) {
     L.push(`# Unplaced nodes (${orphans.length}) — parent path references a name not present as a node`);
     L.push('');
     for (const n of orphans) {
-      const tag = n.role === 'skeleton' ? '[S]' : '[H]';
-      L.push(`- ${tag} **${n.name}** — parent_paths: ${n.parent_paths.map((pp) => pp.join(' › ')).join(' | ') || '(none)'}`);
-      if (n.conduct) L.push(`  · conduct: ${n.conduct}`);
+      L.push(`- **${n.name}** — parent_paths: ${n.parent_paths.map((pp) => pp.join(' › ')).join(' | ') || '(none)'}`);
     }
     L.push('');
   }
@@ -562,7 +577,6 @@ function writeMarkdown(nodes) {
 }
 
 function writeJson(nodes) {
-  const skeleton = nodes.filter((n) => n.role === 'skeleton').length;
   const out = {
     generated_by: 'chaos/categorizer.js',
     mode: MODE,
@@ -573,8 +587,6 @@ function writeJson(nodes) {
     graph_state: 'empty (genesis — authored fresh from scholarship, no DB access)',
     domain: ATTRIBUTES,
     node_count: nodes.length,
-    skeleton_count: skeleton,
-    hook_count: nodes.length - skeleton,
     nodes,
   };
   fs.writeFileSync(PROPOSAL_JSON, JSON.stringify(out, null, 2), 'utf8');
@@ -585,10 +597,9 @@ function writeJson(nodes) {
 // ----------------------------------------------------------------------------
 
 function printSummary(nodes) {
-  const skeleton = nodes.filter((n) => n.role === 'skeleton').length;
   console.log('\n================ GENESIS SUMMARY ================');
   console.log(`model ${MODEL}  effort ${EFFORT}  rubric v${rubricVersion()}`);
-  console.log(`\nNodes: ${nodes.length}  (skeleton ${skeleton} · hooks ${nodes.length - skeleton})`);
+  console.log(`\nNodes: ${nodes.length}  (bare quality-adjectives)`);
   console.log('\nAPI usage this run:');
   console.log(`  API calls made:               ${apiCallCount}`);
   console.log(`  input tokens (uncached):      ${usageTotals.input_tokens}`);

@@ -47,6 +47,8 @@ chaos/papers/
 # Chaos — regenerable reasoning outputs (per-paper cache + proposals)
 chaos/reason_cache/
 chaos/proposals.*
+# Chaos — regenerable Gaia (Instantiator) cache (output of chaos/gaia.js)
+chaos/gaia_cache/
 # Chaos — regenerable run-identity sidecar (output of chaos/apply.js)
 chaos/last-apply.json
 

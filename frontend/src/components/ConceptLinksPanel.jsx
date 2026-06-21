@@ -56,8 +56,11 @@ const ConceptLinksPanel = ({
       votesAPI.getWebLinks(currentEdgeId, linksSort)
         .then(res => {
           if (myRequestId !== linksRequestIdRef.current) return;
+          // Keep the server's home edgeId + source metadata (isInherited,
+          // sourceConceptId/Name/GraphPath) so inherited links can be labeled
+          // and linked back to their source descendant.
           setWebLinks((res.data.webLinks || []).map(link => ({
-            ...link, edgeId: currentEdgeId, parentId: null, parentName: null, graphPath: path || [], attributeName: null,
+            ...link, parentId: null, parentName: null, attributeName: null,
           })));
         })
         .catch(() => { if (myRequestId !== linksRequestIdRef.current) return; setWebLinks([]); })
@@ -183,9 +186,20 @@ const ConceptLinksPanel = ({
   const handleToggleLinkVote = async (link) => {
     if (isGuest) { if (onRequestLogin) onRequestLogin(); return; }
     const wasVoted = link.userVoted;
+    // Children view votes into the current edge's pool; flip view (aggregated)
+    // votes into the decontextualized pool (contextEdgeId = null).
+    const voteContextEdgeId = isChildrenView ? currentEdgeId : null;
     setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: !wasVoted, voteCount: wasVoted ? l.voteCount - 1 : l.voteCount + 1 } : l));
-    try { if (wasVoted) await votesAPI.removeWebLinkVote(link.id); else await votesAPI.upvoteWebLink(link.id); }
+    try { if (wasVoted) await votesAPI.removeWebLinkVote(link.id, voteContextEdgeId); else await votesAPI.upvoteWebLink(link.id, voteContextEdgeId); }
     catch { setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: wasVoted, voteCount: wasVoted ? l.voteCount + 1 : l.voteCount - 1 } : l)); }
+  };
+
+  // Inherited links carry a source label; clicking it navigates to the
+  // source descendant edge and scroll-highlights that specific link
+  // (reuses the cross-instance navigation path).
+  const handleSourceClick = (link) => {
+    if (!onOpenConceptTab || !link.sourceConceptId) return;
+    onOpenConceptTab(link.sourceConceptId, link.sourceGraphPath || [], link.sourceConceptName, undefined, undefined, 'children', link.id);
   };
   const handleAddLink = async () => {
     const trimmed = newLinkUrl.trim();
@@ -316,7 +330,7 @@ const ConceptLinksPanel = ({
             renderInstanceSnippet={renderInstanceSnippet}
             cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
             conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()}
-            voteSets={voteSets}
+            voteSets={voteSets} onSourceClick={handleSourceClick}
             onRemoveSuccess={() => loadLinks()} onAddendumSuccess={() => loadLinks()} />
         ))}
       </>

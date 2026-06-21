@@ -400,6 +400,70 @@ const createTables = async () => {
     `);
 
     // ============================================================
+    // Link inheritance: context-scoped link votes.
+    // A link placed on an edge "floats" up to every ancestor edge's
+    // panel (read-time aggregation). Votes must NOT float — a vote is
+    // scoped to (link, the edge-panel-you-are-viewing). context_edge_id
+    // names that panel: a specific edge id for a per-edge pool, or NULL
+    // for the decontextualized flip-view pool.
+    // ============================================================
+    await client.query(`
+      ALTER TABLE concept_link_votes
+        ADD COLUMN IF NOT EXISTS context_edge_id INTEGER REFERENCES edges(id) ON DELETE CASCADE;
+    `);
+
+    // Backfill existing votes to their home-edge context — gated to run
+    // exactly once. After the new constraint/index exist, a NULL
+    // context_edge_id legitimately means "flip-view pool," so an
+    // ungated UPDATE would clobber real flip votes on every redeploy.
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'concept_link_votes_user_link_context_key'
+        ) AND NOT EXISTS (
+          SELECT 1 FROM pg_class WHERE relname = 'uq_clv_user_link_flip'
+        ) THEN
+          UPDATE concept_link_votes clv
+          SET context_edge_id = cl.edge_id
+          FROM concept_links cl
+          WHERE clv.concept_link_id = cl.id AND clv.context_edge_id IS NULL;
+        END IF;
+      END $$;
+    `);
+
+    // Replace the old UNIQUE(user_id, concept_link_id) with a triple key
+    // that gives each edge-context pool its own one-vote-per-user slot.
+    await client.query(`
+      ALTER TABLE concept_link_votes
+        DROP CONSTRAINT IF EXISTS concept_link_votes_user_id_concept_link_id_key;
+    `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'concept_link_votes_user_link_context_key'
+        ) THEN
+          ALTER TABLE concept_link_votes
+            ADD CONSTRAINT concept_link_votes_user_link_context_key
+            UNIQUE (user_id, concept_link_id, context_edge_id);
+        END IF;
+      END $$;
+    `);
+
+    // Postgres treats NULLs as DISTINCT in UNIQUE, so the triple key
+    // above does NOT prevent duplicate flip-view (NULL-context) votes.
+    // A partial unique index enforces one flip vote per user per link.
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_clv_user_link_flip
+        ON concept_link_votes (user_id, concept_link_id) WHERE context_edge_id IS NULL;
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_concept_link_votes_link_context
+        ON concept_link_votes (concept_link_id, context_edge_id);
+    `);
+
+    // ============================================================
     // Phase 16a: Moderation / Spam Flagging
     // ============================================================
 

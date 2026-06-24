@@ -64,6 +64,16 @@ const EFFORT = argValue('--effort') || 'high'; // low | medium | high | xhigh | 
 const MAILTO = argValue('--mailto') || process.env.CHAOS_MAILTO || '17willim@gmail.com';
 const USER_AGENT = `chaos-orca/0.1 (mailto:${MAILTO})`;
 
+// OpenAlex API key (Feb 2026: a key is required; the mailto polite-pool is no longer
+// honored). Keyless ≈ 100 searches/day; a free key ≈ 1000/day. Sourced ONLY from the
+// env var — never hardcode it, never write it to any file, and redact it from any log.
+const OPENALEX_API_KEY = process.env.OPENALEX_API_KEY || null;
+
+// Strip the api_key value from any string before it is logged or thrown.
+function redactApiKey(s) {
+  return String(s).replace(/([?&]api_key=)[^&\s]+/gi, '$1REDACTED');
+}
+
 // Bumped whenever the Gaia prompt TEMPLATES below change in a way that should
 // invalidate cached query-plans / judgments. Folded into the cache key alongside
 // rubricHash(), so a rubric edit OR a prompt change auto-invalidates stale entries
@@ -398,9 +408,86 @@ function sanitizeQuery(q) {
   return String(q || '').replace(/[,|]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// OpenAlex 429 (rate-limit) backoff schedule: initial attempt + these retry waits.
+// Honors a Retry-After response header when OpenAlex sends one; otherwise uses the
+// fixed schedule. Only OpenAlex search requests use this — model calls are unaffected.
+const OPENALEX_429_BACKOFF_MS = [2000, 5000, 15000, 30000];
+
+// Parse an HTTP Retry-After header into milliseconds. It may be either an integer
+// number of seconds or an HTTP-date; returns null if absent/unparseable.
+function parseRetryAfterMs(res) {
+  const h = res && res.headers && res.headers.get && res.headers.get('retry-after');
+  if (!h) return null;
+  const secs = Number(h);
+  if (Number.isFinite(secs)) return Math.max(0, secs * 1000);
+  const when = Date.parse(h);
+  if (Number.isFinite(when)) return Math.max(0, when - Date.now());
+  return null;
+}
+
+// Thrown when a 429 means the OpenAlex DAILY budget is gone (not a too-fast burst).
+// Carries a flag so callers can re-raise it past the per-query catch and stop the run.
+class OpenAlexBudgetExhaustedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'OpenAlexBudgetExhaustedError';
+    this.budgetExhausted = true;
+  }
+}
+
+function readIntHeader(res, names) {
+  for (const n of names) {
+    const v = res && res.headers && res.headers.get && res.headers.get(n);
+    if (v != null && v !== '') {
+      const num = Number(v);
+      if (Number.isFinite(num)) return num;
+    }
+  }
+  return null;
+}
+
+// Classify a 429: daily-budget exhaustion (permanent until midnight UTC — pointless to
+// retry) vs an ordinary too-fast burst (temporary — back off and retry). Exhaustion if a
+// dedicated credits-remaining header is at/near zero, OR Retry-After is far longer than
+// any per-second backoff (treat > 120s as exhaustion). Returns { exhausted, retryAfterMs }.
+function classify429(res) {
+  const retryAfterMs = parseRetryAfterMs(res);
+  const creditsRemaining = readIntHeader(res, [
+    'x-ratelimit-credits-remaining',
+    'x-daily-credits-remaining',
+    'x-credits-remaining',
+  ]);
+  const exhaustedByCredits = creditsRemaining != null && creditsRemaining <= 0;
+  const exhaustedByRetryAfter = retryAfterMs != null && retryAfterMs > 120000;
+  return { exhausted: exhaustedByCredits || exhaustedByRetryAfter, retryAfterMs };
+}
+
+// Whole hours+minutes until the next midnight UTC (when OpenAlex daily credits reset).
+function msUntilMidnightUtc() {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+  return next.getTime() - now.getTime();
+}
+
+function budgetExhaustedMessage(retryAfterMs) {
+  const ms = retryAfterMs != null ? retryAfterMs : msUntilMidnightUtc();
+  const totalMin = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return (
+    `OpenAlex daily budget exhausted — resets at midnight UTC (~${h}h ${m}m from now). ` +
+    `Re-run after reset; already-grounded leaves are cached and will skip.`
+  );
+}
+
 // Targeted (per-node) retrieval: full-text search over title+abstract, OA + abstract +
 // fulltext + DOI gated. NO recency/FROM_DATE bias — we want the best exhibit, not the
 // newest paper (the bottom-up batch query in source.js is deliberately NOT carried over).
+//
+// On HTTP 429 we do NOT skip the search: we wait and retry the SAME request with
+// exponential backoff (Retry-After honored when present). Only after the retries are
+// exhausted do we give up on this search (throws, logged by the caller). Any other
+// non-ok status throws immediately as before.
 async function fetchWorksBySearch(query, perPage) {
   const filter = [
     `title_and_abstract.search:${sanitizeQuery(query)}`,
@@ -413,11 +500,37 @@ async function fetchWorksBySearch(query, perPage) {
     `https://api.openalex.org/works?filter=${encodeURIComponent(filter)}` +
     `&per_page=${perPage}` +
     `&select=${encodeURIComponent(OPENALEX_SELECT)}` +
-    `&mailto=${encodeURIComponent(MAILTO)}`;
-  const res = await httpGet(url, 'application/json');
-  if (!res.ok) throw new Error(`OpenAlex ${res.status} for search "${query}"`);
-  const json = await res.json();
-  return json.results || [];
+    `&mailto=${encodeURIComponent(MAILTO)}` +
+    (OPENALEX_API_KEY ? `&api_key=${encodeURIComponent(OPENALEX_API_KEY)}` : '');
+
+  // attempt 0 is the initial request; attempts 1..N are the backoff retries.
+  for (let attempt = 0; attempt <= OPENALEX_429_BACKOFF_MS.length; attempt++) {
+    const res = await httpGet(url, 'application/json');
+    if (res.status === 429) {
+      const { exhausted, retryAfterMs } = classify429(res);
+      // Daily budget gone: retrying is pointless until midnight UTC. Throw a tagged
+      // error so retrieveCandidates re-raises it and the whole run stops.
+      if (exhausted) {
+        throw new OpenAlexBudgetExhaustedError(budgetExhaustedMessage(retryAfterMs));
+      }
+      // Ordinary too-fast 429: capped backoff-and-retry (Retry-After honored).
+      if (attempt < OPENALEX_429_BACKOFF_MS.length) {
+        const waitMs = retryAfterMs != null ? retryAfterMs : OPENALEX_429_BACKOFF_MS[attempt];
+        console.error(
+          `    OpenAlex 429 (rate-limited) for "${query}" — waiting ${Math.round(waitMs / 1000)}s, ` +
+          `retry ${attempt + 1}/${OPENALEX_429_BACKOFF_MS.length}`
+        );
+        await sleep(waitMs);
+        continue;
+      }
+      throw new Error(`OpenAlex 429 (rate-limited) for search "${query}" — giving up after ${OPENALEX_429_BACKOFF_MS.length} retries`);
+    }
+    if (!res.ok) throw new Error(`OpenAlex ${res.status} for ${redactApiKey(url)}`);
+    const json = await res.json();
+    return json.results || [];
+  }
+  // Unreachable (the loop either returns or throws), but keeps the function total.
+  throw new Error(`OpenAlex retrieval failed for search "${query}"`);
 }
 
 function buildPaperRecord(work, queryFields) {
@@ -691,14 +804,23 @@ async function planQueries(target, systemText) {
 // Stage 2 — retrieval (OpenAlex; reuse full-text subsystem for the record)
 // ----------------------------------------------------------------------------
 
+// Returns { candidates, retrievalOk }. retrievalOk is false if ANY query failed
+// (including a 429 that exhausted its retries in fetchWorksBySearch) — in that case
+// the candidate set is incomplete/untrustworthy and the leaf must NOT be cached as
+// done, so it retries on the next run.
 async function retrieveCandidates(queries) {
   const byId = new Map(); // shortId -> work
   const querySetById = new Map(); // shortId -> Set<query> (which queries surfaced it)
+  let retrievalOk = true;
   for (const q of queries) {
     let works = [];
     try {
       works = await fetchWorksBySearch(q, CANDIDATES_PER_QUERY);
     } catch (e) {
+      // Daily-budget exhaustion is terminal — re-raise so the whole run stops here
+      // (do NOT mark this leaf incomplete-and-continue; retrying is pointless).
+      if (e && e.budgetExhausted) throw e;
+      retrievalOk = false; // an ordinary failed search makes this leaf incomplete
       console.error(`    search failed "${q}": ${e.message}`);
     }
     for (const w of works) {
@@ -707,13 +829,14 @@ async function retrieveCandidates(queries) {
       if (!querySetById.has(id)) querySetById.set(id, new Set());
       querySetById.get(id).add(q);
     }
-    await sleep(150); // polite to OpenAlex
+    await sleep(250); // polite to OpenAlex (stay under the ~10 req/sec polite-pool ceiling)
   }
   // Rank retrievable (full-text-fetchable) first so we judge the strongest evidence first;
   // recency is intentionally NOT a factor (best exhibit, not newest).
   const works = [...byId.values()].sort((a, b) => (isRetrievable(a) ? 0 : 1) - (isRetrievable(b) ? 0 : 1));
   const capped = works.slice(0, MAX_CANDIDATES_PER_TARGET);
-  return capped.map((w) => ({ work: w, queries: [...(querySetById.get(shortId(w.id)) || [])] }));
+  const candidates = capped.map((w) => ({ work: w, queries: [...(querySetById.get(shortId(w.id)) || [])] }));
+  return { candidates, retrievalOk };
 }
 
 // Load an existing chaos/papers/<id>.json if present (avoids re-fetch), else build the
@@ -744,6 +867,20 @@ async function ensurePaperRecord(work, queries) {
   fs.writeFileSync(file, JSON.stringify(rec, null, 2), 'utf8');
   await sleep(150);
   return rec;
+}
+
+// Load a previously-fetched paper record by id (no network). Used by the leaf-level
+// cache to rehydrate a skipped leaf's accepted/rejected entries into full records so
+// the proposal output is identical to a freshly-grounded leaf. Returns null if the
+// record file is missing or corrupt.
+function loadPaperRecordById(id) {
+  const file = path.join(PAPERS_DIR, `${id}.json`);
+  if (!fs.existsSync(file)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -888,15 +1025,86 @@ async function judgePaper(target, rec, systemText) {
 // Orchestration — ground one target
 // ----------------------------------------------------------------------------
 
+// Leaf-level "already grounded" cache. Keyed exactly like the qplan/judge caches
+// (same GAIA_PROMPT_VERSION/MODEL/EFFORT/rubricHash/name/path inputs), so a rubric or
+// prompt-version bump re-grounds every leaf — preserving the existing auto-invalidation
+// discipline. A present file with complete===true means: retrieval succeeded with no
+// failed/429 search and judging ran to its natural stop, so the leaf need not be
+// re-searched. Accepted/rejected store paper ids only; full records are rehydrated from
+// chaos/papers/<id>.json on read.
+function leafCachePath(target) {
+  const h = fnv1a(
+    `${GAIA_PROMPT_VERSION}|leaf|${MODEL}|${EFFORT}|r${rubricHash()}|${normName(target.name)}|${pathKey(target.parentPath)}`
+  );
+  return path.join(CACHE_DIR, `leaf-${h}.json`);
+}
+
+// Returns { accepted, rejected } (full records rehydrated) for a completed cached leaf,
+// or null on cache miss / corrupt / complete!==true / a missing accepted-paper record
+// (in which case we fall through and re-ground so the proposal stays complete).
+function readLeafCache(target) {
+  const lp = leafCachePath(target);
+  if (!fs.existsSync(lp)) return null;
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(lp, 'utf8'));
+  } catch {
+    return null; // corrupt — re-ground
+  }
+  if (!data || data.complete !== true) return null;
+
+  const accepted = [];
+  for (const a of asArray(data.accepted)) {
+    const rec = loadPaperRecordById(a.paper_id);
+    if (!rec) {
+      // Accepted papers feed the proposal links + cited records — if one can't be
+      // reloaded, the skip would produce an incomplete proposal. Re-ground instead.
+      console.warn(`    (leaf cache unusable — paper ${a.paper_id} record missing; re-grounding)`);
+      return null;
+    }
+    accepted.push({ rec, claim: a.claim, confidence: a.confidence });
+  }
+  const rejected = [];
+  for (const r of asArray(data.rejected)) {
+    const rec = loadPaperRecordById(r.paper_id);
+    if (!rec) continue; // rejected entries are audit-only; drop if the record is gone
+    rejected.push({ rec, reason: r.reason });
+  }
+  return { accepted, rejected };
+}
+
+// Persist a completed leaf. Stores paper ids (not full records) — records live in
+// chaos/papers/<id>.json and are rehydrated on read.
+function writeLeafCache(target, accepted, rejected) {
+  const lp = leafCachePath(target);
+  const payload = {
+    target: { name: target.name, parentPath: target.parentPath },
+    accepted: accepted.map((a) => ({ paper_id: a.rec.id, claim: a.claim, confidence: a.confidence })),
+    rejected: rejected.map((r) => ({ paper_id: r.rec.id, reason: r.reason })),
+    complete: true,
+    ts: new Date().toISOString(),
+  };
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.writeFileSync(lp, JSON.stringify(payload, null, 2), 'utf8');
+}
+
 // Returns { accepted: [{ rec, claim, confidence }], rejected: [{ rec, reason }] } for the
 // candidates actually judged. Accepted = exhibits && confidence in {high, medium} && a
 // non-empty comment; every other judged candidate is recorded in rejected (with its
 // reason) so the gate is auditable. Stops judging once the accept quota is met.
 async function groundTarget(target, ctx) {
+  // Skip guard — before any planning/retrieval/judging. A previously-completed leaf is
+  // returned straight from cache: no model query-plan call, no OpenAlex search, no judging.
+  const cached = readLeafCache(target);
+  if (cached) {
+    console.log(`    [skip] ${target.name} ${pathLabel(target.parentPath)} — already grounded (cache)`);
+    return cached;
+  }
+
   const queries = await planQueries(target, ctx.systemQueryPlan);
   console.log(`    queries: ${queries.map((q) => `"${q}"`).join(', ')}`);
 
-  const candidates = await retrieveCandidates(queries);
+  const { candidates, retrievalOk } = await retrieveCandidates(queries);
   console.log(`    candidates: ${candidates.length}`);
 
   const accepted = [];
@@ -920,6 +1128,19 @@ async function groundTarget(target, ctx) {
     }
   }
   if (!accepted.length) console.log('      (no instances accepted)');
+
+  // Cache ONLY a clean completion: retrieval trustworthy (no failed/429 search) AND
+  // judging at its natural stop — the loop above breaks only on the accept quota or
+  // after judging every retrieved candidate, so reaching here means it did. A complete
+  // leaf is cached even with few/zero accepts (re-running identical queries won't find
+  // more; thin leaves are handled later by multi-attach, not by re-searching). An
+  // incomplete leaf (a failed search) is left uncached so it retries next run.
+  if (retrievalOk) {
+    writeLeafCache(target, accepted, rejected);
+  } else {
+    console.warn(`    (leaf not cached — a search failed/429'd after retries; will retry next run)`);
+  }
+
   return { accepted, rejected };
 }
 
@@ -1078,6 +1299,12 @@ async function main() {
 
   console.log('================ CHAOS GAIA — GROUNDING ================');
   console.log(`model=${MODEL}  effort=${EFFORT}  mailto=${MAILTO}`);
+  if (!OPENALEX_API_KEY) {
+    console.warn(
+      'No OPENALEX_API_KEY set — using keyless tier (~100 searches/day). ' +
+      'Set OPENALEX_API_KEY for ~1000/day.'
+    );
+  }
   console.log(`targets: ${selected.length} (of ${targets.length} total leaf targets)\n`);
 
   const links = [];
@@ -1086,7 +1313,19 @@ async function main() {
 
   for (const target of selected) {
     console.log(`[ground] ${target.name}  ${pathLabel(target.parentPath)}`);
-    const { accepted, rejected } = await groundTarget(target, ctx);
+    let accepted, rejected;
+    try {
+      ({ accepted, rejected } = await groundTarget(target, ctx));
+    } catch (e) {
+      // Daily-budget exhaustion stops the run immediately. Leaves not yet grounded stay
+      // uncached (they retry next run); the proposal is still written below from the
+      // leaves grounded/cached so far, so a re-run after reset completes it.
+      if (e && e.budgetExhausted) {
+        console.error(`\n${e.message}`);
+        break;
+      }
+      throw e;
+    }
     for (const a of accepted) {
       const url = a.rec.best_oa_url || a.rec.doi || a.rec.openalex_id || '';
       links.push({

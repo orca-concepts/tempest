@@ -55,6 +55,9 @@ const PAPERS_DIR = path.join(CHAOS_DIR, 'papers');
 const CACHE_DIR = path.join(CHAOS_DIR, 'gaia_cache');
 const OUT_JSON = path.join(GENESIS_DIR, 'gaia-proposal.json');
 const OUT_MD = path.join(GENESIS_DIR, 'gaia-proposal.md');
+// --multiattach writes a SEPARATE proposal; the two primary outputs above are never touched.
+const OUT_MA_JSON = path.join(GENESIS_DIR, 'gaia-multiattach-proposal.json');
+const OUT_MA_MD = path.join(GENESIS_DIR, 'gaia-multiattach-proposal.md');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';
@@ -80,6 +83,12 @@ function redactApiKey(s) {
 // (same discipline as reason.js / categorizer.js).
 const GAIA_PROMPT_VERSION = 'gaia3';
 
+// Versions the --multiattach Stage-A "propose" prompt + its cache (gaia_cache/propose-*.json).
+// DELIBERATELY SEPARATE from GAIA_PROMPT_VERSION: bumping this re-runs only multi-attach
+// proposals and never invalidates the primary qplan/judge/leaf caches. Never fold it into
+// those keys. Stage B reuses the existing judge (and its existing judge cache), unaffected.
+const GAIA_MULTIATTACH_VERSION = 'ma1';
+
 // Grounding budget knobs.
 const TARGET_INSTANCES_PER_LEAF = 3; // stop a target once this many high/medium accepted
 const MAX_QUERIES_PER_TARGET = 3;    // the planner returns 1–3 search strings
@@ -96,6 +105,7 @@ const MAX_RETRIES = 3;
 // Output token ceilings for the two model calls (small JSON; generous thinking headroom).
 const MAX_TOKENS_QPLAN = 6000;
 const MAX_TOKENS_JUDGE = 8000;
+const MAX_TOKENS_MA_PROPOSE = 8000; // Stage-A propose: up to 8 candidates, each with a feature string
 
 // ----------------------------------------------------------------------------
 // Small helpers (copied from reason.js / categorizer.js)
@@ -1231,6 +1241,375 @@ function writeProposalMd(perLeaf) {
 }
 
 // ----------------------------------------------------------------------------
+// --multiattach — one paper → multiple concepts (Anthropic only; no OpenAlex)
+// ----------------------------------------------------------------------------
+//
+// For every paper ACCEPTED in the primary pass, detect ADDITIONAL leaf qualities the
+// paper's own research concretely EXHIBITS (chaos.md §2: "extract EVERY quality it
+// exhibits; a paper linked to just one concept flags an under-utilized paper"). Works
+// purely on the full text already on disk — NO OpenAlex, no retrieval, no rate limits.
+// Two stages per paper:
+//   A. PROPOSE (new prompt, cached per paper) — the model scans the full text against the
+//      whole leaf menu and names additional (concept, path) it exhibits, each with a
+//      concrete locatable feature. A generative shortlist only.
+//   B. CONFIRM — the EXISTING strict judge (judgePaper) makes the real accept/reject and
+//      reuses the existing per-(target,paper) judge cache. Stage A proposes; Stage B decides.
+// Output is a SEPARATE reviewable proposal; nothing merges into the primary proposal here.
+
+function multiAttachProposeSystem(rubric) {
+  return [
+    'You are Chaos, the INSTANTIATOR (Gaia), in MULTI-ATTACH PROPOSE mode.',
+    'Your governing brain is the rubric below (chaos.md, v2.0). Obey it exactly.',
+    '',
+    '================ BEGIN chaos.md ================',
+    rubric,
+    '================ END chaos.md ================',
+    '',
+    'YOUR TASK THIS CALL: you are given ONE paper (its full text) and the COMPLETE MENU of',
+    'leaf quality-adjectives (each as an adjective + its root→parent path). chaos.md §2:',
+    '"Having read a paper, extract EVERY quality it exhibits; a paper linked to just one',
+    'concept flags an under-utilized paper." Propose the ADDITIONAL menu leaves whose quality',
+    "this paper's OWN RESEARCH CONCRETELY EXHIBITS — beyond the ones it is already linked to",
+    '(listed under EXCLUDE).',
+    '',
+    'SAME DISCIPLINE AS THE JUDGE — non-negotiable:',
+    '  - EXHIBITS, not DISCUSSES: the work itself must be an instance of the quality (the',
+    '    researchers DID it / the work HAS it) — NOT a paper that is ABOUT, studies, reviews,',
+    '    or recommends the quality. Apply the subject-matter-vs-method test: if the quality is',
+    "    the paper's TOPIC rather than its METHOD, do NOT propose it.",
+    '  - Meaning is COMPOSITIONAL: a leaf means what its PATH makes it mean. Read each menu',
+    '    entry as its full path, and propose it only if the paper exhibits THAT path-meaning.',
+    '',
+    'THE FEATURE-OR-ABSTAIN GATE (bias toward OMITTING):',
+    '  For EACH proposed quality you MUST point to a CONCRETE, LOCATABLE feature of the work —',
+    '  what the researchers actually DID or what the work actually HAS. If a quality can only be',
+    '  inferred from tone, framing, or stance with NO concrete feature to point at, OMIT it.',
+    '  Fewer strong proposals beat more speculative ones.',
+    '',
+    'MENU DISCIPLINE:',
+    '  - Choose ONLY from the menu provided. The (concept, path) you return MUST match a real',
+    '    menu entry exactly — same adjective, same path. Do not invent concepts or paths.',
+    '  - Do NOT propose any (concept, path) on the EXCLUDE list (already linked).',
+    '  - Cap your answer at 8 candidates. Returning fewer, stronger ones is better.',
+    '',
+    'OUTPUT CONTRACT: return STRICT JSON ONLY — no prose, no markdown fences. Exactly:',
+    '{',
+    '  "candidates": [',
+    '    {',
+    '      "concept": string,   // the menu adjective, exactly as listed',
+    '      "path": [string],    // its root→parent path, exactly as listed ([] for a root leaf)',
+    '      "feature": string    // the concrete, locatable feature of THIS work that exhibits it',
+    '    }',
+    '  ]',
+    '}',
+    'Return only the JSON object. An empty candidates array is valid (propose nothing).',
+  ].join('\n');
+}
+
+function multiAttachProposeUser(rec, menuTargets, alreadyLinked) {
+  const url = rec.best_oa_url || rec.doi || rec.openalex_id || '';
+  const body =
+    rec.full_text_available && rec.full_text
+      ? String(rec.full_text).slice(0, FULLTEXT_PROMPT_CAP)
+      : rec.abstract || '(no abstract available)';
+  const kind = rec.full_text_available && rec.full_text ? 'FULL TEXT' : 'ABSTRACT ONLY';
+  const fmt = (t) =>
+    `  - ${t.name}  ::  ${asArray(t.parentPath).length ? t.parentPath.join(' > ') : '(root — no parent)'}`;
+  const menu = menuTargets.map(fmt).join('\n');
+  const excl = alreadyLinked.length ? alreadyLinked.map(fmt).join('\n') : '  (none)';
+  return [
+    'PAPER:',
+    `  TITLE: ${rec.title || ''}`,
+    `  VENUE: ${rec.host_venue || ''}   YEAR: ${rec.publication_year || ''}`,
+    `  URL: ${url}`,
+    '',
+    `ARTICLE (${kind}):`,
+    body,
+    '',
+    'COMPLETE MENU of leaf quality-adjectives (choose ONLY from these; match name + path exactly):',
+    menu,
+    '',
+    'EXCLUDE — this paper is ALREADY linked to these (do NOT propose them again):',
+    excl,
+    '',
+    "Which ADDITIONAL menu leaves does this paper's OWN research CONCRETELY EXHIBIT? For each,",
+    'name the concrete locatable feature. Return the JSON { candidates: [...] }. No prose.',
+  ].join('\n');
+}
+
+function multiAttachProposeCachePath(paperId) {
+  const h = fnv1a(
+    `${GAIA_MULTIATTACH_VERSION}|propose|${MODEL}|${EFFORT}|r${rubricHash()}|${paperId}`
+  );
+  return path.join(CACHE_DIR, `propose-${h}.json`);
+}
+
+// Stage A. Returns an array of { concept, path, feature } (≤8), cached per paper. Mirrors
+// judgePaper's caching discipline: a successful parse (even with zero candidates) is cached;
+// a truncated/unparseable response is NOT cached (so it retries on the next run).
+async function proposeMultiAttach(rec, menuTargets, alreadyLinked, systemText) {
+  const cp = multiAttachProposeCachePath(rec.id);
+  if (fs.existsSync(cp)) {
+    try {
+      return asArray(JSON.parse(fs.readFileSync(cp, 'utf8')).candidates);
+    } catch {
+      // corrupt — recompute
+    }
+  }
+  const { text, stop_reason } = await _callModel(
+    systemText,
+    multiAttachProposeUser(rec, menuTargets, alreadyLinked),
+    MAX_TOKENS_MA_PROPOSE
+  );
+  if (stop_reason === 'max_tokens') {
+    console.warn(`    (warn) propose truncated for ${rec.id} — skipping (not cached).`);
+    return [];
+  }
+  const parsed = extractJson(text);
+  if (!parsed || !Array.isArray(parsed.candidates)) {
+    console.warn(`    (warn) propose unparseable for ${rec.id} — skipping (not cached).`);
+    return [];
+  }
+  const candidates = parsed.candidates
+    .filter((c) => c && typeof c.concept === 'string' && c.concept.trim())
+    .map((c) => ({
+      concept: c.concept.trim(),
+      path: asArray(c.path).map(String),
+      feature: typeof c.feature === 'string' ? c.feature.trim() : '',
+    }))
+    .slice(0, 8);
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.writeFileSync(cp, JSON.stringify({ paper_id: rec.id, candidates }, null, 2), 'utf8');
+  return candidates;
+}
+
+// Distinct paper ids accepted in the primary proposal, in first-appearance order.
+function distinctAcceptedPaperIds(primaryLinks) {
+  const seen = new Set();
+  const order = [];
+  for (const l of asArray(primaryLinks)) {
+    const id = l && l.paper_id;
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      order.push(id);
+    }
+  }
+  return order;
+}
+
+function writeMultiAttachJson(citedRecords, links) {
+  const out = {
+    generated_by: 'chaos/gaia.js --multiattach',
+    model: MODEL,
+    effort: EFFORT,
+    rubric_version: rubricVersion(),
+    gaia_prompt_version: GAIA_PROMPT_VERSION,
+    gaia_multiattach_version: GAIA_MULTIATTACH_VERSION,
+    generated_at: new Date().toISOString(),
+    // Trimmed to match the primary writer (apply.js loads full records from
+    // chaos/papers/<id>.json by id at cutover); every cited paper is included.
+    papers: citedRecords.map(trimPaperForProposal),
+    links,
+  };
+  fs.writeFileSync(OUT_MA_JSON, JSON.stringify(out, null, 2), 'utf8');
+}
+
+function writeMultiAttachMd({ perGroup, buriedWins, scanned, skippedNoText, newLinkCount }) {
+  const L = [];
+  L.push('# Chaos — Gaia MULTI-ATTACH proposal (one paper → multiple concepts)');
+  L.push('');
+  L.push(`**Generated by:** chaos/gaia.js --multiattach · model ${MODEL} · effort ${EFFORT} · rubric v${rubricVersion()}`);
+  L.push('**Write target:** this file + chaos/genesis/gaia-multiattach-proposal.json. The PRIMARY proposal is NOT touched. No DB writes, no cutover.');
+  L.push(
+    `**Totals:** ${scanned} paper(s) scanned${skippedNoText ? ` (+${skippedNoText} skipped, no full_text)` : ''} · ` +
+    `${newLinkCount} new instance link(s) · ${perGroup.size} concept(s) gained instances.`
+  );
+  L.push('');
+  L.push('Additional links found by re-reading each accepted paper against the full leaf menu and confirming with the SAME strict exhibits-not-discusses judge (chaos.md §2).');
+  L.push('');
+
+  // Buried-leaf wins up top — the high-value result.
+  L.push('## Buried-leaf wins (had ZERO primary instances, now grounded by multi-attach)');
+  L.push('');
+  if (!buriedWins.length) {
+    L.push('_(none — every concept grounded here already had at least one primary instance.)_');
+  } else {
+    for (const g of buriedWins) {
+      L.push(
+        `- **${g.name}** — *path:* ${g.parentPath.length ? g.parentPath.join(' › ') : '(root)'} — ` +
+        `${g.instances.length} instance(s)`
+      );
+    }
+  }
+  L.push('');
+  L.push('---');
+  L.push('');
+
+  if (!perGroup.size) {
+    L.push('_(no new instances accepted.)_');
+    L.push('');
+  } else {
+    for (const [, g] of perGroup) {
+      L.push(`## ${g.name}`);
+      L.push(`*path:* ${g.parentPath.length ? g.parentPath.join(' › ') : '(root)'}`);
+      L.push('');
+      for (const inst of g.instances) {
+        const url = inst.rec.best_oa_url || inst.rec.doi || inst.rec.openalex_id || '';
+        L.push(`- **${inst.rec.title || inst.rec.id}** _(${inst.confidence})_`);
+        L.push(`  ${inst.claim}`);
+        L.push(`  ${url}`);
+      }
+      L.push('');
+    }
+  }
+
+  L.push('---');
+  L.push('');
+  L.push('**END OF MULTI-ATTACH PROPOSAL — primary proposal untouched, no dev-graph writes, no cutover.**');
+  L.push('');
+  fs.writeFileSync(OUT_MA_MD, L.join('\n'), 'utf8');
+}
+
+// Orchestrate the whole --multiattach run. Reads the primary proposal for the accepted-paper
+// set, scans each paper's full text on disk, and writes the separate multi-attach proposal.
+async function runMultiAttach() {
+  if (!fs.existsSync(OUT_JSON)) {
+    throw new Error(
+      `primary proposal not found at ${OUT_JSON} — run primary grounding first ` +
+      `(e.g. node chaos/gaia.js --all), then re-run --multiattach.`
+    );
+  }
+  let primary;
+  try {
+    primary = JSON.parse(fs.readFileSync(OUT_JSON, 'utf8'));
+  } catch (e) {
+    throw new Error(`could not read primary proposal ${OUT_JSON}: ${e.message}`);
+  }
+  const primaryLinks = asArray(primary.links);
+
+  // The candidate menu: every leaf TARGET (name × path). Index by (normName|pathKey).
+  const { targets: menuTargets } = loadTargets();
+  const menuByKey = new Map();
+  for (const t of menuTargets) menuByKey.set(`${normName(t.name)}|${pathKey(t.parentPath)}`, t);
+
+  const rubric = loadRubric();
+  const ctx = {
+    systemJudge: judgeSystem(rubric),               // Stage B reuses the EXISTING judge verbatim
+    systemPropose: multiAttachProposeSystem(rubric), // Stage A propose
+  };
+
+  // From the primary links: the DEDUPE set (concept|path|paper already grounded), the
+  // per-paper already-linked targets (Stage-A exclude list), and the set of (concept|path)
+  // tuples that have ≥1 primary instance (to detect buried-leaf wins).
+  const dedupe = new Set();
+  const linkedByPaper = new Map();
+  const primaryGroundedTuples = new Set();
+  for (const l of primaryLinks) {
+    const pairKey = `${normName(l.concept_name)}|${pathKey(l.parent_path)}`;
+    dedupe.add(`${pairKey}|${l.paper_id}`);
+    primaryGroundedTuples.add(pairKey);
+    if (!linkedByPaper.has(l.paper_id)) linkedByPaper.set(l.paper_id, []);
+    linkedByPaper.get(l.paper_id).push({ name: l.concept_name, parentPath: asArray(l.parent_path) });
+  }
+
+  // Accepted papers (distinct, first-appearance order). For --multiattach, --limit caps PAPERS.
+  let paperIds = distinctAcceptedPaperIds(primaryLinks);
+  const totalAccepted = paperIds.length;
+  const limit = argValue('--limit');
+  if (limit) {
+    const n = Math.max(1, parseInt(limit, 10) || 1);
+    paperIds = paperIds.slice(0, n);
+  }
+
+  console.log('================ CHAOS GAIA — MULTI-ATTACH ================');
+  console.log(`model=${MODEL}  effort=${EFFORT}  (Anthropic only — no OpenAlex)`);
+  console.log(
+    `accepted papers in primary proposal: ${totalAccepted}` +
+    (limit ? `  ·  scanning first ${paperIds.length} (--limit ${limit})` : '  ·  scanning all')
+  );
+  console.log('');
+
+  const newLinks = [];
+  const citedRecords = new Map();        // id -> full rec
+  const perGroup = new Map();            // "concept|path" -> { name, parentPath, instances: [] }
+  let scanned = 0;
+  let skippedNoText = 0;
+
+  for (const pid of paperIds) {
+    const rec = loadPaperRecordById(pid);
+    if (!rec) {
+      console.warn(`  [skip] ${pid} — paper record missing on disk`);
+      continue;
+    }
+    if (!(rec.full_text_available && rec.full_text)) {
+      console.warn(`  [skip] ${pid} — no full_text (cannot detect without text)`);
+      skippedNoText++;
+      continue;
+    }
+    scanned++;
+    console.log(`[scan] ${rec.id}  ${trunc(rec.title, 60)}`);
+
+    const alreadyLinked = linkedByPaper.get(pid) || [];
+    const candidates = await proposeMultiAttach(rec, menuTargets, alreadyLinked, ctx.systemPropose);
+
+    const seenPair = new Set(); // de-dup candidates within this paper by (concept|path)
+    for (const cand of candidates) {
+      const pairKey = `${normName(cand.concept)}|${pathKey(cand.path)}`;
+      if (seenPair.has(pairKey)) continue;
+      seenPair.add(pairKey);
+
+      const target = menuByKey.get(pairKey);
+      if (!target) continue; // not a real menu target — drop
+
+      const tupleKey = `${pairKey}|${pid}`;
+      if (dedupe.has(tupleKey)) continue; // already grounded in the primary pass
+
+      // Stage B — the EXISTING strict judge makes the real accept/reject (cache-reused).
+      const verdict = await judgePaper(target, rec, ctx.systemJudge);
+      if (!verdict) continue;
+      if (!(verdict.exhibits && verdict.comment && (verdict.confidence === 'high' || verdict.confidence === 'medium'))) {
+        continue;
+      }
+
+      const url = rec.best_oa_url || rec.doi || rec.openalex_id || '';
+      newLinks.push({
+        attribute: 'value',
+        concept_name: target.name,
+        parent_path: target.parentPath,
+        url,
+        // The confirm verdict's comment becomes `claim`, exactly as in the primary path.
+        claim: verdict.comment,
+        paper_id: rec.id,
+      });
+      citedRecords.set(rec.id, rec);
+      dedupe.add(tupleKey); // guard against any later duplicate
+      const g = perGroup.get(pairKey) || { name: target.name, parentPath: target.parentPath, instances: [] };
+      g.instances.push({ rec, claim: verdict.comment, confidence: verdict.confidence });
+      perGroup.set(pairKey, g);
+      console.log(`      [+attach ${verdict.confidence}] ${target.name}  ${pathLabel(target.parentPath)}`);
+    }
+  }
+
+  // Buried-leaf wins: concepts that gained an instance here but had ZERO primary instances.
+  const buriedWins = [];
+  for (const [pairKey, g] of perGroup) {
+    if (!primaryGroundedTuples.has(pairKey)) buriedWins.push(g);
+  }
+
+  writeMultiAttachJson([...citedRecords.values()], newLinks);
+  writeMultiAttachMd({ perGroup, buriedWins, scanned, skippedNoText, newLinkCount: newLinks.length });
+
+  console.log('\n================ MULTI-ATTACH SUMMARY ================');
+  console.log(`papers scanned: ${scanned}` + (skippedNoText ? `  (skipped ${skippedNoText} with no full_text)` : ''));
+  console.log(`new instance links emitted: ${newLinks.length}`);
+  console.log(`buried-leaf wins (0 primary → now grounded): ${buriedWins.length}`);
+  console.log(`papers cited: ${citedRecords.size}`);
+  console.log(`\nWrote ${path.relative(CHAOS_DIR, OUT_MA_JSON)} and ${path.relative(CHAOS_DIR, OUT_MA_MD)}`);
+  console.log('Primary proposal untouched. Review next.');
+  console.log('=====================================================');
+}
+
+// ----------------------------------------------------------------------------
 // CLI / main
 // ----------------------------------------------------------------------------
 
@@ -1254,6 +1633,8 @@ function printUsage(targets) {
   console.log('  node chaos/gaia.js --node "<Name>"   # ground one leaf (all its paths)');
   console.log('  node chaos/gaia.js --limit N         # ground the first N leaf targets');
   console.log('  node chaos/gaia.js --all             # ground every leaf target');
+  console.log('  node chaos/gaia.js --multiattach     # extra concepts per accepted paper (no OpenAlex)');
+  console.log('  node chaos/gaia.js --multiattach --limit N   # only the first N accepted papers');
   console.log('  (optional: --effort=max  --model=…  --mailto=you@example.com)');
   console.log('');
   printPlan(targets);
@@ -1281,6 +1662,13 @@ async function main() {
 
   if (process.argv.includes('--plan')) {
     printPlan(targets);
+    return;
+  }
+
+  // Multi-attach is a distinct mode: it ignores the target selection flags and instead
+  // scans the accepted papers from the primary proposal (Anthropic only, no OpenAlex).
+  if (process.argv.includes('--multiattach')) {
+    await runMultiAttach();
     return;
   }
 
@@ -1403,6 +1791,13 @@ module.exports = {
   trimPaperForProposal,
   __setCallModelForTest,
   GAIA_PROMPT_VERSION,
+  GAIA_MULTIATTACH_VERSION,
   OUT_JSON,
   OUT_MD,
+  runMultiAttach,
+  proposeMultiAttach,
+  multiAttachProposeSystem,
+  loadPaperRecordById,
+  OUT_MA_JSON,
+  OUT_MA_MD,
 };

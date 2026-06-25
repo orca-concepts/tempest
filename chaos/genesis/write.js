@@ -160,17 +160,62 @@ function buildPlan(nodes) {
   };
 }
 
-// Transform genesis nodes -> the proposals shape apply.js consumes. Faithful: adds the
-// implied attribute, carries parent_paths (multi-parent) verbatim, and includes NOTHING
-// else (no papers/links/tunnels/predictions => apply.js inserts only concepts + edges).
-// basis/frontiers are intentionally omitted — apply.js has no destination for them
-// (basis is review-only; frontiers are a later build — see the file header).
-function toApplyProposals(nodes, proposal) {
+// The two grounding proposals whose links + papers are folded into the genesis write
+// at cutover (chaos.md "Next" #1). Both are produced by chaos/gaia.js (primary --all
+// and --multiattach passes) and reviewed before this runs.
+const GAIA_PRIMARY_PATH = path.join(GENESIS_DIR, 'gaia-proposal.json');
+const GAIA_MULTIATTACH_PATH = path.join(GENESIS_DIR, 'gaia-multiattach-proposal.json');
+
+// Load + merge both grounding proposals into the link/paper sets handed to apply.js.
+// Target-agnostic: operates purely on the proposal JSON (no env/dev branching). Throws
+// a clear error if either file is missing — the cutover writes concepts + edges +
+// grounding links TOGETHER, so we refuse to materialize a taxonomy with no links.
+function loadGrounding() {
+  for (const [label, p] of [['primary', GAIA_PRIMARY_PATH], ['multi-attach', GAIA_MULTIATTACH_PATH]]) {
+    if (!fs.existsSync(p)) {
+      throw new Error(
+        `grounding proposal not found (${label}): ${path.relative(REPO_DIR, p)}. ` +
+          'The cutover writes concepts + edges + grounding links together; refusing to write a ' +
+          'taxonomy with no links. Run chaos/gaia.js (--all then --multiattach) first.'
+      );
+    }
+  }
+  const primary = JSON.parse(fs.readFileSync(GAIA_PRIMARY_PATH, 'utf8'));
+  const multi = JSON.parse(fs.readFileSync(GAIA_MULTIATTACH_PATH, 'utf8'));
+  const primaryLinks = asArray(primary.links);
+  const multiLinks = asArray(multi.links);
+  // links: concatenate, NO pre-dedupe — apply.js dedupes by (concept sig + normalized
+  // url) and intentionally keeps the same url under different concepts.
+  const links = [...primaryLinks, ...multiLinks];
+  // papers: union DEDUPED BY id (order-independent; multi-attach's papers are a subset).
+  const papersById = new Map();
+  for (const pp of [...asArray(primary.papers), ...asArray(multi.papers)]) {
+    if (pp && pp.id != null && !papersById.has(pp.id)) papersById.set(pp.id, pp);
+  }
+  const papers = [...papersById.values()];
   return {
-    generated_by: 'chaos/genesis/write.js (transformed from genesis proposal.json)',
+    links,
+    papers,
+    counts: {
+      linksPrimary: primaryLinks.length,
+      linksMultiattach: multiLinks.length,
+      linksTotal: links.length,
+      papers: papers.length,
+    },
+  };
+}
+
+// Transform genesis nodes -> the proposals shape apply.js consumes. Faithful for the
+// taxonomy (adds the implied attribute, carries parent_paths verbatim); links + papers
+// come from the merged grounding proposals (loadGrounding). basis/frontiers are
+// intentionally omitted — apply.js has no destination for them (basis is review-only;
+// frontiers are a later build — see the file header). tunnels stay empty (genesis).
+function toApplyProposals(nodes, proposal, grounding) {
+  return {
+    generated_by: 'chaos/genesis/write.js (genesis taxonomy + merged gaia grounding)',
     rubric_version: proposal.rubric_version || '0',
     graph_state: 'empty (genesis)',
-    papers: [],
+    papers: grounding.papers,
     concepts: nodes.map((n) => ({
       attribute: ATTRIBUTE,
       name: n.name,
@@ -179,7 +224,7 @@ function toApplyProposals(nodes, proposal) {
       parent_paths: n.parent_paths,
       parent_path: [],
     })),
-    links: [],
+    links: grounding.links,
     tunnels: [],
   };
 }
@@ -236,16 +281,21 @@ async function readGraphState(pool) {
 // Plan printing
 // ----------------------------------------------------------------------------
 
-function printPlan(plan, proposal, graphState) {
+function printPlan(plan, proposal, graphState, grounding) {
   console.log('================ CHAOS GENESIS WRITER — PLAN ================');
   console.log(`source: ${path.relative(REPO_DIR, PROPOSAL_PATH)}  ·  rubric v${proposal.rubric_version || '?'}  ·  domain [${ATTRIBUTE}]`);
   console.log(`mode: ${COMMIT ? 'COMMIT (real write)' : 'DRY RUN (no DB writes)'}`);
   console.log('');
-  console.log('PLAN — rows that WOULD be inserted (concepts + edges only; append-only):');
+  console.log('PLAN — taxonomy rows that WOULD be inserted (concepts + edges; append-only):');
   console.log(`  concepts (distinct value-kinds) ... ${plan.conceptNames.size}`);
   console.log(`  parent edges (distinct) ........... ${plan.edgeKeys.size}   (root edges ${plan.rootEdges} · child edges ${plan.childEdges})`);
   console.log(`  total placements (chains) ......... ${plan.chains.length}`);
   console.log(`  multi-parent nodes (>1 parent) .... ${plan.multiParent.length}   (each becomes that many path-dependent placements)`);
+  console.log('');
+  console.log('GROUNDING handed to apply.js (links + papers; from merged gaia proposals):');
+  console.log(`  links ............................. ${grounding.counts.linksTotal}   (primary ${grounding.counts.linksPrimary} + multi-attach ${grounding.counts.linksMultiattach})`);
+  console.log(`  papers (deduped by id) ............ ${grounding.counts.papers}   (upserted by openalex_id; titles flow onto links)`);
+  console.log('  (apply.js dedupes links by concept-sig + normalized url; same url under different concepts is kept.)');
   console.log('');
   console.log('CARRIED BUT NOT WRITTEN (deliberately out of scope this build):');
   console.log(`  frontiers ... ${plan.withFrontiers.length} nodes carry ≥1 — TODO: first-class frontier objects (likely need schema; own build).`);
@@ -295,8 +345,8 @@ function printPlan(plan, proposal, graphState) {
 // apply.js delegation
 // ----------------------------------------------------------------------------
 
-function writeTempProposals(nodes, proposal) {
-  fs.writeFileSync(TEMP_PROPOSALS, JSON.stringify(toApplyProposals(nodes, proposal), null, 2), 'utf8');
+function writeTempProposals(nodes, proposal, grounding) {
+  fs.writeFileSync(TEMP_PROPOSALS, JSON.stringify(toApplyProposals(nodes, proposal, grounding), null, 2), 'utf8');
 }
 function cleanupTemp() {
   try {
@@ -324,6 +374,8 @@ async function main() {
   const nodes = normalizeNodes(proposal);
   if (!nodes.length) throw new Error('proposal.json has no usable nodes.');
   const plan = buildPlan(nodes);
+  // Merge both grounding proposals' links + papers (throws clearly if either is missing).
+  const grounding = loadGrounding();
 
   // Read-only graph-state check (best effort in dry run; enforced in commit below).
   let graphState = null;
@@ -343,13 +395,13 @@ async function main() {
     console.warn(`(note) graph-state check skipped: ${err.message}\n`);
   }
 
-  printPlan(plan, proposal, graphState);
+  printPlan(plan, proposal, graphState, grounding);
 
   if (!COMMIT) {
     // Dry run: prove the apply.js reuse wiring with apply.js's OWN dry run (no DB writes).
     console.log('\n---- apply.js cross-check (its dry-run plan over the transformed proposal; no writes) ----');
     try {
-      writeTempProposals(nodes, proposal);
+      writeTempProposals(nodes, proposal, grounding);
       const r = runApply(['--dry-run']);
       process.stdout.write(r.stdout || '');
       if (r.status !== 0) {
@@ -383,7 +435,7 @@ async function main() {
   console.log('\n================ COMMITTING (delegating to apply.js) ================');
   console.log(`DB: ${dbInfo.database} @ ${dbInfo.host}  (dev guard passed; graph empty)`);
   try {
-    writeTempProposals(nodes, proposal);
+    writeTempProposals(nodes, proposal, grounding);
     // apply.js takes its own pg_dump backup, writes in one transaction, and refreshes
     // the snapshot. Inherit stdio so its output streams through.
     const r = spawnSync('node', [APPLY_PATH, '--proposals', TEMP_PROPOSALS], {

@@ -306,6 +306,15 @@ function buildPlan(proposals) {
     }
   }
 
+  // Every path-key materializeChain WILL register (leafEdgeByPathSig), precomputed so a
+  // link can be checked for a clean path-specific resolution BEFORE apply time. A leaf
+  // chain registers `${sig(attr,leaf)}|${pathKeyOf(ancestors)}` (see materializeChain).
+  const chainPathKeys = new Set();
+  for (const ch of chains) {
+    const leaf = ch.names[ch.names.length - 1];
+    chainPathKeys.add(`${sig(ch.attribute, leaf)}|${pathKeyOf(ch.names.slice(0, -1))}`);
+  }
+
   // --- links: attach only to edges that exist in the merged concept set.
   //     Links naming a pre-merge concept (not in concepts[]) are reported, not created. ---
   const links = [];
@@ -319,9 +328,29 @@ function buildPlan(proposals) {
     const dedupeKey = `${s}|${normalizeUrl(l.url)}`;
     if (linkSeen.has(dedupeKey)) continue;
     linkSeen.add(dedupeKey);
+    // Detection-only safety net: a link with a parent_path that does NOT correspond to
+    // any materialized chain would silently fall back to the primary placement in
+    // resolveLeafEdge — mis-placing it. Surface it as feedback so --dry-run flags it.
+    // (resolveLeafEdge's runtime behavior is unchanged; this only reports.)
+    const parentPath = asArray(l.parent_path);
+    if (parentPath.length && !chainPathKeys.has(`${s}|${pathKeyOf(parentPath)}`)) {
+      unmapped.push(
+        `link path-key fallback: ${l.attribute}:${l.concept_name} @ ${pathKeyOf(parentPath)} ` +
+          `(no matching chain — would attach to the primary placement; paper ${l.paper_id})`
+      );
+    }
     // Carry the link's parent_path so a link to a multi-parent concept attaches to
     // the right edge (path-specific), falling back to the primary edge otherwise.
-    links.push({ s, url: l.url, comment: l.claim, paperShort: l.paper_id, parentPath: asArray(l.parent_path) });
+    // title comes from the resolved paper record (byShort), so seed links carry the
+    // real article title instead of null (matches the app's store-on-write behavior).
+    links.push({
+      s,
+      url: l.url,
+      comment: l.claim,
+      paperShort: l.paper_id,
+      parentPath,
+      title: (byShort.get(l.paper_id) || {}).title || null,
+    });
   }
 
   // --- tunnels: value↔value associative links (P8/P15). Both endpoints must resolve to
@@ -638,7 +667,7 @@ async function apply(plan) {
       await client.query(
         `INSERT INTO concept_links (edge_id, url, title, comment, added_by, paper_id)
          VALUES ($1,$2,$3,$4,$5,$6)`,
-        [edgeId, l.url, null, l.comment || null, seedId, paperId]
+        [edgeId, l.url, l.title || null, l.comment || null, seedId, paperId]
       );
       stats.concept_links += 1;
     }

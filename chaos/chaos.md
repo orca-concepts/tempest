@@ -279,6 +279,27 @@ as the navigational / integration skeleton — de-emphasized as entry points, ne
   existing graph is **cleared at cutover** (it was never written to from genesis, so no DB rollback is
   involved — only the proposal artifacts are superseded), and the new taxonomy is built from scratch by
   the Categorizer in genesis mode.
+- **Promotion / source-of-truth invariant.** The working database is a **test bench**;
+  the **JSON proposals are the source of truth**. Every graph-growing engine — the
+  Categorizer (Ouranos), the Instantiator (Gaia), the Scout (Krius), and the
+  frontier-driven run loop — persists its output as a reviewable JSON proposal and
+  writes to the graph **only** through the name-based `apply.js` path (concepts/edges
+  resolved from names; IDs and `graph_path` assigned at write time). No engine writes
+  graph content directly to the database, and no graph state that matters is allowed to
+  live *only* in the database. The payoff: **promotion between environments (dev → prod)
+  is a name-based re-seed from the committed proposals, never a database row-copy**
+  (`pg_dump`/restore). Because IDs and `graph_path` are assigned at write time, a
+  name-based rebuild is what preserves path-dependent identity (the path-scoped edge a
+  link lives on) and FK integrity across concepts → edges → links → papers; a raw
+  row-copy would carry stale IDs and break both. Prod promotion is therefore the same
+  `apply.js` write pointed at prod, behind its own confirmation, mandatory backup, and
+  empty-graph precondition — a separate guarded invocation, not a loosening of the dev
+  guard. **Caveat:** anything not captured in a regenerable proposal — votes,
+  UI-authored links/concepts, append-only hand edits — does **not** promote under this
+  model. While iterating locally, treat the UI as a *viewer* and the engines' JSON as the
+  real artifacts. If preserving database-only local state ever becomes necessary, that is
+  a deliberate shift away from this invariant (toward genuine data migration) and must be
+  reconsidered explicitly, not drifted into.
 
 ## 10. Settled decisions (from review)
 

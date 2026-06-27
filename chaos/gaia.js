@@ -161,6 +161,47 @@ function extractJson(text) {
   }
 }
 
+// Stronger ENVELOPE recovery for a malformed model response — recovers the JSON wrapper, never
+// the verdict logic. Walks to the first BALANCED {…} object (tolerating markdown fences anywhere,
+// leading preamble, and trailing prose/garbage), and repairs a recoverable truncation (an
+// unterminated trailing string and/or unclosed braces). Returns a parsed object or null; field
+// validation is the CALLER's job (salvage never fabricates a verdict from a half-object).
+function salvageJson(text) {
+  if (!text) return null;
+  let s = String(text).replace(/```(?:json)?/gi, '');
+  const start = s.indexOf('{');
+  if (start === -1) return null;
+  s = s.slice(start);
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let end = -1;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') { depth -= 1; if (depth === 0) { end = i; break; } }
+  }
+  // A clean balanced object was found → parse it, ignoring any trailing garbage.
+  if (end !== -1) {
+    try { return JSON.parse(s.slice(0, end + 1)); } catch { /* fall through to repair */ }
+  }
+  // Truncation repair: close a dangling string, then any still-open objects, and drop a
+  // trailing comma before the synthetic closers. Only succeeds if the prefix was well-formed
+  // up to the cut — a truncation before a required field stays unparseable (→ caller retries).
+  let repaired = s;
+  if (inStr) repaired += '"';
+  if (depth > 0) repaired += '}'.repeat(depth);
+  repaired = repaired.replace(/,(\s*\}+\s*)$/g, '$1');
+  try { return JSON.parse(repaired); } catch { return null; }
+}
+
 // Dependency-free FNV-1a (32-bit) — keys the content-addressed cache (reason.js:705-712).
 function fnv1a(str) {
   let h = 0x811c9dc5;
@@ -1001,6 +1042,49 @@ function judgeCachePath(target, paperId) {
   return path.join(CACHE_DIR, `judge-${h}.json`);
 }
 
+// Judgment-envelope recovery counters (process-wide; printed in the run summaries so the
+// yield leak is visible/measurable). first-pass = parsed on the first try (the byte-identical
+// existing path); salvaged = first response recovered by salvageJson; retried-ok = recovered
+// after one reissued call; still-failed = warn-and-drop fallback (not cached).
+const judgeRecovery = { firstPass: 0, salvaged: 0, retriedOk: 0, stillFailed: 0 };
+
+// The REQUIRED judgment field the consumer reads (the verdict). A salvaged/partial object is
+// acceptable only if it carries this; everything else is tolerated/defaulted in buildVerdict.
+function isJudgment(p) {
+  return !!p && typeof p.exhibits === 'boolean';
+}
+// Build the verdict object — identical coercion to the original judge path.
+function buildVerdict(parsed) {
+  return {
+    exhibits: !!parsed.exhibits,
+    comment: typeof parsed.comment === 'string' ? parsed.comment.trim() : null,
+    confidence: ['high', 'medium', 'low'].includes(parsed.confidence) ? parsed.confidence : 'low',
+    reason: typeof parsed.reason === 'string' ? parsed.reason.trim() : '',
+  };
+}
+// Recover a valid judgment object from a model response: primary extractJson FIRST (so a
+// response that parses today is handled byte-identically as 'first'), then the stronger
+// salvageJson. Returns { parsed, how: 'first' | 'salvaged' } or null. Never fabricates fields.
+function recoverJudgment(text) {
+  const p = extractJson(text);
+  if (isJudgment(p)) return { parsed: p, how: 'first' };
+  const s = salvageJson(text);
+  if (isJudgment(s)) return { parsed: s, how: 'salvaged' };
+  return null;
+}
+function cacheVerdict(cp, verdict) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.writeFileSync(cp, JSON.stringify(verdict, null, 2), 'utf8');
+  return verdict;
+}
+
+// One terse line for the run summaries; null when no judgments ran this process.
+function judgeRecoveryLine() {
+  const j = judgeRecovery;
+  if (j.firstPass + j.salvaged + j.retriedOk + j.stillFailed === 0) return null;
+  return `judgment recovery: ${j.firstPass} first-pass · ${j.salvaged} salvaged · ${j.retriedOk} retried-ok · ${j.stillFailed} still-failed (dropped)`;
+}
+
 async function judgePaper(target, rec, systemText) {
   const cp = judgeCachePath(target, rec.id);
   if (fs.existsSync(cp)) {
@@ -1010,25 +1094,36 @@ async function judgePaper(target, rec, systemText) {
       // corrupt — recompute
     }
   }
-  const { text, stop_reason } = await _callModel(systemText, judgeUser(target, rec), MAX_TOKENS_JUDGE);
-  if (stop_reason === 'max_tokens') {
-    console.warn(`    (warn) judgment truncated for ${rec.id} — skipping (not cached).`);
-    return null;
+
+  // Attempt 1 — the existing request. extractJson-first keeps the valid path byte-identical;
+  // salvageJson additionally recovers a malformed envelope or a recoverable truncation.
+  const r1 = await _callModel(systemText, judgeUser(target, rec), MAX_TOKENS_JUDGE);
+  const rec1 = recoverJudgment(r1.text);
+  if (rec1) {
+    if (rec1.how === 'first') judgeRecovery.firstPass += 1;
+    else judgeRecovery.salvaged += 1;
+    return cacheVerdict(cp, buildVerdict(rec1.parsed));
   }
-  const parsed = extractJson(text);
-  if (!parsed || typeof parsed.exhibits !== 'boolean') {
-    console.warn(`    (warn) judgment unparseable for ${rec.id} — skipping (not cached).`);
-    return null;
+
+  // One-shot retry — re-issue the SAME judgment request once, appending a terse envelope
+  // reinforcement (NOT a template/rubric edit) to cut preamble/markdown/truncation. At most one.
+  const retryUser = judgeUser(target, rec) +
+    '\n\nRespond with ONLY the JSON object: no preamble, no markdown, no commentary.';
+  const r2 = await _callModel(systemText, retryUser, MAX_TOKENS_JUDGE);
+  const rec2 = recoverJudgment(r2.text);
+  if (rec2) {
+    judgeRecovery.retriedOk += 1;
+    return cacheVerdict(cp, buildVerdict(rec2.parsed));
   }
-  const verdict = {
-    exhibits: !!parsed.exhibits,
-    comment: typeof parsed.comment === 'string' ? parsed.comment.trim() : null,
-    confidence: ['high', 'medium', 'low'].includes(parsed.confidence) ? parsed.confidence : 'low',
-    reason: typeof parsed.reason === 'string' ? parsed.reason.trim() : '',
-  };
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-  fs.writeFileSync(cp, JSON.stringify(verdict, null, 2), 'utf8');
-  return verdict;
+
+  // Fallback — keep the original behavior: warn and DROP (not cached, so a later run can retry).
+  judgeRecovery.stillFailed += 1;
+  const truncated = r1.stop_reason === 'max_tokens' || r2.stop_reason === 'max_tokens';
+  console.warn(
+    `    (warn) judgment ${truncated ? 'truncated/unparseable' : 'unparseable'} for ${rec.id} ` +
+      'after salvage + 1 retry — skipping (not cached).'
+  );
+  return null;
 }
 
 // ----------------------------------------------------------------------------
@@ -1604,6 +1699,8 @@ async function runMultiAttach() {
   console.log(`new instance links emitted: ${newLinks.length}`);
   console.log(`buried-leaf wins (0 primary → now grounded): ${buriedWins.length}`);
   console.log(`papers cited: ${citedRecords.size}`);
+  const maRecovery = judgeRecoveryLine();
+  if (maRecovery) console.log(maRecovery);
   console.log(`\nWrote ${path.relative(CHAOS_DIR, OUT_MA_JSON)} and ${path.relative(CHAOS_DIR, OUT_MA_MD)}`);
   console.log('Primary proposal untouched. Review next.');
   console.log('=====================================================');
@@ -1738,6 +1835,8 @@ async function main() {
   console.log(`leaf targets grounded: ${perLeaf.filter((e) => e.accepted.length).length} / ${selected.length}`);
   console.log(`instance links emitted: ${links.length}`);
   console.log(`papers cited: ${citedRecords.size}`);
+  const groundRecovery = judgeRecoveryLine();
+  if (groundRecovery) console.log(groundRecovery);
   console.log('\nAPI usage this run:');
   console.log(`  API calls made:          ${apiCallCount}`);
   console.log(`  input tokens (uncached): ${usageTotals.input_tokens}`);
@@ -1783,6 +1882,7 @@ module.exports = {
   buildPaperRecord,
   sanitizeQuery,
   extractJson,
+  salvageJson,
   fnv1a,
   planQueries,
   retrieveCandidates,

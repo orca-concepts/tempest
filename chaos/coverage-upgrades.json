@@ -1,0 +1,548 @@
+{
+  "generated_by": "chaos/gaia.js --coverage-probe",
+  "generated_at": "2026-06-27T19:01:50.488Z",
+  "note": "STEP 2 must force-re-judge these ids: the judgment cache is keyed by paper id + version, not content, so an upgraded paper would otherwise hit its stale abstract-only judgment.",
+  "upgraded_ids": [
+    "W2025956988",
+    "W2037669635",
+    "W2037935612",
+    "W204017299",
+    "W2042190008",
+    "W2050799425",
+    "W2050850397",
+    "W2065176333",
+    "W2075625863",
+    "W2088267428",
+    "W2096036657",
+    "W2099246599",
+    "W2102264993",
+    "W2102891551",
+    "W2107026277",
+    "W2109071510",
+    "W2110515650",
+    "W2114549073",
+    "W2115404600",
+    "W2146023819",
+    "W2157710407",
+    "W2164298086",
+    "W2175341273",
+    "W2233837936",
+    "W2279053323",
+    "W2339573327",
+    "W2461177968",
+    "W2508801071",
+    "W2515359515",
+    "W2515461238",
+    "W2534322213",
+    "W2571218951",
+    "W2606762649",
+    "W2763328223",
+    "W2775178462",
+    "W2777285813",
+    "W2789919977",
+    "W2793535520",
+    "W2801509064",
+    "W2805603051",
+    "W2892499001",
+    "W2899658391",
+    "W2906099918",
+    "W2939501546",
+    "W2986513011",
+    "W3006795663",
+    "W3014494221",
+    "W3022739979",
+    "W3026165501",
+    "W3027675559",
+    "W3043135743",
+    "W3092105746",
+    "W3092907164",
+    "W3137005130",
+    "W3174133678",
+    "W4205987431",
+    "W4303969279",
+    "W4362504976",
+    "W4372271659",
+    "W4385572236",
+    "W4390937479",
+    "W4396786123",
+    "W4396890669",
+    "W4396895867",
+    "W4402490654",
+    "W4405459657",
+    "W4415975270",
+    "W7125561013",
+    "W886330677",
+    "W2053326730",
+    "W2103899236",
+    "W2064848288",
+    "W4394013673"
+  ],
+  "upgraded": [
+    {
+      "id": "W2025956988",
+      "method": "oa-html",
+      "chars": 35672,
+      "source": "https://doi.org/10.1371/journal.pone.0045607"
+    },
+    {
+      "id": "W2037669635",
+      "method": "oa-html",
+      "chars": 39498,
+      "source": "https://doi.org/10.1371/journal.pone.0098856"
+    },
+    {
+      "id": "W2037935612",
+      "method": "oa-html",
+      "chars": 3263,
+      "source": "https://doi.org/10.2196/jmir.2745"
+    },
+    {
+      "id": "W204017299",
+      "method": "oa-html",
+      "chars": 25896,
+      "source": "https://doi.org/10.1017/s0317167100031814"
+    },
+    {
+      "id": "W2042190008",
+      "method": "oa-html",
+      "chars": 43273,
+      "source": "https://doi.org/10.1371/journal.pone.0007824"
+    },
+    {
+      "id": "W2050799425",
+      "method": "oa-html",
+      "chars": 23448,
+      "source": "https://doi.org/10.1371/journal.pone.0071079"
+    },
+    {
+      "id": "W2050850397",
+      "method": "oa-html",
+      "chars": 30233,
+      "source": "https://doi.org/10.1371/journal.pmed.0040005"
+    },
+    {
+      "id": "W2065176333",
+      "method": "oa-html",
+      "chars": 34035,
+      "source": "https://doi.org/10.1371/journal.pone.0040436"
+    },
+    {
+      "id": "W2075625863",
+      "method": "oa-html",
+      "chars": 52915,
+      "source": "https://doi.org/10.1371/journal.pone.0019779"
+    },
+    {
+      "id": "W2088267428",
+      "method": "oa-html",
+      "chars": 61180,
+      "source": "https://doi.org/10.1371/journal.pcbi.1000520"
+    },
+    {
+      "id": "W2096036657",
+      "method": "oa-html",
+      "chars": 50515,
+      "source": "https://doi.org/10.1079/bjn2000281"
+    },
+    {
+      "id": "W2099246599",
+      "method": "oa-html",
+      "chars": 27412,
+      "source": "https://doi.org/10.1370/afm.405"
+    },
+    {
+      "id": "W2102264993",
+      "method": "oa-html",
+      "chars": 34689,
+      "source": "https://doi.org/10.1371/journal.pntd.0000482"
+    },
+    {
+      "id": "W2102891551",
+      "method": "oa-html",
+      "chars": 17464,
+      "source": "https://doi.org/10.5808/gi.2012.10.2.117"
+    },
+    {
+      "id": "W2107026277",
+      "method": "oa-html",
+      "chars": 10750,
+      "source": "https://doi.org/10.4300/jgme-d-12-00156.1"
+    },
+    {
+      "id": "W2109071510",
+      "method": "oa-html",
+      "chars": 19575,
+      "source": "https://doi.org/10.4085/1062-6050-48.3.09"
+    },
+    {
+      "id": "W2110515650",
+      "method": "oa-html",
+      "chars": 46188,
+      "source": "https://doi.org/10.1590/s0102-311x2008000100003"
+    },
+    {
+      "id": "W2114549073",
+      "method": "oa-html",
+      "chars": 29544,
+      "source": "https://doi.org/10.1371/journal.pmed.1001578"
+    },
+    {
+      "id": "W2115404600",
+      "method": "oa-html",
+      "chars": 37174,
+      "source": "https://doi.org/10.1371/journal.pone.0003491"
+    },
+    {
+      "id": "W2146023819",
+      "method": "oa-html",
+      "chars": 38750,
+      "source": "https://doi.org/10.1017/s0007114599001348"
+    },
+    {
+      "id": "W2157710407",
+      "method": "oa-html",
+      "chars": 5367,
+      "source": "https://doi.org/10.1261/rna.046011.114"
+    },
+    {
+      "id": "W2164298086",
+      "method": "oa-html",
+      "chars": 4319,
+      "source": "https://doi.org/10.5194/hess-14-1551-2010"
+    },
+    {
+      "id": "W2175341273",
+      "method": "oa-html",
+      "chars": 45966,
+      "source": "https://doi.org/10.2147/clep.s90589"
+    },
+    {
+      "id": "W2233837936",
+      "method": "oa-html",
+      "chars": 31512,
+      "source": "https://doi.org/10.1371/journal.pone.0147086"
+    },
+    {
+      "id": "W2279053323",
+      "method": "oa-html",
+      "chars": 92269,
+      "source": "https://doi.org/10.1017/xps.2015.19"
+    },
+    {
+      "id": "W2339573327",
+      "method": "oa-html",
+      "chars": 7839,
+      "source": "https://doi.org/10.21037/atm.2016.03.35"
+    },
+    {
+      "id": "W2461177968",
+      "method": "oa-html",
+      "chars": 47544,
+      "source": "https://doi.org/10.1371/journal.pone.0159267"
+    },
+    {
+      "id": "W2508801071",
+      "method": "oa-html",
+      "chars": 62361,
+      "source": "https://doi.org/10.1371/journal.pone.0162198"
+    },
+    {
+      "id": "W2515359515",
+      "method": "oa-html",
+      "chars": 53112,
+      "source": "https://doi.org/10.1371/journal.pone.0161407"
+    },
+    {
+      "id": "W2515461238",
+      "method": "oa-html",
+      "chars": 12040,
+      "source": "https://doi.org/10.5271/sjweh.3585"
+    },
+    {
+      "id": "W2534322213",
+      "method": "oa-html",
+      "chars": 30647,
+      "source": "https://doi.org/10.1371/journal.pmed.1002148"
+    },
+    {
+      "id": "W2571218951",
+      "method": "oa-html",
+      "chars": 22248,
+      "source": "https://doi.org/10.1371/journal.pbio.2001221"
+    },
+    {
+      "id": "W2606762649",
+      "method": "oa-html",
+      "chars": 5223,
+      "source": "https://doi.org/10.1127/0941-2948/2013/0399"
+    },
+    {
+      "id": "W2763328223",
+      "method": "oa-html",
+      "chars": 47727,
+      "source": "https://doi.org/10.1371/journal.pone.0185578"
+    },
+    {
+      "id": "W2775178462",
+      "method": "oa-html",
+      "chars": 26079,
+      "source": "https://doi.org/10.1371/journal.pone.0188466"
+    },
+    {
+      "id": "W2777285813",
+      "method": "oa-html",
+      "chars": 9556,
+      "source": "https://doi.org/10.1055/s-0043-124001"
+    },
+    {
+      "id": "W2789919977",
+      "method": "oa-html",
+      "chars": 44977,
+      "source": "https://doi.org/10.1017/s1368980018000575"
+    },
+    {
+      "id": "W2793535520",
+      "method": "oa-html",
+      "chars": 24024,
+      "source": "https://doi.org/10.1371/journal.pone.0193023"
+    },
+    {
+      "id": "W2801509064",
+      "method": "oa-html",
+      "chars": 15392,
+      "source": "https://doi.org/10.2147/jpr.s158847"
+    },
+    {
+      "id": "W2805603051",
+      "method": "oa-html",
+      "chars": 53465,
+      "source": "https://doi.org/10.18332/tid/90668"
+    },
+    {
+      "id": "W2892499001",
+      "method": "oa-html",
+      "chars": 7109,
+      "source": "https://doi.org/10.20343/teachlearninqu.6.2.9"
+    },
+    {
+      "id": "W2899658391",
+      "method": "oa-html",
+      "chars": 120000,
+      "source": "https://doi.org/10.5194/amt-12-2341-2019"
+    },
+    {
+      "id": "W2906099918",
+      "method": "oa-html",
+      "chars": 28412,
+      "source": "https://doi.org/10.3389/fphys.2018.01764"
+    },
+    {
+      "id": "W2939501546",
+      "method": "oa-html",
+      "chars": 24375,
+      "source": "https://doi.org/10.1371/journal.pone.0214921"
+    },
+    {
+      "id": "W2986513011",
+      "method": "oa-html",
+      "chars": 31385,
+      "source": "https://doi.org/10.3892/etm.2019.8159"
+    },
+    {
+      "id": "W3006795663",
+      "method": "oa-html",
+      "chars": 43135,
+      "source": "https://doi.org/10.1371/journal.pone.0229345"
+    },
+    {
+      "id": "W3014494221",
+      "method": "oa-html",
+      "chars": 73141,
+      "source": "https://doi.org/10.1017/cts.2020.30"
+    },
+    {
+      "id": "W3022739979",
+      "method": "oa-html",
+      "chars": 9834,
+      "source": "https://doi.org/10.37231/apj.2020.3.1.121"
+    },
+    {
+      "id": "W3026165501",
+      "method": "oa-html",
+      "chars": 13102,
+      "source": "https://doi.org/10.1371/journal.pone.0233395"
+    },
+    {
+      "id": "W3027675559",
+      "method": "pmc",
+      "chars": 57044,
+      "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10792999/"
+    },
+    {
+      "id": "W3043135743",
+      "method": "oa-html",
+      "chars": 120000,
+      "source": "https://doi.org/10.1371/journal.pbio.3000411"
+    },
+    {
+      "id": "W3092105746",
+      "method": "oa-html",
+      "chars": 3995,
+      "source": "https://doi.org/10.2196/19129"
+    },
+    {
+      "id": "W3092907164",
+      "method": "oa-html",
+      "chars": 53534,
+      "source": "https://doi.org/10.5194/amt-14-665-2021"
+    },
+    {
+      "id": "W3137005130",
+      "method": "oa-html",
+      "chars": 31386,
+      "source": "https://doi.org/10.31486/toj.19.0105"
+    },
+    {
+      "id": "W3174133678",
+      "method": "oa-html",
+      "chars": 20008,
+      "source": "https://doi.org/10.21203/rs.3.rs-637876/v1"
+    },
+    {
+      "id": "W4205987431",
+      "method": "oa-html",
+      "chars": 3652,
+      "source": "https://doi.org/10.2196/27637"
+    },
+    {
+      "id": "W4303969279",
+      "method": "oa-html",
+      "chars": 115836,
+      "source": "https://doi.org/10.1017/s0003055422000880"
+    },
+    {
+      "id": "W4362504976",
+      "method": "oa-html",
+      "chars": 15949,
+      "source": "https://doi.org/10.56645/jmde.v5i9.171"
+    },
+    {
+      "id": "W4372271659",
+      "method": "pmc",
+      "chars": 46545,
+      "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10592548/"
+    },
+    {
+      "id": "W4385572236",
+      "method": "oa-html",
+      "chars": 12300,
+      "source": "http://dx.doi.org/10.18653/v1/2023.findings-acl.794"
+    },
+    {
+      "id": "W4390937479",
+      "method": "pmc",
+      "chars": 116179,
+      "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11026053/"
+    },
+    {
+      "id": "W4396786123",
+      "method": "oa-html",
+      "chars": 68929,
+      "source": "https://doi.org/10.5194/acp-24-5369-2024"
+    },
+    {
+      "id": "W4396890669",
+      "method": "pmc",
+      "chars": 52854,
+      "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11140535/"
+    },
+    {
+      "id": "W4396895867",
+      "method": "pmc",
+      "chars": 57474,
+      "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11187420/"
+    },
+    {
+      "id": "W4402490654",
+      "method": "oa-html",
+      "chars": 76538,
+      "source": "https://doi.org/10.1017/can.2024.25"
+    },
+    {
+      "id": "W4405459657",
+      "method": "oa-html",
+      "chars": 108668,
+      "source": "https://doi.org/10.70593/978-81-982935-8-9_3"
+    },
+    {
+      "id": "W4415975270",
+      "method": "oa-html",
+      "chars": 18686,
+      "source": "https://doi.org/10.3389/fpsyg.2025.1710851"
+    },
+    {
+      "id": "W7125561013",
+      "method": "oa-html",
+      "chars": 31122,
+      "source": "https://doi.org/10.3389/fimmu.2026.1754735"
+    },
+    {
+      "id": "W886330677",
+      "method": "oa-html",
+      "chars": 21154,
+      "source": "https://doi.org/10.1371/journal.pone.0132578"
+    },
+    {
+      "id": "W2053326730",
+      "method": "pdf",
+      "chars": 48462,
+      "source": "https://jme.bmj.com/content/medethics/31/12/727.full.pdf",
+      "source_quality": "pdf-clean"
+    },
+    {
+      "id": "W2103899236",
+      "method": "pdf",
+      "chars": 49514,
+      "source": "https://bmjopen.bmj.com/content/bmjopen/2/4/e001368.full.pdf",
+      "source_quality": "pdf-clean"
+    },
+    {
+      "id": "W2064848288",
+      "method": "pdf",
+      "chars": 55646,
+      "source": "https://jech.bmj.com/content/jech/58/10/811.full.pdf",
+      "source_quality": "pdf-clean"
+    },
+    {
+      "id": "W4394013673",
+      "method": "pdf",
+      "chars": 120000,
+      "source": "https://osf.io/brnt8/download",
+      "source_quality": "pdf-clean"
+    }
+  ],
+  "step1_5": {
+    "demoted_count": 12,
+    "promoted_pdf_count": 4,
+    "demoted_ids": [
+      "W2044828726",
+      "W2077002173",
+      "W2101270240",
+      "W2145265052",
+      "W2598995014",
+      "W2933602294",
+      "W2977681130",
+      "W4307582511",
+      "W4399270915",
+      "W4414852381",
+      "W7131296517",
+      "W7156288530"
+    ],
+    "promoted_ids": [
+      "W2053326730",
+      "W2103899236",
+      "W2064848288",
+      "W4394013673"
+    ]
+  }
+}

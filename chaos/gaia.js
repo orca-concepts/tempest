@@ -42,6 +42,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 
 // ----------------------------------------------------------------------------
 // Config
@@ -58,6 +59,10 @@ const OUT_MD = path.join(GENESIS_DIR, 'gaia-proposal.md');
 // --multiattach writes a SEPARATE proposal; the two primary outputs above are never touched.
 const OUT_MA_JSON = path.join(GENESIS_DIR, 'gaia-multiattach-proposal.json');
 const OUT_MA_MD = path.join(GENESIS_DIR, 'gaia-multiattach-proposal.md');
+// --coverage-probe (STEP 1): low-confidence/quarantine extractions land here for human review
+// (gitignored, regenerable). The clean-upgrade work-list for STEP 2's force-re-judge lives here.
+const COVERAGE_REVIEW_DIR = path.join(CHAOS_DIR, 'coverage-review');
+const COVERAGE_UPGRADES_PATH = path.join(CHAOS_DIR, 'coverage-upgrades.json');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const API_VERSION = '2023-06-01';
@@ -98,6 +103,11 @@ const MAX_CANDIDATES_PER_TARGET = 40; // candidates judged per target (after ded
 // I/O caps (mirrors source.js / reason.js).
 const FULLTEXT_MAX_CHARS = 120000;   // stored in the paper record (source.js parity)
 const FULLTEXT_PROMPT_CAP = 60000;   // slice sent to the judge model (reason.js parity)
+// Coverage-probe cleanliness gate: an extraction counts as CLEAN full text only above this
+// char floor AND alphabetic-content ratio (rejects mostly-markup/garbage). PDF text is always
+// treated as low-confidence regardless (flagged 'pdf-uncertain'), never written to papers/.
+const CLEAN_MIN_CHARS = 3000;
+const CLEAN_MIN_ALPHA = 0.6;
 const HTTP_TIMEOUT_MS = 20000;       // OpenAlex + full-text fetches
 const MODEL_TIMEOUT_MS = 420000;     // 7 min per model call
 const MAX_RETRIES = 3;
@@ -442,6 +452,262 @@ async function tryFetchFullText(work) {
     }
   }
   return { ...NO_FULLTEXT };
+}
+
+// ----------------------------------------------------------------------------
+// Broadened full-text fetchers (STEP 1). These run as FALLBACKS, AFTER the existing
+// host-specific plan above. Used by --coverage-probe only — the live grounding path
+// (tryFetchFullText) is unchanged. All HTTP goes through the existing httpGet client and
+// respects the existing timeouts; no OpenAlex search, no model calls.
+// ----------------------------------------------------------------------------
+
+function isPdfUrl(u) {
+  return /\.pdf($|\?)/i.test(String(u || '')) || /\/pdf($|\?|\/)/i.test(String(u || ''));
+}
+
+// Generic readability extractor for an OA landing/article HTML page: drop nav/boilerplate,
+// prefer <article>/<main> if present, then strip a trailing references list when it is safely
+// past the body (so methods/results prose survives). Returns clean prose.
+function extractReadableHtml(html) {
+  if (!html) return '';
+  let s = String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<head[\s\S]*?<\/head>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<header[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+    .replace(/<form[\s\S]*?<\/form>/gi, ' ');
+  const pick = (re) => { const m = s.match(re); return m ? m[1] : null; };
+  const main = pick(/<article[^>]*>([\s\S]*?)<\/article>/i) || pick(/<main[^>]*>([\s\S]*?)<\/main>/i);
+  let text = markupToText(main || s);
+  // Trim a trailing references/bibliography list, but only when it sits in the back half and
+  // leaves a substantial body — avoids cutting an early in-prose "references" mention.
+  const refMatch = /\b(References|Bibliography|Literature Cited)\b/i.exec(text);
+  if (refMatch && refMatch.index > Math.max(CLEAN_MIN_CHARS, text.length * 0.5)) {
+    text = text.slice(0, refMatch.index).trim();
+  }
+  return text.slice(0, FULLTEXT_MAX_CHARS);
+}
+
+// Best-effort, dependency-free PDF text extraction (LOWER-TRUST). Inflates FlateDecode
+// streams with the built-in zlib, then pulls parenthesized text from PDF text operators.
+// Custom-encoded PDFs yield garbage — that is exactly why the result is flagged
+// 'pdf-uncertain' and quarantined to coverage-review, never written to the paper cache.
+function extractPdfTextOps(s) {
+  let out = '';
+  const re = /\((?:\\[\s\S]|[^()\\])*\)/g;
+  const esc = { n: '\n', r: '\r', t: '\t', b: '', f: '', '(': '(', ')': ')', '\\': '\\' };
+  let m;
+  while ((m = re.exec(s))) {
+    out += m[0].slice(1, -1).replace(/\\([\s\S])/g, (_, c) => (c in esc ? esc[c] : c)) + ' ';
+  }
+  return out;
+}
+function extractPdfText(buf) {
+  if (!buf || !buf.length) return '';
+  const str = buf.toString('latin1');
+  let collected = '';
+  const streamRe = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let m;
+  while ((m = streamRe.exec(str))) {
+    const rawStream = Buffer.from(m[1], 'latin1');
+    let data = null;
+    try { data = zlib.inflateSync(rawStream); }
+    catch { try { data = zlib.inflateRawSync(rawStream); } catch { data = null; } }
+    if (data) collected += extractPdfTextOps(data.toString('latin1'));
+  }
+  // Also scan the raw file for any uncompressed text operators.
+  collected += extractPdfTextOps(str);
+  return collected
+    .replace(/[^\S\r\n]+/g, ' ')
+    .replace(/[^\x20-\x7E\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, FULLTEXT_MAX_CHARS);
+}
+
+// Unpaywall lookup by DOI (free; requires the email param). Returns the parsed JSON (with
+// best_oa_location: { url, url_for_pdf, url_for_landing_page }) or null. Not an OpenAlex call.
+async function fetchUnpaywall(doi) {
+  const bare = doiBare(doi);
+  if (!bare) return null;
+  try {
+    const res = await httpGet(
+      `https://api.unpaywall.org/v2/${encodeURIComponent(bare)}?email=${encodeURIComponent(MAILTO)}`,
+      'application/json'
+    );
+    if (!res.ok) return null;
+    return JSON.parse(await res.text());
+  } catch {
+    return null;
+  }
+}
+
+// Fetch one HTML URL and extract readable prose (or '' on any failure / non-HTML / too-short).
+async function fetchHtmlReadable(url) {
+  try {
+    const res = await httpGet(url, 'text/html');
+    if (!res.ok) return '';
+    const ctype = (res.headers.get('content-type') || '').toLowerCase();
+    if (!ctype.includes('html') && !ctype.includes('xml') && ctype) return '';
+    return extractReadableHtml(await res.text());
+  } catch {
+    return '';
+  }
+}
+
+// Fetch one PDF URL and extract lower-trust text (or '' on failure).
+async function fetchPdfText(url) {
+  try {
+    const res = await httpGet(url, 'application/pdf');
+    if (!res.ok) return '';
+    const buf = Buffer.from(await res.arrayBuffer());
+    return extractPdfText(buf);
+  } catch {
+    return '';
+  }
+}
+
+// Broadened full-text fetch for a CACHED paper record. Order: existing host-specific plan →
+// generic OA-landing HTML → Unpaywall (HTML, then PDF) → direct OA PDF. Returns
+// { full_text, full_text_available, full_text_source, full_text_method, source_quality }
+// where source_quality is 'clean' for HTML/XML prose or 'pdf-uncertain' for PDF text.
+async function fetchFullTextBroadened(rec) {
+  // Reconstruct a minimal work-like object so the existing host-specific fetchers get a shot.
+  const oaUrl = (rec.open_access && rec.open_access.oa_url) || null;
+  const locs = [];
+  if (rec.best_oa_url) {
+    locs.push({ is_oa: true, landing_page_url: isPdfUrl(rec.best_oa_url) ? null : rec.best_oa_url, pdf_url: isPdfUrl(rec.best_oa_url) ? rec.best_oa_url : null });
+  }
+  if (oaUrl && oaUrl !== rec.best_oa_url) {
+    locs.push({ is_oa: true, landing_page_url: isPdfUrl(oaUrl) ? null : oaUrl, pdf_url: isPdfUrl(oaUrl) ? oaUrl : null });
+  }
+  const work = {
+    doi: rec.doi || null,
+    ids: rec.ids || {},
+    best_oa_location: locs[0] || null,
+    primary_location: null,
+    locations: locs,
+    open_access: rec.open_access || null,
+  };
+
+  // 1) existing host-specific plan (Europe PMC / arXiv / PMC / PLOS / eLife / etc.)
+  const hs = await tryFetchFullText(work);
+  if (hs.full_text_available && hs.full_text) return { ...hs, source_quality: 'clean' };
+
+  // 2) generic OA-landing HTML (unknown publishers the host plan doesn't match)
+  for (const u of [rec.best_oa_url, oaUrl].filter((x) => x && !isPdfUrl(x))) {
+    const text = await fetchHtmlReadable(u);
+    if (looksLikeArticleText(text)) {
+      return { full_text: text, full_text_available: true, full_text_source: u, full_text_method: 'oa-html', source_quality: 'clean' };
+    }
+  }
+
+  // 3) Unpaywall by DOI → best OA location (HTML first, then remember a PDF url)
+  let pdfCandidates = [rec.best_oa_url, oaUrl].filter((x) => x && isPdfUrl(x));
+  const up = await fetchUnpaywall(rec.doi);
+  const upLoc = up && up.best_oa_location;
+  if (upLoc) {
+    const upLanding = upLoc.url_for_landing_page || upLoc.url;
+    if (upLanding && !isPdfUrl(upLanding)) {
+      const text = await fetchHtmlReadable(upLanding);
+      if (looksLikeArticleText(text)) {
+        return { full_text: text, full_text_available: true, full_text_source: upLanding, full_text_method: 'unpaywall-html', source_quality: 'clean' };
+      }
+    }
+    if (upLoc.url_for_pdf) pdfCandidates.push(upLoc.url_for_pdf);
+    if (upLoc.url && isPdfUrl(upLoc.url)) pdfCandidates.push(upLoc.url);
+  }
+
+  // 4) PDF (LOWER-TRUST) — extract but flag as pdf-uncertain (quarantined by the probe)
+  pdfCandidates = [...new Set(pdfCandidates.filter(Boolean))];
+  for (const u of pdfCandidates) {
+    const text = await fetchPdfText(u);
+    if (text && text.length >= 500) {
+      return { full_text: text, full_text_available: true, full_text_source: u, full_text_method: 'pdf', source_quality: 'pdf-uncertain' };
+    }
+  }
+
+  return { ...NO_FULLTEXT, source_quality: 'none' };
+}
+
+// Cleanliness gate: an extraction is CLEAN full text only above the char floor AND alphabetic
+// ratio. PDF-uncertain text never qualifies (gated by source_quality at the call site).
+function isCleanFullText(text) {
+  if (!text || text.length < CLEAN_MIN_CHARS) return false;
+  const letters = (text.match(/[A-Za-z]/g) || []).length;
+  return letters / text.length >= CLEAN_MIN_ALPHA;
+}
+
+// STEP 1.5 — repository/portal HTML-stub detection. Many university Pure / DigitalCommons /
+// Dagstuhl landing pages clear the char floor with abstract + fingerprint + citation/export
+// blocks but carry NO article body. Returns the list of stub signatures present (empty = none).
+function repositoryStubSignals(text) {
+  const t = String(text || '');
+  const sig = [];
+  // Pure "Fingerprint" portal page. The PHRASE is the reliable tell — NOT a bare count of "%"
+  // tokens, which genuine results sections (45%, 95% CI, p<.05) carry in abundance.
+  if (/Dive into the research topics|Together they form a unique fingerprint/i.test(t)) sig.push('pure-fingerprint');
+  const ris = ['U2 - ', 'DO - ', 'M3 - ', 'SP - ', 'EP - ', 'ER -'].filter((r) => t.includes(r));
+  if (ris.length >= 2) sig.push(`ris-export(${ris.length})`);
+  if (/author = "/.test(t) && (/abstract = "/.test(t) || /keywords = "/.test(t))) sig.push('bibtex-fields');
+  if (/Skip to main content/i.test(t) && /(My Account|DOWNLOADS|Previous\s+Next|Digital Commons)/i.test(t)) sig.push('digitalcommons-chrome');
+  if (/Export BibTeX|Export XML|Export ACM-XML|Schloss Dagstuhl|About DROPS/i.test(t)) sig.push('dagstuhl-drops');
+  if (/Citation\/Publisher Attribution/i.test(t)) sig.push('citation-attribution');
+  // DSpace / EPrints repository file-listing widget ("File(s) … Download <name>.pdf") — a
+  // landing page for a deposited PDF, not the article body. "File(s)" with the parens is specific.
+  if (/File\(s\)\s+Download|\bFile\(s\)\b/.test(t) || /\bFile\(s\)/.test(t)) sig.push('repo-file-listing');
+  return [...new Set(sig)];
+}
+
+// At least 2 distinct article-body section headings — a weak positive signal that the text is a
+// real body and not just an abstract page. (Structured abstracts can carry 1; require 2+.)
+const BODY_SECTION_RE =
+  /\b(Introduction|Methods?|Methodology|Materials and Methods|Results|Discussion|Conclusions?|Experimental|Findings|Related Work|Procedure|Participants|Data Collection|Statistical Analysis)\b/gi;
+function hasBodySections(text) {
+  const m = String(text || '').match(BODY_SECTION_RE) || [];
+  return new Set(m.map((x) => x.toLowerCase())).size >= 2;
+}
+
+// Tightened gate for HTML/XML extractions: char/alpha floor AND no repository-stub signature AND
+// (long enough OR shows body sections). A short oa-html page with no body markers is a stub.
+function isCleanHtmlFullText(text) {
+  if (!isCleanFullText(text)) return false;
+  if (repositoryStubSignals(text).length) return false;
+  if (text.length < 5000 && !hasBodySections(text)) return false;
+  return true;
+}
+
+// STEP 1.5 — heuristic quality metrics for a PDF text extraction (no model, no rubric). Used to
+// triage the quarantined PDF pile into failed / messy / borderline / clean before a human read.
+function scorePdfText(text) {
+  const t = String(text || '');
+  const len = t.length;
+  const letters = (t.match(/[A-Za-z]/g) || []).length;
+  const ws = (t.match(/\s/g) || []).length;
+  const tokens = t.split(/\s+/).filter(Boolean);
+  const longToks = tokens.filter((w) => w.length > 25).length; // column-merge / no-space tell
+  const nonWord = (t.match(/[^A-Za-z0-9\s.,;:()\-'%/[\]]/g) || []).length; // garbage/ligature density
+  const refIdx = (() => { const m = /\bReferences\b|\bBibliography\b/i.exec(t); return m ? m.index : -1; })();
+  return {
+    len,
+    alpha: len ? letters / len : 0,
+    wsRatio: len ? ws / len : 0,
+    longRatio: tokens.length ? longToks / tokens.length : 1,
+    garbageRatio: len ? nonWord / len : 1,
+    refProp: refIdx >= 0 ? (len - refIdx) / len : 0,
+    tokens: tokens.length,
+  };
+}
+
+// Bucket a PDF extraction from its metrics: 'failed' (hard drop), 'messy', 'borderline', 'clean'.
+function bucketPdf(m) {
+  if (m.len < 2000 || m.alpha < 0.5 || m.wsRatio < 0.08 || m.garbageRatio > 0.15) return 'failed';
+  if (m.alpha >= 0.62 && m.wsRatio >= 0.12 && m.wsRatio <= 0.25 && m.longRatio < 0.03 && m.garbageRatio < 0.05) return 'clean';
+  if (m.alpha < 0.56 || m.longRatio >= 0.06 || m.garbageRatio >= 0.09) return 'messy';
+  return 'borderline';
 }
 
 const OPENALEX_SELECT = [
@@ -1707,6 +1973,132 @@ async function runMultiAttach() {
 }
 
 // ----------------------------------------------------------------------------
+// --coverage-probe (STEP 1): read-only full-text coverage probe. Re-fetches the currently
+// abstract-only papers through the BROADENED fetchers and reports what would be upgraded.
+// NO judging, NO Anthropic API, NO OpenAlex search. Clean upgrades are written into
+// chaos/papers/<id>.json (so STEP 2 reuses them without re-fetching); low-confidence /
+// pdf-uncertain extractions go to chaos/coverage-review/<id>.txt for human eyeballing and are
+// NEVER put in the paper cache. Papers that already had full text are not touched.
+// ----------------------------------------------------------------------------
+
+function pct(n, d) { return d ? `${Math.round((n / d) * 100)}%` : '0%'; }
+
+function listPaperRecords() {
+  if (!fs.existsSync(PAPERS_DIR)) return [];
+  return fs.readdirSync(PAPERS_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => {
+      try { return JSON.parse(fs.readFileSync(path.join(PAPERS_DIR, f), 'utf8')); }
+      catch { return null; }
+    })
+    .filter(Boolean);
+}
+
+function writeCoverageReview(id, rec, r, reason) {
+  fs.mkdirSync(COVERAGE_REVIEW_DIR, { recursive: true });
+  const header = [
+    `# coverage-review · ${id}`,
+    `title: ${rec.title || ''}`,
+    `doi: ${rec.doi || ''}`,
+    `source: ${r.full_text_source || ''}`,
+    `method: ${r.full_text_method || ''}   source_quality: ${r.source_quality || ''}`,
+    `chars: ${(r.full_text || '').length}   reason: ${reason}`,
+    '----------------------------------------------------------------',
+    '',
+  ].join('\n');
+  fs.writeFileSync(path.join(COVERAGE_REVIEW_DIR, `${id}.txt`), header + (r.full_text || ''), 'utf8');
+}
+
+async function runCoverageProbe() {
+  const delay = Number(process.env.CHAOS_OPENALEX_DELAY_MS || 1000);
+  const idsArg = argValue('--ids');
+  const limitArg = argValue('--limit');
+  const all = listPaperRecords();
+  const total = all.length;
+  const fullBefore = all.filter((r) => r.full_text_available && r.full_text).length;
+
+  // Target set: explicit --ids, else every abstract-only record.
+  let targets;
+  if (idsArg) {
+    const wanted = new Set(idsArg.split(',').map((s) => s.trim()).filter(Boolean));
+    targets = all.filter((r) => wanted.has(r.id));
+  } else {
+    targets = all.filter((r) => !(r.full_text_available && r.full_text));
+  }
+  if (limitArg) {
+    const n = Math.max(1, parseInt(limitArg, 10) || 1);
+    targets = targets.slice(0, n);
+  }
+
+  console.log('================ CHAOS GAIA — COVERAGE PROBE (read-only; no judging) ================');
+  console.log(`papers on disk: ${total}  ·  full-text now: ${fullBefore}  ·  abstract-only: ${total - fullBefore}`);
+  console.log(`probing ${targets.length} target(s)${idsArg ? ' (explicit --ids)' : ' (abstract-only set)'}${limitArg ? ` (--limit ${limitArg})` : ''}`);
+  console.log(`fetchers: host-specific → OA-html → Unpaywall → PDF(lower-trust)  ·  mailto=${MAILTO}`);
+  console.log('');
+
+  const upgraded = [];   // ids upgraded to clean full text (written to papers/)
+  const lowConf = [];    // ids with low-confidence / pdf-uncertain text (→ coverage-review)
+  const stillFailed = [];
+  let sampled = 0;
+
+  for (const rec of targets) {
+    const id = rec.id;
+    let r;
+    try { r = await fetchFullTextBroadened(rec); }
+    catch { r = { ...NO_FULLTEXT, source_quality: 'none' }; }
+
+    const clean = r.full_text_available && r.source_quality === 'clean' && isCleanHtmlFullText(r.full_text);
+    if (clean) {
+      // Upgrade the paper cache in place (preserve every other field).
+      rec.full_text = r.full_text;
+      rec.full_text_available = true;
+      rec.full_text_source = r.full_text_source;
+      rec.full_text_method = r.full_text_method;
+      rec.full_text_source_quality = 'clean';
+      rec.refetched_at = new Date().toISOString();
+      fs.writeFileSync(path.join(PAPERS_DIR, `${id}.json`), JSON.stringify(rec, null, 2), 'utf8');
+      upgraded.push({ id, method: r.full_text_method, chars: r.full_text.length, source: r.full_text_source });
+      if (sampled < 5) { writeCoverageReview(id, rec, r, 'CLEAN SAMPLE (also upgraded into papers/)'); sampled += 1; }
+      console.log(`  [upgrade] ${id}  ${r.full_text_method}  ${r.full_text.length} chars`);
+    } else if (r.full_text && r.full_text.length) {
+      const why = r.source_quality === 'pdf-uncertain'
+        ? 'pdf-uncertain (lower-trust)'
+        : `failed clean gate (${r.full_text.length} chars / alpha ratio)`;
+      writeCoverageReview(id, rec, r, why);
+      lowConf.push({ id, method: r.full_text_method, chars: r.full_text.length, why });
+      console.log(`  [low-conf] ${id}  ${r.full_text_method}  ${r.full_text.length} chars → coverage-review`);
+    } else {
+      stillFailed.push(id);
+    }
+    if (delay) await sleep(delay);
+  }
+
+  // Work-list for STEP 2's force-re-judge (exactly the clean-upgraded ids).
+  const upgradePayload = {
+    generated_by: 'chaos/gaia.js --coverage-probe',
+    generated_at: new Date().toISOString(),
+    note: 'STEP 2 must force-re-judge these ids: the judgment cache is keyed by paper id + version, '
+      + 'not content, so an upgraded paper would otherwise hit its stale abstract-only judgment.',
+    upgraded_ids: upgraded.map((u) => u.id),
+    upgraded,
+  };
+  fs.writeFileSync(COVERAGE_UPGRADES_PATH, JSON.stringify(upgradePayload, null, 2), 'utf8');
+
+  const fullAfter = fullBefore + upgraded.length;
+  console.log('\n================ COVERAGE PROBE SUMMARY ================');
+  console.log(`coverage: ${fullBefore}/${total} (${pct(fullBefore, total)}) → projected ${fullAfter}/${total} (${pct(fullAfter, total)})`);
+  console.log(`upgraded to CLEAN full text: ${upgraded.length}  (written into chaos/papers/)`);
+  console.log(`low-confidence / pdf-uncertain: ${lowConf.length}  (→ chaos/coverage-review/, NOT cached)`);
+  console.log(`still abstract-only / no text: ${stillFailed.length}`);
+  console.log(`\nAnthropic judge calls this run: ${apiCallCount}  (must be 0 — the probe never judges)`);
+  console.log('OpenAlex search calls this run: 0  (probe makes none — only Unpaywall/publisher HTTP)');
+  console.log(`\nWrote ${path.relative(CHAOS_DIR, COVERAGE_UPGRADES_PATH)} (STEP 2 force-re-judge work-list).`);
+  console.log(`coverage-review samples/low-conf under ${path.relative(CHAOS_DIR, COVERAGE_REVIEW_DIR)}/ (gitignored).`);
+  console.log('No judging done. Review coverage-review/, then run STEP 2 to force-re-judge upgraded ids.');
+  console.log('=======================================================');
+}
+
+// ----------------------------------------------------------------------------
 // CLI / main
 // ----------------------------------------------------------------------------
 
@@ -1732,6 +2124,8 @@ function printUsage(targets) {
   console.log('  node chaos/gaia.js --all             # ground every leaf target');
   console.log('  node chaos/gaia.js --multiattach     # extra concepts per accepted paper (no OpenAlex)');
   console.log('  node chaos/gaia.js --multiattach --limit N   # only the first N accepted papers');
+  console.log('  node chaos/gaia.js --coverage-probe  # STEP 1: re-fetch abstract-only papers (no judging/OpenAlex)');
+  console.log('  node chaos/gaia.js --coverage-probe --ids W1,W2   # probe specific paper ids');
   console.log('  (optional: --effort=max  --model=…  --mailto=you@example.com)');
   console.log('');
   printPlan(targets);
@@ -1755,6 +2149,12 @@ function selectTargets(targets) {
 }
 
 async function main() {
+  // STEP 1 coverage probe — read-only, no proposal/targets/keys needed; checked first.
+  if (process.argv.includes('--coverage-probe')) {
+    await runCoverageProbe();
+    return;
+  }
+
   const { targets } = loadTargets();
 
   if (process.argv.includes('--plan')) {
@@ -1883,6 +2283,15 @@ module.exports = {
   sanitizeQuery,
   extractJson,
   salvageJson,
+  extractReadableHtml,
+  extractPdfText,
+  fetchFullTextBroadened,
+  isCleanFullText,
+  isCleanHtmlFullText,
+  repositoryStubSignals,
+  hasBodySections,
+  scorePdfText,
+  bucketPdf,
   fnv1a,
   planQueries,
   retrieveCandidates,

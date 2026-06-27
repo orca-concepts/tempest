@@ -24,7 +24,7 @@
  *
  * This file is self-contained: the OpenAlex client, full-text subsystem, Anthropic
  * caller, and content-addressed cache are COPIED from the proven implementations in
- * source.js / reason.js / categorizer.js (not imported), so Gaia has no dependency on
+ * source.js / reason.js / ouranos.js (not imported), so Gaia has no dependency on
  * the retired engines. The rubric is NOT hard-coded — it travels in the prompt.
  *
  * Cutover, multi-attach (one paper → many concepts), tunnels/predictions/precision,
@@ -80,7 +80,7 @@ function redactApiKey(s) {
 // Bumped whenever the Gaia prompt TEMPLATES below change in a way that should
 // invalidate cached query-plans / judgments. Folded into the cache key alongside
 // rubricHash(), so a rubric edit OR a prompt change auto-invalidates stale entries
-// (same discipline as reason.js / categorizer.js).
+// (same discipline as reason.js / ouranos.js).
 const GAIA_PROMPT_VERSION = 'gaia3';
 
 // Versions the --multiattach Stage-A "propose" prompt + its cache (gaia_cache/propose-*.json).
@@ -108,7 +108,7 @@ const MAX_TOKENS_JUDGE = 8000;
 const MAX_TOKENS_MA_PROPOSE = 8000; // Stage-A propose: up to 8 candidates, each with a feature string
 
 // ----------------------------------------------------------------------------
-// Small helpers (copied from reason.js / categorizer.js)
+// Small helpers (copied from reason.js / ouranos.js)
 // ----------------------------------------------------------------------------
 
 function argValue(flag) {
@@ -146,7 +146,7 @@ function pathLabel(parentPath) {
 }
 
 // Tolerant JSON extraction — strips markdown fences and grabs the outermost object
-// (reason.js:119-132 / categorizer.js).
+// (reason.js:119-132 / ouranos.js).
 function extractJson(text) {
   if (!text) return null;
   let s = text.trim();
@@ -587,7 +587,7 @@ function buildPaperRecord(work, queryFields) {
 
 // ----------------------------------------------------------------------------
 // Anthropic Messages API (raw fetch, prompt caching on the constant system prefix;
-// mirrors reason.js:521-588 / categorizer.js)
+// mirrors reason.js:521-588 / ouranos.js)
 // ----------------------------------------------------------------------------
 
 const usageTotals = {
@@ -696,7 +696,7 @@ function normalizeNodes(data) {
 
 function loadTargets() {
   if (!fs.existsSync(PROPOSAL_PATH)) {
-    throw new Error(`genesis proposal not found at ${PROPOSAL_PATH}. Run chaos/categorizer.js first.`);
+    throw new Error(`genesis proposal not found at ${PROPOSAL_PATH}. Run chaos/ouranos.js first.`);
   }
   const data = JSON.parse(fs.readFileSync(PROPOSAL_PATH, 'utf8'));
   const nodes = normalizeNodes(data);
@@ -1749,7 +1749,7 @@ async function main() {
 }
 
 // Best-effort drain of undici keep-alive sockets so Node exits cleanly on Windows
-// (same as categorizer.js / reason.js).
+// (same as ouranos.js / reason.js).
 async function closeHttp() {
   try {
     const sym = Object.getOwnPropertySymbols(globalThis).find(

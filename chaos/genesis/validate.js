@@ -82,7 +82,7 @@ function loadProposal() {
   const file = argValue('--file') || DEFAULT_PROPOSAL;
   if (!fs.existsSync(file)) {
     console.error(`No proposal found at ${file}.`);
-    console.error('Run the Categorizer first: node chaos/categorizer.js');
+    console.error('Run the Categorizer first: node chaos/ouranos.js');
     process.exit(2);
   }
   let data;

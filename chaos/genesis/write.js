@@ -91,7 +91,7 @@ function pathKey(arr) {
 
 // Normalize a proposal node to the shape this writer reasons about. parent_paths is
 // coerced to string[][] (a single flat path is wrapped; root => []). Mirrors the
-// normalization in categorizer.js / validate.js so a hand-edited proposal is tolerated.
+// normalization in ouranos.js / validate.js so a hand-edited proposal is tolerated.
 function normalizeNodes(data) {
   return asArray(data.nodes)
     .filter((n) => n && typeof n.name === 'string' && n.name.trim())
@@ -368,7 +368,7 @@ function runApply(extraArgs) {
 
 async function main() {
   if (!fs.existsSync(PROPOSAL_PATH)) {
-    throw new Error(`proposal not found at ${PROPOSAL_PATH}. Run chaos/categorizer.js first.`);
+    throw new Error(`proposal not found at ${PROPOSAL_PATH}. Run chaos/ouranos.js first.`);
   }
   const proposal = JSON.parse(fs.readFileSync(PROPOSAL_PATH, 'utf8'));
   const nodes = normalizeNodes(proposal);

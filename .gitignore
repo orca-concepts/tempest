@@ -49,6 +49,8 @@ chaos/reason_cache/
 chaos/proposals.*
 # Chaos — regenerable Gaia (Instantiator) cache (output of chaos/gaia.js)
 chaos/gaia_cache/
+# Chaos — regenerable Krius (Scout) cache (output of chaos/krius.js)
+chaos/krius_cache/
 # Chaos — regenerable run-identity sidecar (output of chaos/apply.js)
 chaos/last-apply.json
 

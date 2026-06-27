@@ -1,0 +1,309 @@
+{
+  "generated_by": "chaos/gaia.js --multiattach --rejudge-upgrades (STEP 2: in-graph full-text re-judge)",
+  "model": "claude-opus-4-8",
+  "effort": "high",
+  "rubric_version": "2.0",
+  "gaia_prompt_version": "gaia3",
+  "gaia_multiattach_version": "ma1",
+  "generated_at": "2026-06-27T20:08:02.153Z",
+  "note": "Additive NEW links only, to EXISTING concepts, for in-graph upgraded papers. Separate from the committed gaia proposals (not overwritten). No DB writes (promotion invariant).",
+  "papers": [
+    {
+      "id": "W2088267428",
+      "openalex_id": "https://openalex.org/W2088267428",
+      "doi": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "title": "Bayesian Phylogeography Finds Its Roots",
+      "authors": [
+        "Philippe Lemey",
+        "Andrew Rambaut",
+        "Alexei J. Drummond",
+        "Marc A. Suchard"
+      ],
+      "publication_year": 2009,
+      "host_venue": "PLoS Computational Biology",
+      "best_oa_url": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "full_text_available": true,
+      "full_text_method": "oa-html",
+      "referenced_works_count": 58
+    },
+    {
+      "id": "W2114549073",
+      "openalex_id": "https://openalex.org/W2114549073",
+      "doi": "https://doi.org/10.1371/journal.pmed.1001578",
+      "title": "Financial Conflicts of Interest and Reporting Bias Regarding the Association between Sugar-Sweetened Beverages and Weight Gain: A Systematic Review of Systematic Reviews",
+      "authors": [
+        "Maira Bes‐Rastrollo",
+        "Matthias B. Schulze",
+        "Miguel Ruiz‐Canela",
+        "Miguel Ángel Martínez‐González"
+      ],
+      "publication_year": 2013,
+      "host_venue": "PLoS Medicine",
+      "best_oa_url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "full_text_available": true,
+      "full_text_method": "oa-html",
+      "referenced_works_count": 52
+    },
+    {
+      "id": "W3092907164",
+      "openalex_id": "https://openalex.org/W3092907164",
+      "doi": "https://doi.org/10.5194/amt-14-665-2021",
+      "title": "Methane retrieved from TROPOMI: improvement of the data product and validation of the first 2 years of measurements",
+      "authors": [
+        "Alba Lorente",
+        "Tobias Borsdorff",
+        "A. Butz",
+        "Otto Hasekamp",
+        "Joost aan de Brugh",
+        "Andreas Schneider",
+        "Lianghai Wu",
+        "Frank Hase",
+        "Rigel Kivi",
+        "Debra Wunch",
+        "David F. Pollard",
+        "Kei Shiomi",
+        "Nicholas M. Deutscher",
+        "Voltaire A. Velazco",
+        "Coleen M. Roehl",
+        "P. O. Wennberg",
+        "Thorsten Warneke",
+        "Jochen Landgraf"
+      ],
+      "publication_year": 2021,
+      "host_venue": "Atmospheric measurement techniques",
+      "best_oa_url": "https://doi.org/10.5194/amt-14-665-2021",
+      "full_text_available": true,
+      "full_text_method": "oa-html",
+      "referenced_works_count": 49
+    },
+    {
+      "id": "W4396895867",
+      "openalex_id": "https://openalex.org/W4396895867",
+      "doi": "https://doi.org/10.1093/jamia/ocae101",
+      "title": "A taxonomy for advancing systematic error analysis in multi-site electronic health record-based clinical concept extraction",
+      "authors": [
+        "Sunyang Fu",
+        "Liwei Wang",
+        "Huan He",
+        "Andrew Wen",
+        "Nansu Zong",
+        "Anamika Kumari",
+        "Feifan Liu",
+        "Sicheng Zhou",
+        "Rui Zhang",
+        "Chenyu Li",
+        "Yanshan Wang",
+        "Jennifer L. St. Sauver",
+        "Hongfang Liu",
+        "Sunghwan Sohn"
+      ],
+      "publication_year": 2024,
+      "host_venue": "Journal of the American Medical Informatics Association",
+      "best_oa_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/11187420",
+      "full_text_available": true,
+      "full_text_method": "pmc",
+      "referenced_works_count": 33
+    }
+  ],
+  "links": [
+    {
+      "attribute": "value",
+      "concept_name": "Parsimonious",
+      "parent_path": [
+        "Rigorous",
+        "Warranted"
+      ],
+      "url": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "claim": "To map how two viruses spread between places, the researchers deliberately kept only the fewest travel routes their data actually demanded, discarding connections the evidence didn't support, and then drew their conclusions about flu and rabies spread from that stripped-down picture rather than an overfitted one — even overturning a previously claimed link the simpler model wouldn't back.",
+      "paper_id": "W2088267428"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Measured",
+      "parent_path": [
+        "Humble",
+        "Cautious"
+      ],
+      "url": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "claim": "Faced with a question others had answered confidently — where the bird-flu epidemic began — the authors deliberately declined to name an origin, because their own analysis showed the data simply could not pin it down, and they explicitly refused to repeat a claim an earlier study had asserted.",
+      "paper_id": "W2088267428"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Caveated",
+      "parent_path": [
+        "Honest",
+        "Candid"
+      ],
+      "url": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "claim": "The authors repeatedly hedge their own findings against the assumptions baked into their method: they explicitly decline to name an origin location because their model forces migrations to run both ways, warn that shared ancestry between gene segments may inflate confidence in some results, and note their data exclude some samples that could shift the signal — limitations stated alongside the claims they qualify.",
+      "paper_id": "W2088267428"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Tentative",
+      "parent_path": [
+        "Humble"
+      ],
+      "url": "https://doi.org/10.1371/journal.pcbi.1000520",
+      "claim": "Faced with murky data, the authors held back: they explicitly declined to name a single origin for the bird-flu virus, refused to confirm a location-to-location link that an earlier study had asserted, and repeatedly flagged where their answers stayed 'elusive' rather than forcing a firm conclusion. A concrete look at researchers stating only what their data could support.",
+      "paper_id": "W2088267428"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Blinded",
+      "parent_path": [
+        "Honest",
+        "Disinterested"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "To judge each review's conclusion fairly, the two people doing the rating were kept unaware of who had funded that review or whether its authors had any industry ties — so their classification couldn't be swayed by knowing the money trail. A clean example of shielding the assessors from the very information being tested.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Blinded",
+      "parent_path": [
+        "Rigorous",
+        "Controlled"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "To keep their own judgments unbiased, two researchers classified each review's conclusion without being allowed to see who funded that review or what conflicts the authors had declared — a clean example of hiding the potentially biasing information from the people doing the rating.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Systematic",
+      "parent_path": [
+        "Careful",
+        "Thorough"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "To answer their own question, the researchers ran a defined protocol: they searched three databases from inception to a fixed cutoff with a stated search string, applied written inclusion rules, and had two reviewers independently extract every included review's conclusion (blinded to who funded it) — a concrete look at building a conclusion by a reproducible procedure rather than ad hoc reading.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Systematic",
+      "parent_path": [
+        "Rigorous"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "To investigate their question, the authors followed a pre-specified protocol: they searched three databases from inception to a fixed cutoff date with an explicit, reproducible list of search terms, applied stated inclusion criteria, and had two reviewers independently and blindly extract and classify every review's conclusions, resolving disagreements through a third reviewer. A concrete look at running an inquiry by fixed, repeatable rules rather than ad hoc judgment.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Caveated",
+      "parent_path": [
+        "Honest",
+        "Candid"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "Right in their abstract and discussion, the authors flag the alternative reading that would undercut their own headline result — they admit they cannot rule out that the bias runs the other way (that the studies without industry funding were the skewed ones), and that they can't determine which side is actually correct. A concrete look at attaching honest qualifications to one's own conclusion.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Reflexive",
+      "parent_path": [
+        "Humble"
+      ],
+      "url": "https://doi.org/10.1371/journal.pmed.1001578",
+      "claim": "Having found that industry-tied reviews reached more favorable conclusions, the authors turn the same suspicion on their own side: they openly entertain that the non-industry researchers (their natural allies) might themselves be biased by prejudice or selective publication, and admit they cannot prove which interpretation is truly correct. A concrete example of researchers questioning their own standpoint rather than only others'.",
+      "paper_id": "W2114549073"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Independent",
+      "parent_path": [
+        "Honest",
+        "Disinterested"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "To fix a known skew in their satellite methane readings, the team built the correction using only their own instrument's data, deliberately not leaning on the independent ground-station and other-satellite datasets they later checked against — so the close agreement they found is a genuine outside test rather than a result baked in by tuning to the very data used to judge it.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Accessible",
+      "parent_path": [
+        "Open"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "The team posted their full methane dataset for anyone to download from a public archive (with a permanent DOI link), and also points to the open ground-station data used to check it — a concrete example of making the actual research product freely retrievable rather than just describing the results.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Documented",
+      "parent_path": [
+        "Transparent"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "The researchers laid out the full recipe behind their measurements — every data-cleaning filter spelled out in an appendix table, the exact regions and steps used to derive their correction, the equations, and a public download link to the resulting dataset — so an outsider could trace and reuse exactly what they did.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Systematic",
+      "parent_path": [
+        "Rigorous"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "To improve a satellite methane product, the team changed one ingredient at a time — three different reference tables for how gases absorb light, a finer ground-elevation map, a new bias correction — and checked each change against the same two independent yardsticks (a global satellite and 13 ground stations) across two full years, so every adjustment could be judged on its own. A concrete look at orderly, piece-by-piece method.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Caveated",
+      "parent_path": [
+        "Honest",
+        "Candid"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "Throughout their own conclusions the authors flag where their results fall short and may yet change: they note that snow-covered scenes remain unreliable, that the cause of the leftover bias is unknown and 'needs to be further investigated', that their reference network barely covers bright surfaces near the Equator, and they even add a disclaimer that the data are preliminary and 'will still change.' A concrete look at researchers attaching honest qualifications to their own findings.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Consistent",
+      "parent_path": [
+        "Reliable"
+      ],
+      "url": "https://doi.org/10.5194/amt-14-665-2021",
+      "claim": "The team checked their satellite methane measurements against two completely independent yardsticks — ground-based stations and a different satellite — over two full years, and showed the numbers agreed steadily within tight limits; they also redesigned a processing step specifically to cut the scatter so repeated measurements over uniform areas hold together.",
+      "paper_id": "W3092907164"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Accessible",
+      "parent_path": [
+        "Open"
+      ],
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/11187420",
+      "claim": "The team released their full error-classification scheme as openly downloadable files on a public GitHub repository, made it work with free, open-source annotation tools, and built it into a no-install, run-in-your-browser tool anyone can use — a concrete case of making the research outputs freely reachable by others.",
+      "paper_id": "W4396895867"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Reusable",
+      "parent_path": [
+        "Open"
+      ],
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/11187420",
+      "claim": "The team released their error-classification scheme in two standard machine-readable formats and made it work out-of-the-box with several existing open-source annotation tools, posting it on a public repository so other groups can plug it straight into their own projects — a concrete example of building a research output meant to be picked up and reused.",
+      "paper_id": "W4396895867"
+    },
+    {
+      "attribute": "value",
+      "concept_name": "Shared",
+      "parent_path": [
+        "Open"
+      ],
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/11187420",
+      "claim": "The team didn't just describe their error catalog — they published it in two standard machine-readable formats on a public consortium site and GitHub, made it work with three free open-source annotation tools, and released the annotation tool itself for anyone to download and reuse.",
+      "paper_id": "W4396895867"
+    }
+  ]
+}

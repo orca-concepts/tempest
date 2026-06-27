@@ -5,17 +5,21 @@
  * (chaos/proposals.json) into the LOCAL DEV database, attributed to the
  * chaos-seed account. This is the FIRST Chaos stage that writes to the DB.
  *
+ * Pure-hierarchy writer (chaos.md §8): it materializes concepts + parent edges and
+ * their grounding (papers + concept_links). The dormant v0.x payload (tunnels,
+ * prediction/precision ledger, restructure-mention addenda) is no longer written — the
+ * tables remain in the schema, but apply.js does not touch them.
+ *
  * Safety contract:
  *   - pg_dump backup to backups/ BEFORE any write; abort if it fails.
  *   - One transaction; rolls back on any error.
  *   - Idempotent: re-running creates zero new rows and raises no constraint
- *     errors (concepts/edges reused, links/tunnels deduped,
- *     predictions upserted-if-changed, ledger events guarded per run_id).
+ *     errors (concepts/edges reused, links deduped, papers upserted by openalex_id).
  *   - --dry-run prints the complete write plan and exits WITHOUT a backup or a
  *     write transaction.
  *
- * Attribution: the seed account is resolved at runtime by username='chaos-seed'
- * (NEVER hardcoded). created_by / added_by point at that id.
+ * Attribution: the seed account is resolved at runtime by username (NEVER hardcoded).
+ * created_by / added_by point at that id.
  *
  * READ-ONLY w.r.t. production: connects only to the LOCAL dev DB via the backend
  * pool config (same as the other chaos scripts). No schema changes, no reasoning.
@@ -23,7 +27,6 @@
  * Usage:
  *   node chaos/apply.js --dry-run
  *   node chaos/apply.js
- *   node chaos/apply.js --recompute-precision   # dev-only guarded precision backfill
  */
 
 const path = require('path');
@@ -56,120 +59,6 @@ require(require.resolve('dotenv', { paths: [BACKEND_DIR] })).config({
   path: path.join(BACKEND_DIR, '.env'),
 });
 const pool = require(path.join(BACKEND_DIR, 'src', 'config', 'database'));
-// Reuse the backend's mention parser so Chaos-written restructure-mention addenda
-// are indexed exactly like user-written ones (Phase 65b). Same grammar, one source.
-const { parseMentions } = require(path.join(BACKEND_DIR, 'src', 'utils', 'parseMentions'));
-// Shared P16 precision curve — same source of truth reason.js uses. apply.js feeds it
-// the ACCUMULATED evidence (all runs) so the stored precision is authoritative.
-const { TARGETED_WEIGHT, precisionFromEvidence } = require(path.join(CHAOS_DIR, 'precision'));
-
-// --recompute-precision: dev-only guarded backfill that recomputes precision for ALL
-// existing targets from their accumulated events (repairs values clobbered by the old
-// per-run overwrite). Runs instead of a normal apply. See recomputeAllPrecision().
-const RECOMPUTE_PRECISION = process.argv.includes('--recompute-precision');
-
-// Accumulated precision (Option A / P16): a target's precision computed from its FULL
-// confirmation-event history (chaos_prediction_events), not just the current run's
-// proposal. Distinct grounding papers each weighted by provenance (independent/unknown
-// = 1.0, targeted = TARGETED_WEIGHT), scaled by discipline diversity from
-// papers.discipline_tags. Same curve as reason.js (shared precision module), so this
-// value rises monotonically with recurrence (both read the same accumulated events).
-async function accumulatedPrecisionFromEvents(client, targetType, targetId) {
-  const { rows } = await client.query(
-    `SELECT e.paper_id, e.provenance, pp.discipline_tags
-       FROM chaos_prediction_events e
-       LEFT JOIN papers pp ON pp.id = e.paper_id
-      WHERE e.target_type = $1 AND e.target_id = $2 AND e.event = 'confirmed'`,
-    [targetType, targetId]
-  );
-  const byPaper = new Map(); // distinct grounding paper_id -> { nonTargeted }
-  const disciplines = new Set();
-  let confirmedCount = 0;
-  for (const r of rows) {
-    confirmedCount += 1;
-    for (const d of asArray(r.discipline_tags)) disciplines.add(d);
-    if (r.paper_id == null) continue;
-    if (!byPaper.has(r.paper_id)) byPaper.set(r.paper_id, { nonTargeted: false });
-    // A paper confirmed independently (or unknown-provenance) in ANY run is full weight.
-    if (r.provenance !== 'targeted') byPaper.get(r.paper_id).nonTargeted = true;
-  }
-  let weighted = 0;
-  for (const rec of byPaper.values()) weighted += rec.nonTargeted ? 1.0 : TARGETED_WEIGHT;
-  // Confirmed events with no paper_id still attest the target; fall back to the event
-  // count so precision never under-reports (mirrors reason.js's recurrence fallback).
-  if (weighted === 0) weighted = confirmedCount;
-  return precisionFromEvidence(weighted, disciplines.size);
-}
-
-// Dev guard for the destructive backfill — refuse anything that isn't the local dev DB
-// (mirrors the reset/check scripts: localhost + concept_hierarchy, no DATABASE_URL, no
-// production markers). Returns { host, database } or throws to abort.
-function assertDevDb(action) {
-  const o = pool.options || {};
-  let host;
-  let database;
-  if (o.connectionString) {
-    try {
-      const u = new URL(o.connectionString);
-      host = u.hostname || '';
-      database = decodeURIComponent((u.pathname || '').replace(/^\//, '')) || '';
-    } catch {
-      host = '(unparseable)';
-      database = '(unknown)';
-    }
-  } else {
-    host = o.host || 'localhost';
-    database = o.database || 'concept_hierarchy';
-  }
-  const PROD = ['switchback.proxy.rlwy.net', 'rlwy.net', 'railway'];
-  const marked = (s) => PROD.some((m) => String(s || '').toLowerCase().includes(m));
-  if (
-    process.env.DATABASE_URL ||
-    marked(host) ||
-    !['localhost', '127.0.0.1'].includes(String(host)) ||
-    String(database) !== 'concept_hierarchy'
-  ) {
-    throw new Error(
-      `${action} refused by dev guard — resolved host="${host}" db="${database}". ` +
-        'This is dev-only: requires localhost/127.0.0.1 + concept_hierarchy via discrete DB_* vars (no DATABASE_URL, no production markers).'
-    );
-  }
-  return { host, database };
-}
-
-// Part C — historical correction. Recompute precision for EVERY existing target from its
-// accumulated events (same computation as the live apply pass), repairing values the old
-// per-run overwrite clobbered. Guarded (dev-only), idempotent, backed up before writing.
-async function recomputeAllPrecision() {
-  const { host, database } = assertDevDb('--recompute-precision');
-  console.log('============ CHAOS — RECOMPUTE PRECISION (dev backfill, Option A) ============');
-  console.log(`DB: ${database} @ ${host}`);
-  backup(); // pg_dump before any write; aborts on failure
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const concepts = (await client.query(
-      `SELECT target_id FROM chaos_predictions WHERE target_type = 'concept'`
-    )).rows;
-    let cChanged = 0;
-    for (const r of concepts) {
-      const acc = await accumulatedPrecisionFromEvents(client, 'concept', r.target_id);
-      const u = await client.query(
-        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
-          WHERE target_type = 'concept' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, r.target_id]
-      );
-      cChanged += u.rowCount;
-    }
-    await client.query('COMMIT');
-    console.log(`Recomputed: ${concepts.length} concept target(s), ${cChanged} changed.`);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
-}
 
 // ----------------------------------------------------------------------------
 // Helpers (URL/identity normalization mirrors chaos/source.js)
@@ -277,10 +166,13 @@ function buildPlan(proposals) {
   for (const c of asArray(proposals.concepts)) conceptBySig.set(sig(c.attribute, c.name), c);
 
   // --- concept chains: every (attribute, [..ancestors, leaf]) to materialize.
-  //     Ancestors named in a parent_path but absent from concepts[] are auto-created
-  //     (e.g. 'generative model'); flag them as feedback. ---
+  //     Ancestors named in a parent_path but absent from concepts[] are EXPECTED for an
+  //     additive multi-parent plan (you propose only the child; its parents already exist).
+  //     They are recorded as INFORMATIONAL ancestor refs — NOT a mapping failure. apply()
+  //     reports loudly only if such an ancestor turns out NOT to resolve by name and is
+  //     actually auto-created (the genuine concern). ---
   const chains = []; // {attribute, names: [...]}
-  const ancestorAuto = new Set();
+  const ancestorAuto = new Map(); // sig -> { attribute, name } (first occurrence)
   for (const c of asArray(proposals.concepts)) {
     // Multi-parent placement (P15): one chain per parent path, so each parent
     // context becomes its own edge. Single-parent concepts yield exactly one chain.
@@ -288,11 +180,12 @@ function buildPlan(proposals) {
       const names = [...pp, c.name];
       chains.push({ attribute: c.attribute, names });
       for (const anc of pp) {
-        if (!conceptBySig.has(sig(c.attribute, anc))) ancestorAuto.add(sig(c.attribute, anc));
+        const s = sig(c.attribute, anc);
+        if (!conceptBySig.has(s) && !ancestorAuto.has(s)) ancestorAuto.set(s, { attribute: c.attribute, name: anc });
       }
     }
   }
-  for (const k of ancestorAuto) unmapped.push(`ancestor auto-created (not its own proposal): ${k}`);
+  const ancestorRefs = [...ancestorAuto.values()]; // informational; resolved/created decided at apply time
 
   // Count distinct concepts (names) and distinct edges the chains imply.
   const conceptNames = new Set();
@@ -353,62 +246,6 @@ function buildPlan(proposals) {
     });
   }
 
-  // --- tunnels: value↔value associative links (P8/P15). Both endpoints must resolve to
-  //     a concept edge; `relation` is the association kind (similarity | thematic |
-  //     analogy | metaphor | affective), stored as the tunnel comment. ---
-  const tunnels = [];
-  for (const t of asArray(proposals.tunnels)) {
-    const fromS = sig(t.from.attribute, t.from.name);
-    const toS = sig(t.to.attribute, t.to.name);
-    if (!conceptBySig.has(fromS) || !conceptBySig.has(toS)) {
-      unmapped.push(`tunnel endpoint not in concepts: ${t.from.attribute}:${t.from.name} ↔ ${t.to.attribute}:${t.to.name}`);
-      continue;
-    }
-    tunnels.push({ fromS, toS, comment: t.relation });
-  }
-
-  // --- restructure-mentions (P6/P7): an addendum posted on a superseded concept's
-  //     link, pointing (via an in-orca URL in the body) at the new location, so the
-  //     Phase 65b mention parser backreferences it. Forward-compatible: the current
-  //     reasoning contract emits none, so this is empty today. Shape consumed:
-  //       { target: { attribute, name }, body }   (body should contain the in-orca URL)
-  //     Concept-level c.restructure_mentions[] are folded in with their concept as
-  //     the implicit target. ---
-  const restructureMentions = [];
-  const pushRM = (rm, fallbackTarget) => {
-    const target = rm.target || fallbackTarget || null;
-    const body = String(rm.body || '').trim();
-    if (!target || !body) {
-      unmapped.push(`restructure_mention missing target or body: ${JSON.stringify(rm).slice(0, 80)}`);
-      return;
-    }
-    const s = sig(target.attribute, target.name);
-    if (!conceptBySig.has(s)) {
-      unmapped.push(`restructure_mention target not in concepts: ${target.attribute}:${target.name}`);
-      return;
-    }
-    restructureMentions.push({ s, body });
-  };
-  for (const rm of asArray(proposals.restructure_mentions)) pushRM(rm, null);
-  for (const c of asArray(proposals.concepts)) {
-    for (const rm of asArray(c.restructure_mentions)) pushRM(rm, { attribute: c.attribute, name: c.name });
-  }
-
-  // --- predictions + events ---
-  // concept target = its leaf edge; one 'confirmed' event per grounding paper.
-  const conceptPredictions = asArray(proposals.concepts).map((c) => ({
-    s: sig(c.attribute, c.name),
-    prediction: c.prediction || '',
-    // v0.9/v0.10 ledger fields. precision → chaos_predictions; the rest → each
-    // confirmation event. provenance/severe come from a sampling plan (null/false
-    // in a bootstrapping run); surprise_level is the concept's structural property.
-    precision: c.precision == null ? null : Number(c.precision),
-    surpriseLevel: c.surprise_level || null,
-    provenance: c.provenance || null,
-    severe: c.severe === true,
-    groundingShort: asArray(c.grounding_papers),
-  }));
-
   return {
     runId,
     papers,
@@ -419,9 +256,7 @@ function buildPlan(proposals) {
     conceptNames,
     edgeKeys,
     links,
-    tunnels,
-    restructureMentions,
-    conceptPredictions,
+    ancestorRefs,
     unmapped,
   };
 }
@@ -431,33 +266,26 @@ function buildPlan(proposals) {
 // ----------------------------------------------------------------------------
 
 function printPlan(plan) {
-  // Corpus paper set, keyed by openalex work id (matches apply's resolvePaper).
-  const corpusWork = new Set([...plan.byShort.keys()].map(workIdOf).filter(Boolean));
-  const conceptPredCount = plan.conceptPredictions.filter((c) => (c.prediction || '').trim()).length;
-  const eventCount = plan.conceptPredictions.reduce(
-    (n, c) => n + c.groundingShort.filter((g) => corpusWork.has(workIdOf(g))).length, 0);
-
   console.log('================ CHAOS APPLY — DRY RUN (no writes) ================');
   console.log(`run_id: ${plan.runId}`);
   console.log('\nPLAN — rows that WOULD be created/ensured (idempotent):');
   console.log(`  papers ..................... ${plan.papers.length}  (upsert by openalex_id)`);
   console.log(`  paper_citations ............ ${plan.citations.length}  (within-corpus referenced_works pairs)`);
-  console.log(`  concepts (value dispositions, distinct names) .. ${plan.conceptNames.size}`);
+  console.log(`  concepts (distinct names) .. ${plan.conceptNames.size}`);
   console.log(`  edges (distinct) ........... ${plan.edgeKeys.size}`);
   const linkSkipped = plan.unmapped.filter((u) => u.startsWith('link →')).length;
   console.log(`  concept_links .............. ${plan.links.length}  (${plan.links.length + linkSkipped} proposed; ${linkSkipped} unmapped skipped)`);
-  console.log(`  tunnel_links ............... ${plan.tunnels.length}  (value↔value associative)`);
-  console.log(`  restructure addenda ........ ${plan.restructureMentions.length}  (seed-authored concept_link addenda + indexed mentions)`);
-  console.log(`  chaos_predictions .......... ${conceptPredCount}  (concept/disposition; empty predictions skipped)`);
-  console.log(`  chaos_prediction_events .... ${eventCount}  (one 'confirmed' per grounding paper per target)`);
-
-  console.log(`\nValue dispositions (distinct): ${plan.conceptBySig.size}`);
 
   console.log('\nPapers to upsert:');
   for (const r of plan.papers) console.log(`  - ${r.id}  ${(r.title || '').slice(0, 64)}`);
 
-  console.log('\nTunnels (from ↔ to):');
-  for (const t of plan.tunnels) console.log(`  - ${t.fromS}  ↔  ${t.toS}`);
+  // Informational — ancestors referenced by a parent_path but not separately proposed. For an
+  // additive plan these resolve to existing concepts by name (nothing created); this is NOT a
+  // mapping failure, so it stays OUT of "DID NOT MAP CLEANLY".
+  if (asArray(plan.ancestorRefs).length) {
+    console.log('\nAncestors referenced but not separately proposed (resolve to existing concepts by name; auto-created only if absent):');
+    for (const a of plan.ancestorRefs) console.log(`  · ${a.attribute}:${a.name}`);
+  }
 
   console.log('\n---- DID NOT MAP CLEANLY (design feedback) ----');
   if (!plan.unmapped.length) console.log('  (none)');
@@ -498,10 +326,8 @@ async function apply(plan) {
   const client = await pool.connect();
   const stats = {
     papers: 0, paper_citations: 0, concepts: 0, edges: 0, concept_links: 0,
-    tunnel_links: 0,
-    concept_link_addenda: 0, comment_mentions: 0,
-    chaos_predictions: 0, chaos_prediction_events: 0,
   };
+  const createdConceptNames = new Set(); // norm(name) for concepts actually INSERTed this run
   try {
     await client.query('BEGIN');
 
@@ -578,6 +404,7 @@ async function apply(plan) {
         );
         id = ins.rows[0].id;
         stats.concepts += 1;
+        createdConceptNames.add(key); // record genuine creation (vs resolved-existing)
       }
       conceptIdByName.set(key, id);
       return id;
@@ -617,8 +444,8 @@ async function apply(plan) {
 
     // Materialize a full chain (root → leaf); return the LEAF edge id. A concept
     // placed under multiple parents (P15) produces multiple chains sharing the leaf
-    // name: leafEdgeBySig records the PRIMARY (first) edge for name-only lookups
-    // (members, tunnels, predictions), while leafEdgeByPathSig records every edge
+    // name: leafEdgeBySig records the PRIMARY (first) edge for name-only lookups,
+    // while leafEdgeByPathSig records every edge
     // keyed by its parent path so a path-bearing reference resolves precisely.
     const leafEdgeBySig = new Map(); // (attr,name) -> primary leaf edge id
     const leafEdgeByPathSig = new Map(); // (attr,name)|pathKey -> that edge id
@@ -672,136 +499,8 @@ async function apply(plan) {
       stats.concept_links += 1;
     }
 
-    // ---- d. tunnels (directed from→to; dedupe by origin+linked+comment) ----
-    for (const t of plan.tunnels) {
-      const origin = leafEdgeBySig.get(t.fromS);
-      const linked = leafEdgeBySig.get(t.toS);
-      if (!origin || !linked) continue;
-      const exists = await client.query(
-        `SELECT id FROM tunnel_links
-         WHERE origin_edge_id=$1 AND linked_edge_id=$2 AND comment IS NOT DISTINCT FROM $3 LIMIT 1`,
-        [origin, linked, t.comment || null]
-      );
-      if (exists.rows[0]) continue;
-      await client.query(
-        `INSERT INTO tunnel_links (origin_edge_id, linked_edge_id, comment, created_by)
-         VALUES ($1,$2,$3,$4)`,
-        [origin, linked, t.comment || null, seedId]
-      );
-      stats.tunnel_links += 1;
-    }
-
-    // ---- e. restructure-mention addenda (P6/P7). Post an addendum (seed-authored)
-    //      on a concept_link of the superseded concept, then index its in-orca URLs
-    //      via the Phase 65b parser into comment_mentions. Idempotent: an identical
-    //      (link, body) addendum is not re-posted. Forward-compatible: empty today. ----
-    for (const rm of asArray(plan.restructureMentions)) {
-      const edgeId = leafEdgeBySig.get(rm.s);
-      if (!edgeId) continue;
-      const linkRow = await client.query(
-        'SELECT id FROM concept_links WHERE edge_id=$1 ORDER BY id LIMIT 1',
-        [edgeId]
-      );
-      if (!linkRow.rows[0]) {
-        plan.unmapped.push(`restructure_mention: no concept_link on edge for ${rm.s} to attach an addendum`);
-        continue;
-      }
-      const linkId = linkRow.rows[0].id;
-      const dup = await client.query(
-        'SELECT id FROM concept_link_addenda WHERE concept_link_id=$1 AND body=$2 LIMIT 1',
-        [linkId, rm.body]
-      );
-      if (dup.rows[0]) continue;
-      const addRes = await client.query(
-        `INSERT INTO concept_link_addenda (concept_link_id, author_id, body)
-         VALUES ($1,$2,$3) RETURNING id`,
-        [linkId, seedId, rm.body]
-      );
-      const addendumId = addRes.rows[0].id;
-      stats.concept_link_addenda += 1;
-      for (const m of parseMentions(rm.body)) {
-        await client.query(
-          `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
-           VALUES ('concept_link_addendum',$1,$2,$3,$4)`,
-          [addendumId, m.targetType, m.targetId, m.targetPath]
-        );
-        stats.comment_mentions += 1;
-      }
-    }
-
-    // ---- f. prediction ledger ----
-    // Append a 'confirmed' event idempotently per run_id (append-only table; a NEW
-    // run_id appends a fresh observation round; the same run_id never duplicates).
-    // opts carries the v0.9/v0.10 event fields (all null-tolerant): a confirmation
-    // event records the concept's structural surprise_level and, from the sampling
-    // plan, its provenance/severe (null/false when there is no plan).
-    async function addEvent(targetType, targetId, paperId, opts = {}) {
-      const { surpriseLevel = null, provenance = null, severe = false } = opts;
-      const exists = await client.query(
-        `SELECT 1 FROM chaos_prediction_events
-         WHERE target_type=$1 AND target_id=$2 AND run_id=$3 AND event='confirmed'
-           AND paper_id IS NOT DISTINCT FROM $4 LIMIT 1`,
-        [targetType, targetId, plan.runId, paperId]
-      );
-      if (exists.rows[0]) return;
-      await client.query(
-        `INSERT INTO chaos_prediction_events
-           (target_type, target_id, run_id, event, paper_id, surprise_level, provenance, severe)
-         VALUES ($1,$2,$3,'confirmed',$4,$5,$6,$7)`,
-        [targetType, targetId, plan.runId, paperId, surpriseLevel, provenance, severe]
-      );
-      stats.chaos_prediction_events += 1;
-    }
-    async function upsertPrediction(targetType, targetId, prediction, precision = null) {
-      const res = await client.query(
-        `INSERT INTO chaos_predictions (target_type, target_id, prediction, run_id, precision)
-         VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (target_type, target_id) DO UPDATE
-           SET prediction = EXCLUDED.prediction, run_id = EXCLUDED.run_id,
-               precision = EXCLUDED.precision, updated_at = NOW()
-           WHERE chaos_predictions.prediction IS DISTINCT FROM EXCLUDED.prediction
-              OR chaos_predictions.precision IS DISTINCT FROM EXCLUDED.precision
-         RETURNING (xmax = 0) AS inserted`,
-        [targetType, targetId, prediction, plan.runId, precision]
-      );
-      if (res.rows[0] && res.rows[0].inserted) stats.chaos_predictions += 1;
-    }
-
-    // The per-run estimate from cp.precision is written here so the prediction row
-    // exists; the accumulated value below (computed AFTER events) overwrites it.
-    const conceptTargets = new Set();
-    for (const cp of plan.conceptPredictions) {
-      const edgeId = leafEdgeBySig.get(cp.s);
-      if (!edgeId) continue;
-      if ((cp.prediction || '').trim()) await upsertPrediction('concept', edgeId, cp.prediction, cp.precision);
-      for (const g of cp.groundingShort) {
-        const pid = resolvePaper(g);
-        if (pid) {
-          await addEvent('concept', edgeId, pid, {
-            surpriseLevel: cp.surpriseLevel,
-            provenance: cp.provenance,
-            severe: cp.severe,
-          });
-          conceptTargets.add(edgeId);
-        }
-      }
-    }
-
-    // --- Accumulated precision (Option A) — MUST run AFTER addEvent above ----------
-    // For every concept target whose evidence changed this run, recompute precision from
-    // the FULL accumulated event history and overwrite the per-run estimate, so stored
-    // precision rises with recurrence (both now derive from the same events).
-    for (const edgeId of conceptTargets) {
-      const acc = await accumulatedPrecisionFromEvents(client, 'concept', edgeId);
-      await client.query(
-        `UPDATE chaos_predictions SET precision = $1, updated_at = NOW()
-          WHERE target_type = 'concept' AND target_id = $2 AND precision IS DISTINCT FROM $1`,
-        [acc, edgeId]
-      );
-    }
-
     await client.query('COMMIT');
-    return { stats, seedId };
+    return { stats, seedId, createdConceptNames };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -815,13 +514,6 @@ async function apply(plan) {
 // ----------------------------------------------------------------------------
 
 async function main() {
-  // Part C backfill path: recompute accumulated precision for all targets, then stop.
-  // Independent of proposals.json — runs the dev-guarded historical correction only.
-  if (RECOMPUTE_PRECISION) {
-    await recomputeAllPrecision();
-    return;
-  }
-
   const proposals = loadProposals();
   const plan = buildPlan(proposals);
 
@@ -834,11 +526,27 @@ async function main() {
   console.log(`run_id: ${plan.runId}`);
   backup(); // aborts on failure, before any write
 
-  const { stats, seedId } = await apply(plan);
+  const { stats, seedId, createdConceptNames } = await apply(plan);
 
   console.log('\nApplied. Rows CREATED per table:');
   for (const [t, n] of Object.entries(stats)) console.log(`  ${t.padEnd(26)} ${n}`);
   console.log(`\nAttribution: created_by / added_by = chaos-seed id ${seedId}`);
+
+  // Ancestor references not separately proposed: split by whether they were actually created.
+  // Resolved-to-existing (the additive-plan norm) is INFORMATIONAL; a genuine auto-creation
+  // (the ancestor did NOT resolve by name) is the real concern and joins the loud alarm below.
+  const ancestorResolved = [];
+  for (const a of asArray(plan.ancestorRefs)) {
+    if (createdConceptNames.has(norm(a.name))) {
+      plan.unmapped.push(`ancestor AUTO-CREATED — did not resolve by name: ${a.attribute}:${a.name}`);
+    } else {
+      ancestorResolved.push(a);
+    }
+  }
+  if (ancestorResolved.length) {
+    console.log('\nAncestors referenced but not separately proposed (resolved to existing concepts; nothing created):');
+    for (const a of ancestorResolved) console.log(`  · ${a.attribute}:${a.name}`);
+  }
 
   // Persist the run identity (additive — apply already computed plan.runId; we only
   // record it). record-run.js reads this to populate the episodic record's db_run_id,

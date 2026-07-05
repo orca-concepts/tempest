@@ -20,12 +20,12 @@ const AddConceptModal = ({ onClose, onAdd, title }) => {
         
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Concept Name</label>
+            <label style={styles.label}>Question Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter concept name..."
+              placeholder="Enter question name..."
               autoFocus
               required
               style={styles.input}

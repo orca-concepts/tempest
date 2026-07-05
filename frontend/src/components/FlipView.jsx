@@ -288,7 +288,7 @@ const FlipView = ({
       {/* Description + sort toggle */}
       <div style={styles.description}>
         {filteredParents.length === 0 ? (
-          <p style={{ margin: 0 }}>This concept has no other parent contexts yet.</p>
+          <p style={{ margin: 0 }}>This question has no other parent contexts yet.</p>
         ) : (
           <div style={styles.descriptionRow}>
             <p style={{ margin: 0 }}>

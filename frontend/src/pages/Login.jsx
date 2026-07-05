@@ -30,7 +30,7 @@ const Login = () => {
   return (
     <div style={styles.container}>
       <div style={styles.formCard}>
-        <h1 style={styles.title}>Concept Hierarchy</h1>
+        <h1 style={styles.title}>Question Hierarchy</h1>
         <h2 style={styles.subtitle}>Login</h2>
         
         <form onSubmit={handleSubmit} style={styles.form}>

@@ -225,9 +225,9 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
       await loadCombo();
     } catch (err) {
       if (err.response?.status === 409) {
-        setAddError('This concept in this context is already in the situation');
+        setAddError('This question in this context is already in the situation');
       } else {
-        setAddError(err.response?.data?.error || 'Failed to add concept');
+        setAddError(err.response?.data?.error || 'Failed to add question');
       }
     }
   };
@@ -243,7 +243,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
       });
       await loadCombo();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to remove concept');
+      alert(err.response?.data?.error || 'Failed to remove question');
     }
   };
 
@@ -365,7 +365,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
           <div style={styles.metaLine}>
             Created by {combo?.creator_username || '[deleted user]'}<OrcidBadge orcidId={combo?.creator_orcid_id} />
             {' \u00B7 '}
-            {edges.length} concept{edges.length !== 1 ? 's' : ''}
+            {edges.length} question{edges.length !== 1 ? 's' : ''}
             {' \u00B7 '}
             {combo?.vote_count || 0} vote{combo?.vote_count != 1 ? 's' : ''}
           </div>
@@ -457,7 +457,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
                 onClick={() => { setShowAddPicker(!showAddPicker); setAddError(''); setSelectedConcept(null); setSearchQuery(''); setSearchResults([]); }}
                 style={styles.addButton}
               >
-                {showAddPicker ? 'Cancel' : '+ Add Concept'}
+                {showAddPicker ? 'Cancel' : '+ Add Question'}
               </button>
             </div>
           )}
@@ -467,7 +467,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
             <div style={styles.pickerArea}>
               <input
                 type="text"
-                placeholder="Search for a concept..."
+                placeholder="Search for a question..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setSelectedConcept(null); setConceptContexts([]); setAddError(''); }}
                 style={styles.searchInput}
@@ -501,7 +501,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
                   {contextsLoading ? (
                     <div style={styles.hint}>Loading contexts...</div>
                   ) : conceptContexts.length === 0 ? (
-                    <div style={styles.hint}>No contexts found for this concept.</div>
+                    <div style={styles.hint}>No contexts found for this question.</div>
                   ) : (
                     <div style={styles.contextList}>
                       {conceptContexts.map(ctx => (
@@ -525,7 +525,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
           )}
 
           {edges.length === 0 && isOwner && !showAddPicker && (
-            <div style={styles.emptyHint}>No concepts added yet. Click "+ Add Concept" to get started.</div>
+            <div style={styles.emptyHint}>No questions added yet. Click "+ Add Question" to get started.</div>
           )}
 
           {/* Four-column layout by attribute */}
@@ -550,7 +550,7 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
                             <button
                               onClick={() => toggleHideEdge(edge.edge_id)}
                               style={styles.hideToggleButton}
-                              title="Temporarily remove this concept from the search"
+                              title="Temporarily remove this question from the search"
                             >
                               {isHidden ? 'show' : 'hide'}
                             </button>
@@ -597,8 +597,8 @@ const ComboTabContent = ({ comboId, user, isGuest, onRequestLogin, onOpenConcept
           ) : visibleLinks.length === 0 ? (
             <div style={styles.emptyState}>
               {comboLinks.length === 0
-                ? 'No links in this situation yet. Add a link to one of its concepts to see it here.'
-                : 'All concepts are hidden. Unhide a concept to see its links.'}
+                ? 'No links in this situation yet. Add a link to one of its questions to see it here.'
+                : 'All questions are hidden. Unhide a question to see its links.'}
             </div>
           ) : (
             visibleLinks.map((link, idx) => (

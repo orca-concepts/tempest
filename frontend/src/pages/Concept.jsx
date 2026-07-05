@@ -333,7 +333,7 @@ const Concept = ({
       await loadConcept();
       setShowAddModal(false);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create concept');
+      alert(err.response?.data?.error || 'Failed to create question');
     }
   };
 
@@ -540,9 +540,9 @@ const Concept = ({
       await loadHiddenCount();
     } catch (err) {
       if (err.response?.status === 400 && err.response?.data?.error?.includes('already flagged')) {
-        alert('You have already flagged this concept.');
+        alert('You have already flagged this question.');
       } else {
-        alert(err.response?.data?.error || 'Failed to flag concept');
+        alert(err.response?.data?.error || 'Failed to flag question');
       }
     }
   };
@@ -634,7 +634,7 @@ const Concept = ({
   if (error || !concept) {
     return (
       <div style={styles.container}>
-        <div style={styles.error}>{error || 'Concept not found'}</div>
+        <div style={styles.error}>{error || 'Question not found'}</div>
       </div>
     );
   }
@@ -677,7 +677,7 @@ const Concept = ({
                 onClick={handleToggleView}
                 style={styles.flipButton}
                 disabled={loadingFlip}
-                title="View and vote on alternative parent contexts that exist for this concept; vote for contexts helpful to explore from this one"
+                title="View and vote on alternative parent contexts that exist for this question; vote for contexts helpful to explore from this one"
               >
                 {loadingFlip
                   ? 'Loading...'
@@ -699,7 +699,7 @@ const Concept = ({
               <button
                 onClick={handleEnterTunnel}
                 style={styles.flipButton}
-                title="Attach concepts from other graphs/attributes to this one, to help with graph exploration"
+                title="Attach questions from other graphs/attributes to this one, to help with graph exploration"
               >
                 {`Tunnel${tunnelLinkCount > 0 ? ` · ${tunnelLinkCount}` : ''}`}
               </button>
@@ -716,7 +716,7 @@ const Concept = ({
                     }
                   }}
                   style={styles.annotateButton}
-                  title="Add this concept to a situation"
+                  title="Add this question to a situation"
                 >
                   {comboFeedback === 'added' ? 'Added \u2713'
                     : comboFeedback === 'duplicate' ? 'Already in situation'
@@ -734,7 +734,7 @@ const Concept = ({
                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; }}
                       >
                         <span style={styles.comboPickerName}>{combo.name}</span>
-                        <span style={styles.comboPickerMeta}>{combo.edge_count || 0} concept{combo.edge_count != 1 ? 's' : ''}</span>
+                        <span style={styles.comboPickerMeta}>{combo.edge_count || 0} question{combo.edge_count != 1 ? 's' : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -779,7 +779,7 @@ const Concept = ({
                     <button
                       onClick={() => setShowHiddenPanel(true)}
                       style={styles.hiddenBadge}
-                      title={`${hiddenCount} hidden concept${hiddenCount !== 1 ? 's' : ''} — click to review`}
+                      title={`${hiddenCount} hidden question${hiddenCount !== 1 ? 's' : ''} — click to review`}
                     >
                       {hiddenCount} hidden
                     </button>
@@ -804,7 +804,7 @@ const Concept = ({
 
                 {children.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <p>{isGuest ? 'No child concepts yet.' : 'No child concepts yet. Add one to get started!'}</p>
+                    <p>{isGuest ? 'No child questions yet.' : 'No child questions yet. Add one to get started!'}</p>
                   </div>
                 ) : tieredSections ? (
                   tieredSections.map((section) => (

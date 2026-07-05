@@ -139,7 +139,7 @@ const DeleteAccountFlow = ({ onClose }) => {
           <div>
             <p style={styles.text}>
               This will permanently delete your account. Your votes, subscriptions, and saved items will be removed.
-              Concepts and links you created will remain but will no longer be attributed to you. This cannot be undone.
+              Questions and links you created will remain but will no longer be attributed to you. This cannot be undone.
             </p>
             <label style={styles.label}>Type your username to confirm:</label>
             <input

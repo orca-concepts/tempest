@@ -98,7 +98,7 @@ const ConceptGrid = ({
                         title={
                           concept.nestedLocations.length === 1
                             ? `Also nested deeper under ${concept.nestedLocations[0].parentName} — click to go there`
-                            : `Also nested deeper under ${concept.nestedLocations.length} concepts — click to choose`
+                            : `Also nested deeper under ${concept.nestedLocations.length} questions — click to choose`
                         }
                         onClick={(e) => {
                           e.stopPropagation();
@@ -161,7 +161,7 @@ const ConceptGrid = ({
                       e.stopPropagation();
                       onVote(concept.edge_id, concept.user_voted, path);
                     } : undefined}
-                    title={!onVote ? 'Log in to vote on concepts' : undefined}
+                    title={!onVote ? 'Log in to vote on questions' : undefined}
                   >
                     ▲ {concept.vote_count}
                   </button>
@@ -175,7 +175,7 @@ const ConceptGrid = ({
                         e.stopPropagation();
                         onSwapClick(concept);
                       }}
-                      title="Pick another concept you prefer to this one"
+                      title="Pick another question you prefer to this one"
                     >
                       ⇄ {concept.swap_count || 0}
                     </button>

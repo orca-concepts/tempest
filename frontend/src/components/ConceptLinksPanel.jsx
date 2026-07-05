@@ -247,7 +247,7 @@ const ConceptLinksPanel = ({
       <div key={inst.id} style={styles.instanceRow} onClick={() => handleInstanceClick(inst)}
         onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f5f0e8'; }}
         onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; }}
-        title={inst.concept_id === conceptId ? 'Scroll to this link' : 'Open this concept'}>
+        title={inst.concept_id === conceptId ? 'Scroll to this link' : 'Open this question'}>
         <div style={styles.instancePath}>{pathDisplay}</div>
         {snippet && <div style={styles.instanceSnippet}>{snippet}</div>}
       </div>
@@ -348,7 +348,7 @@ const ConceptLinksPanel = ({
               <span onClick={() => onNavigateToSituation && onNavigateToSituation(sc.id, sc.name)} style={styles.situationName}>{sc.name}</span>
               <div style={styles.situationOwner}>by {sc.created_by_username || '[deleted user]'}{sc.created_by_orcid_id && <OrcidBadge orcidId={sc.created_by_orcid_id} />}</div>
               {sc.description && <div style={styles.situationDescription}>{sc.description}</div>}
-              <div style={styles.situationStats}>{plural(sc.edge_count, 'concept')} {'\u00b7'} {'\u25b2'} {plural(sc.vote_count, 'vote')}</div>
+              <div style={styles.situationStats}>{plural(sc.edge_count, 'question')} {'\u00b7'} {'\u25b2'} {plural(sc.vote_count, 'vote')}</div>
             </div>
           );
         })}
@@ -372,7 +372,7 @@ const ConceptLinksPanel = ({
                 targetType="concept"
                 targetId={conceptId}
                 targetPath={path || []}
-                emptyStateNoun="concept"
+                emptyStateNoun="question"
                 expanded={true}
               />
             )}

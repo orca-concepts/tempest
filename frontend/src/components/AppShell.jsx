@@ -17,7 +17,6 @@ import TermsPage from '../components/TermsPage';
 import PrivacyPage from '../components/PrivacyPage';
 import CopyrightPolicyPage from '../components/CopyrightPolicyPage';
 import AdminLegalRemovalsPanel from '../components/AdminLegalRemovalsPanel';
-import TheStormPage from '../components/TheStormPage';
 import CopyrightPage from '../components/CopyrightPage';
 import InfringementNoticePage from '../components/InfringementNoticePage';
 import CounterNoticePage from '../components/CounterNoticePage';
@@ -37,7 +36,7 @@ const AppShell = () => {
   }, []);
 
   // Phase 30g: Info page detection and header nav
-  const INFO_SLUGS = ['using-orca', 'the-storm'];
+  const INFO_SLUGS = ['using-orca'];
   const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'report-infringement', 'counter-notice', 'admin/legal'];
   const infoSlug = INFO_SLUGS.find(s => location.pathname === `/${s}`);
   const isLegalPage = LEGAL_SLUGS.some(s => location.pathname === `/${s}`);
@@ -664,7 +663,7 @@ const AppShell = () => {
   }, [isGuest]);
 
   const handleOpenConceptTab = useCallback(async (conceptId, path, conceptName, attributeName, sourceCorpusTabId, viewMode, scrollToLinkId) => {
-    const label = conceptName || 'Concept';
+    const label = conceptName || 'Question';
     const tabType = conceptId ? 'concept' : 'root';
     const effectiveViewMode = viewMode || 'children';
 
@@ -1205,7 +1204,6 @@ const AppShell = () => {
         <div style={styles.headerContent}>
           <div style={styles.titleRow}>
             <h1 style={styles.title} onClick={() => navigate('/')} role="button" tabIndex={0}>orca</h1>
-            <button style={{ ...styles.navLink, ...(infoSlug === 'the-storm' ? styles.navLinkActive : {}) }} onClick={() => navigate('/the-storm')}>The Categorical Storm</button>
             <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>Using orca</button>
             {!isOutreachMode && <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>}
           </div>
@@ -1269,8 +1267,7 @@ const AppShell = () => {
       {infoSlug || isLegalPage ? (
         <div style={styles.mainLayout}>
           <div style={styles.contentArea}>
-            {infoSlug === 'the-storm' && <TheStormPage />}
-            {infoSlug && infoSlug !== 'the-storm' && <InfoPage slug={infoSlug} onRequestLogin={handleRequestLogin} />}
+            {infoSlug && <InfoPage slug={infoSlug} onRequestLogin={handleRequestLogin} />}
             {location.pathname === '/legal' && <LegalPage />}
             {location.pathname === '/terms' && <TermsPage />}
             {location.pathname === '/privacy' && <PrivacyPage />}
@@ -1300,7 +1297,7 @@ const AppShell = () => {
                 <button
                   onClick={() => { setComboView(null); setVotesOpen(true); }}
                   style={styles.sidebarActionButton}
-                  title="View your saved concepts and upvoted links"
+                  title="View your saved questions and upvoted links"
                 >Votes</button>
               )}
             </div>

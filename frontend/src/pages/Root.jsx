@@ -93,7 +93,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
   const handleConceptClick = (conceptId) => {
     // Look up the concept name for the tab label
     const concept = concepts.find(c => c.id === conceptId);
-    const label = concept ? concept.name : 'Concept';
+    const label = concept ? concept.name : 'Question';
 
     // Update the graph tab's navigation state
     if (onNavigate && graphTabId) {
@@ -144,9 +144,9 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
       await loadHiddenCount();
     } catch (err) {
       if (err.response?.status === 400 && err.response?.data?.error?.includes('already flagged')) {
-        alert('You have already flagged this concept.');
+        alert('You have already flagged this question.');
       } else {
-        alert(err.response?.data?.error || 'Failed to flag concept');
+        alert(err.response?.data?.error || 'Failed to flag question');
       }
     }
   };
@@ -203,15 +203,15 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
                 <button
                   onClick={() => setShowHiddenPanel(true)}
                   style={styles.hiddenBadge}
-                  title={`${hiddenCount} hidden root concept${hiddenCount !== 1 ? 's' : ''} — click to review`}
+                  title={`${hiddenCount} hidden root question${hiddenCount !== 1 ? 's' : ''} — click to review`}
                 >
                   {hiddenCount} hidden
                 </button>
               )}
               <div style={styles.sortRow}>
                 {[
-                  { value: 'saves', label: 'Graph Votes' },
-                  { value: 'new', label: 'Newest' },
+                  { value: 'saves', label: 'Votes' },
+                  { value: 'new', label: 'New' },
                 ].map((opt, i) => (
                   <button
                     key={opt.value}
@@ -263,7 +263,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
             : concepts.filter(c => c.attribute_name === attributeFilter);
           return filtered.length === 0 ? (
             <div style={styles.emptyState}>
-              <p>{isGuest ? 'No root concepts yet.' : 'No root concepts yet. Type in the search field to create one!'}</p>
+              <p>{isGuest ? 'No root questions yet.' : 'No root questions yet. Type in the search field to create one!'}</p>
             </div>
           ) : (
             <ConceptGrid

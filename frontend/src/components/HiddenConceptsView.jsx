@@ -34,7 +34,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
       setError(null);
     } catch (err) {
       console.error('Failed to load hidden children:', err);
-      setError('Failed to load hidden concepts');
+      setError('Failed to load hidden questions');
     } finally {
       setLoading(false);
     }
@@ -57,7 +57,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
   };
 
   const handleUnhide = async (edgeId) => {
-    if (!window.confirm('Are you sure you want to unhide this concept? It will become visible to all users again.')) {
+    if (!window.confirm('Are you sure you want to unhide this question? It will become visible to all users again.')) {
       return;
     }
     try {
@@ -65,7 +65,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
       await loadHiddenChildren();
     } catch (err) {
       if (err.response?.status === 403) {
-        alert('Only administrators can unhide concepts.');
+        alert('Only administrators can unhide questions.');
       } else {
         alert(err.response?.data?.error || 'Failed to unhide');
       }
@@ -114,7 +114,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
     return (
       <div style={styles.overlay}>
         <div style={styles.panel}>
-          <div style={styles.loading}>Loading hidden concepts...</div>
+          <div style={styles.loading}>Loading hidden questions...</div>
         </div>
       </div>
     );
@@ -124,14 +124,14 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <h3 style={styles.title}>Hidden Concepts</h3>
+          <h3 style={styles.title}>Hidden Questions</h3>
           <button onClick={onClose} style={styles.closeButton}>✕</button>
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
 
         {hiddenChildren.length === 0 ? (
-          <div style={styles.empty}>No hidden concepts in this context.</div>
+          <div style={styles.empty}>No hidden questions in this context.</div>
         ) : (
           <div style={styles.list}>
             {hiddenChildren.map((item) => (
@@ -160,7 +160,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
                       ...styles.voteButton,
                       ...(item.userVoteType === 'show' ? styles.voteButtonActiveShow : {}),
                     }}
-                    title="Vote to restore this concept"
+                    title="Vote to restore this question"
                   >
                     Show ({item.showVoteCount})
                   </button>
@@ -179,7 +179,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
                     <button
                       onClick={() => handleUnhide(item.edgeId)}
                       style={styles.unhideButton}
-                      title="Admin: restore this concept to visible"
+                      title="Admin: restore this question to visible"
                     >
                       ↩ Unhide
                     </button>
@@ -227,7 +227,7 @@ const HiddenConceptsView = ({ parentId, path = [], onClose }) => {
                                 ...prev,
                                 [item.edgeId]: e.target.value
                               }))}
-                              placeholder="Add a comment about this hidden concept..."
+                              placeholder="Add a comment about this hidden question..."
                               style={styles.commentInput}
                               rows={2}
                             />

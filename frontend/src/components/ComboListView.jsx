@@ -132,7 +132,7 @@ const ComboListView = ({ onBack, isGuest, onComboClick, onRequestLogin }) => {
       )}
 
       <div style={{ padding: '8px 20px 0 20px', fontSize: '14px', color: '#666', fontFamily: '"EB Garamond", Georgia, serif', lineHeight: 1.5 }}>
-        Create collections of concepts to see all their links in one place.
+        Create collections of questions to see all their links in one place.
       </div>
 
       {/* Search and sort controls */}
@@ -210,7 +210,7 @@ const ComboListView = ({ onBack, isGuest, onComboClick, onRequestLogin }) => {
               <div style={styles.cardMeta}>
                 <span>Created by {combo.creator_username || '[deleted user]'}<OrcidBadge orcidId={combo.creator_orcid_id} /></span>
                 <span style={styles.metaDot}>{'\u00B7'}</span>
-                <span>{combo.edge_count || 0} concept{combo.edge_count != 1 ? 's' : ''}</span>
+                <span>{combo.edge_count || 0} question{combo.edge_count != 1 ? 's' : ''}</span>
                 <span style={styles.metaDot}>{'\u00B7'}</span>
                 <span>{'\u25B2'} {combo.vote_count || 0} vote{combo.vote_count != 1 ? 's' : ''}</span>
               </div>

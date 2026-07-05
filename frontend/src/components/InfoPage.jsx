@@ -14,7 +14,7 @@ const USE_CASES = [
   },
   {
     label: 'Use Case: Education.',
-    text: ' Students and educators can create hierarchy graphs and apply them to material for self-directed exploration of core concepts.',
+    text: ' Students and educators can create hierarchy graphs and apply them to material for self-directed exploration of core questions.',
   },
 ];
 
@@ -72,12 +72,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Flip View showing alternative parents"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/flip-view.png', caption: '\u201CFlip View\u201D shows you the alternative parents a given concept has; the concept might have different child paths to explore for different parent contexts. This is test data.' }],
+              slides: [{ image: '/images/using-orca/flip-view.png', caption: '\u201CFlip View\u201D shows you the alternative parents a given question has; the question might have different child paths to explore for different parent contexts. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            "Flip View" shows you the alternative parents a given concept has; the concept might have
+            "Flip View" shows you the alternative parents a given question has; the question might have
             different child paths to explore for different parent contexts. This is test data.
           </p>
         </div>
@@ -86,15 +86,15 @@ const UsingOrcaContent = ({ onImageClick }) => {
           <div style={usingOrcaStyles.sectionTitle}>Tunneling</div>
           <img
             src="/images/using-orca/tunnel_view.png"
-            alt="Tunnel view showing pinned concepts across graphs"
+            alt="Tunnel view showing pinned questions across graphs"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/tunnel_view.png', caption: 'Pin concepts from different types of graphs for quick navigation to relevant areas. This is test data.' }],
+              slides: [{ image: '/images/using-orca/tunnel_view.png', caption: 'Pin questions from different types of graphs for quick navigation to relevant areas. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Pin concepts from different types of graphs for quick navigation to relevant areas. This is test data.
+            Pin questions from different types of graphs for quick navigation to relevant areas. This is test data.
           </p>
         </div>
 
@@ -105,12 +105,12 @@ const UsingOrcaContent = ({ onImageClick }) => {
             alt="Situation page showing a curated reading list"
             style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
             onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create situations to build reading lists based on certain concepts. This is test data.' }],
+              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create situations to build reading lists based on certain questions. This is test data.' }],
               index: 0,
             })}
           />
           <p style={usingOrcaStyles.caption}>
-            Create situations to build reading lists based on certain concepts. This is test data.
+            Create situations to build reading lists based on certain questions. This is test data.
           </p>
         </div>
       </div>
@@ -123,7 +123,7 @@ const UsingOrcaContent = ({ onImageClick }) => {
       <p style={{ ...usingOrcaStyles.useCase, marginTop: '24px' }}>
         This is a free, open-source project for use by researchers. You can create your own version using the same code at{' '}
         <a href="https://github.com/orca-concepts/tempest" target="_blank" rel="noopener noreferrer" style={usingOrcaStyles.subtleLink}>https://github.com/orca-concepts/tempest</a>.
-        {' '}Just decide the domains of concept graphs you want to build and the kind of source material to which they should link.
+        {' '}Just decide the domains of question graphs you want to build and the kind of source material to which they should link.
       </p>
     </div>
   );

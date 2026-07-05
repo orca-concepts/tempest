@@ -253,7 +253,7 @@ const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
         <div style={styles.emptyState}>
           <p style={styles.emptyText}>No votes yet.</p>
           <p style={styles.emptySubtext}>
-            Save concepts with the {'\u25B2'} button or upvote links on concept pages.
+            Save questions with the {'\u25B2'} button or upvote links on question pages.
           </p>
         </div>
       ) : (

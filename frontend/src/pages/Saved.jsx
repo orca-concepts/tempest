@@ -62,7 +62,7 @@ const Saved = () => {
       setConceptNames(response.data.conceptNames);
       setError(null);
     } catch (err) {
-      setError('Failed to load saved concepts');
+      setError('Failed to load saved questions');
       console.error(err);
     } finally {
       setLoading(false);
@@ -245,7 +245,7 @@ const Saved = () => {
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <div style={styles.headerLeft}>
-            <h1 style={styles.title} onClick={() => navigate('/')} title="Back to root concepts">
+            <h1 style={styles.title} onClick={() => navigate('/')} title="Back to root questions">
               orca
             </h1>
             <span style={styles.pageLabel}>Graph Votes</span>
@@ -344,7 +344,7 @@ const Saved = () => {
           <div style={styles.emptyState}>
             <p style={styles.emptyText}>No graph votes in this tab.</p>
             <p style={styles.emptySubtext}>
-              Vote on concepts by clicking the {'\u25B2'} button on any concept in the graph.
+              Vote on questions by clicking the {'\u25B2'} button on any question in the graph.
               Your votes will appear here organized by their root graph.
             </p>
           </div>

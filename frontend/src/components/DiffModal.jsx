@@ -410,9 +410,9 @@ export default function DiffModal({ isOpen, onClose, initialConcept, isGuest }) 
             <button
               style={styles.addButton}
               onClick={() => setShowSearch(!showSearch)}
-              title="Add another concept to compare"
+              title="Add another question to compare"
             >
-              + Add concept
+              + Add question
             </button>
             <button style={styles.closeButton} onClick={onClose}>{'\u2715'}</button>
           </div>
@@ -427,7 +427,7 @@ export default function DiffModal({ isOpen, onClose, initialConcept, isGuest }) 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder="Search for a concept to compare..."
+                placeholder="Search for a question to compare..."
                 style={styles.searchInput}
                 autoFocus
               />
@@ -660,7 +660,7 @@ export default function DiffModal({ isOpen, onClose, initialConcept, isGuest }) 
           {panes.length === 1 && allLoaded && (
             <div style={styles.emptyPanePlaceholder}>
               <div style={styles.emptyPaneText}>
-                Click <strong>+ Add concept</strong> above to compare with another concept's children
+                Click <strong>+ Add question</strong> above to compare with another question's children
               </div>
             </div>
           )}

@@ -237,7 +237,7 @@ const SavedTabContent = ({ edges, conceptNames, conceptCorpusBadges, corpusId, o
           <div style={styles.emptyState}>
             <p style={styles.emptyText}>No graph votes yet.</p>
             <p style={styles.emptySubtext}>
-              Vote on concepts by clicking the ▲ button on any concept in the graph.
+              Vote on questions by clicking the ▲ button on any question in the graph.
             </p>
           </div>
         ) : (

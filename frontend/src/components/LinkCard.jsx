@@ -241,7 +241,7 @@ const LinkCard = ({
               style={sameCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
               onClick={sameCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'same') : undefined}
             >
-              This concept ({sameCount}) {sameCount > 0 ? (iData.expanded?.same ? '\u25be' : '\u25b8') : ''}
+              This question ({sameCount}) {sameCount > 0 ? (iData.expanded?.same ? '\u25be' : '\u25b8') : ''}
             </span>
             {iData.expanded?.same && sameCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.sameConceptInstances.map(renderInstanceSnippet)}</div>}
           </div>
@@ -250,7 +250,7 @@ const LinkCard = ({
               style={otherCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
               onClick={otherCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'other') : undefined}
             >
-              All concepts ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
+              All questions ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
             </span>
             {iData.expanded?.other && otherCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.otherConceptInstances.map(renderInstanceSnippet)}</div>}
           </div>

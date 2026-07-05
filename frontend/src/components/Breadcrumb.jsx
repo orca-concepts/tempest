@@ -42,7 +42,7 @@ const Breadcrumb = ({ path, currentConcept, currentAttribute, onBreadcrumbClick 
       </span>
       
       {path.slice(0, -1).map((conceptId, index) => {
-        const fullName = conceptNames[conceptId] || `Concept ${conceptId}`;
+        const fullName = conceptNames[conceptId] || `Question ${conceptId}`;
         const displayName = truncateName(fullName);
         
         return (

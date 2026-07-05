@@ -559,7 +559,7 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
         >
           ▲ {card.tunnelVoteCount}
         </button>
-        <span style={styles.saveVoteCount} title="Save votes on this concept">
+        <span style={styles.saveVoteCount} title="Save votes on this question">
           ▲ {card.saveVoteCount}
         </span>
         <span

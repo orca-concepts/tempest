@@ -127,7 +127,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
       setPendingAction(null);
       if (onConceptAdded) onConceptAdded();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create concept');
+      alert(err.response?.data?.error || 'Failed to create question');
     } finally {
       setAddingName(null);
     }
@@ -164,7 +164,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
       setPendingAction(null);
       if (onConceptAdded) onConceptAdded();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to create concept');
+      alert(err.response?.data?.error || 'Failed to create question');
     } finally {
       setAddingName(null);
     }
@@ -254,7 +254,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
               onClick={() => handleCreateRootClick(trimmedQuery)}
             >
               <span style={styles.addIcon}>+</span>
-              <span>{exactMatch ? 'Add' : 'Create'} "<strong>{trimmedQuery}</strong>" as root concept</span>
+              <span>{exactMatch ? 'Add' : 'Create'} "<strong>{trimmedQuery}</strong>" as root question</span>
             </div>
           )}
 

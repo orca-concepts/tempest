@@ -109,6 +109,10 @@ export const conceptsAPI = {
   createChildConcept: (name, parentId, path) =>
     api.post('/concepts/child', { name, parentId, path }),
 
+  // Copy selected sibling questions' subtrees under another sibling
+  nestUnderSibling: ({ parentConceptId, path, selectedEdgeIds, targetEdgeId }) =>
+    api.post('/concepts/nest-under-sibling', { parentConceptId, path, selectedEdgeIds, targetEdgeId }),
+
   // Phase 14a: Batch children for diff modal
   getBatchChildrenForDiff: (panes) =>
     api.post('/concepts/batch-children-for-diff', { panes }),

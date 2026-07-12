@@ -7,15 +7,21 @@ const ConceptGrid = ({
   onVote,
   onSwapClick,
   onCompareChildren,
+  onNestUnderSibling,
   onFlag,
   onUnflag,
   onNavigateNested,
+  nestMode = false,
+  selectedEdgeIds = null,
+  onToggleSelect,
   showVotes = false,
   showAttributeBadge = false,
   path = [],
   edgeToSets = {},
   tierLabel = null,
 }) => {
+  const isSelected = (edgeId) =>
+    !!(selectedEdgeIds && (selectedEdgeIds.has ? selectedEdgeIds.has(edgeId) : selectedEdgeIds.includes(edgeId)));
   // Phase 14a: Right-click context menu for concept diffing
   const [contextMenu, setContextMenu] = useState(null);
   // Phase 69: which card's nested-location picker is open (keyed by edge_id)
@@ -32,7 +38,7 @@ const ConceptGrid = ({
   const handleCardContextMenu = (e, child) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!onCompareChildren && !onFlag) return;
+    if (!onCompareChildren && !onNestUnderSibling && !onFlag) return;
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -64,12 +70,40 @@ const ConceptGrid = ({
           const showingTabPicker = false; // Tab picker removed in Phase 7c overhaul
 
           return (
-            <div key={concept.edge_id || concept.id} style={styles.card}>
-              <div 
+            <div
+              key={concept.edge_id || concept.id}
+              style={{
+                ...styles.card,
+                ...(nestMode && isSelected(concept.edge_id) ? styles.cardSelected : {}),
+              }}
+            >
+              <div
                 style={styles.cardContent}
-                onClick={() => onConceptClick(concept.id)}
+                onClick={() => {
+                  if (nestMode) {
+                    if (onToggleSelect) onToggleSelect(concept.edge_id);
+                  } else {
+                    onConceptClick(concept.id);
+                  }
+                }}
                 onContextMenu={(e) => handleCardContextMenu(e, concept)}
               >
+                {nestMode && (
+                  <label
+                    style={styles.nestCheckboxRow}
+                    onClick={(e) => { e.stopPropagation(); if (onToggleSelect) onToggleSelect(concept.edge_id); }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected(concept.edge_id)}
+                      readOnly
+                      style={styles.nestCheckbox}
+                    />
+                    <span style={styles.nestCheckboxLabel}>
+                      {isSelected(concept.edge_id) ? 'Selected to nest' : 'Select to nest'}
+                    </span>
+                  </label>
+                )}
                 <div style={styles.nameRow}>
                   <h3 style={styles.conceptName}>
                     {concept.name}
@@ -230,13 +264,31 @@ const ConceptGrid = ({
               Compare children…
             </div>
           )}
+          {onNestUnderSibling && (
+            <div
+              style={{
+                padding: '8px 14px',
+                cursor: 'pointer',
+                color: '#333',
+                borderTop: onCompareChildren ? '1px solid #e8e4dc' : 'none',
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0ece4'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              onClick={() => {
+                onNestUnderSibling(contextMenu.child);
+                setContextMenu(null);
+              }}
+            >
+              Nest under sibling…
+            </div>
+          )}
           {onFlag && (
             <div
               style={{
                 padding: '8px 14px',
                 cursor: 'pointer',
                 color: '#555',
-                borderTop: onCompareChildren ? '1px solid #e8e4dc' : 'none',
+                borderTop: (onCompareChildren || onNestUnderSibling) ? '1px solid #e8e4dc' : 'none',
               }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0ece4'}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -282,8 +334,27 @@ const styles = {
     transition: 'transform 0.2s, box-shadow 0.2s',
     cursor: 'pointer',
   },
+  cardSelected: {
+    boxShadow: '0 0 0 2px #333',
+  },
   cardContent: {
     padding: '20px',
+  },
+  nestCheckboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '10px',
+    cursor: 'pointer',
+  },
+  nestCheckbox: {
+    cursor: 'pointer',
+    accentColor: '#333',
+  },
+  nestCheckboxLabel: {
+    fontSize: '13px',
+    color: '#666',
+    fontFamily: '"EB Garamond", Georgia, serif',
   },
   nameRow: {
     display: 'flex',

@@ -10,7 +10,6 @@ import SearchField from '../components/SearchField';
 import SwapModal from '../components/SwapModal';
 import VoteSetBar from '../components/VoteSetBar';
 import ConceptLinksPanel from '../components/ConceptLinksPanel';
-import DiffModal from '../components/DiffModal';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 
 import TunnelView from '../components/TunnelView';
@@ -92,9 +91,13 @@ const Concept = ({
   // Share link state
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
-  // Phase 14a: Diff modal state
-  const [diffModalOpen, setDiffModalOpen] = useState(false);
-  const [diffInitialConcept, setDiffInitialConcept] = useState(null);
+  // Nest-under-sibling state
+  const [nestMode, setNestMode] = useState(false);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState(() => new Set());
+  const [nestTargetEdgeId, setNestTargetEdgeId] = useState(null);
+  const [nestPickerOpen, setNestPickerOpen] = useState(false);
+  const [nestSubmitting, setNestSubmitting] = useState(false);
+  const [nestFeedback, setNestFeedback] = useState(null);
 
   // Phase 16c: Hidden concepts state
   const [hiddenCount, setHiddenCount] = useState(0);
@@ -502,31 +505,55 @@ const Concept = ({
     loadConcept();
   };
 
-  // Phase 14a: Open diff modal from right-click on a child card
-  const handleCompareChildren = (child) => {
-    // path state = graph_path used by the current concept's children query (e.g. [2] when viewing Cooking)
-    // The child's own children live at graph_path = [...path, child.id]
-    // But getBatchChildrenForDiff uses the same convention as getConceptWithChildren:
-    // it takes the parent's path context, i.e. the graph_path on the child's edges = path (which already includes current concept)
-    const childPath = [...(path || [])];
+  // Nest-under-sibling: enter selection mode from a right-clicked child card.
+  const handleNestUnderSibling = (child) => {
+    setNestMode(true);
+    setSelectedEdgeIds(new Set([child.edge_id]));
+    setNestTargetEdgeId(null);
+    setNestPickerOpen(false);
+    setNestFeedback(null);
+  };
 
-    // Build path names for display from breadcrumb data
-    // path = [rootId, ..., currentConceptId], concept.name is the current concept
-    let displayPathNames = [];
-    if (concept && path.length > 0) {
-      // We don't have all ancestor names readily available, but we can at least
-      // pass what we know and let DiffModal resolve them via getConceptNames
-      displayPathNames = []; // DiffModal will resolve from path IDs
-    }
-
-    setDiffInitialConcept({
-      conceptId: child.id,
-      name: child.name,
-      attribute: child.attribute_name || '',
-      path: childPath,
-      pathNames: displayPathNames
+  const toggleNestSelect = (edgeId) => {
+    setSelectedEdgeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(edgeId)) next.delete(edgeId); else next.add(edgeId);
+      return next;
     });
-    setDiffModalOpen(true);
+    // If the newly-selected edge was the chosen target, clear the target.
+    setNestTargetEdgeId((prev) => (prev === edgeId ? null : prev));
+  };
+
+  const cancelNest = () => {
+    setNestMode(false);
+    setSelectedEdgeIds(new Set());
+    setNestTargetEdgeId(null);
+    setNestPickerOpen(false);
+    setNestSubmitting(false);
+    setNestFeedback(null);
+  };
+
+  const confirmNest = async () => {
+    if (nestSubmitting) return;
+    if (selectedEdgeIds.size === 0 || !nestTargetEdgeId) return;
+    setNestSubmitting(true);
+    setNestFeedback(null);
+    try {
+      const res = await conceptsAPI.nestUnderSibling({
+        parentConceptId: effectiveConceptId,
+        path,
+        selectedEdgeIds: [...selectedEdgeIds],
+        targetEdgeId: nestTargetEdgeId,
+      });
+      cancelNest();
+      await loadConcept();
+      const c = res?.data || {};
+      setNestFeedback(`Nested ${c.copiedEdges ?? ''} question${c.copiedEdges === 1 ? '' : 's'} under ${c.target?.name || 'the selected question'}.`);
+      setTimeout(() => setNestFeedback(null), 4000);
+    } catch (err) {
+      setNestSubmitting(false);
+      setNestFeedback(err?.response?.data?.error || 'Could not nest the selected questions.');
+    }
   };
 
   // Phase 16c: Flag a child concept as spam
@@ -814,10 +841,13 @@ const Concept = ({
                       onConceptClick={handleConceptClick}
                       onVote={isGuest ? undefined : handleVote}
                       onSwapClick={isGuest ? undefined : handleSwapClick}
-                      onCompareChildren={handleCompareChildren}
+                      onNestUnderSibling={isGuest ? undefined : handleNestUnderSibling}
                       onFlag={isGuest ? undefined : handleFlag}
                       onUnflag={isGuest ? undefined : handleUnflag}
                       onNavigateNested={handleNavigateNested}
+                      nestMode={nestMode}
+                      selectedEdgeIds={selectedEdgeIds}
+                      onToggleSelect={toggleNestSelect}
                       showVotes={true}
                       path={path}
                       edgeToSets={edgeToSets}
@@ -830,10 +860,13 @@ const Concept = ({
                     onConceptClick={handleConceptClick}
                     onVote={isGuest ? undefined : handleVote}
                     onSwapClick={isGuest ? undefined : handleSwapClick}
-                    onCompareChildren={handleCompareChildren}
+                    onNestUnderSibling={isGuest ? undefined : handleNestUnderSibling}
                     onFlag={isGuest ? undefined : handleFlag}
                     onUnflag={isGuest ? undefined : handleUnflag}
                     onNavigateNested={handleNavigateNested}
+                    nestMode={nestMode}
+                    selectedEdgeIds={selectedEdgeIds}
+                    onToggleSelect={toggleNestSelect}
                     showVotes={true}
                     path={path}
                     edgeToSets={edgeToSets}
@@ -914,14 +947,6 @@ const Concept = ({
         />
       )}
 
-      {/* Phase 14a: Diff Modal */}
-      <DiffModal
-        isOpen={diffModalOpen}
-        onClose={() => setDiffModalOpen(false)}
-        initialConcept={diffInitialConcept}
-        isGuest={isGuest}
-      />
-
       {/* Phase 16c: Hidden Concepts Panel */}
       {showHiddenPanel && (
         <HiddenConceptsView
@@ -929,6 +954,64 @@ const Concept = ({
           path={effectivePath}
           onClose={() => { setShowHiddenPanel(false); loadHiddenCount(); loadConcept(); }}
         />
+      )}
+
+      {/* Nest-under-sibling action bar */}
+      {nestMode && (() => {
+        const eligibleTargets = children.filter((c) => !selectedEdgeIds.has(c.edge_id));
+        const targetConcept = children.find((c) => c.edge_id === nestTargetEdgeId);
+        return (
+          <div style={styles.nestBar}>
+            <span style={styles.nestBarText}>
+              {selectedEdgeIds.size} question{selectedEdgeIds.size === 1 ? '' : 's'} selected to nest
+            </span>
+            <div style={{ position: 'relative' }}>
+              <button
+                style={styles.nestBarPickerButton}
+                onClick={() => setNestPickerOpen((o) => !o)}
+                disabled={eligibleTargets.length === 0}
+                title="Choose the sibling question to nest the selected questions under"
+              >
+                {targetConcept ? `Under: ${targetConcept.name}` : 'Question to nest under'} {'▾'}
+              </button>
+              {nestPickerOpen && (
+                <div style={styles.nestPickerDropdown}>
+                  {eligibleTargets.length === 0 ? (
+                    <div style={styles.nestPickerEmpty}>No eligible questions</div>
+                  ) : eligibleTargets.map((c) => (
+                    <div
+                      key={c.edge_id}
+                      style={styles.nestPickerItem}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0ece4')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      onClick={() => { setNestTargetEdgeId(c.edge_id); setNestPickerOpen(false); }}
+                    >
+                      {c.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              style={{
+                ...styles.nestBarConfirm,
+                ...((selectedEdgeIds.size === 0 || !nestTargetEdgeId || nestSubmitting) ? styles.nestBarDisabled : {}),
+              }}
+              onClick={confirmNest}
+              disabled={selectedEdgeIds.size === 0 || !nestTargetEdgeId || nestSubmitting}
+            >
+              {nestSubmitting ? 'Nesting…' : 'Confirm'}
+            </button>
+            <button style={styles.nestBarCancel} onClick={cancelNest} disabled={nestSubmitting}>
+              Cancel
+            </button>
+            {nestFeedback && <span style={styles.nestBarFeedback}>{nestFeedback}</span>}
+          </div>
+        );
+      })()}
+
+      {!nestMode && nestFeedback && (
+        <div style={styles.nestToast}>{nestFeedback}</div>
       )}
 
     </div>
@@ -1102,9 +1185,8 @@ const styles = {
     margin: 0,
     color: '#333',
     fontFamily: '"EB Garamond", Georgia, serif',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
     minWidth: 0,
     flex: 1,
   },
@@ -1185,6 +1267,113 @@ const styles = {
     textAlign: 'center',
     padding: '60px 20px',
     color: '#666',
+  },
+  nestBar: {
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    maxWidth: '90vw',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #d4d0c8',
+    borderRadius: '8px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+    padding: '12px 18px',
+    zIndex: 10002,
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  nestBarText: {
+    fontSize: '15px',
+    color: '#333',
+  },
+  nestBarPickerButton: {
+    padding: '8px 14px',
+    backgroundColor: 'white',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#333',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    maxWidth: '320px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  nestPickerDropdown: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    marginBottom: '6px',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #d4d0c8',
+    borderRadius: '4px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    minWidth: '240px',
+    maxWidth: '360px',
+    maxHeight: '300px',
+    overflowY: 'auto',
+    zIndex: 10003,
+    fontSize: '14px',
+  },
+  nestPickerItem: {
+    padding: '8px 14px',
+    cursor: 'pointer',
+    color: '#333',
+  },
+  nestPickerEmpty: {
+    padding: '8px 14px',
+    color: '#888',
+  },
+  nestBarConfirm: {
+    padding: '8px 18px',
+    backgroundColor: '#333',
+    color: '#faf9f6',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  nestBarDisabled: {
+    opacity: 0.45,
+    cursor: 'default',
+  },
+  nestBarCancel: {
+    padding: '8px 14px',
+    backgroundColor: 'white',
+    color: '#555',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  nestBarFeedback: {
+    fontSize: '14px',
+    color: '#c33',
+    width: '100%',
+    textAlign: 'center',
+  },
+  nestToast: {
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #d4d0c8',
+    borderRadius: '8px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+    padding: '12px 18px',
+    zIndex: 10002,
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontSize: '15px',
+    color: '#333',
   },
 };
 

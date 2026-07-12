@@ -29,7 +29,7 @@ const conceptsController = {
              OR (ce.graph_path[1:1] = ARRAY[c.id] AND array_length(ce.graph_path, 1) >= 1)
            )) as link_count
         FROM concepts c
-        LEFT JOIN edges child_e ON c.id = child_e.parent_id AND child_e.is_hidden = false
+        LEFT JOIN edges child_e ON c.id = child_e.parent_id AND child_e.graph_path = ARRAY[c.id] AND child_e.is_hidden = false
         LEFT JOIN edges root_e ON root_e.child_id = c.id AND root_e.parent_id IS NULL AND root_e.graph_path = '{}' AND root_e.is_hidden = false
         LEFT JOIN attributes a ON root_e.attribute_id = a.id
         LEFT JOIN votes v ON root_e.id = v.edge_id
@@ -1005,6 +1005,192 @@ const conceptsController = {
       res.json({ edges, truncated });
     } catch (error) {
       console.error('Error fetching subtree:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Copy one or more sibling questions' full subtrees (descendant edges + links)
+  // under another sibling question ("nest under sibling"). Additive copy — originals
+  // are untouched. Copied edges/links preserve their original author.
+  nestUnderSibling: async (req, res) => {
+    const NEST_EDGE_CAP = 1000;
+    let { parentConceptId, path, selectedEdgeIds, targetEdgeId } = req.body;
+
+    try {
+      parentConceptId = parseInt(parentConceptId);
+      targetEdgeId = parseInt(targetEdgeId);
+      // P = graph_path of the sibling edges on the page (root-to-parent inclusive).
+      // Empty P => the root-list page: siblings are root edges (parent_id NULL, graph_path '{}').
+      const P = Array.isArray(path)
+        ? path.map(Number)
+        : (path ? String(path).split(',').filter(Boolean).map(Number) : []);
+      const rootMode = P.length === 0;
+      const selectedIds = Array.isArray(selectedEdgeIds)
+        ? [...new Set(selectedEdgeIds.map(Number).filter((n) => !isNaN(n)))]
+        : [];
+
+      if (!rootMode && (!parentConceptId || isNaN(parentConceptId))) {
+        return res.status(400).json({ error: 'parentConceptId is required' });
+      }
+      if (!targetEdgeId || isNaN(targetEdgeId)) {
+        return res.status(400).json({ error: 'targetEdgeId is required' });
+      }
+      if (selectedIds.length === 0) {
+        return res.status(400).json({ error: 'Select at least one question to nest' });
+      }
+      if (selectedIds.includes(targetEdgeId)) {
+        return res.status(400).json({ error: 'The target cannot be one of the selected questions' });
+      }
+      if (P.some((n) => isNaN(n))) {
+        return res.status(400).json({ error: 'Invalid path' });
+      }
+
+      const pLiteral = '{' + P.join(',') + '}';
+
+      // All selected edges + the target edge must be real siblings on this page.
+      // Root-list page: parent_id IS NULL, graph_path '{}'. Concept page: parent_id = C,
+      // graph_path = P. (not hidden either way)
+      const allEdgeIds = [...selectedIds, targetEdgeId];
+      const siblingResult = rootMode
+        ? await pool.query(
+            `SELECT id, child_id, attribute_id
+               FROM edges
+              WHERE id = ANY($1::int[])
+                AND parent_id IS NULL
+                AND graph_path = '{}'::integer[]
+                AND is_hidden = false`,
+            [allEdgeIds]
+          )
+        : await pool.query(
+            `SELECT id, child_id, attribute_id
+               FROM edges
+              WHERE id = ANY($1::int[])
+                AND parent_id = $2
+                AND graph_path = $3::integer[]
+                AND is_hidden = false`,
+            [allEdgeIds, parentConceptId, pLiteral]
+          );
+      if (siblingResult.rows.length !== allEdgeIds.length) {
+        return res.status(400).json({ error: 'Selected questions and target must all be siblings on this page' });
+      }
+
+      // Preserve the single-attribute-graph invariant: everything must share one attribute.
+      // (Always true within one concept graph; the real guard is on the root-list page,
+      // where different roots could belong to different attributes.)
+      const attributeIds = new Set(siblingResult.rows.map((r) => r.attribute_id));
+      if (attributeIds.size > 1) {
+        return res.status(400).json({ error: 'Selected questions and target must share the same attribute' });
+      }
+
+      const targetRow = siblingResult.rows.find((r) => r.id === targetEdgeId);
+      const T = targetRow.child_id;
+      const targetName = (await pool.query('SELECT name FROM concepts WHERE id = $1', [T])).rows[0]?.name || null;
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        let copiedEdges = 0;
+        let copiedLinks = 0;
+        let totalSourceEdges = 0;
+
+        for (const sel of siblingResult.rows) {
+          if (sel.id === targetEdgeId) continue;
+          const X = sel.child_id;
+          const N = P.length + 1;
+          const prefixWithX = '{' + [...P, X].join(',') + '}';
+
+          // Source edges = the selected (X) edge itself + all its descendants in this context.
+          const srcResult = await client.query(
+            `SELECT id AS edge_id, parent_id, child_id, graph_path, attribute_id, created_by
+               FROM edges
+              WHERE is_hidden = false
+                AND (id = $1 OR graph_path[1:$2] = $3::integer[])
+              ORDER BY array_length(graph_path, 1) NULLS FIRST`,
+            [sel.id, N, prefixWithX]
+          );
+
+          totalSourceEdges += srcResult.rows.length;
+          if (totalSourceEdges > NEST_EDGE_CAP) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Too many questions to copy (limit ${NEST_EDGE_CAP})` });
+          }
+
+          // oldEdgeId -> { newEdgeId, isNew }. Links are copied only for newly-created
+          // edges so a repeated nest is fully idempotent (no duplicate links).
+          const edgeIdMap = new Map();
+
+          for (const src of srcResult.rows) {
+            const gp = src.graph_path || [];
+            // Splice T in at position P.length: newPath = P + [T] + gp.slice(P.length)
+            const newPath = [...P, T, ...gp.slice(P.length)];
+            const newParent = newPath[newPath.length - 1];
+
+            // Cycle guard: a concept cannot appear in its own ancestor path.
+            if (newPath.includes(src.child_id)) {
+              await client.query('ROLLBACK');
+              return res.status(400).json({ error: 'Cannot nest: would create a cycle in the graph' });
+            }
+
+            const newPathLiteral = '{' + newPath.join(',') + '}';
+            const insertResult = await client.query(
+              `INSERT INTO edges (parent_id, child_id, graph_path, attribute_id, created_by)
+               VALUES ($1, $2, $3::integer[], $4, $5)
+               ON CONFLICT (parent_id, child_id, graph_path, attribute_id) DO NOTHING
+               RETURNING id`,
+              [newParent, src.child_id, newPathLiteral, src.attribute_id, src.created_by]
+            );
+
+            let newEdgeId;
+            let isNew;
+            if (insertResult.rows.length > 0) {
+              newEdgeId = insertResult.rows[0].id;
+              isNew = true;
+              copiedEdges += 1;
+            } else {
+              const existing = await client.query(
+                `SELECT id FROM edges
+                  WHERE parent_id = $1 AND child_id = $2 AND graph_path = $3::integer[] AND attribute_id = $4`,
+                [newParent, src.child_id, newPathLiteral, src.attribute_id]
+              );
+              newEdgeId = existing.rows[0].id;
+              isNew = false;
+            }
+            edgeIdMap.set(src.edge_id, { newEdgeId, isNew });
+          }
+
+          // Copy links from each source edge to its mapped new edge (preserve original
+          // author), but only for edges we just created — keeps re-nesting idempotent.
+          for (const [oldEdgeId, { newEdgeId, isNew }] of edgeIdMap.entries()) {
+            if (!isNew) continue;
+            const linkResult = await client.query(
+              `INSERT INTO concept_links (edge_id, url, title, comment, added_by)
+               SELECT $1, url, title, comment, added_by
+                 FROM concept_links
+                WHERE edge_id = $2 AND legal_hold = false
+               RETURNING id`,
+              [newEdgeId, oldEdgeId]
+            );
+            copiedLinks += linkResult.rows.length;
+          }
+        }
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+          message: 'Nested under sibling',
+          copiedEdges,
+          copiedLinks,
+          target: { edgeId: targetEdgeId, name: targetName },
+        });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error nesting under sibling:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

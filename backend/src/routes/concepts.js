@@ -26,4 +26,7 @@ router.post('/root', authenticateToken, rootConceptCreateLimiter, conceptsContro
 // Create child concept (requires login)
 router.post('/child', authenticateToken, childConceptCreateLimiter, conceptsController.createChildConcept);
 
+// Copy selected sibling questions' subtrees under another sibling (requires login)
+router.post('/nest-under-sibling', authenticateToken, conceptsController.nestUnderSibling);
+
 module.exports = router;

@@ -333,12 +333,16 @@ const styles = {
     overflow: 'hidden',
     transition: 'transform 0.2s, box-shadow 0.2s',
     cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
   },
   cardSelected: {
     boxShadow: '0 0 0 2px #333',
   },
   cardContent: {
     padding: '20px',
+    flex: 1,
   },
   nestCheckboxRow: {
     display: 'flex',

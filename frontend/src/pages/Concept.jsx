@@ -722,15 +722,6 @@ const Concept = ({
                 {shareLinkCopied ? 'Copied!' : 'Share'}
               </button>
             </div>
-            {effectiveViewMode === 'children' && parentEdgeId && (
-              <button
-                onClick={handleEnterTunnel}
-                style={styles.flipButton}
-                title="Attach questions from other graphs/attributes to this one, to help with graph exploration"
-              >
-                {`Tunnel${tunnelLinkCount > 0 ? ` · ${tunnelLinkCount}` : ''}`}
-              </button>
-            )}
             {user && !isGuest && parentEdgeId && ownedCombos.length > 0 && (
               <div style={{ position: 'relative' }} ref={comboPickerRef}>
                 <button
@@ -788,7 +779,7 @@ const Concept = ({
                   )}
                   <div style={{ ...styles.sortRow, marginLeft: 'auto', flexShrink: 0 }}>
                     {[
-                      { value: 'saves', label: 'Graph Votes' },
+                      { value: 'saves', label: 'Votes' },
                       { value: 'new', label: 'Newest' },
                     ].map((opt, i) => (
                       <button

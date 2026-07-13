@@ -3,127 +3,72 @@ import { useAuth } from '../contexts/AuthContext';
 import { pagesAPI } from '../services/api';
 
 const PAGE_TITLES = {
-  'using-orca': 'Using orca',
+  'using-orca': 'What is orca?',
 };
 
-// ── Use case data ────────────────────────────────────────────
-const USE_CASES = [
-  {
-    label: 'Use Case: Research.',
-    text: ' Researchers can develop value hierarchy graphs (as well as those for actions, tools, and research questions) to navigate research documents of different kinds.',
-  },
-  {
-    label: 'Use Case: Education.',
-    text: ' Students and educators can create hierarchy graphs and apply them to material for self-directed exploration of core questions.',
-  },
-];
-
-// ── Using Orca content (left column) ─────────────────────────
+// ── What is orca? content (left column) ──────────────────────
 const UsingOrcaContent = ({ onImageClick }) => {
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1024
+  const showImage = (file, alt) => (
+    <div style={{ marginBottom: '28px' }}>
+      <img
+        src={`/images/using-orca/${file}`}
+        alt={alt}
+        style={usingOrcaStyles.heroImage}
+        onClick={() => onImageClick({
+          slides: [{ image: `/images/using-orca/${file}`, caption: '' }],
+          index: 0,
+        })}
+      />
+    </div>
   );
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const isNarrow = windowWidth < 768;
-
-  const gridStyle = {
-    display: isNarrow ? 'block' : 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '28px',
-    marginTop: '28px',
-  };
-
-  const cellStyle = {
-    marginBottom: isNarrow ? '28px' : 0,
-  };
 
   return (
     <div>
-
-      <div style={usingOrcaStyles.heroTitle}>
-        Build collaborative value ontologies, then use them to link to research documents
+      <div style={usingOrcaStyles.epigraph}>
+        Thoroughly conscious ignorance is the prelude to every real advance in science.
       </div>
-      <div style={{ marginBottom: '28px' }}>
-        <img
-          src="/images/using-orca/children_view.png"
-          alt="Children view showing a value hierarchy"
-          style={usingOrcaStyles.heroImage}
-          onClick={() => onImageClick({
-            slides: [{ image: '/images/using-orca/children_view.png', caption: 'Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values. This is test data' }],
-            index: 0,
-          })}
-        />
-        <p style={usingOrcaStyles.caption}>
-          Build collaborative value ontologies to organize the principles central to research and link to documents that exemplify those values. This is test data.
-        </p>
-      </div>
+      <div style={usingOrcaStyles.epigraphAttribution}>James Clerk Maxwell</div>
 
-      <div style={gridStyle}>
-        <div style={cellStyle}>
-          <div style={usingOrcaStyles.sectionTitle}>Flip View</div>
-          <img
-            src="/images/using-orca/flip-view.png"
-            alt="Flip View showing alternative parents"
-            style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
-            onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/flip-view.png', caption: '\u201CFlip View\u201D shows you the alternative parents a given question has; the question might have different child paths to explore for different parent contexts. This is test data.' }],
-              index: 0,
-            })}
-          />
-          <p style={usingOrcaStyles.caption}>
-            "Flip View" shows you the alternative parents a given question has; the question might have
-            different child paths to explore for different parent contexts. This is test data.
-          </p>
-        </div>
+      <p style={usingOrcaStyles.intro}>
+        Use orca to explore research questions. Research questions can range from the broad and
+        abstract to the specific and concrete, and the work of answering the former lies in
+        answering the latter.
+      </p>
+      <p style={usingOrcaStyles.intro}>
+        Mapping the relationships between these questions in hierarchies of abstract parents and
+        concrete children can help us consider and explore the work questions do in science.
+        Linking research work to questions provides the final concretion, instantiating questions
+        with the research aimed at answering them.
+      </p>
 
-        <div style={cellStyle}>
-          <div style={usingOrcaStyles.sectionTitle}>Tunneling</div>
-          <img
-            src="/images/using-orca/tunnel_view.png"
-            alt="Tunnel view showing pinned questions across graphs"
-            style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
-            onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/tunnel_view.png', caption: 'Pin questions from different types of graphs for quick navigation to relevant areas. This is test data.' }],
-              index: 0,
-            })}
-          />
-          <p style={usingOrcaStyles.caption}>
-            Pin questions from different types of graphs for quick navigation to relevant areas. This is test data.
-          </p>
-        </div>
+      {showImage('children_view_questions.png', 'Children view of research questions')}
 
-        <div style={cellStyle}>
-          <div style={usingOrcaStyles.sectionTitle}>Situations</div>
-          <img
-            src="/images/using-orca/superconcept.png"
-            alt="Situation page showing a curated reading list"
-            style={{ ...usingOrcaStyles.screenshot, cursor: 'pointer' }}
-            onClick={() => onImageClick({
-              slides: [{ image: '/images/using-orca/superconcept.png', caption: 'Create situations to build reading lists based on certain questions. This is test data.' }],
-              index: 0,
-            })}
-          />
-          <p style={usingOrcaStyles.caption}>
-            Create situations to build reading lists based on certain questions. This is test data.
-          </p>
-        </div>
-      </div>
+      <div style={usingOrcaStyles.sectionTitle}>Flip View</div>
+      <p style={usingOrcaStyles.intro}>
+        When a question is attached to multiple parents paths, you can explore those using Flip View.
+      </p>
 
-      {USE_CASES.map((uc, i) => (
-        <p key={i} style={usingOrcaStyles.useCase}>
-          <span style={{ fontWeight: 'bold' }}>{uc.label}</span>{uc.text}
-        </p>
-      ))}
-      <p style={{ ...usingOrcaStyles.useCase, marginTop: '24px' }}>
-        This is a free, open-source project for use by researchers. You can create your own version using the same code at{' '}
+      {showImage('flip_view_questions.png', 'Flip View of a question with multiple parent paths')}
+
+      <div style={usingOrcaStyles.sectionTitle}>Link Surfacing</div>
+      <p style={usingOrcaStyles.intro}>
+        Research work that is linked to a child concept is automatically surfaced within the entire
+        parent path, so that at any level of abstraction you can explore and vote on the full
+        variety of work taking place within.
+      </p>
+
+      <div style={usingOrcaStyles.sectionTitle}>Votes</div>
+      <p style={usingOrcaStyles.intro}>
+        You can view all the questions and links you've voted for on a single page for easy navigation.
+      </p>
+
+      {showImage('votes_page.png', 'Votes page listing voted questions and links')}
+
+      <p style={usingOrcaStyles.intro}>
+        This is a free, open-source project for use by researchers:{' '}
         <a href="https://github.com/orca-concepts/tempest" target="_blank" rel="noopener noreferrer" style={usingOrcaStyles.subtleLink}>https://github.com/orca-concepts/tempest</a>.
-        {' '}Just decide the domains of question graphs you want to build and the kind of source material to which they should link.
+        {' '}In general, this app aims to apply the categorical nature of concepts to larger, more
+        complex expressions like research questions.
       </p>
     </div>
   );
@@ -136,6 +81,24 @@ const usingOrcaStyles = {
     color: '#333',
     lineHeight: '1.6',
     margin: '0 0 24px 0',
+  },
+  epigraph: {
+    fontSize: '1.15em',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#333',
+    lineHeight: '1.6',
+    marginTop: '28px',
+    marginBottom: '4px',
+    textAlign: 'center',
+  },
+  epigraphAttribution: {
+    fontSize: '0.95em',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#777',
+    lineHeight: '1.6',
+    margin: '0 0 28px 0',
+    textAlign: 'right',
+    marginRight: '20%',
   },
   useCase: {
     fontSize: '1.1em',
@@ -311,10 +274,10 @@ const InfoPage = ({ slug, onRequestLogin }) => {
             onClick={() => handleToggleVote(comment.id)}
             title={comment.userVoted ? 'Remove vote' : 'Vote'}
           >
-            {comment.userVoted ? '\u25B2' : '\u25B3'}
+            {comment.userVoted ? '▲' : '△'}
           </button>
         ) : (
-          <span style={styles.voteIcon}>{'\u25B3'}</span>
+          <span style={styles.voteIcon}>{'△'}</span>
         )}
         <span style={styles.voteCount}>{comment.voteCount}</span>
       </div>
@@ -459,7 +422,7 @@ const InfoPage = ({ slug, onRequestLogin }) => {
                       style={{ ...styles.lightboxArrow, opacity: canPrev ? 1 : 0.3 }}
                       onClick={() => canPrev && setLightbox(prev => ({ ...prev, index: prev.index - 1 }))}
                       disabled={!canPrev}
-                    >{'\u2190'}</button>
+                    >{'←'}</button>
                     <span style={styles.lightboxIndicator}>
                       {lightbox.index + 1} of {lightbox.slides.length}
                     </span>
@@ -467,13 +430,13 @@ const InfoPage = ({ slug, onRequestLogin }) => {
                       style={{ ...styles.lightboxArrow, opacity: canNext ? 1 : 0.3 }}
                       onClick={() => canNext && setLightbox(prev => ({ ...prev, index: prev.index + 1 }))}
                       disabled={!canNext}
-                    >{'\u2192'}</button>
+                    >{'→'}</button>
                   </div>
                 )}
                 <button
                   style={styles.lightboxClose}
                   onClick={() => setLightbox(null)}
-                >{'\u00D7'}</button>
+                >{'×'}</button>
               </div>
             </div>
           );

@@ -27,7 +27,9 @@ const Breadcrumb = ({ path, currentConcept, currentAttribute, onBreadcrumbClick 
     fetchNames();
   }, [path]);
   
-  const truncateName = (name, maxLength = 20) => {
+  // Show the full question text (wrapping onto multiple lines as needed). Only
+  // truncate at a length long enough to cause real layout problems.
+  const truncateName = (name, maxLength = 300) => {
     if (name.length <= maxLength) return name;
     return name.substring(0, maxLength) + '...';
   };
@@ -89,12 +91,18 @@ const styles = {
     textDecoration: 'underline',
     position: 'relative',
     fontFamily: '"EB Garamond", Georgia, serif',
+    maxWidth: '100%',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
   },
   currentCrumb: {
     color: '#333',
     fontWeight: '500',
     position: 'relative',
     fontFamily: '"EB Garamond", Georgia, serif',
+    maxWidth: '100%',
+    overflowWrap: 'break-word',
+    wordBreak: 'break-word',
   },
   separator: {
     color: '#999',

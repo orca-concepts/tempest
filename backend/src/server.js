@@ -128,8 +128,8 @@ if (process.env.NODE_ENV === 'production') {
       twitterCard: 'summary_large_image',
     },
     '/using-orca': {
-      title: 'Using Orca',
-      description: 'An introduction to building shared concept hierarchies and exploring research with Orca.',
+      title: 'What is orca?',
+      description: 'Map the categorical relationships between research questions.',
       image: 'https://orcaconcepts.org/og-using-orca.png',
       twitterCard: 'summary_large_image',
     },

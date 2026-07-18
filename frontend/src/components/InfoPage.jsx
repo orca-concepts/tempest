@@ -24,13 +24,9 @@ const UsingOrcaContent = ({ onImageClick }) => {
 
   return (
     <div>
-      <div style={usingOrcaStyles.epigraph}>
-        Thoroughly conscious ignorance is the prelude to every real advance in science.
-      </div>
-      <div style={usingOrcaStyles.epigraphAttribution}>James Clerk Maxwell</div>
 
       <p style={usingOrcaStyles.intro}>
-        Use orca to explore research questions. Research questions can range from the broad and
+        orca is a tool for exploring research questions. Research questions can range from the broad and
         abstract to the specific and concrete, and the work of answering the former lies in
         answering the latter.
       </p>
@@ -46,6 +42,8 @@ const UsingOrcaContent = ({ onImageClick }) => {
       <div style={usingOrcaStyles.sectionTitle}>Flip View</div>
       <p style={usingOrcaStyles.intro}>
         When a question is attached to multiple parents paths, you can explore those using Flip View.
+        A question's parent path is a good contextualizing mechanism, so adding and exploring questions 
+        that exist in multiple parent paths allows users to compare those different contexts.
       </p>
 
       {showImage('flip_view_questions.png', 'Flip View of a question with multiple parent paths')}
@@ -54,15 +52,35 @@ const UsingOrcaContent = ({ onImageClick }) => {
       <p style={usingOrcaStyles.intro}>
         Research work that is linked to a child concept is automatically surfaced within the entire
         parent path, so that at any level of abstraction you can explore and vote on the full
-        variety of work taking place within.
+        variety of work taking place within. Each question becomes a reading list of the research linked
+        to any of its descendant questions.
       </p>
 
       <div style={usingOrcaStyles.sectionTitle}>Votes</div>
       <p style={usingOrcaStyles.intro}>
-        You can view all the questions and links you've voted for on a single page for easy navigation.
+        You can view all the questions and links you've voted for on a single page for easy navigation and 
+        maintenance of votes.
       </p>
 
       {showImage('votes_page.png', 'Votes page listing voted questions and links')}
+
+      <div style={usingOrcaStyles.sectionTitle}>Append-only; vote set colors</div>
+      <p style={usingOrcaStyles.intro}>
+        As users vote on different questions, common patterns of votes will emerge, groups of users who voted 
+        for the same set of child questions for a given parent. These groups are visualized by color swatches 
+        which can be clicked to filter the page to only that set.
+      </p>
+      <p style={usingOrcaStyles.intro}>
+        This feature is designed to allow the child set of questions for a given parent 
+        (or indeed the set of root level questions) to be a dynamic expression of that set of different users’ 
+        preferred directions for research. orca is append-only, meaning questions cannot be deleted once they 
+        are made, so curating and maintaining ones votes is an important mechanism by which the app can display 
+        and weight the different avenues that can emerge from a given question. Viewing and comparing these color 
+        sets allows users to explore how that given question can be differentiated, which might help to spark new 
+        ideas for differentiation.
+      </p>
+        {showImage('vote_set.png', 'Children view displaying color vote sets')}
+
 
       <p style={usingOrcaStyles.intro}>
         This is a free, open-source project for use by researchers:{' '}

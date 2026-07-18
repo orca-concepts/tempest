@@ -828,7 +828,7 @@ const conceptsController = {
         if (peResult.rows.length > 0) parentEdgeId = peResult.rows[0].id;
       }
 
-      const VOTE_SET_THRESHOLD = 10;
+      const VOTE_SET_THRESHOLD = 2;
       const rawSets = result.rows.map((row) => ({
         edgeIds: row.saved_edge_ids,
         childIds: row.saved_child_ids,

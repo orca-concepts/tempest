@@ -36,7 +36,7 @@ const AppShell = () => {
   }, []);
 
   // Phase 30g: Info page detection and header nav
-  const INFO_SLUGS = ['using-orca'];
+  const INFO_SLUGS = ['thoroughly-conscious-ignorance', 'using-orca'];
   const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'report-infringement', 'counter-notice', 'admin/legal'];
   const infoSlug = INFO_SLUGS.find(s => location.pathname === `/${s}`);
   const isLegalPage = LEGAL_SLUGS.some(s => location.pathname === `/${s}`);
@@ -1204,6 +1204,7 @@ const AppShell = () => {
         <div style={styles.headerContent}>
           <div style={styles.titleRow}>
             <h1 style={styles.title} onClick={() => navigate('/')} role="button" tabIndex={0}>orca</h1>
+            <button style={{ ...styles.navLink, ...(infoSlug === 'thoroughly-conscious-ignorance' ? styles.navLinkActive : {}) }} onClick={() => navigate('/thoroughly-conscious-ignorance')}>Thoroughly Conscious Ignorance</button>
             <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>What is orca?</button>
             {!isOutreachMode && <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>}
           </div>
@@ -1609,6 +1610,9 @@ const styles = {
     borderBottom: '1px solid #eee',
     padding: '10px 20px',
     flexShrink: 0,
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
   },
   headerContent: {
     display: 'flex',

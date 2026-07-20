@@ -133,6 +133,12 @@ if (process.env.NODE_ENV === 'production') {
       image: 'https://orcaconcepts.org/og-using-orca.png',
       twitterCard: 'summary_large_image',
     },
+    '/thoroughly-conscious-ignorance': {
+      title: 'Thoroughly Conscious Ignorance',
+      description: 'An essay on questions, the mapping of ignorance, and how orca helps the research community taxonomize the questions that drive science.',
+      image: 'https://orcaconcepts.org/og-conscious-ignorance.png',
+      twitterCard: 'summary_large_image',
+    },
     // Future page-specific overrides go here.
   };
 

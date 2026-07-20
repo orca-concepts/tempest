@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { pagesAPI } from '../services/api';
 
 const PAGE_TITLES = {
   'using-orca': 'What is orca?',
+  'thoroughly-conscious-ignorance': 'Thoroughly Conscious Ignorance',
 };
 
 // ── What is orca? content (left column) ──────────────────────
@@ -92,6 +94,109 @@ const UsingOrcaContent = ({ onImageClick }) => {
   );
 };
 
+// ── Thoroughly Conscious Ignorance essay (left column) ───────
+const ThoroughlyConsciousIgnoranceContent = ({ onImageClick }) => {
+  const showImage = (file, alt) => (
+    <div style={{ marginBottom: '28px' }}>
+      <img
+        src={`/images/using-orca/${file}`}
+        alt={alt}
+        style={usingOrcaStyles.heroImage}
+        onClick={() => onImageClick({
+          slides: [{ image: `/images/using-orca/${file}`, caption: '' }],
+          index: 0,
+        })}
+      />
+    </div>
+  );
+
+  return (
+    <div>
+      <p style={usingOrcaStyles.epigraph}>
+        Thoroughly conscious ignorance is the prelude to every real advance in science.
+      </p>
+      <p style={usingOrcaStyles.epigraphAttribution}>James Clerk Maxwell</p>
+
+      <p style={usingOrcaStyles.intro}>
+        In 2019, John Brockman compiled a book called <span style={usingOrcaStyles.italic}>The Last
+        Unknowns</span>, asking scholars across various disciplines for the open questions on which
+        they feel their life’s work has focused.
+        The questions were naturally both abstract and consequential, the ‘big questions’ in research
+        that we might wrestle with for centuries, millennia, or perhaps for all time. They are not
+        questions that a single project, career, or even discipline is likely to answer; in actual
+        research material you might only see glimpses of them in the stage-setting introductions to an
+        article. Works like Brockman’s, along with field-specific white papers and roadmaps, aim to
+        orient research using these big abstract questions.
+      </p>
+
+      <p style={usingOrcaStyles.intro}>
+        In general, questions are a fascinating linguistic tool. They allow us to map out our
+        ignorance, to define the conceptual spaces in which we cannot reliably predict the reality
+        around us. To think of a question means you are not ignorant in the pejorative sense, but
+        rather you are participating in the ‘thoroughly conscious ignorance’ that Maxwell praises in
+        his famous quote. By thinking about the questions you have, you are bringing ignorance into
+        consciousness, and by sharing it you are making the world’s collectively conscious ignorance
+        more thorough. Stuart Firestein, in his excellent book <span style={usingOrcaStyles.italic}>Ignorance:
+        How it Drives Science</span>, paints a more detailed picture of this phenomenon: “This is
+        knowledgeable ignorance,
+        perceptive ignorance, insightful ignorance. It leads us to frame better questions, the first
+        step to getting better answers.”
+      </p>
+
+      <p style={usingOrcaStyles.intro}>
+        Maxwell’s phrase itself raises a question: how thorough can we be? What does it mean to pursue
+        thoroughly conscious ignorance? Consider the type of question that appears in <span style={usingOrcaStyles.italic}>The
+        Last Unknowns</span>, aptly described by its subtitle: <span style={usingOrcaStyles.italic}>Deep,
+        Elegant, Profound Unanswered Questions About the Universe, the Mind, the Future of
+        Civilization, and the Meaning of Life</span>. The defining
+        characteristic of these questions is their abstractness; they are generative and
+        thought-provoking because the implications of answering them are general and vast. When we
+        think about thoroughly exploring normal concepts, we reflect on their nature as categories: we
+        build ourselves a taxonomical bridge between abstract notions and concrete instances. Each
+        step lets us talk and think about the world around us in new ways: you can reason about
+        mammals or nuclear fusion or coping mechanisms without reciting the full list of features and
+        examples that define them. If we treat research questions as concepts in this way, the project
+        of building out a thoroughly conscious ignorance becomes one of mapping the avenues of
+        abstraction that emerge from a question fitted to the scope of a research project, avenues that
+        invariably lead to one or more ‘big questions’.
+      </p>
+
+      <p style={usingOrcaStyles.intro}>
+        This is the project that orca aims to facilitate. orca is a place where members of the
+        research community can taxonomize questions with a parent/child hierarchy, voting on which
+        slightly-more-concrete children they engage with for a given slightly-more-abstract parent,
+        and then linking to research material when the questions reach an appropriate level of
+        concreteness. These links surface upwards along the hierarchy, so each question in orca becomes
+        a reading list of the material attached to its descendant questions.
+      </p>
+
+      {showImage('children_view_questions.png', 'Children view of research questions')}
+
+      <p style={usingOrcaStyles.intro}>
+        When users inevitably vote on different subsets of child questions, these sets are tagged with
+        unique colors, so that the different tastes and directions of research for a given parent
+        question can be easily seen. The color sets can also act as filters to focus on a particular
+        direction. This visualization encourages a dynamic taxonomy; the best ways to differentiate a
+        given parent question (and indeed the best methods of differentiating questions in general)
+        are diverse and should change over time. You can see the full list of questions you have voted
+        for and use this list to navigate back to those questions, so you can change your votes as you
+        revisit them and see how the voting landscape has changed.
+      </p>
+
+      {showImage('vote_set.png', 'Children view displaying color vote sets')}
+      {showImage('votes_page.png', 'Votes page listing voted questions and links')}
+
+      <p style={usingOrcaStyles.intro}>
+        Active, dynamic categorization of questions is key to the project of thoroughly conscious
+        ignorance. As we become more conscious of the world around us, our taxonomies change
+        drastically and new language is developed to meet new levels of understanding. To apply this
+        practice to questions is to pave the way for more differentiated and better understood
+        ignorance, setting the stage for that ignorance to transform into new understanding.
+      </p>
+    </div>
+  );
+};
+
 const usingOrcaStyles = {
   intro: {
     fontSize: '1.1em',
@@ -99,6 +204,9 @@ const usingOrcaStyles = {
     color: '#333',
     lineHeight: '1.6',
     margin: '0 0 24px 0',
+  },
+  italic: {
+    fontStyle: 'italic',
   },
   epigraph: {
     fontSize: '1.15em',
@@ -171,6 +279,7 @@ const usingOrcaStyles = {
 
 // ── Main InfoPage component ──────────────────────────────────
 const InfoPage = ({ slug, onRequestLogin }) => {
+  const navigate = useNavigate();
   const { user, isGuest } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -187,7 +296,8 @@ const InfoPage = ({ slug, onRequestLogin }) => {
 
   const title = PAGE_TITLES[slug] || slug;
   const isUsingOrca = slug === 'using-orca';
-  const isTwoCol = isUsingOrca;
+  const isEssay = slug === 'thoroughly-conscious-ignorance';
+  const isTwoCol = isUsingOrca || isEssay;
   const commentsHeading = isUsingOrca ? 'Report Bugs / Request Enhancements' : 'Community Comments';
 
   const loadComments = useCallback(async () => {
@@ -203,8 +313,9 @@ const InfoPage = ({ slug, onRequestLogin }) => {
   }, [slug]);
 
   useEffect(() => {
+    if (isEssay) return; // static essay page — no comments section
     loadComments();
-  }, [loadComments]);
+  }, [loadComments, isEssay]);
 
   const handleAddComment = async () => {
     if (!commentBody.trim() || submitting) return;
@@ -413,8 +524,31 @@ const InfoPage = ({ slug, onRequestLogin }) => {
       <div style={styles.container}>
         <div style={styles.twoColWrapper}>
           <div style={styles.leftCol}>
-            <h1 style={styles.pageTitle}>{title}</h1>
+            <h1 style={{ ...styles.pageTitle, ...(isEssay ? styles.pageTitleCentered : {}) }}>{title}</h1>
             {isUsingOrca && <UsingOrcaContent onImageClick={setLightbox} />}
+            {isEssay && <ThoroughlyConsciousIgnoranceContent onImageClick={setLightbox} />}
+
+            {isEssay && (
+              <div style={styles.footerNav}>
+                <button style={styles.footerNavButton} onClick={() => navigate('/')}>
+                  <span style={styles.footerArrow}>←</span> use orca
+                </button>
+                <button style={styles.footerNavButton} onClick={() => navigate('/using-orca')}>
+                  learn more about orca <span style={styles.footerArrow}>→</span>
+                </button>
+              </div>
+            )}
+
+            {isUsingOrca && (
+              <div style={styles.footerNavLeft}>
+                <button style={styles.footerNavButton} onClick={() => navigate('/')}>
+                  <span style={styles.footerArrow}>«</span> use orca
+                </button>
+                <button style={styles.footerNavButton} onClick={() => navigate('/thoroughly-conscious-ignorance')}>
+                  <span style={styles.footerArrow}>←</span> thoroughly conscious ignorance
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -659,6 +793,40 @@ const styles = {
     fontWeight: '600',
     color: '#333',
     margin: '0 0 16px 0',
+  },
+  pageTitleCentered: {
+    textAlign: 'center',
+  },
+  footerNav: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    marginTop: '16px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e8e6e2',
+  },
+  footerNavLeft: {
+    display: 'flex',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: '12px',
+    marginTop: '16px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e8e6e2',
+  },
+  footerNavButton: {
+    padding: '8px 14px',
+    backgroundColor: 'transparent',
+    color: '#333',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '15px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  footerArrow: {
+    color: '#777',
   },
   placeholder: {
     fontSize: '15px',

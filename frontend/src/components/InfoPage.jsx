@@ -120,7 +120,7 @@ const ThoroughlyConsciousIgnoranceContent = ({ onImageClick }) => {
       <p style={usingOrcaStyles.intro}>
         The infrastructure of modern science indexes answers, not questions. We build vast ontologies, 
         curate libraries of citations, develop detailed impact metrics, but when it comes to mapping the 
-        structure of the unknown, we seem to fall flat. The thoroughly conscious ignorance that Maxwell 
+        structure of the unknown, we seem to fall flat. The conscious ignorance that Maxwell 
         praises seems only to exist tacitly in the minds of individual scientists, raising the question: 
         what does it mean to pursue thoroughly conscious ignorance?
       </p>

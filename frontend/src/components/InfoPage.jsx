@@ -118,53 +118,27 @@ const ThoroughlyConsciousIgnoranceContent = ({ onImageClick }) => {
       <p style={usingOrcaStyles.epigraphAttribution}>James Clerk Maxwell</p>
 
       <p style={usingOrcaStyles.intro}>
-        In 2019, John Brockman compiled a book called <span style={usingOrcaStyles.italic}>The Last
-        Unknowns</span>, asking scholars across various disciplines for the open questions on which
-        they feel their life’s work has focused.
-        The questions were naturally both abstract and consequential, the ‘big questions’ in research
-        that we might wrestle with for centuries, millennia, or perhaps for all time. They are not
-        questions that a single project, career, or even discipline is likely to answer; in actual
-        research material you might only see glimpses of them in the stage-setting introductions to an
-        article. Works like Brockman’s, along with field-specific white papers and roadmaps, aim to
-        orient research using these big abstract questions.
+        The infrastructure of modern science indexes answers, not questions. We build vast ontologies, 
+        curate libraries of citations, develop detailed impact metrics, but when it comes to mapping the 
+        structure of the unknown, we seem to fall flat. The thoroughly conscious ignorance that Maxwell 
+        praises seems only to exist tacitly in the minds of individual scientists, raising the question: 
+        what does it mean to pursue thoroughly conscious ignorance?
       </p>
 
       <p style={usingOrcaStyles.intro}>
-        In general, questions are a fascinating linguistic tool. They allow us to map out our
-        ignorance, to define the conceptual spaces in which we cannot reliably predict the reality
-        around us. To think of a question means you are not ignorant in the pejorative sense, but
-        rather you are participating in the ‘thoroughly conscious ignorance’ that Maxwell praises in
-        his famous quote. By thinking about the questions you have, you are bringing ignorance into
-        consciousness, and by sharing it you are making the world’s collectively conscious ignorance
-        more thorough. Stuart Firestein, in his excellent book <span style={usingOrcaStyles.italic}>Ignorance:
-        How it Drives Science</span>, paints a more detailed picture of this phenomenon: “This is
-        knowledgeable ignorance,
-        perceptive ignorance, insightful ignorance. It leads us to frame better questions, the first
-        step to getting better answers.”
-      </p>
-
-      <p style={usingOrcaStyles.intro}>
-        Maxwell’s phrase itself raises a question: how thorough can we be? What does it mean to pursue
-        thoroughly conscious ignorance? Consider the type of question that appears in <span style={usingOrcaStyles.italic}>The
-        Last Unknowns</span>, aptly described by its subtitle: <span style={usingOrcaStyles.italic}>Deep,
-        Elegant, Profound Unanswered Questions About the Universe, the Mind, the Future of
-        Civilization, and the Meaning of Life</span>. The defining
-        characteristic of these questions is their abstractness; they are generative and
-        thought-provoking because the implications of answering them are general and vast. When we
-        think about thoroughly exploring normal concepts, we reflect on their nature as categories: we
-        build ourselves a taxonomical bridge between abstract notions and concrete instances. Each
-        step lets us talk and think about the world around us in new ways: you can reason about
-        mammals or nuclear fusion or coping mechanisms without reciting the full list of features and
-        examples that define them. If we treat research questions as concepts in this way, the project
-        of building out a thoroughly conscious ignorance becomes one of mapping the avenues of
-        abstraction that emerge from a question fitted to the scope of a research project, avenues that
-        invariably lead to one or more ‘big questions’.
+        When we think about thoroughly exploring normal concepts, we reflect on their nature as categories: 
+        we build ourselves a taxonomical bridge between abstract notions and concrete instances. Each step lets 
+        us talk and think about the world around us in new ways: you can reason about mammals or nuclear fusion 
+        or coping mechanisms without reciting the full list of  features and examples that define them. If we treat 
+        research questions as concepts in this way, the project of building out a thoroughly conscious ignorance becomes 
+        one of mapping the avenues of abstraction that span from the ‘big questions’ the drive progress in a discipline 
+        down to questions so concrete they could be addressed by a single research project.
       </p>
 
       <p style={usingOrcaStyles.intro}>
         This is the project that orca aims to facilitate. orca is a place where members of the
         research community can taxonomize questions with a parent/child hierarchy, voting on which
-        slightly-more-concrete children they engage with for a given slightly-more-abstract parent,
+        more-concrete children they engage with for a given more-abstract parent
         and then linking to research material when the questions reach an appropriate level of
         concreteness. These links surface upwards along the hierarchy, so each question in orca becomes
         a reading list of the material attached to its descendant questions.

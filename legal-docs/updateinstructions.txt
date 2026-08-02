@@ -1,0 +1,7 @@
+This folder is reference; the app reads from frontend/public/legal
+
+Google Drive
+
+File > Download > Web page (.html, zipped)
+
+Extract then place into orca/orca-public/frontend/public/legal and orca/orca-public/legal-docs

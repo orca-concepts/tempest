@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import CopyLinkPicker from './CopyLinkPicker';
 import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
-import MentionsPanel from './MentionsPanel';
 import { getSetColor } from './VoteSetBar';
 import { votesAPI } from '../services/api';
 
@@ -49,11 +48,9 @@ const LinkCard = ({
   const [addendumError, setAddendumError] = useState(null);
   const [addendumSubmitting, setAddendumSubmitting] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [mentionsExpanded, setMentionsExpanded] = useState(false);
   const iData = instanceData || {};
-  const sameCount = (iData.sameConceptInstances || []).length;
   const otherCount = (iData.otherConceptInstances || []).length;
-  const hasFetched = !!iData.sameConceptInstances;
+  const hasFetched = !!iData.otherConceptInstances;
 
   const handleVote = (e) => {
     e.stopPropagation();
@@ -238,34 +235,12 @@ const LinkCard = ({
         <div style={s.instanceRow}>
           <div style={s.instanceColumn}>
             <span
-              style={sameCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
-              onClick={sameCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'same') : undefined}
-            >
-              This question ({sameCount}) {sameCount > 0 ? (iData.expanded?.same ? '\u25be' : '\u25b8') : ''}
-            </span>
-            {iData.expanded?.same && sameCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.sameConceptInstances.map(renderInstanceSnippet)}</div>}
-          </div>
-          <div style={s.instanceColumn}>
-            <span
               style={otherCount > 0 ? s.instanceToggle : s.instanceToggleDisabled}
               onClick={otherCount > 0 ? () => onToggleInstance && onToggleInstance(link.id, 'other') : undefined}
             >
-              All questions ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
+              Other questions with this link ({otherCount}) {otherCount > 0 ? (iData.expanded?.other ? '\u25be' : '\u25b8') : ''}
             </span>
             {iData.expanded?.other && otherCount > 0 && renderInstanceSnippet && <div style={s.instanceList}>{iData.otherConceptInstances.map(renderInstanceSnippet)}</div>}
-          </div>
-          <div style={s.instanceColumn}>
-            <span
-              style={(link.mentionCount || 0) > 0 ? s.instanceToggle : s.instanceToggleDisabled}
-              onClick={(link.mentionCount || 0) > 0 ? (e) => { e.stopPropagation(); setMentionsExpanded(p => !p); } : undefined}
-            >
-              Mentioned by ({link.mentionCount || 0}) {(link.mentionCount || 0) > 0 ? (mentionsExpanded ? '\u25be' : '\u25b8') : ''}
-            </span>
-            {mentionsExpanded && (link.mentionCount || 0) > 0 && (
-              <div style={s.instanceList}>
-                <MentionsPanel targetType="link" targetId={link.id} emptyStateNoun="link" expanded={true} />
-              </div>
-            )}
           </div>
         </div>
       )}

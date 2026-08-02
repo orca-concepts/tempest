@@ -212,31 +212,6 @@ const conceptsController = {
         tunnelLinkCount = tunnelCountResult.rows[0].cnt || 0;
       }
 
-      // Phase 65b-2: mention count for this concept at this path
-      // IMPORTANT: This visibility filter must match the one in mentionsController.js.
-      // Both filter out mentions whose source's parent link/tunnel is hidden or legal-held.
-      // If you change one, change all four. See Phase 65b-2-fix for the bug that motivated this.
-      const mentionCountResult = await pool.query(
-        `SELECT COUNT(*) AS cnt
-         FROM comment_mentions cm
-         LEFT JOIN concept_links cl_c ON cm.source_type = 'concept_link_comment' AND cm.source_id = cl_c.id
-         LEFT JOIN concept_link_addenda cla_c ON cm.source_type = 'concept_link_addendum' AND cm.source_id = cla_c.id
-         LEFT JOIN concept_links cl_p ON cl_p.id = COALESCE(cl_c.id, cla_c.concept_link_id)
-         LEFT JOIN tunnel_links tl_c ON cm.source_type = 'tunnel_link_comment' AND cm.source_id = tl_c.id
-         LEFT JOIN tunnel_link_addenda tla_c ON cm.source_type = 'tunnel_link_addendum' AND cm.source_id = tla_c.id
-         LEFT JOIN tunnel_links tl_p ON tl_p.id = COALESCE(tl_c.id, tla_c.tunnel_link_id)
-         WHERE cm.target_type = 'concept' AND cm.target_id = $1 AND cm.target_path = $2::int[]
-           AND (
-             (cm.source_type IN ('concept_link_comment', 'concept_link_addendum') AND cl_p.id IS NOT NULL AND cl_p.legal_hold = false
-               AND EXISTS (SELECT 1 FROM edges e WHERE e.id = cl_p.edge_id AND e.is_hidden = false AND e.legal_hold = false))
-             OR
-             (cm.source_type IN ('tunnel_link_comment', 'tunnel_link_addendum') AND tl_p.id IS NOT NULL
-               AND EXISTS (SELECT 1 FROM edges e WHERE e.id = tl_p.origin_edge_id AND e.is_hidden = false AND e.legal_hold = false))
-           )`,
-        [id, graphPath.slice(0, -1)]
-      );
-      const mentionCount = parseInt(mentionCountResult.rows[0].cnt || 0);
-
       res.json({
         concept,
         path: graphPath,
@@ -246,7 +221,6 @@ const conceptsController = {
         currentEdgeId,
         altParentCount,
         tunnelLinkCount,
-        mentionCount
       });
     } catch (error) {
       console.error('Error fetching concept:', error);

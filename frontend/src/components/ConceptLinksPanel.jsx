@@ -3,14 +3,12 @@ import { votesAPI, combosAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import OrcidBadge from './OrcidBadge';
 import LinkCard from './LinkCard';
-import MentionsPanel from './MentionsPanel';
 
 const ConceptLinksPanel = ({
   conceptId, conceptName, path, currentEdgeId, isGuest, viewMode,
   onRequestLogin, onNavigateToSituation, onOpenConceptTab,
   pendingScrollLinkId, onPendingScrollLinkConsumed,
   collapsible = false,
-  conceptMentionCount = 0,
   voteSets = [],
 }) => {
   const { user } = useAuth();
@@ -103,9 +101,13 @@ const ConceptLinksPanel = ({
     setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
   }, []);
 
-  // Pending scroll
+  // Pending scroll — only fire when the target link is directly on this edge (not inherited
+  // from a descendant). Inherited links share the same id but are "owned" by a child concept's
+  // panel; that panel fires the scroll and consumes pendingScrollLinkId instead.
   useEffect(() => {
     if (!pendingScrollLinkId || webLinksLoading || webLinks.length === 0) return;
+    const targetLink = webLinks.find(l => l.id === pendingScrollLinkId);
+    if (!targetLink || targetLink.isInherited) return;
     const timer = setTimeout(() => {
       scrollToAndHighlight(pendingScrollLinkId);
       if (onPendingScrollLinkConsumed) onPendingScrollLinkConsumed();
@@ -128,7 +130,7 @@ const ConceptLinksPanel = ({
       const newData = {};
       webLinks.forEach(link => {
         const all = (urlMap[link.url] || []).filter(r => r.id !== link.id);
-        newData[link.id] = { loading: false, sameConceptInstances: all.filter(r => r.concept_id === conceptId), otherConceptInstances: all.filter(r => r.concept_id !== conceptId), expanded: {} };
+        newData[link.id] = { loading: false, otherConceptInstances: all.filter(r => r.concept_id !== conceptId), expanded: {} };
       });
       setInstanceData(newData);
     });
@@ -239,16 +241,17 @@ const ConceptLinksPanel = ({
   };
 
   const renderInstanceSnippet = (inst) => {
-    const pathParts = (inst.graph_path || []).map(id => instancePathNames[id] || `#${id}`);
-    pathParts.push(inst.concept_name);
-    const pathDisplay = pathParts.join(' \u2192 ');
+    const ancestorParts = (inst.graph_path || []).map(id => instancePathNames[id] || `#${id}`);
     const snippet = inst.comment ? (inst.comment.length > 100 ? inst.comment.substring(0, 100) + '\u2026' : inst.comment) : null;
     return (
       <div key={inst.id} style={styles.instanceRow} onClick={() => handleInstanceClick(inst)}
         onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f5f0e8'; }}
         onMouseLeave={e => { e.currentTarget.style.backgroundColor = ''; }}
-        title={inst.concept_id === conceptId ? 'Scroll to this link' : 'Open this question'}>
-        <div style={styles.instancePath}>{pathDisplay}</div>
+        title="Open this question">
+        <div style={styles.instancePath}>
+          {ancestorParts.length > 0 && <span style={{ fontWeight: 'normal' }}>{ancestorParts.join(' \u2192 ')} {'\u2192 '}</span>}
+          <span style={{ fontWeight: '600' }}>{inst.concept_name}</span>
+        </div>
         {snippet && <div style={styles.instanceSnippet}>{snippet}</div>}
       </div>
     );
@@ -361,21 +364,8 @@ const ConceptLinksPanel = ({
       {collapsible && <div style={styles.collapseHeader} onClick={() => setCollapsed(prev => !prev)}><span>Links {collapsed ? '\u25b8' : '\u25be'}</span></div>}
       {(!collapsible || !collapsed) && (
         <>
-          <div style={styles.tabBar}>
-            <span onClick={() => setActiveTab('weblinks')} style={{ ...styles.tab, ...(activeTab === 'weblinks' ? styles.tabActive : {}) }}>Links</span>
-            <><span style={styles.tabSeparator}>|</span><span onClick={() => setActiveTab('mentions')} style={{ ...styles.tab, ...(activeTab === 'mentions' ? styles.tabActive : {}), ...(conceptMentionCount === 0 && activeTab !== 'mentions' ? { color: '#ccc' } : {}) }}>Mentioned by ({conceptMentionCount})</span></>
-          </div>
           <div style={styles.content}>
-            {activeTab === 'weblinks' && renderWebLinksTab()}
-            {activeTab === 'mentions' && (
-              <MentionsPanel
-                targetType="concept"
-                targetId={conceptId}
-                targetPath={path || []}
-                emptyStateNoun="question"
-                expanded={true}
-              />
-            )}
+            {renderWebLinksTab()}
           </div>
         </>
       )}

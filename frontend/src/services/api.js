@@ -404,15 +404,4 @@ export const adminAPI = {
     api.post(`/admin/legal/strikes/${strikeId}/clear`, { reason }),
 };
 
-// Phase 65b: Mentions
-export const mentionsAPI = {
-  getMentions: (targetType, targetId, { path, limit, offset } = {}) => {
-    const params = {};
-    if (path != null) params.path = path;
-    if (limit != null) params.limit = limit;
-    if (offset != null) params.offset = offset;
-    return api.get(`/mentions/${targetType}/${targetId}`, { params });
-  },
-};
-
 export default api;

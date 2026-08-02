@@ -3,7 +3,6 @@ import { conceptsAPI, tunnelsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
-import MentionsPanel from './MentionsPanel';
 
 const TunnelView = ({
   conceptId,
@@ -478,7 +477,6 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
   const isCreator = user && card.createdByUserId === user.id;
   const [showAddendumModal, setShowAddendumModal] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [mentionsExpanded, setMentionsExpanded] = useState(false);
   const [addendumBody, setAddendumBody] = useState('');
   const [addendumError, setAddendumError] = useState(null);
   const [addendumSubmitting, setAddendumSubmitting] = useState(false);
@@ -576,18 +574,7 @@ const TunnelCard = ({ card, attrId, isGuest, user, onVote, onClick, onRightClick
             Add addendum
           </span>
         )}
-        <span
-          onClick={(e) => { e.stopPropagation(); if ((card.mentionCount || 0) > 0) setMentionsExpanded(p => !p); }}
-          style={(card.mentionCount || 0) > 0 ? styles.addendumBtn : { ...styles.addendumBtn, color: '#ccc', cursor: 'default' }}
-        >
-          Mentioned by ({card.mentionCount || 0}) {(card.mentionCount || 0) > 0 ? (mentionsExpanded ? '\u25be' : '\u25b8') : ''}
-        </span>
       </div>
-      {mentionsExpanded && (card.mentionCount || 0) > 0 && (
-        <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #e0e0e0' }}>
-          <MentionsPanel targetType="tunnel" targetId={card.tunnelLinkId} emptyStateNoun="tunnel link" expanded={true} />
-        </div>
-      )}
       {/* Addendum modal */}
       {showAddendumModal && (
         <div style={styles.modalOverlay} onClick={(e) => { e.stopPropagation(); setShowAddendumModal(false); }}>

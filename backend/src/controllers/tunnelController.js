@@ -1,18 +1,5 @@
 const pool = require('../config/database');
-const { parseMentions } = require('../utils/parseMentions');
 const { orcidForDisplay } = require('../utils/orcidValidator');
-
-// Insert mention rows parsed from comment/addendum text.
-async function insertMentions(queryable, sourceType, sourceId, text) {
-  const mentions = parseMentions(text);
-  for (const m of mentions) {
-    await queryable.query(
-      `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [sourceType, sourceId, m.targetType, m.targetId, m.targetPath]
-    );
-  }
-}
 
 const tunnelController = {
   // GET /api/tunnels/:edgeId — get all tunnel links for an edge, grouped by attribute
@@ -44,27 +31,7 @@ const tunnelController = {
           u.orcid_id AS author_orcid_id,
           (SELECT COUNT(*) FROM tunnel_votes tv WHERE tv.tunnel_link_id = tl.id) AS tunnel_vote_count,
           (SELECT BOOL_OR(tv.user_id = $2) FROM tunnel_votes tv WHERE tv.tunnel_link_id = tl.id) AS user_voted,
-          (SELECT COUNT(DISTINCT v.user_id) FROM votes v WHERE v.edge_id = tl.linked_edge_id) AS save_vote_count,
-          -- IMPORTANT: This visibility filter must match the one in mentionsController.js.
-          -- Both filter out mentions whose source's parent link/tunnel is hidden or legal-held.
-          -- If you change one, change all four. See Phase 65b-2-fix for the bug that motivated this.
-          (SELECT COUNT(*)
-           FROM comment_mentions cm
-           LEFT JOIN concept_links cl_c2 ON cm.source_type = 'concept_link_comment' AND cm.source_id = cl_c2.id
-           LEFT JOIN concept_link_addenda cla_c2 ON cm.source_type = 'concept_link_addendum' AND cm.source_id = cla_c2.id
-           LEFT JOIN concept_links cl_p2 ON cl_p2.id = COALESCE(cl_c2.id, cla_c2.concept_link_id)
-           LEFT JOIN tunnel_links tl_c2 ON cm.source_type = 'tunnel_link_comment' AND cm.source_id = tl_c2.id
-           LEFT JOIN tunnel_link_addenda tla_c2 ON cm.source_type = 'tunnel_link_addendum' AND cm.source_id = tla_c2.id
-           LEFT JOIN tunnel_links tl_p2 ON tl_p2.id = COALESCE(tl_c2.id, tla_c2.tunnel_link_id)
-           WHERE cm.target_type = 'tunnel' AND cm.target_id = tl.id
-             AND (
-               (cm.source_type IN ('concept_link_comment', 'concept_link_addendum') AND cl_p2.id IS NOT NULL AND cl_p2.legal_hold = false
-                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = cl_p2.edge_id AND e.is_hidden = false AND e.legal_hold = false))
-               OR
-               (cm.source_type IN ('tunnel_link_comment', 'tunnel_link_addendum') AND tl_p2.id IS NOT NULL
-                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = tl_p2.origin_edge_id AND e.is_hidden = false AND e.legal_hold = false))
-             )
-          ) AS mention_count
+          (SELECT COUNT(DISTINCT v.user_id) FROM votes v WHERE v.edge_id = tl.linked_edge_id) AS save_vote_count
         FROM tunnel_links tl
         JOIN edges e ON tl.linked_edge_id = e.id
         JOIN concepts c ON e.child_id = c.id
@@ -155,7 +122,6 @@ const tunnelController = {
           authorOrcidId: orcidForDisplay(row.author_orcid_id),
           createdAt: row.created_at,
           addenda: addendaMap[row.tunnel_link_id] || [],
-          mentionCount: Number(row.mention_count || 0),
         });
       }
 
@@ -245,12 +211,6 @@ const tunnelController = {
         `INSERT INTO tunnel_votes (user_id, tunnel_link_id) VALUES ($1, $2)`,
         [userId, reverseRow.id]
       );
-
-      // Parse and store mentions from the comment (both directions)
-      if (comment) {
-        await insertMentions(client, 'tunnel_link_comment', forwardRow.id, comment);
-        await insertMentions(client, 'tunnel_link_comment', reverseRow.id, comment);
-      }
 
       await client.query('COMMIT');
 
@@ -360,9 +320,6 @@ const tunnelController = {
          RETURNING id, body, created_at, author_id`,
         [tunnelLinkId, userId, trimmedBody]
       );
-
-      // Parse and store mentions from the addendum body
-      await insertMentions(pool, 'tunnel_link_addendum', result.rows[0].id, trimmedBody);
 
       res.json({ addendum: result.rows[0] });
     } catch (error) {

@@ -13,7 +13,6 @@ const tunnelRoutes = require('./routes/tunnels');
 const userRoutes = require('./routes/users');
 const legalRoutes = require('./routes/legal');
 const adminLegalRoutes = require('./routes/adminLegal');
-const mentionsRoutes = require('./routes/mentions');
 
 const pool = require('./config/database');
 
@@ -98,7 +97,6 @@ app.use('/api/tunnels', tunnelRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/admin', adminLegalRoutes);
-app.use('/api/mentions', mentionsRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

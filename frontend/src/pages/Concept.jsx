@@ -63,7 +63,6 @@ const Concept = ({
   const [path, setPath] = useState([]);
   const [currentEdgeVoteCount, setCurrentEdgeVoteCount] = useState(null);
   const [currentAttribute, setCurrentAttribute] = useState(null);
-  const [conceptMentionCount, setConceptMentionCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -165,7 +164,6 @@ const Concept = ({
       setPath(response.data.path);
       setCurrentEdgeVoteCount(response.data.currentEdgeVoteCount);
       setCurrentAttribute(response.data.currentAttribute || null);
-      setConceptMentionCount(response.data.mentionCount || 0);
       setAltParentCount(response.data.altParentCount || 0);
       setTunnelLinkCount(response.data.tunnelLinkCount || 0);
       setError(null);
@@ -904,7 +902,6 @@ const Concept = ({
                 pendingScrollLinkId={pendingScrollLinkId}
                 onPendingScrollLinkConsumed={onPendingScrollLinkConsumed}
                 collapsible={isNarrow}
-                conceptMentionCount={conceptMentionCount}
               />
             </div>
           )}

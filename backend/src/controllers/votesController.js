@@ -2,21 +2,7 @@ const pool = require('../config/database');
 const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
-const { parseMentions } = require('../utils/parseMentions');
 const { orcidForDisplay } = require('../utils/orcidValidator');
-
-// Insert mention rows parsed from comment/addendum text.
-// Uses the provided queryable (pool or transaction client).
-async function insertMentions(queryable, sourceType, sourceId, text) {
-  const mentions = parseMentions(text);
-  for (const m of mentions) {
-    await queryable.query(
-      `INSERT INTO comment_mentions (source_type, source_id, target_type, target_id, target_path)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [sourceType, sourceId, m.targetType, m.targetId, m.targetPath]
-    );
-  }
-}
 
 // Validate a link-vote context for context-scoped link votes.
 // A vote may be cast in: (a) the flip-view pool (contextEdgeId == null),
@@ -1554,27 +1540,7 @@ const votesController = {
           (cl.edge_id <> $3) AS is_inherited,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted,
-          array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids,
-          -- IMPORTANT: This visibility filter must match the one in mentionsController.js.
-          -- Both filter out mentions whose source's parent link/tunnel is hidden or legal-held.
-          -- If you change one, change all four. See Phase 65b-2-fix for the bug that motivated this.
-          (SELECT COUNT(*)
-           FROM comment_mentions cm
-           LEFT JOIN concept_links cl_c2 ON cm.source_type = 'concept_link_comment' AND cm.source_id = cl_c2.id
-           LEFT JOIN concept_link_addenda cla_c2 ON cm.source_type = 'concept_link_addendum' AND cm.source_id = cla_c2.id
-           LEFT JOIN concept_links cl_p2 ON cl_p2.id = COALESCE(cl_c2.id, cla_c2.concept_link_id)
-           LEFT JOIN tunnel_links tl_c2 ON cm.source_type = 'tunnel_link_comment' AND cm.source_id = tl_c2.id
-           LEFT JOIN tunnel_link_addenda tla_c2 ON cm.source_type = 'tunnel_link_addendum' AND cm.source_id = tla_c2.id
-           LEFT JOIN tunnel_links tl_p2 ON tl_p2.id = COALESCE(tl_c2.id, tla_c2.tunnel_link_id)
-           WHERE cm.target_type = 'link' AND cm.target_id = cl.id
-             AND (
-               (cm.source_type IN ('concept_link_comment', 'concept_link_addendum') AND cl_p2.id IS NOT NULL AND cl_p2.legal_hold = false
-                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = cl_p2.edge_id AND e.is_hidden = false AND e.legal_hold = false))
-               OR
-               (cm.source_type IN ('tunnel_link_comment', 'tunnel_link_addendum') AND tl_p2.id IS NOT NULL
-                 AND EXISTS (SELECT 1 FROM edges e WHERE e.id = tl_p2.origin_edge_id AND e.is_hidden = false AND e.legal_hold = false))
-             )
-          ) AS mention_count
+          array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids
         FROM concept_links cl
         LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = $3
         LEFT JOIN users u ON u.id = cl.added_by
@@ -1619,7 +1585,6 @@ const votesController = {
           userVoted: row.user_voted || false,
           voterUserIds: row.voter_user_ids || [],
           addenda: addendaMap[row.id] || [],
-          mentionCount: parseInt(row.mention_count || 0),
           isInherited: row.is_inherited || false,
           sourceEdgeId: row.edge_id,
           sourceConceptId: row.source_concept_id,
@@ -1701,11 +1666,6 @@ const votesController = {
          ON CONFLICT DO NOTHING`,
         [userId, result.rows[0].id, edgeId]
       );
-
-      // Parse and store mentions from the comment
-      if (trimmedComment) {
-        await insertMentions(pool, 'concept_link_comment', result.rows[0].id, trimmedComment);
-      }
 
       res.status(201).json({
         message: 'Web link added',
@@ -2159,9 +2119,6 @@ const votesController = {
          RETURNING id, body, created_at, author_id`,
         [linkId, userId, trimmedBody]
       );
-
-      // Parse and store mentions from the addendum body
-      await insertMentions(pool, 'concept_link_addendum', result.rows[0].id, trimmedBody);
 
       res.json({ addendum: result.rows[0] });
     } catch (error) {
@@ -2635,16 +2592,6 @@ const votesController = {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-
-      // Clean up mention rows for this link's comment and addenda
-      // (no FK cascade since comment_mentions has no FK by design)
-      await client.query(
-        `DELETE FROM comment_mentions
-         WHERE (source_type = 'concept_link_comment' AND source_id = $1)
-            OR (source_type = 'concept_link_addendum' AND source_id IN
-                (SELECT id FROM concept_link_addenda WHERE concept_link_id = $1))`,
-        [linkId]
-      );
 
       const result = await client.query(
         `DELETE FROM concept_links

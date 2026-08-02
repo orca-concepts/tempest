@@ -23,11 +23,8 @@ const conceptsController = {
           (SELECT COUNT(*) > 0 FROM replace_votes rv WHERE rv.edge_id = root_e.id AND rv.user_id = $1) as user_swapped,
           (SELECT COUNT(*) FROM concept_flags cf WHERE cf.edge_id = root_e.id) as flag_count,
           (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = root_e.id AND cf.user_id = $1) as user_flagged,
-          (SELECT COUNT(*) FROM concept_links cl JOIN edges ce ON ce.id = cl.edge_id
-           WHERE cl.legal_hold = false AND ce.is_hidden = false AND ce.legal_hold = false AND (
-             ce.id = root_e.id
-             OR (ce.graph_path[1:1] = ARRAY[c.id] AND array_length(ce.graph_path, 1) >= 1)
-           )) as link_count
+          (SELECT COUNT(*) FROM concept_links cl
+           WHERE cl.edge_id = root_e.id AND cl.legal_hold = false) as link_count
         FROM concepts c
         LEFT JOIN edges child_e ON c.id = child_e.parent_id AND child_e.graph_path = ARRAY[c.id] AND child_e.is_hidden = false
         LEFT JOIN edges root_e ON root_e.child_id = c.id AND root_e.parent_id IS NULL AND root_e.graph_path = '{}' AND root_e.is_hidden = false
@@ -89,12 +86,8 @@ const conceptsController = {
           (SELECT COUNT(*) > 0 FROM replace_votes rv WHERE rv.edge_id = e.id AND rv.user_id = $2) as user_swapped,
           (SELECT COUNT(*) FROM concept_flags cf WHERE cf.edge_id = e.id) as flag_count,
           (SELECT COUNT(*) > 0 FROM concept_flags cf WHERE cf.edge_id = e.id AND cf.user_id = $2) as user_flagged,
-          (SELECT COUNT(*) FROM concept_links cl JOIN edges ce ON ce.id = cl.edge_id
-           WHERE cl.legal_hold = false AND ce.is_hidden = false AND ce.legal_hold = false AND (
-             ce.id = e.id
-             OR (ce.graph_path[1:array_length(e.graph_path || c.id, 1)] = (e.graph_path || c.id)
-                 AND array_length(ce.graph_path, 1) >= array_length(e.graph_path || c.id, 1))
-           )) as link_count
+          (SELECT COUNT(*) FROM concept_links cl
+           WHERE cl.edge_id = e.id AND cl.legal_hold = false) as link_count
         FROM edges e
         JOIN concepts c ON e.child_id = c.id
         JOIN attributes a ON e.attribute_id = a.id

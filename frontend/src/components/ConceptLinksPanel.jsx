@@ -54,9 +54,6 @@ const ConceptLinksPanel = ({
       votesAPI.getWebLinks(currentEdgeId, linksSort)
         .then(res => {
           if (myRequestId !== linksRequestIdRef.current) return;
-          // Keep the server's home edgeId + source metadata (isInherited,
-          // sourceConceptId/Name/GraphPath) so inherited links can be labeled
-          // and linked back to their source descendant.
           setWebLinks((res.data.webLinks || []).map(link => ({
             ...link, parentId: null, parentName: null, attributeName: null,
           })));
@@ -101,13 +98,10 @@ const ConceptLinksPanel = ({
     setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
   }, []);
 
-  // Pending scroll — only fire when the target link is directly on this edge (not inherited
-  // from a descendant). Inherited links share the same id but are "owned" by a child concept's
-  // panel; that panel fires the scroll and consumes pendingScrollLinkId instead.
   useEffect(() => {
     if (!pendingScrollLinkId || webLinksLoading || webLinks.length === 0) return;
     const targetLink = webLinks.find(l => l.id === pendingScrollLinkId);
-    if (!targetLink || targetLink.isInherited) return;
+    if (!targetLink) return;
     const timer = setTimeout(() => {
       scrollToAndHighlight(pendingScrollLinkId);
       if (onPendingScrollLinkConsumed) onPendingScrollLinkConsumed();
@@ -130,7 +124,7 @@ const ConceptLinksPanel = ({
       const newData = {};
       webLinks.forEach(link => {
         const all = (urlMap[link.url] || []).filter(r => r.id !== link.id);
-        newData[link.id] = { loading: false, otherConceptInstances: all.filter(r => r.concept_id !== conceptId), expanded: {} };
+        newData[link.id] = { loading: false, otherConceptInstances: all.filter(r => r.edge_id !== link.edgeId), expanded: {} };
       });
       setInstanceData(newData);
     });
@@ -196,13 +190,6 @@ const ConceptLinksPanel = ({
     catch { setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: wasVoted, voteCount: wasVoted ? l.voteCount + 1 : l.voteCount - 1 } : l)); }
   };
 
-  // Inherited links carry a source label; clicking it navigates to the
-  // source descendant edge and scroll-highlights that specific link
-  // (reuses the cross-instance navigation path).
-  const handleSourceClick = (link) => {
-    if (!onOpenConceptTab || !link.sourceConceptId) return;
-    onOpenConceptTab(link.sourceConceptId, link.sourceGraphPath || [], link.sourceConceptName, undefined, undefined, 'children', link.id);
-  };
   const handleAddLink = async () => {
     const trimmed = newLinkUrl.trim();
     if (!trimmed) return;
@@ -333,7 +320,7 @@ const ConceptLinksPanel = ({
             renderInstanceSnippet={renderInstanceSnippet}
             cardRef={el => { linkRefs.current[link.id] = el; }} onRequestLogin={onRequestLogin}
             conceptId={conceptId} conceptPath={path} onCopySuccess={() => loadLinks()}
-            voteSets={voteSets} onSourceClick={handleSourceClick}
+            voteSets={voteSets}
             onRemoveSuccess={() => loadLinks()} onAddendumSuccess={() => loadLinks()} />
         ))}
       </>

@@ -30,7 +30,6 @@ const LinkCard = ({
   conceptId, conceptPath, onCopySuccess,
   onRemoveSuccess, onAddendumSuccess,
   voteSets = [],
-  onSourceClick,
 }) => {
   const isCreator = user && link.addedBy === user.id;
   // Phase 69: a link gets a vote-set's color dot if ≥1 member of that set upvoted
@@ -116,15 +115,6 @@ const LinkCard = ({
       onMouseEnter={clickable ? e => { e.currentTarget.style.backgroundColor = '#f8f5ee'; } : undefined}
       onMouseLeave={clickable ? e => { e.currentTarget.style.backgroundColor = ''; } : undefined}>
       {contextLabel && <div style={s.contextLabel}>{contextLabel}</div>}
-      {link.isInherited && link.sourceConceptName && (
-        <div style={s.sourceLabel}>
-          <span
-            onClick={e => { e.stopPropagation(); if (onSourceClick) onSourceClick(link); }}
-            style={s.sourceLabelLink}
-            title="Go to where this link was placed"
-          >{'↙'} from {link.sourceConceptName}</span>
-        </div>
-      )}
       <a href={link.url} target="_blank" rel="noopener noreferrer" style={s.title}
         onClick={e => e.stopPropagation()}>{link.title || link.url}</a>
       {link.title && <div style={s.url}>{link.url}</div>}
@@ -252,8 +242,6 @@ const s = {
   cardFirst: { paddingBottom: '12px', borderRadius: '3px', transition: 'background-color 0.3s' },
   card: { paddingTop: '12px', paddingBottom: '12px', borderTop: '1px solid #ece6db', borderRadius: '3px', transition: 'background-color 0.3s' },
   contextLabel: { fontSize: '11px', color: '#999', marginBottom: '2px', fontFamily: '"EB Garamond", Georgia, serif' },
-  sourceLabel: { fontSize: '11px', marginBottom: '2px', fontFamily: '"EB Garamond", Georgia, serif' },
-  sourceLabelLink: { color: '#888', cursor: 'pointer', textDecoration: 'underline' },
   title: { fontSize: '14px', color: '#333', textDecoration: 'underline', fontWeight: '500', display: 'block', marginBottom: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
   url: { fontSize: '12px', color: '#aaa', marginBottom: '4px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
   commentBlock: { fontSize: '12px', color: '#555', marginTop: '4px', marginBottom: '2px', lineHeight: 1.4 },

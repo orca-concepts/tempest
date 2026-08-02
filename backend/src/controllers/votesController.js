@@ -1491,33 +1491,6 @@ const votesController = {
       // req.user may be null for guests (optionalAuth)
       const userId = req.user ? req.user.userId : -1;
 
-      // Link inheritance: this edge's panel shows links placed directly on
-      // it PLUS links on all of its descendant edges (in this exact
-      // graph_path context). Load the edge to build the descendant prefix.
-      const edgeResult = await pool.query(
-        'SELECT id, parent_id, child_id, graph_path FROM edges WHERE id = $1',
-        [edgeId]
-      );
-      if (edgeResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Edge not found' });
-      }
-      const edge = edgeResult.rows[0];
-      const descendantPathPrefix = edge.parent_id === null
-        ? [edge.child_id]
-        : [...edge.graph_path, edge.child_id];
-      const prefixLen = descendantPathPrefix.length;
-      // Set-based prefix scan (no recursion) — same pattern as removeVote.
-      // The self edge's own graph_path is shorter than the prefix, so it
-      // never double-matches here. Hidden/legal-held descendants don't float.
-      const descendantEdges = await pool.query(
-        `SELECT e.id FROM edges e
-         WHERE e.graph_path[1:$1] = $2::integer[]
-         AND array_length(e.graph_path, 1) >= $1
-         AND e.is_hidden = false AND e.legal_hold = false`,
-        [prefixLen, descendantPathPrefix]
-      );
-      const allEdgeIds = [parseInt(edgeId, 10), ...descendantEdges.rows.map(r => r.id)];
-
       const orderClause = sort === 'new'
         ? 'ORDER BY cl.created_at DESC'
         : 'ORDER BY COUNT(clv.id) DESC, cl.created_at DESC';
@@ -1534,23 +1507,25 @@ const votesController = {
           cl.created_at,
           cl.comment,
           cl.updated_at,
-          src_c.id AS source_concept_id,
-          src_c.name AS source_concept_name,
-          src_e.graph_path AS source_graph_path,
-          (cl.edge_id <> $3) AS is_inherited,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted,
           array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids
         FROM concept_links cl
-        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = $3
+        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = $1
         LEFT JOIN users u ON u.id = cl.added_by
-        JOIN edges src_e ON src_e.id = cl.edge_id
-        JOIN concepts src_c ON src_c.id = src_e.child_id
-        WHERE cl.edge_id = ANY($1::integer[]) AND cl.legal_hold = false
-        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at, src_c.id, src_c.name, src_e.graph_path
+        WHERE cl.edge_id = $1 AND cl.legal_hold = false
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at
         ${orderClause}`,
-        [allEdgeIds, userId, parseInt(edgeId, 10)]
+        [parseInt(edgeId, 10), userId]
       );
+
+      // Verify the edge exists (distinguish "no links" from "edge not found")
+      if (result.rows.length === 0) {
+        const edgeCheck = await pool.query('SELECT id FROM edges WHERE id = $1', [edgeId]);
+        if (edgeCheck.rows.length === 0) {
+          return res.status(404).json({ error: 'Edge not found' });
+        }
+      }
 
       // Fetch addenda for all returned links in one query
       const linkIds = result.rows.map(r => r.id);
@@ -1585,11 +1560,6 @@ const votesController = {
           userVoted: row.user_voted || false,
           voterUserIds: row.voter_user_ids || [],
           addenda: addendaMap[row.id] || [],
-          isInherited: row.is_inherited || false,
-          sourceEdgeId: row.edge_id,
-          sourceConceptId: row.source_concept_id,
-          sourceConceptName: row.source_concept_name,
-          sourceGraphPath: row.source_graph_path || [],
         }))
       });
     } catch (error) {

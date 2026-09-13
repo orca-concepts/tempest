@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { pagesAPI } from '../services/api';
 
 const PAGE_TITLES = {
-  'using-orca': 'What is orca?',
+  'using-orca': 'what is orca?',
   'thoroughly-conscious-ignorance': 'Thoroughly Conscious Ignorance',
 };
 
@@ -39,7 +39,7 @@ const UsingOrcaContent = ({ onImageClick }) => {
         with the research aimed at answering them.
       </p>
 
-      {showImage('children_view_questions.png', 'Children view of research questions')}
+      {showImage('children_view_questions_soil.png', 'Children view of research questions')}
 
       <div style={usingOrcaStyles.sectionTitle}>Flip View</div>
       <p style={usingOrcaStyles.intro}>
@@ -50,21 +50,13 @@ const UsingOrcaContent = ({ onImageClick }) => {
 
       {showImage('flip_view_questions.png', 'Flip View of a question with multiple parent paths')}
 
-      <div style={usingOrcaStyles.sectionTitle}>Link Surfacing</div>
-      <p style={usingOrcaStyles.intro}>
-        Research work that is linked to a child concept is automatically surfaced within the entire
-        parent path, so that at any level of abstraction you can explore and vote on the full
-        variety of work taking place within. Each question becomes a reading list of the research linked
-        to any of its descendant questions.
-      </p>
-
       <div style={usingOrcaStyles.sectionTitle}>Votes</div>
       <p style={usingOrcaStyles.intro}>
         You can view all the questions and links you've voted for on a single page for easy navigation and 
         maintenance of votes.
       </p>
 
-      {showImage('votes_page.png', 'Votes page listing voted questions and links')}
+      {showImage('votes_page_soil.png', 'Votes page listing voted questions and links')}
 
       <div style={usingOrcaStyles.sectionTitle}>Append-only; vote set colors</div>
       <p style={usingOrcaStyles.intro}>
@@ -87,8 +79,7 @@ const UsingOrcaContent = ({ onImageClick }) => {
       <p style={usingOrcaStyles.intro}>
         This is a free, open-source project for use by researchers:{' '}
         <a href="https://github.com/orca-concepts/tempest" target="_blank" rel="noopener noreferrer" style={usingOrcaStyles.subtleLink}>https://github.com/orca-concepts/tempest</a>.
-        {' '}In general, this app aims to apply the categorical nature of concepts to larger, more
-        complex expressions like research questions.
+        {' '}In general, this app aims to index information in a way that is more closely aligned to the goals of those accessing it, an idea that could be iterated on.
       </p>
     </div>
   );
@@ -118,54 +109,38 @@ const ThoroughlyConsciousIgnoranceContent = ({ onImageClick }) => {
       <p style={usingOrcaStyles.epigraphAttribution}>James Clerk Maxwell</p>
 
       <p style={usingOrcaStyles.intro}>
-        The infrastructure of modern science indexes answers, not questions. We build vast ontologies, 
-        curate libraries of citations, develop detailed impact metrics, but when it comes to mapping the 
-        structure of the unknown, we seem to fall flat. The conscious ignorance that Maxwell 
-        praises seems only to exist tacitly in the minds of individual scientists, raising the question: 
-        what does it mean to pursue thoroughly conscious ignorance?
+       The organizational mechanism of modern science indexes the answers, not the questions. It can build vast ontologies, 
+       curate libraries of citations, and develop detailed impact metrics, but it fails to attach itself to the genuine goal 
+       of any researcher who uses it: discovery. The moment of discovery is a moment when the landscape of research questions 
+       changes: some are closed, some are left open but thought about differently, and some new questions are opened. This is 
+       the landscape of the conscious ignorance that Maxwell praises and it is left to exist tacitly in the minds of individual 
+       researchers, raising the question: what does it mean for us to pursue thoroughly conscious ignorance?*
       </p>
 
       <p style={usingOrcaStyles.intro}>
-        When we think about thoroughly exploring normal concepts, we reflect on their nature as categories: 
-        we build ourselves a taxonomical bridge between abstract notions and concrete instances. Each step lets 
-        us talk and think about the world around us in new ways: you can reason about mammals or nuclear fusion 
-        or coping mechanisms without reciting the full list of  features and examples that define them. If we treat 
-        research questions as concepts in this way, the project of building out a thoroughly conscious ignorance becomes 
-        one of mapping the avenues of abstraction that span from the ‘big questions’ the drive progress in a discipline 
-        down to questions so concrete they could be addressed by a single research project.
+        The project of practicing thoroughly conscious ignorance is a project of structuring this landscape of questions. Any 
+        research project can be defined as the work of finding the answer to the one or more very concrete questions around which 
+        the project is based. But there are broader questions the work also contributes knowledge to, questions that are too broad 
+        and abstract to be answered by a single project. The ‘answer’ to these questions is a conversation about compiling the right 
+        concrete questions and using the knowledge that comes from answering them to ask new questions; the project of pursuing thoroughly 
+        conscious ignorance is to create a place where this conversation can happen. 
       </p>
 
+       {showImage('soil_simple_graph.png', 'Simple graph demonstrating question-goal decomposition')}
+
       <p style={usingOrcaStyles.intro}>
-        This is the project that orca aims to facilitate. orca is a place where members of the
-        research community can taxonomize questions with a parent/child hierarchy, voting on which
-        more-concrete children they engage with for a given more-abstract parent
-        and then linking to research material when the questions reach an appropriate level of
-        concreteness. These links surface upwards along the hierarchy, so each question in orca becomes
-        a reading list of the material attached to its descendant questions.
+        Look at the above diagram. It recognizes that there is a goal in soil science to find out how much carbon we can store in the world’s soils. 
+        This question might be too broad and abstract to answer definitively within a single research project. But if we also recognize the sub-goals, 
+        the more concrete and actionable questions that posit what we need to understand in order to tackle the parent question, we can start to put 
+        together a productive and generative picture of the goal-environment of the researchers in this area. 
       </p>
 
-      {showImage('children_view_questions.png', 'Children view of research questions')}
+      {showImage('soil_complex_graph.png', 'Complex graph demonstrating question-goal decomposition')}
 
       <p style={usingOrcaStyles.intro}>
-        When users inevitably vote on different subsets of child questions, these sets are tagged with
-        unique colors, so that the different tastes and directions of research for a given parent
-        question can be easily seen. The color sets can also act as filters to focus on a particular
-        direction. This visualization encourages a dynamic taxonomy; the best ways to differentiate a
-        given parent question (and indeed the best methods of differentiating questions in general)
-        are diverse and should change over time. You can see the full list of questions you have voted
-        for and use this list to navigate back to those questions, so you can change your votes as you
-        revisit them and see how the voting landscape has changed.
-      </p>
-
-      {showImage('vote_set.png', 'Children view displaying color vote sets')}
-      {showImage('votes_page.png', 'Votes page listing voted questions and links')}
-
-      <p style={usingOrcaStyles.intro}>
-        Active, dynamic categorization of questions is key to the project of thoroughly conscious
-        ignorance. As we become more conscious of the world around us, our taxonomies change
-        drastically and new language is developed to meet new levels of understanding. To apply this
-        practice to questions is to pave the way for more differentiated and better understood
-        ignorance, setting the stage for that ignorance to transform into new understanding.
+        This goal-environment is a dynamic and continuous assertion among researchers in a field about where that field should go next. Decomposing goal 
+        concepts is how brains like ours succeed in the world, and so in research, where questions are this wonderful linguistic proxy for goals, we 
+        should be doing it collectively and at speed. orca is a platform where these kinds of goal-environments can be built and maintained. 
       </p>
     </div>
   );
@@ -199,6 +174,13 @@ const usingOrcaStyles = {
     margin: '0 0 28px 0',
     textAlign: 'right',
     marginRight: '20%',
+  },
+  footnote: {
+    fontSize: '1.0em',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#555',
+    lineHeight: '1.6',
+    margin: '8px 0 20px 0',
   },
   useCase: {
     fontSize: '1.1em',
@@ -503,12 +485,19 @@ const InfoPage = ({ slug, onRequestLogin }) => {
             {isEssay && <ThoroughlyConsciousIgnoranceContent onImageClick={setLightbox} />}
 
             {isEssay && (
+              <p style={usingOrcaStyles.footnote}>
+                * I first read this quotation in <em>Ignorance: How It Drives Science</em> by Stuart Firestein, a treatise on 
+                the importance of closely examining our relationship to the unknown in science that I would highly recommend.
+              </p>
+            )}
+
+            {isEssay && (
               <div style={styles.footerNav}>
                 <button style={styles.footerNavButton} onClick={() => navigate('/')}>
                   <span style={styles.footerArrow}>←</span> use orca
                 </button>
                 <button style={styles.footerNavButton} onClick={() => navigate('/using-orca')}>
-                  learn more about orca <span style={styles.footerArrow}>→</span>
+                  what is orca? <span style={styles.footerArrow}>→</span>
                 </button>
               </div>
             )}

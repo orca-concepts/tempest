@@ -486,8 +486,8 @@ const InfoPage = ({ slug, onRequestLogin }) => {
 
             {isEssay && (
               <p style={usingOrcaStyles.footnote}>
-                * I first read this quotation in <em>Ignorance: How It Drives Science</em> by Stuart Firestein, a treatise on 
-                the importance of closely examining our relationship to the unknown in science that I would highly recommend.
+                * I first read this quotation in <em>Ignorance: How It Drives Science</em> by Stuart Firestein, which makes a strong 
+                argument for closely examining our relationship to the unknown in science. 
               </p>
             )}
 

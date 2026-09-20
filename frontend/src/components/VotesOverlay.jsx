@@ -13,7 +13,7 @@ import ClampedText from './ClampedText';
  *   onOpenConceptTab  — (conceptId, path, conceptName, attributeName) => void
  *   onNavigateToLink  — (conceptId, path, conceptName, attributeName, scrollToLinkId) => void
  */
-const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
+const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink, communityId }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +26,7 @@ const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
     setError(null);
     (async () => {
       try {
-        const res = await votesAPI.getAllVotes();
+        const res = await votesAPI.getAllVotes(communityId);
         if (gen !== genRef.current) return;
         setData(res.data);
       } catch (err) {
@@ -37,7 +37,7 @@ const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
         if (gen === genRef.current) setLoading(false);
       }
     })();
-  }, []);
+  }, [communityId]);
 
   const handleEdgeClick = (edge) => {
     const path = edge.parentId === null ? [] : edge.graphPath;
@@ -182,9 +182,6 @@ const VotesOverlay = ({ onBack, onOpenConceptTab, onNavigateToLink }) => {
           >
             {node.childName}
           </span>
-          {isRoot && node.attributeName && (
-            <span style={styles.attributeBadge}>{node.attributeName}</span>
-          )}
           <span style={styles.voteCount}>{'\u25B2'} {node.voteCount}</span>
           {node.swapCount > 0 && (
             <span style={styles.swapIndicator} title={`${node.swapCount} swap vote(s)`}>
@@ -308,7 +305,6 @@ const styles = {
   contextIndicator: { fontSize: '10px', color: '#ccc', flexShrink: 0, lineHeight: 1 },
   conceptName: { fontSize: '15px', fontFamily: '"EB Garamond", Georgia, serif', color: '#333', cursor: 'pointer', flex: 1, lineHeight: 1.4 },
   rootConceptName: { fontSize: '18px', fontWeight: '600' },
-  attributeBadge: { display: 'inline-block', padding: '1px 7px', background: '#e8f4f8', borderRadius: '4px', fontSize: '11px', color: '#555', flexShrink: 0 },
   voteCount: { fontSize: '13px', color: '#888', flexShrink: 0, fontFamily: '"EB Garamond", Georgia, serif' },
   swapIndicator: { fontSize: '13px', color: '#8050b0', flexShrink: 0, fontFamily: '"EB Garamond", Georgia, serif' },
   childrenContainer: { borderLeft: '1px solid #e8e8e8', marginLeft: '10px' },

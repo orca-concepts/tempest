@@ -137,15 +137,28 @@ const AppShell = () => {
       .catch(() => setCommunities([]));
   }, []);
 
-  const handleSelectCommunity = useCallback((community) => {
+  const handleSelectCommunity = useCallback(async (community) => {
     setActiveCommunityId(community.id);
     setActiveCommunityName(community.name);
     localStorage.setItem('orca_active_community', community.slug);
     setCommunitiesOpen(false);
-    // Show the community's roots by activating the root tab.
+    // Show the community's roots: reuse an existing root tab, or create one so
+    // the user never lands on a tab hidden by the community filter.
     const rootTab = graphTabs.find((t) => t.tab_type === 'root' && !t.concept_id);
-    if (rootTab) setActiveTab({ type: 'graph', id: rootTab.id });
-  }, [graphTabs]);
+    if (rootTab) {
+      setActiveTab({ type: 'graph', id: rootTab.id });
+    } else if (!isGuest) {
+      try {
+        const res = await votesAPI.createGraphTab('root', null, [], 'children', 'Root');
+        const newTab = res.data.graphTab;
+        setGraphTabs((prev) => [...prev, newTab]);
+        setActiveTab({ type: 'graph', id: newTab.id });
+        await refreshSidebarItems();
+      } catch (e) {
+        console.error('Failed to create root tab on community switch:', e);
+      }
+    }
+  }, [graphTabs, isGuest]);
 
   const handleCommunityCreated = useCallback((community) => {
     setCommunities((prev) => [...prev, community].sort((a, b) => a.name.localeCompare(b.name)));
@@ -659,7 +672,12 @@ const AppShell = () => {
   const handleGraphTabNavigate = useCallback(async (tabId, updates) => {
     const normalized = {};
     if (updates.tabType !== undefined)   normalized.tab_type   = updates.tabType;
-    if (updates.conceptId !== undefined) normalized.concept_id = updates.conceptId;
+    if (updates.conceptId !== undefined) {
+      normalized.concept_id = updates.conceptId;
+      // Phase 71: in-tab navigation stays within the active community; the server
+      // response below reconciles the authoritative value for cross-community tabs.
+      normalized.community_id = updates.conceptId == null ? null : activeCommunityId;
+    }
     if (updates.path !== undefined)      normalized.path       = updates.path;
     if (updates.viewMode !== undefined)  normalized.view_mode  = updates.viewMode;
     if (updates.label !== undefined)     normalized.label      = updates.label;
@@ -698,11 +716,17 @@ const AppShell = () => {
     if (isGuest) return;
 
     try {
-      await votesAPI.updateGraphTab(tabId, updates);
+      const res = await votesAPI.updateGraphTab(tabId, updates);
+      const serverTab = res?.data?.graphTab;
+      if (serverTab) {
+        setGraphTabs(prev => prev.map(t =>
+          t.id === tabId ? { ...t, community_id: serverTab.community_id ?? null } : t
+        ));
+      }
     } catch (err) {
       console.error('Failed to update graph tab:', err);
     }
-  }, [isGuest]);
+  }, [isGuest, activeCommunityId]);
 
   const handleOpenConceptTab = useCallback(async (conceptId, path, conceptName, attributeName, sourceCorpusTabId, viewMode, scrollToLinkId) => {
     const label = conceptName || 'Question';
@@ -1056,16 +1080,32 @@ const AppShell = () => {
     );
   }
 
+  // Phase 71: a graph tab belongs to the active community if its concept does.
+  // Root tabs (and tabs whose concept was deleted) are community-agnostic and always shown.
+  const tabInActiveCommunity = (tab) => {
+    if (!tab) return false;
+    if (tab.tab_type === 'root' || tab.concept_id == null) return true;
+    if (activeCommunityId == null) return true; // community not resolved yet
+    return tab.community_id === activeCommunityId;
+  };
+  const groupHasVisibleMembers = (groupId) =>
+    graphTabs.some(t => t.group_id === groupId && tabInActiveCommunity(t)) ||
+    comboSubscriptions.some(c => c.group_id === groupId);
+
   // Sidebar: Graph tabs split by group membership (used by guest mode + group rendering)
-  const ungroupedGraphTabs = graphTabs.filter(t => !t.group_id);
+  const ungroupedGraphTabs = graphTabs.filter(t => !t.group_id && tabInActiveCommunity(t));
 
   // DnD: top-level items and their sortable IDs (Phase 19c)
   const topLevelSidebarItems = sidebarItems.filter(item => {
     if (item.item_type === 'graph_tab') {
-      return !graphTabs.find(t => t.id === item.item_id)?.group_id;
+      const tab = graphTabs.find(t => t.id === item.item_id);
+      return tab && !tab.group_id && tabInActiveCommunity(tab);
     }
     if (item.item_type === 'combo') {
       return !comboSubscriptions.find(c => c.id === item.item_id)?.group_id;
+    }
+    if (item.item_type === 'group') {
+      return groupHasVisibleMembers(item.item_id);
     }
     return true;
   });
@@ -1143,7 +1183,7 @@ const AppShell = () => {
   // Render a sidebar group. sidebarItemId is the sidebar_items.id for DnD.
   const renderSidebarGroup = (group, sidebarItemId = null) => {
     const isExpanded = group.is_expanded;
-    const memberGraph = graphTabs.filter(t => t.group_id === group.id);
+    const memberGraph = graphTabs.filter(t => t.group_id === group.id && tabInActiveCommunity(t));
     const memberCombos = comboSubscriptions.filter(c => c.group_id === group.id);
     // Sidebar item IDs for member graph tabs (for the inner SortableContext)
     const memberGraphSidebarIds = memberGraph
@@ -1151,6 +1191,8 @@ const AppShell = () => {
       .filter(Boolean);
     const hasActiveInside = groupContainsActiveTab(group);
     const memberCount = memberGraph.length + memberCombos.length;
+    // Phase 71: hide a group with no members in the active community.
+    if (memberCount === 0) return null;
     // Amber highlight when a graph_tab is dragged over this group
     const isDropTarget = overGroupItemId != null && overGroupItemId === sidebarItemId;
 
@@ -1398,7 +1440,7 @@ const AppShell = () => {
                 [
                   ...comboSubscriptions.map(c => ({ item_type: 'combo', item_id: c.id, _key: `cb-${c.id}` })),
                   ...tabGroups.map(g => ({ item_type: 'group', item_id: g.id, _key: `g-${g.id}` })),
-                  ...graphTabs.filter(t => !t.group_id).map(t => ({ item_type: 'graph_tab', item_id: t.id, _key: `gt-${t.id}` })),
+                  ...graphTabs.filter(t => !t.group_id && tabInActiveCommunity(t)).map(t => ({ item_type: 'graph_tab', item_id: t.id, _key: `gt-${t.id}` })),
                 ].map(item => {
                   if (item.item_type === 'combo') return renderSidebarComboItem(comboSubscriptions.find(c => c.id === item.item_id));
                   if (item.item_type === 'group') return renderSidebarGroup(tabGroups.find(g => g.id === item.item_id));
@@ -1455,6 +1497,7 @@ const AppShell = () => {
           {/* Phase 59b: Unified Votes overlay */}
           {!communitiesOpen && votesOpen && (
             <VotesOverlay
+              communityId={activeCommunityId}
               onBack={() => setVotesOpen(false)}
               onOpenConceptTab={handleOpenConceptTab}
               onNavigateToLink={(conceptId, path, conceptName, attributeName, scrollToLinkId) => {

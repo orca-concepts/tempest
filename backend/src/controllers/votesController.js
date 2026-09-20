@@ -1029,10 +1029,12 @@ const votesController = {
       const userId = req.user.userId;
 
       const result = await pool.query(
-        `SELECT id, tab_type, concept_id, path, view_mode, display_order, label, group_id, created_at, updated_at
-         FROM graph_tabs 
-         WHERE user_id = $1 
-         ORDER BY display_order ASC, created_at ASC`,
+        `SELECT gt.id, gt.tab_type, gt.concept_id, gt.path, gt.view_mode, gt.display_order, gt.label, gt.group_id, gt.created_at, gt.updated_at,
+                c.community_id
+         FROM graph_tabs gt
+         LEFT JOIN concepts c ON c.id = gt.concept_id
+         WHERE gt.user_id = $1
+         ORDER BY gt.display_order ASC, gt.created_at ASC`,
         [userId]
       );
 
@@ -1069,6 +1071,10 @@ const votesController = {
       );
 
       const newTab = result.rows[0];
+      // Phase 71: attach the tab's community (from its concept; null for root tabs)
+      newTab.community_id = newTab.concept_id
+        ? ((await pool.query('SELECT community_id FROM concepts WHERE id = $1', [newTab.concept_id])).rows[0]?.community_id ?? null)
+        : null;
 
       // Add to sidebar_items (at end of list)
       await pool.query(
@@ -1140,7 +1146,13 @@ const votesController = {
         return res.status(404).json({ error: 'Graph tab not found' });
       }
 
-      res.json({ graphTab: result.rows[0] });
+      // Phase 71: attach the tab's community (from its concept; null for root tabs)
+      const updatedTab = result.rows[0];
+      updatedTab.community_id = updatedTab.concept_id
+        ? ((await pool.query('SELECT community_id FROM concepts WHERE id = $1', [updatedTab.concept_id])).rows[0]?.community_id ?? null)
+        : null;
+
+      res.json({ graphTab: updatedTab });
     } catch (error) {
       console.error('Error updating graph tab:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -2335,6 +2347,9 @@ const votesController = {
   getAllVotes: async (req, res) => {
     try {
       const userId = req.user.userId;
+      // Phase 71: optionally scope to a community. When absent, return all.
+      const cidRaw = parseInt(req.query.communityId, 10);
+      const cid = Number.isInteger(cidRaw) ? cidRaw : null;
 
       // 1. Saved edges (same query as getUserSaves, no tab filter)
       const savedResult = await pool.query(
@@ -2349,11 +2364,11 @@ const votesController = {
         JOIN concepts c ON e.child_id = c.id
         JOIN attributes a ON e.attribute_id = a.id
         LEFT JOIN votes all_v ON all_v.edge_id = e.id
-        WHERE v.user_id = $1
+        WHERE v.user_id = $1 AND ($2::int IS NULL OR c.community_id = $2)
         GROUP BY e.id, e.parent_id, e.child_id, e.graph_path, e.created_at,
                  c.name, a.id, a.name
         ORDER BY e.graph_path, c.name`,
-        [userId]
+        [userId, cid]
       );
 
       const savedEdges = savedResult.rows.map(row => ({
@@ -2386,13 +2401,14 @@ const votesController = {
         LEFT JOIN users u ON u.id = cl.added_by
         LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id AND clv_all.context_edge_id = cl.edge_id
         WHERE clv_user.user_id = $1 AND clv_user.context_edge_id = cl.edge_id AND e.is_hidden = false
+          AND ($2::int IS NULL OR child_c.community_id = $2)
         GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
                  cl.added_by, u.username, cl.created_at,
                  e.child_id, child_c.name, e.parent_id, e.graph_path,
                  e.attribute_id, a.name
         ORDER BY cl.created_at DESC
         LIMIT 500`,
-        [userId]
+        [userId, cid]
       );
 
       const linkVotes = linkResult.rows.map(row => ({

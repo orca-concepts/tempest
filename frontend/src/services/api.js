@@ -136,9 +136,9 @@ export const communitiesAPI = {
 
 // Votes endpoints
 export const votesAPI = {
-  // Phase 59b: Unified votes endpoint
-  getAllVotes: () =>
-    api.get('/votes/me/all'),
+  // Phase 59b: Unified votes endpoint. Phase 71: optionally community-scoped.
+  getAllVotes: (communityId) =>
+    api.get('/votes/me/all', { params: { communityId } }),
 
   // Get user's saved edges (for Saved Page) — optionally filtered by tabId
   getUserSaves: (tabId) =>

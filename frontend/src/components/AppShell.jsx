@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { votesAPI, combosAPI, tunnelsAPI } from '../services/api';
+import { votesAPI, combosAPI, tunnelsAPI, communitiesAPI } from '../services/api';
 import { arrayMove } from '@dnd-kit/sortable';
 import Root from '../pages/Root';
 import Concept from '../pages/Concept';
@@ -21,6 +21,7 @@ import CopyrightPage from '../components/CopyrightPage';
 import InfringementNoticePage from '../components/InfringementNoticePage';
 import CounterNoticePage from '../components/CounterNoticePage';
 import OutreachLanding from '../components/OutreachLanding';
+import CommunitiesBrowse from '../components/CommunitiesBrowse';
 
 const isOutreachMode = import.meta.env.VITE_OUTREACH_MODE === 'true';
 
@@ -109,6 +110,47 @@ const AppShell = () => {
   // Phase 39b: Combo browse overlay state
   const [comboView, setComboView] = useState(null); // null | { view: 'list' }
   const [guestComboId, setGuestComboId] = useState(null); // deep-linked combo for guests
+
+  // Phase 71: Communities (graph partitions). Active community drives the root
+  // list, search, and root creation; resolved from localStorage or "general".
+  const [communities, setCommunities] = useState([]);
+  const [activeCommunityId, setActiveCommunityId] = useState(null);
+  const [activeCommunityName, setActiveCommunityName] = useState('');
+  const [communitiesOpen, setCommunitiesOpen] = useState(false);
+
+  useEffect(() => {
+    communitiesAPI.listCommunities()
+      .then((r) => {
+        const list = r.data.communities || [];
+        setCommunities(list);
+        const storedSlug = localStorage.getItem('orca_active_community');
+        const pick =
+          list.find((c) => c.slug === storedSlug) ||
+          list.find((c) => c.slug === 'general') ||
+          list[0];
+        if (pick) {
+          setActiveCommunityId(pick.id);
+          setActiveCommunityName(pick.name);
+          localStorage.setItem('orca_active_community', pick.slug);
+        }
+      })
+      .catch(() => setCommunities([]));
+  }, []);
+
+  const handleSelectCommunity = useCallback((community) => {
+    setActiveCommunityId(community.id);
+    setActiveCommunityName(community.name);
+    localStorage.setItem('orca_active_community', community.slug);
+    setCommunitiesOpen(false);
+    // Show the community's roots by activating the root tab.
+    const rootTab = graphTabs.find((t) => t.tab_type === 'root' && !t.concept_id);
+    if (rootTab) setActiveTab({ type: 'graph', id: rootTab.id });
+  }, [graphTabs]);
+
+  const handleCommunityCreated = useCallback((community) => {
+    setCommunities((prev) => [...prev, community].sort((a, b) => a.name.localeCompare(b.name)));
+    handleSelectCommunity(community);
+  }, [handleSelectCommunity]);
 
   // Phase 39b: Combo subscriptions (persistent combo tabs)
   const [comboSubscriptions, setComboSubscriptions] = useState([]);
@@ -1294,6 +1336,11 @@ const AppShell = () => {
           <nav style={styles.sidebar}>
             {/* Action buttons at top */}
             <div style={styles.sidebarActions}>
+              <button
+                onClick={() => setCommunitiesOpen(true)}
+                style={styles.sidebarActionButton}
+                title="Browse and switch research communities"
+              >{activeCommunityName ? `Community: ${activeCommunityName}` : 'Communities'}</button>
               {!isGuest && (
                 <button
                   onClick={() => { setComboView(null); setVotesOpen(true); }}
@@ -1392,8 +1439,21 @@ const AppShell = () => {
 
         {/* ─── Content Area ─── */}
         <div style={styles.contentArea}>
+          {/* Phase 71: Communities browse overlay */}
+          {communitiesOpen && (
+            <CommunitiesBrowse
+              communities={communities}
+              activeCommunityId={activeCommunityId}
+              isGuest={isGuest}
+              onSelect={handleSelectCommunity}
+              onCreated={handleCommunityCreated}
+              onBack={() => setCommunitiesOpen(false)}
+              onRequestLogin={handleRequestLogin}
+            />
+          )}
+
           {/* Phase 59b: Unified Votes overlay */}
-          {votesOpen && (
+          {!communitiesOpen && votesOpen && (
             <VotesOverlay
               onBack={() => setVotesOpen(false)}
               onOpenConceptTab={handleOpenConceptTab}
@@ -1405,7 +1465,7 @@ const AppShell = () => {
           )}
 
           {/* Phase 39b: Browse Combos overlay */}
-          {!votesOpen && comboView && comboView.view === 'list' && (
+          {!communitiesOpen && !votesOpen && comboView && comboView.view === 'list' && (
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
@@ -1421,7 +1481,7 @@ const AppShell = () => {
           )}
 
           {/* Guest deep-link combo view */}
-          {!votesOpen && !comboView && guestComboId && (
+          {!communitiesOpen && !votesOpen && !comboView && guestComboId && (
             <div>
               <div style={{ padding: '12px 20px 0', fontFamily: '"EB Garamond", Georgia, serif' }}>
                 <span onClick={() => setGuestComboId(null)} style={{ cursor: 'pointer', color: '#888', fontSize: '14px', textDecoration: 'underline' }}>{'\u2190'} Back</span>
@@ -1437,7 +1497,7 @@ const AppShell = () => {
           )}
 
           {/* Normal tab content — hidden when overlays are active */}
-          {!votesOpen && !comboView && !guestComboId && (
+          {!communitiesOpen && !votesOpen && !comboView && !guestComboId && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {
@@ -1471,6 +1531,8 @@ const AppShell = () => {
                         graphTabId={tab.id}
                         onNavigate={handleGraphTabNavigate}
                         isGuest={isGuest}
+                        communityId={activeCommunityId}
+                        communityName={activeCommunityName}
                       />
                     ) : (
                       <Concept

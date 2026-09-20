@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { conceptsAPI } from '../services/api';
 
-const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false }) => {
+const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false, communityId }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [exactMatch, setExactMatch] = useState(false);
@@ -66,7 +66,9 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
       const response = await conceptsAPI.searchConcepts(
         searchTerm,
         parentId || undefined,
-        parentId ? (path || '') : undefined
+        parentId ? (path || '') : undefined,
+        undefined,
+        communityId
       );
       setResults(response.data.results);
       setExactMatch(response.data.exactMatch);
@@ -77,7 +79,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
     } finally {
       setLoading(false);
     }
-  }, [parentId, path]);
+  }, [parentId, path, communityId]);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -156,7 +158,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
 
     try {
       setAddingName(name);
-      await conceptsAPI.createRootConcept(name, attributeId);
+      await conceptsAPI.createRootConcept(name, attributeId, communityId);
 
       setQuery('');
       setShowDropdown(false);

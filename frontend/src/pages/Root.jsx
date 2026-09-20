@@ -9,7 +9,7 @@ import SwapModal from '../components/SwapModal';
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
 
-const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
+const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityName }) => {
   const [concepts, setConcepts] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
   useEffect(() => {
     loadRootConcepts();
     loadHiddenCount();
-  }, [sortMode, user]);
+  }, [sortMode, user, communityId]);
 
   const loadHiddenCount = async () => {
     if (!user) { setHiddenCount(0); return; }
@@ -78,10 +78,11 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
   };
 
   const loadRootConcepts = async () => {
+    if (!communityId) { setConcepts([]); setLoading(false); return; }
     try {
       setLoading(true);
       const sortParam = sortMode === 'saves' ? undefined : sortMode;
-      const response = await conceptsAPI.getRootConcepts(sortParam);
+      const response = await conceptsAPI.getRootConcepts(sortParam, communityId);
       setConcepts(response.data.concepts);
       setTotalUsers(response.data.totalUsers);
       setError(null);
@@ -235,6 +236,9 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
   return (
     <div style={styles.container}>
       <main style={styles.main}>
+        {communityName && (
+          <div style={styles.communityTitle}>{communityName}</div>
+        )}
         {!loading && !error && (
           <div style={styles.topBar}>
             <div style={styles.totalUsers}>
@@ -337,6 +341,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false }) => {
         graphTabId={graphTabId}
         onNavigate={onNavigate}
         isGuest={isGuest}
+        communityId={communityId}
       />
 
       {/* Phase 38b: Swap Modal for root concepts */}
@@ -432,6 +437,12 @@ const styles = {
     margin: '0 auto',
     padding: '40px 20px',
     position: 'relative',
+  },
+  communityTitle: {
+    fontSize: '22px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#222',
+    marginBottom: '16px',
   },
   loading: {
     textAlign: 'center',

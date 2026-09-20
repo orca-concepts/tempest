@@ -79,8 +79,8 @@ export const authAPI = {
 
 // Concepts endpoints
 export const conceptsAPI = {
-  getRootConcepts: (sort) =>
-    api.get('/concepts/root', { params: { sort } }),
+  getRootConcepts: (sort, communityId) =>
+    api.get('/concepts/root', { params: { sort, communityId } }),
 
   getConceptWithChildren: (id, path, sort) =>
     api.get(`/concepts/${id}`, { params: { path, sort } }),
@@ -88,11 +88,15 @@ export const conceptsAPI = {
   getConceptParents: (id, originPath) =>
     api.get(`/concepts/${id}/parents`, { params: { originPath } }),
 
+  // Phase 71: cross-community exact-name bridges for a concept
+  getConceptBridges: (id) =>
+    api.get(`/concepts/${id}/bridges`),
+
   getConceptNames: (ids) =>
     api.get('/concepts/names/batch', { params: { ids } }),
 
-  searchConcepts: (query, parentId, path, attributeId) =>
-    api.get('/concepts/search', { params: { q: query, parentId, path, ...(attributeId ? { attributeId } : {}) } }),
+  searchConcepts: (query, parentId, path, attributeId, communityId) =>
+    api.get('/concepts/search', { params: { q: query, parentId, path, communityId, ...(attributeId ? { attributeId } : {}) } }),
 
   getAttributes: () =>
     api.get('/concepts/attributes'),
@@ -103,8 +107,8 @@ export const conceptsAPI = {
   getSubtree: (conceptId, path) =>
     api.get(`/concepts/${conceptId}/subtree`, { params: path ? { path } : {} }),
 
-  createRootConcept: (name, attributeId) =>
-    api.post('/concepts/root', { name, attributeId }),
+  createRootConcept: (name, attributeId, communityId) =>
+    api.post('/concepts/root', { name, attributeId, communityId }),
 
   createChildConcept: (name, parentId, path) =>
     api.post('/concepts/child', { name, parentId, path }),
@@ -116,6 +120,18 @@ export const conceptsAPI = {
   // Phase 14a: Batch children for diff modal
   getBatchChildrenForDiff: (panes) =>
     api.post('/concepts/batch-children-for-diff', { panes }),
+};
+
+// Phase 71: Communities
+export const communitiesAPI = {
+  listCommunities: () =>
+    api.get('/communities'),
+
+  getCommunityBySlug: (slug) =>
+    api.get(`/communities/${slug}`),
+
+  createCommunity: (name, description) =>
+    api.post('/communities', { name, description }),
 };
 
 // Votes endpoints

@@ -59,6 +59,7 @@ const Concept = ({
     : (searchParams.get('view') === 'flip' ? 'flip' : searchParams.get('view') === 'tunnel' ? 'tunnel' : 'children');
 
   const [concept, setConcept] = useState(null);
+  const [bridges, setBridges] = useState([]);
   const [children, setChildren] = useState([]);
   const [path, setPath] = useState([]);
   const [currentEdgeVoteCount, setCurrentEdgeVoteCount] = useState(null);
@@ -168,6 +169,11 @@ const Concept = ({
       setTunnelLinkCount(response.data.tunnelLinkCount || 0);
       setError(null);
 
+      // Phase 71: cross-community exact-name bridges for this concept
+      conceptsAPI.getConceptBridges(effectiveConceptId)
+        .then((br) => setBridges(br.data.bridges || []))
+        .catch(() => setBridges([]));
+
       // If flip view, load parents too
       if (effectiveViewMode === 'flip') {
         const parentsResponse = await conceptsAPI.getConceptParents(effectiveConceptId, pathParam);
@@ -187,6 +193,19 @@ const Concept = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  // Phase 71: open the matched question in another community.
+  const handleBridgeClick = (bridge) => {
+    if (!onOpenConceptTab) return;
+    onOpenConceptTab(
+      bridge.conceptId,
+      [],
+      undefined,
+      undefined,
+      undefined,
+      bridge.viewMode === 'flip' ? 'flip' : 'children'
+    );
   };
 
   const loadVoteSets = async (pathParam) => {
@@ -802,6 +821,22 @@ const Concept = ({
                   )}
                 </div>
 
+                {bridges.length > 0 && (
+                  <div style={styles.bridgeBar}>
+                    <span style={styles.bridgeLabel}>Also asked in:</span>
+                    {bridges.map((b) => (
+                      <button
+                        key={`${b.communityId}-${b.conceptId}`}
+                        style={styles.bridgeChip}
+                        onClick={() => handleBridgeClick(b)}
+                        title={`View this question in ${b.communityName}`}
+                      >
+                        {b.communityName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <VoteSetBar
                   voteSets={voteSets}
                   activeSetIndices={activeSetIndices}
@@ -916,6 +951,7 @@ const Concept = ({
         graphTabId={graphTabId}
         onNavigate={onNavigate}
         isGuest={isGuest}
+        communityId={concept?.community_id}
       />
 
       {showAddModal && (
@@ -1167,6 +1203,28 @@ const styles = {
     flexWrap: 'wrap',
     gap: '8px 12px',
     marginBottom: '20px',
+  },
+  bridgeBar: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginBottom: '16px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  bridgeLabel: {
+    fontSize: '13px',
+    color: '#888',
+  },
+  bridgeChip: {
+    padding: '3px 10px',
+    fontSize: '13px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    backgroundColor: '#faf9f6',
+    border: '1px solid #cfc9bd',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    color: '#333',
   },
   conceptName: {
     fontSize: '32px',

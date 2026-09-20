@@ -15,6 +15,7 @@ router.get('/names/batch', optionalAuth, conceptsController.getConceptNames);
 router.get('/:id/parents', optionalAuth, conceptsController.getConceptParents);
 router.get('/:id/votesets', optionalAuth, conceptsController.getVoteSets);
 router.get('/:id/subtree', optionalAuth, conceptsController.getSubtree);
+router.get('/:id/bridges', optionalAuth, conceptsController.getConceptBridges);
 router.get('/:id', optionalAuth, conceptsController.getConceptWithChildren);
 
 // Phase 14a: Batch children for diff modal (guest-accessible)

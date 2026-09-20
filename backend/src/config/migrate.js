@@ -101,6 +101,72 @@ const createTables = async () => {
         ON concepts (LOWER(name));
     `);
 
+    // ============================================================
+    // Phase 71: Community pages — partition the graph into per-community
+    // spaces. Concept identity becomes community-scoped; a normalized_name
+    // key powers the cross-community exact-match bridge. All existing
+    // concepts bootstrap into a single "General" community.
+    // ============================================================
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS communities (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL,
+        description TEXT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_slug ON communities (LOWER(slug));
+    `);
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_name ON communities (LOWER(name));
+    `);
+
+    // Scope concepts to a community + add the normalized match key (immutable
+    // expression => valid STORED generated column). Trailing ?/./! stripped so
+    // "How does X work?" bridges to "How does X work".
+    await client.query(`
+      ALTER TABLE concepts ADD COLUMN IF NOT EXISTS community_id INTEGER REFERENCES communities(id);
+    `);
+    await client.query(`
+      ALTER TABLE concepts ADD COLUMN IF NOT EXISTS normalized_name TEXT
+        GENERATED ALWAYS AS (
+          regexp_replace(regexp_replace(lower(btrim(name)), '\\s+', ' ', 'g'), '[?.!]+$', '')
+        ) STORED;
+    `);
+
+    // Bootstrap: create "General" if absent, backfill every concept, then
+    // enforce NOT NULL. Idempotent (INSERT guarded, UPDATE only fills NULLs,
+    // SET NOT NULL is a no-op once applied).
+    await client.query(`
+      INSERT INTO communities (name, slug, description)
+      SELECT 'General', 'general', 'Default community for pre-existing questions.'
+      WHERE NOT EXISTS (SELECT 1 FROM communities WHERE LOWER(slug) = 'general');
+    `);
+    await client.query(`
+      UPDATE concepts
+      SET community_id = (SELECT id FROM communities WHERE LOWER(slug) = 'general')
+      WHERE community_id IS NULL;
+    `);
+    await client.query(`
+      ALTER TABLE concepts ALTER COLUMN community_id SET NOT NULL;
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_concepts_community ON concepts (community_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_concepts_norm ON concepts (normalized_name);
+    `);
+    // Name is unique WITHIN a community (replaces the old app-level global
+    // reuse-by-name; different communities keep independent nodes).
+    await client.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_concepts_community_name
+        ON concepts (community_id, LOWER(name));
+    `);
+
     // Attributes table - stores reusable attribute tags (action, tool, value)
     await client.query(`
       CREATE TABLE IF NOT EXISTS attributes (

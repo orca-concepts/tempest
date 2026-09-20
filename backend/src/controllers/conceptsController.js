@@ -4,7 +4,13 @@ const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
     try {
-      const { sort } = req.query; // 'new' or default (saves)
+      const { sort, communityId } = req.query; // 'new' or default (saves)
+
+      // Phase 71: roots are scoped to a community.
+      const cid = parseInt(communityId, 10);
+      if (!cid || isNaN(cid)) {
+        return res.status(400).json({ error: 'communityId is required' });
+      }
 
       const orderClause = sort === 'new'
         ? 'ORDER BY root_e.created_at DESC, c.name'
@@ -30,12 +36,12 @@ const conceptsController = {
         LEFT JOIN edges root_e ON root_e.child_id = c.id AND root_e.parent_id IS NULL AND root_e.graph_path = '{}' AND root_e.is_hidden = false
         LEFT JOIN attributes a ON root_e.attribute_id = a.id
         LEFT JOIN votes v ON root_e.id = v.edge_id
-        WHERE root_e.id IS NOT NULL
+        WHERE root_e.id IS NOT NULL AND c.community_id = $2
         GROUP BY c.id, c.name, c.created_at, root_e.id, root_e.created_at, a.id, a.name
         ${orderClause};
       `;
 
-      const result = await pool.query(query, [req.user ? req.user.userId : -1]);
+      const result = await pool.query(query, [req.user ? req.user.userId : -1, cid]);
 
       const userCountResult = await pool.query('SELECT COUNT(*) as total_users FROM users');
       const totalUsers = parseInt(userCountResult.rows[0].total_users);
@@ -366,7 +372,7 @@ const conceptsController = {
 
   // Search concepts by name (text matching + trigram similarity)
   searchConcepts: async (req, res) => {
-    const { q, parentId, path, attributeId } = req.query;
+    const { q, parentId, path, attributeId, communityId } = req.query;
 
     try {
       if (!q || q.trim().length === 0) {
@@ -374,6 +380,12 @@ const conceptsController = {
       }
 
       const searchTerm = q.trim();
+
+      // Phase 71: search is scoped to a community.
+      const cid = parseInt(communityId, 10);
+      if (!cid || isNaN(cid)) {
+        return res.status(400).json({ error: 'communityId is required' });
+      }
 
       const attrFilter = attributeId
         ? `AND EXISTS (SELECT 1 FROM edges e_attr WHERE e_attr.child_id = c.id AND e_attr.attribute_id = ${parseInt(attributeId)} AND e_attr.is_hidden = false)`
@@ -388,6 +400,7 @@ const conceptsController = {
             END as relevance
           FROM concepts c
           WHERE LOWER(c.name) LIKE LOWER($1) || '%'
+            AND c.community_id = $2
           ${attrFilter}
           LIMIT 10
         ),
@@ -396,6 +409,7 @@ const conceptsController = {
             similarity(c.name, $1) as relevance
           FROM concepts c
           WHERE similarity(c.name, $1) > 0.15
+            AND c.community_id = $2
             AND c.id NOT IN (SELECT id FROM exact_matches)
           ${attrFilter}
           ORDER BY similarity(c.name, $1) DESC
@@ -412,7 +426,7 @@ const conceptsController = {
         LIMIT 20;
       `;
 
-      const result = await pool.query(searchQuery, [searchTerm]);
+      const result = await pool.query(searchQuery, [searchTerm, cid]);
 
       // If we have a parentId and path, check which results are already children
       let childInfo = {};
@@ -544,6 +558,16 @@ const conceptsController = {
       }
       const attributeId = rootEdgeResult.rows[0].attribute_id;
 
+      // Phase 71: a child concept belongs to the same community as its root graph.
+      const rootConceptRow = await pool.query(
+        'SELECT community_id FROM concepts WHERE id = $1',
+        [rootConceptId]
+      );
+      if (rootConceptRow.rows.length === 0) {
+        return res.status(400).json({ error: 'Could not determine community for this graph' });
+      }
+      const communityId = rootConceptRow.rows[0].community_id;
+
       const attrResult = await pool.query('SELECT id FROM attributes WHERE id = $1', [attributeId]);
       if (attrResult.rows.length === 0) {
         return res.status(400).json({ error: 'Invalid attribute on root edge' });
@@ -555,8 +579,8 @@ const conceptsController = {
         await client.query('BEGIN');
 
         let conceptResult = await client.query(
-          'SELECT * FROM concepts WHERE LOWER(name) = LOWER($1)',
-          [name]
+          'SELECT * FROM concepts WHERE LOWER(name) = LOWER($1) AND community_id = $2',
+          [name, communityId]
         );
 
         let conceptId;
@@ -570,8 +594,8 @@ const conceptsController = {
           }
         } else {
           conceptResult = await client.query(
-            'INSERT INTO concepts (name, created_by) VALUES ($1, $2) RETURNING *',
-            [name, req.user.userId]
+            'INSERT INTO concepts (name, created_by, community_id) VALUES ($1, $2, $3) RETURNING *',
+            [name, req.user.userId, communityId]
           );
           conceptId = conceptResult.rows[0].id;
         }
@@ -660,7 +684,7 @@ const conceptsController = {
 
   // Create a root concept
   createRootConcept: async (req, res) => {
-    const { name, attributeId } = req.body;
+    const { name, attributeId, communityId } = req.body;
 
     try {
       if (!name || !attributeId) {
@@ -669,6 +693,16 @@ const conceptsController = {
 
       if (name.length > 255) {
         return res.status(400).json({ error: 'Concept name must be 255 characters or fewer' });
+      }
+
+      // Phase 71: a root concept is created inside a community.
+      const cid = parseInt(communityId, 10);
+      if (!cid || isNaN(cid)) {
+        return res.status(400).json({ error: 'communityId is required' });
+      }
+      const communityCheck = await pool.query('SELECT id FROM communities WHERE id = $1', [cid]);
+      if (communityCheck.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid community' });
       }
 
       const attrResult = await pool.query('SELECT id FROM attributes WHERE id = $1', [attributeId]);
@@ -682,8 +716,8 @@ const conceptsController = {
         await client.query('BEGIN');
 
         const existingConcept = await client.query(
-          'SELECT id, name FROM concepts WHERE LOWER(name) = LOWER($1)',
-          [name]
+          'SELECT id, name FROM concepts WHERE LOWER(name) = LOWER($1) AND community_id = $2',
+          [name, cid]
         );
 
         let conceptId;
@@ -705,8 +739,8 @@ const conceptsController = {
           }
         } else {
           const result = await client.query(
-            'INSERT INTO concepts (name, created_by) VALUES ($1, $2) RETURNING *',
-            [name, req.user.userId]
+            'INSERT INTO concepts (name, created_by, community_id) VALUES ($1, $2, $3) RETURNING *',
+            [name, req.user.userId, cid]
           );
           conceptId = result.rows[0].id;
           conceptRow = result.rows[0];
@@ -1158,6 +1192,56 @@ const conceptsController = {
       }
     } catch (error) {
       console.error('Error nesting under sibling:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 71: cross-community exact-name bridge. For the concept being viewed,
+  // find same-normalized-name concepts in OTHER communities. Precompute the click
+  // destination: 'flip' when the target has a non-root placement (the
+  // decontextualized flip view lists placements), else 'root' — the flip view
+  // (getConceptParents) excludes root edges, so a root-only target would render
+  // empty and we send the user to its root page instead.
+  getConceptBridges: async (req, res) => {
+    const { id } = req.params;
+
+    try {
+      const conceptResult = await pool.query(
+        'SELECT id, community_id, normalized_name FROM concepts WHERE id = $1',
+        [id]
+      );
+      if (conceptResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Concept not found' });
+      }
+      const { community_id, normalized_name } = conceptResult.rows[0];
+
+      const bridgesResult = await pool.query(
+        `SELECT c.id AS concept_id,
+                c.community_id,
+                comm.name AS community_name,
+                comm.slug AS community_slug,
+                EXISTS (
+                  SELECT 1 FROM edges e
+                  WHERE e.child_id = c.id AND e.parent_id IS NOT NULL AND e.is_hidden = false
+                ) AS has_nonroot_placement
+         FROM concepts c
+         JOIN communities comm ON comm.id = c.community_id
+         WHERE c.normalized_name = $1 AND c.community_id <> $2
+         ORDER BY comm.name`,
+        [normalized_name, community_id]
+      );
+
+      const bridges = bridgesResult.rows.map((row) => ({
+        conceptId: row.concept_id,
+        communityId: row.community_id,
+        communityName: row.community_name,
+        communitySlug: row.community_slug,
+        viewMode: row.has_nonroot_placement ? 'flip' : 'root',
+      }));
+
+      res.json({ bridges });
+    } catch (error) {
+      console.error('Error fetching concept bridges:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

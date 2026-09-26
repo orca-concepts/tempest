@@ -1576,6 +1576,7 @@ const AppShell = () => {
                         isGuest={isGuest}
                         communityId={activeCommunityId}
                         communityName={activeCommunityName}
+                        onOpenCommunities={() => setCommunitiesOpen(true)}
                       />
                     ) : (
                       <Concept

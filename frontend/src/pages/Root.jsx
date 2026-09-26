@@ -9,7 +9,7 @@ import SwapModal from '../components/SwapModal';
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
 
-const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityName }) => {
+const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityName, onOpenCommunities }) => {
   const [concepts, setConcepts] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -239,7 +239,7 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
         {communityName && (
           <div style={styles.communityTitle}>{communityName}</div>
         )}
-        {!loading && !error && (
+        {communityId && !loading && !error && (
           <div style={styles.topBar}>
             <div style={styles.totalUsers}>
               {totalUsers} {totalUsers === 1 ? 'user' : 'users'}
@@ -299,11 +299,25 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
           </div>
         )}
 
-        {loading && <div style={styles.loading}>Loading...</div>}
+        {!communityId && (
+          <div style={styles.emptyState}>
+            <p style={styles.nudgeHeading}>No community selected</p>
+            <p style={styles.nudgeBody}>
+              {isGuest
+                ? 'Questions live inside communities. Open Communities to explore a space of questions.'
+                : 'Questions live inside communities. Open Communities to pick one — or create the first.'}
+            </p>
+            <button style={styles.nudgeButton} onClick={onOpenCommunities}>
+              {isGuest ? 'Browse communities' : 'Open Communities'}
+            </button>
+          </div>
+        )}
 
-        {error && <div style={styles.error}>{error}</div>}
+        {communityId && loading && <div style={styles.loading}>Loading...</div>}
 
-        {!loading && !error && (() => {
+        {communityId && error && <div style={styles.error}>{error}</div>}
+
+        {communityId && !loading && !error && (() => {
           const filtered = attributeFilter === 'all' || availableAttributes.length <= 1
             ? concepts
             : concepts.filter(c => c.attribute_name === attributeFilter);
@@ -331,18 +345,21 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
         })()}
       </main>
 
-      {/* Search field with root concept creation */}
-      <SearchField
-        parentId={null}
-        path={null}
-        viewMode="children"
-        onConceptAdded={loadRootConcepts}
-        isRootPage={!isGuest}
-        graphTabId={graphTabId}
-        onNavigate={onNavigate}
-        isGuest={isGuest}
-        communityId={communityId}
-      />
+      {/* Search field with root concept creation — only when a community is active
+          (root listing, search, and creation all require a communityId) */}
+      {communityId && (
+        <SearchField
+          parentId={null}
+          path={null}
+          viewMode="children"
+          onConceptAdded={loadRootConcepts}
+          isRootPage={!isGuest}
+          graphTabId={graphTabId}
+          onNavigate={onNavigate}
+          isGuest={isGuest}
+          communityId={communityId}
+        />
+      )}
 
       {/* Phase 38b: Swap Modal for root concepts */}
       {swapModalEdge && (
@@ -461,6 +478,29 @@ const styles = {
     textAlign: 'center',
     padding: '60px 20px',
     color: '#666',
+  },
+  nudgeHeading: {
+    fontSize: '20px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#333',
+    marginBottom: '8px',
+  },
+  nudgeBody: {
+    fontSize: '15px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    color: '#666',
+    maxWidth: '460px',
+    margin: '0 auto 20px',
+  },
+  nudgeButton: {
+    padding: '8px 18px',
+    fontSize: '15px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    backgroundColor: '#333',
+    color: '#faf9f6',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
   },
   totalUsers: {
     fontSize: '14px',

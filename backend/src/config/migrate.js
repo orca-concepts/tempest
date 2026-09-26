@@ -137,19 +137,27 @@ const createTables = async () => {
         ) STORED;
     `);
 
-    // Bootstrap: create "General" if absent, backfill every concept, then
-    // enforce NOT NULL. Idempotent (INSERT guarded, UPDATE only fills NULLs,
-    // SET NOT NULL is a no-op once applied).
+    // Bootstrap ONLY when migrating pre-existing data: if any concept lacks a
+    // community, create a fallback "General" and backfill it so the NOT NULL
+    // below can be applied. On a fresh/cleared database there are no orphaned
+    // concepts, so no "General" is created — the site starts with zero
+    // communities and users create the first one via the Communities UI.
+    // Idempotent: the guard is a no-op once every concept has a community.
     await client.query(`
-      INSERT INTO communities (name, slug, description)
-      SELECT 'General', 'general', 'Default community for pre-existing questions.'
-      WHERE NOT EXISTS (SELECT 1 FROM communities WHERE LOWER(slug) = 'general');
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM concepts WHERE community_id IS NULL) THEN
+          INSERT INTO communities (name, slug, description)
+          SELECT 'General', 'general', 'Default community for pre-existing questions.'
+          WHERE NOT EXISTS (SELECT 1 FROM communities WHERE LOWER(slug) = 'general');
+
+          UPDATE concepts
+          SET community_id = (SELECT id FROM communities WHERE LOWER(slug) = 'general')
+          WHERE community_id IS NULL;
+        END IF;
+      END $$;
     `);
-    await client.query(`
-      UPDATE concepts
-      SET community_id = (SELECT id FROM communities WHERE LOWER(slug) = 'general')
-      WHERE community_id IS NULL;
-    `);
+    // Safe on an empty table and a no-op once already applied.
     await client.query(`
       ALTER TABLE concepts ALTER COLUMN community_id SET NOT NULL;
     `);

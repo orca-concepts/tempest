@@ -123,15 +123,16 @@ const AppShell = () => {
       .then((r) => {
         const list = r.data.communities || [];
         setCommunities(list);
+        // Only restore a community this browser explicitly chose before. With no
+        // stored choice we leave none active, so Root shows the "select a
+        // community" nudge — new users pick one consciously instead of landing
+        // in an arbitrary community. (A stale slug for a missing community also
+        // falls through to the nudge.)
         const storedSlug = localStorage.getItem('orca_active_community');
-        const pick =
-          list.find((c) => c.slug === storedSlug) ||
-          list.find((c) => c.slug === 'general') ||
-          list[0];
+        const pick = storedSlug ? list.find((c) => c.slug === storedSlug) : undefined;
         if (pick) {
           setActiveCommunityId(pick.id);
           setActiveCommunityName(pick.name);
-          localStorage.setItem('orca_active_community', pick.slug);
         }
       })
       .catch(() => setCommunities([]));

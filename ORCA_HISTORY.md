@@ -4667,4 +4667,545 @@ DATABASE_URL connection string for managed Postgres. Seed question attribute in 
 
 ---
 
+## Phases 59–70 (Migrated from ORCA_STATUS.md during the October 2026 status-doc reconciliation)
+
+These sections were moved verbatim from `ORCA_STATUS.md` on October 19, 2026, when the status doc was cut down to describe only the current system. Some of what they describe has since been removed or changed:
+- **Mentions (Phase 65b) was intentionally removed.** Its code is gone and `comment_mentions` is dropped by `migrate.js`.
+- **The Storm page was intentionally replaced** by the "thoroughly-conscious-ignorance" info page.
+- **Situations and tunnels are UI-dormant dead code** (Phase 70).
+- **Link inheritance and context-scoped link votes** (a post-Phase-69 change not otherwise documented here: links placed on a descendant edge surfaced in ancestor panels / Flip View groups, with votes scoped by a `context_edge_id` column) were removed in October 2026. Links now apply only to their own edge, one vote per user per link.
+- **Phase 71 (communities)** is documented in `ORCA_STATUS.md` and its spec `PHASE_71_COMMUNITY_PAGES.md`.
+
+### Status-doc header entries (Phases 67–70)
+
+**Phase 70 (June 14, 2026):** Value-only pivot + situations removed from the UI.
+- **Value-only attributes.** `backend/.env` set to `ENABLED_ATTRIBUTES=value`. `getAttributes` (`conceptsController.js`) already filters by this env var, so `GET /api/concepts/attributes` now returns only `{ id, name: 'value' }`. This alone collapses two UI surfaces that were already guarded on `availableAttributes.length > 1`: the root-page attribute filter bar (`Root.jsx`, auto-hidden; filter logic also short-circuits to "show all" at ≤1 attribute) and the create-root attribute picker (`SearchField.jsx`, auto-assigns the single attribute, no picker shown). No code change to `Root.jsx` or `SearchField.jsx` — they self-hide and remain a safe fail-back if multiple attributes are ever re-enabled.
+- **Attribute badges removed (the only env-independent surface).** Deleted the badge JSX in `ConceptGrid.jsx` (per-card `{showAttributeBadge && concept.attribute_name && ...}`) and in `Concept.jsx` (concept-header `{currentAttribute && <span style={styles.graphAttributeBadge}>...}`). `currentAttribute` is kept (still passed to `Breadcrumb`); the `attributeBadge` / `graphAttributeBadge` style objects are left in place (dead, harmless). `migrate.js` still seeds all four attribute rows (`ON CONFLICT DO NOTHING`) — harmless, the env var filters at read time.
+- **Situations removed from the UI (backend left intact).** Strategy: a "data lever" plus explicit removal of the deliberate entry points.
+  - **Data lever** — `AppShell.jsx` `loadAllTabs` no longer calls `combosAPI.getSubscriptions()` / `combosAPI.getMyCombos()`; `comboSubscriptions` and `ownedCombos` are set to `[]`. This auto-hides every persistence surface that was already guarded on empty data: the "Add to Situation" button on concept pages (gated on `ownedCombos.length > 0`), sidebar situation items at top level and inside groups (lookup returns `undefined` → `null`), situation tab panes (`.map` over `[]`), and the situation tab context menu (no item to right-click).
+  - **Explicit removals** — removed the "Browse Situations" sidebar button (`AppShell.jsx`); removed the "Situations" tab header + content render in `ConceptLinksPanel.jsx` and short-circuited its per-concept `combosAPI.getCombosByEdge` loader to `setSituations([])` (the `situations` / `setSituations` state and `renderSituationsTab` are kept declared but unreachable, to avoid undefined-ref churn).
+  - **Deep-link neutralized** — `/situation/:id` in `AppShell.jsx` now redirects to `/` (drops `handleOpenSituationTab` / `setGuestComboId`, so the guest combo view is unreachable); `situation` was dropped from the `hasDeepLinkInUrl` regex so a stale situation URL no longer suppresses default tab activation. A 301 from `/superconcept/:id` → `/situation/:id` (Phase 66, `server.js`) still exists and now lands on the redirect-to-home path.
+  - **Left as dead code (NOT touched):** `ComboListView`, `ComboTabContent`, all `combosAPI` methods, `handleOpenSituationTab` / `handleCloseSituationTab` / `renderSidebarComboItem` / `handleAddToCombo`, combo context-menu actions, all backend combo routes/controllers/tables, and the state vars `comboSubscriptions` / `ownedCombos` / `comboView` / `guestComboId` (still declared, never populated).
+- **Verification:** frontend `npm run build` clean; backend starts and connects; `GET /api/concepts/attributes` returns only `value`.
+- **Files:** `backend/.env`, `frontend/src/components/ConceptGrid.jsx`, `frontend/src/pages/Concept.jsx`, `frontend/src/components/AppShell.jsx`, `frontend/src/components/ConceptLinksPanel.jsx`.
+
+**Phase 69 (June 13, 2026):** Concept-card & links-panel enhancements.
+- **Cross-sibling-descendant flag.** `getConceptWithChildren` runs one graph_path prefix-slice query (`graph_path[1:n] = $base AND array_length > n AND child_id = ANY(directChildren)`) to find each direct child that also appears deeper in the current concept's subtree — within that subtree a deeper occurrence can only sit under a sibling (cycles prevented), so this is exactly "descendant of a sibling". Each such child carries `nestedLocations: [{ edgeId, graphPath, parentName }]`. `ConceptGrid` shows a `↘` arrow top-right of those cards; click navigates to the single nested location (`navigateInTab(childId, loc.graphPath, 'children')`) or opens a small "under {parent}" picker for >1.
+- **Per-card link count.** A `(SELECT COUNT(*) FROM concept_links WHERE edge_id = e.id AND legal_hold = false)` correlated subquery added to BOTH `getConceptWithChildren` (children grid) and `getRootConcepts` (root grid, keyed on the root edge). Rendered as `N children · M links` in `ConceptGrid` (which both grids use).
+- **Flip / Tunnel button counts.** `getConceptWithChildren` also returns `altParentCount` (other non-root parent contexts for the concept — matches `getConceptParents`, which excludes root edges) and `tunnelLinkCount` (tunnels on the current edge), plus `currentEdgeId`. `Concept.jsx` appends `· N` to the Flip View / Tunnel buttons only when > 0 (unchanged at 0).
+- **Vote-set dots on links.** `getWebLinks` returns `voterUserIds` per link (`array_agg(DISTINCT clv.user_id) FILTER (...)`). `voteSets` (already loaded in `Concept.jsx` with per-set `userIds`) flows to `ConceptLinksPanel` → `LinkCard`, which intersects each link's voters with set membership and renders the matching color dots via `getSetColor` (same markup as the child-card dots). Naturally gated: empty `voteSets` → no dots; multiple dots per link supported. **AD note:** per-link voter ids are now sent to the client (frontend computes the intersection) — consistent with the vote-set endpoint, which already sends per-set `userIds`.
+
+**Phase 68 (June 13, 2026):** ORCID badge display validation + `chaos-seed` → `chaos-seed-data`.
+- **The bug:** `OrcidBadge` rendered *any* `orcid_id` as a link to `https://orcid.org/<value>`, guarding only `if (!orcidId)`. The `chaos-seed` system account's sentinel (`'CHAOS-SEED-ACCOUNT'`) is not a real iD, so every seed-authored link/tunnel/addendum/mention/situation showed a badge that 400s at ORCID.
+- **Shared validator (dual-file, like `inOrcaLinks.js` ↔ `LinkifiedText.jsx`):** `backend/src/utils/orcidValidator.js` exports `ORCID_DISPLAY_REGEX`, `isValidOrcid(value)`, and `orcidForDisplay(value)` (→ value if valid else `null`); `frontend/src/utils/orcidValidator.js` exports the same regex + `isValidOrcid`. The two regex copies (`/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/`) are kept in sync manually.
+- **Backend (display only — stored value untouched):** nine badge-display emit points wrap the emitted orcid with `orcidForDisplay`: `comboController` (`listCombos`, `getCombo`, `getCombosByEdge`), `tunnelController.getTunnelLinks`, `votesController` (`getWebLinks`, `getAllWebLinksForConcept`), `mentionsController.getMentions`, `usersController` (`searchUsers`, `getUserProfile`). Left truthful: `authController.getCurrentUser` (`/me`, identity not a third-party badge) and `usersController.exportMyData` (data export).
+- **Frontend (defense in depth):** `OrcidBadge.jsx` returns `null` when `!isValidOrcid(orcidId)`; `ProfilePage.jsx`'s raw `orcid.org` link is gated on `isValidOrcid`.
+- **Seed rename:** `chaos-seed` → `chaos-seed-data` (and email). `migrate-chaos.js` renames the legacy row in place via `UPDATE users ... WHERE username='chaos-seed'` before the idempotent INSERT, preserving id (25 locally) and every `created_by`/`added_by`. `apply.js`/`snapshot.js` resolve the new username. The sentinel `orcid_id` and password hash are unchanged.
+- **DRY cleanup:** `authController.js`'s `registerWithOrcid` and `devConnectOrcid` endpoints now call the shared `isValidOrcid` instead of an inline copy of the same regex (behavior-identical — verified across valid iDs, the sentinel, empty, non-string, and bad-suffix inputs), so the ORCID format lives in exactly one place per layer.
+- **Not touched:** schema, `orcid_id NOT NULL`, the registration/login flow behavior (the validator swap preserves it exactly).
+
+**Phase 67 (June 13, 2026):** Situations-as-tabs + situation votes.
+- **Bug fix (the trigger):** `setSavedPageOpen` was called at four sites in `AppShell.jsx` but never declared — dead state from the `SavedPageOverlay` removed in Phase 59b. In `handleSubscribeToCombo` the `combosAPI.subscribe()` call succeeded, then the undefined call threw a `ReferenceError`, was caught, and surfaced as a misleading "Failed to subscribe" alert (also skipping `refreshSidebarItems`, so the situation never appeared in the sidebar). Clicking a situation from Browse and from the concept link-panel Situations tab both routed through this. The follow-on "Not subscribed to this combo" popup was `unsubscribeFromCombo` returning 404 for a row that was never created.
+- **Model change:** `handleSubscribeToCombo` → `handleOpenSituationTab` (idempotent open + activate; 409 = already open → just activate) and `handleUnsubscribeFromCombo` → `handleCloseSituationTab` (wired to a new sidebar X button on combo items, mirroring `handleCloseGraphTab`). `combo_subscriptions` is kept as the backing store for "open tabs" (no table rename), so open situations persist across refresh exactly like graph tabs. `unsubscribeFromCombo` returns `200 { ok: true }` when nothing was deleted (idempotent close).
+- **Situation votes:** new `combo_votes` table (mirror of `tunnel_votes`, simple per-row toggle), `POST /api/combos/:id/vote` (`toggleComboVote`), `vote_count` + `user_voted` added to `listCombos` and `getCombo`. Browse default sort is now `vote_count DESC` (replacing subscriber count); `listCombos` accepts `?filter=voted` (EXISTS against `combo_votes` for the current user). Vote button in the `ComboTabContent` header (optimistic toggle); the header "Unsubscribe" button was removed (closing is the sidebar X). Browse cards are open-only: card click opens the tab, vote **count** is displayed but not votable from the card (voting is on the situation page).
+
+### Quick Context phase summaries (Phases 58–66)
+
+Orca is an open-source (AGPL v3) collaborative research-question ontology platform for academic research. Users create and navigate hierarchical concept graphs with context-dependent children and community voting. **The concept graph uses a single attribute, `question`** (`ENABLED_ATTRIBUTES=question`); the historical multi-attribute model (action, tool, value, question) is retired and any mention of the other three attributes elsewhere in this file is historical only. References to external resources are organized as **links** (URLs with optional titles and comments) attached to specific edges in the concept graph.
+
+**Phase 58 pivot (May 2026):** Removed the entire document/corpus/annotation/message layer. The platform now uses a simpler link-based reference system: users paste URLs, the server auto-fetches Open Graph titles, and the community upvotes/discusses links. Cross-instance navigation lets users see where the same URL appears across different concepts. Full Phase 58 narrative archived in `ORCA_HISTORY.md`.
+
+**Phase 59 (May 2026):** Tunnel links gained optional comments and now allow duplicates between the same edge pair (different comments = different rows = independent vote tallies). Graph Votes and Link Votes overlays merged into a single display-only Votes overlay with full root-to-edge ancestry rendering for link-voted edges.
+
+**Phase 60a (May 2026):** Self-authored links may now be hard-deleted by their adder (carve-out from append-only AD — see "Append-Only" section for the reframed principle). New `link_removal_log` table preserves a sparse audit trail (sha256 of URL, no plaintext content). Add-link form gained a required affirmation checkbox and on-paste/on-blur title preview via new `GET /web-links/preview-title` endpoint reusing the existing OG-fetch utility.
+
+**Phase 61 pivot (May 2026):** Replaced Twilio phone OTP authentication with ORCID-first email+password registration. New signup flow: (1) ORCID OAuth proves the user owns an ORCID iD, (2) the user submits username, email, password, and ToS acceptance. If the submitted email matches an ORCID-verified email returned by `/v3.0/{orcid}/email`, the account is created with `email_verified_at = NOW()` and a welcome email is sent. Otherwise a verification email with a 24-hour single-use token is sent, and the welcome email follows after the user clicks the verify link. Password reset uses a similar email-token flow. Phase 61a added the schema + Resend integration. 61b added five new backend endpoints. 61c reworked `LoginModal.jsx` and added standalone `/reset-password` and `/email-verification` pages. A follow-up fix corrected the verification email's URL (it pointed at the frontend route instead of the backend endpoint, so verification appeared to succeed but didn't actually update the database).
+
+**Phase 62b (May 2026):** Replaced the editable-comment model on links and tunnel links with an append-only addendum system. Original comments are now immutable; the author can post timestamped addenda below. Author ORCID badges now display on both link types. Share links added for superconcepts. Deep-link navigation (`/concept/:id` and `/superconcept/:id`) now works for both logged-in users and guests.
+
+**Phase 62c (May 23, 2026):** Removed the ORCID disconnect endpoint (`POST /api/auth/orcid/disconnect`) and the Connect/Disconnect conditional UI block on the profile page. The endpoint was zombie code from Phase 41a (when ORCID was optional) that survived Phase 61d/e's transition to ORCID-required accounts. It was broken in two ways: (1) it attempted `UPDATE users SET orcid_id = NULL`, which violates the NOT NULL constraint added in 61d/e, and (2) even if it had worked, the defensive ORCID-present check at login (`authController.js:87`) would have locked the user out permanently. The bug surfaced during manual exercise of the endpoint during a security-hardening session and was fixed by removing the endpoint and UI rather than dropping the constraint. The profile page now passively displays the user's ORCID iD using the existing `OrcidBadge` component. The `devConnectOrcid` endpoint (dev-only ORCID linking) remains intact. This is the second instance of a zombie-code cleanup mirroring Phase 62a — see "Phase Transitions Can Leave Zombie Code" in Key Learnings.
+
+**Phase 63a (May 2026):** Added favicon and Open Graph / Twitter Card metadata for social media link previews. The favicon is an SVG of a lowercase 'o' in Georgia serif on an off-white `#FAF9F6` tile. Three pages have dedicated `summary_large_image` preview cards (home, The Storm, Using Orca) with custom screenshots; other paths fall back to a `summary` card with the favicon. Page-specific tags are injected by the Express SPA-fallback handler via an `OG_OVERRIDES` map — crawler bots and human visitors both receive the path-correct HTML, since crawlers don't execute JavaScript. Verified working on Bluesky via the cardyb extract endpoint.
+
+**Phase 64a (May 24, 2026):** Added Google Safe Browsing v4 URL safety check. The check runs at two existing call sites: `POST /api/votes/web-links/add` (security boundary, before INSERT) and `GET /api/votes/web-links/preview-title` (early feedback during the add-link form). Flagged URLs are rejected with `403` and a machine-readable `code: 'unsafe_url'`. Threat categories checked: MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION. A sparse `safe_browsing_rejections` audit table records sha256 of URL, threat types, source ('add' vs 'preview'), and attempting user — modeled on `link_removal_log`. The utility follows the established fail-open never-throws contract: missing key, timeouts, network failures all return `{ safe: true, threats: [] }` with a warning log. Local dev runs without the key (warning at startup); production has the key set in Railway. This replaces the previously-considered "domain allowlist" approach — the allowlist was rejected as too restrictive for cross-disciplinary research (Phase 60a) and as insufficient defense against actually-malicious URLs (which Safe Browsing addresses directly).
+
+**Phase 65a (May 24, 2026):** Added share buttons on regular links and tunnel links plus in-comment linkification of in-orca URLs. Share buttons (mirroring Phase 62b's concept/superconcept share buttons) copy `/link/:id` or `/tunnel/:id` URLs to clipboard. New `GET /api/votes/web-links/:linkId/location` and `GET /api/tunnels/:tunnelLinkId/location` endpoints resolve those URLs client-side to the parent edge's concept + path; the AppShell deep-link `useEffect` was extended to handle the new patterns (route to `/concept/:id?path=...#link-:id` and let the existing concept-deep-link path take over). A new `LinkifiedText` component replaces `ClampedText` on user-authored comment/addendum surfaces — only in-orca URLs (matching a narrow anchored grammar in `backend/src/utils/inOrcaLinks.js` and `frontend/src/components/LinkifiedText.jsx`) become clickable hyperlinks; external URLs and malformed strings remain plain text. Hyperlinks always open in a new browser tab (`target="_blank" rel="noopener noreferrer"`). Two follow-up bug fixes shipped in the same arc: `65a-fix` (location endpoints renamed `path` → `parentPath` and now return `graph_path` directly, fixing a duplicate-concept-in-breadcrumb bug caused by appending `concept_id` to `graph_path`); `65a-fix-2` (mount-time race between `loadAllTabs`'s default-tab-activation and the async location-resolution allowed a brief flash of the wrong concept in fresh browser tabs — fixed by suppressing default-activation when the URL is a deep-link pattern). The Phase 65b mentions feature is scaffolded but not yet implemented — `parseInOrcaLinks` utility is defined and tested but not called.
+
+**Phase 65a-fix-3 (May 26, 2026):** Hangover bug from 65a's tunnel share flow. Opening a `/tunnel/:id` share URL correctly resolved to the right concept page but rendered in the default view mode (Children) instead of Tunnel View, so `TunnelView` was not mounted and `pendingScrollTunnelLinkId` was plumbed to a component that didn't exist on screen. The first fix attempt assumed `Concept.jsx`'s fragment-reading useEffect could detect a `#tunnel-:id` fragment and switch view mode — but AppShell's deep-link useEffect uses `handleOpenConceptTab` (which manages tab state directly without fragments) and then `navigate('/', { replace: true })` strips any hash, so the fragment effect was a dead code path for tunnels. The retry uses `handleOpenConceptTab`'s existing `viewMode` parameter (sixth positional argument) — the `/tunnel/:id` branch now passes `'tunnel'`. Regular link shares are unchanged because `ConceptLinksPanel` renders alongside any view mode.
+
+**Phase 65b-1 (May 26, 2026):** Mentions data layer — schema, parser hookup at four write paths, backfill, and read endpoint. **No UI ships in this phase**; Mentions panels are deferred to 65b-2.
+
+New `comment_mentions` join table with CHECK constraints on `source_type` (one of `concept_link_comment`, `concept_link_addendum`, `tunnel_link_comment`, `tunnel_link_addendum`) and `target_type` (one of `concept`, `superconcept`, `link`, `tunnel`). No foreign keys — there are four source × four target combinations and FKs would require multiple nullable columns and CHECK gymnastics; instead, integrity comes from (a) the parser being deterministic, (b) write-time inserts happening within the source row's transaction, (c) deletion paths cleaning up explicitly (currently just `POST /web-links/remove`), and (d) read-time visibility filtering joining to source tables and checking `is_hidden` / `legal_hold`.
+
+A new `backend/src/utils/parseMentions.js` is a stricter variant of Phase 65a's `parseInOrcaLinks`: concept URLs MUST have `?path=` to be indexed (path-dependent identity is load-bearing), but empty `?path=` is accepted as a deliberate root-concept reference (Phase 65b-1-fix added this).
+
+A new `GET /api/mentions/:targetType/:targetId?path=...&limit=&offset=` endpoint returns paginated mentions with the source's parent context (parent ID, author, ORCID badge data). The visibility filter is a LEFT JOIN to source/parent tables in the same query; mentions whose source's parent is hidden or legal-held are filtered out (NOT deleted — un-hiding restores them automatically).
+
+`backend/scripts/backfill-mentions.js` is an idempotent backfill (DELETE-then-INSERT per source row) with a `--dry-run` flag. Ran cleanly locally (4 production-style test mentions indexed) and against production (1 historical mention indexed via Railway public proxy URL after the Railway CLI's `railway run` failed on the internal `postgres.railway.internal` hostname).
+
+**Phase 65b-1-fix (May 26, 2026):** Root-concept share URLs. Root concepts have `graph_path = '{}'`. The Phase 62b share button was emitting `/concept/:id` (no `?path=`) for roots, which the strict mention parser rejected as ambiguous. Two coordinated changes: (a) `Concept.jsx` share button now always emits `?path=` — empty value for roots, full path otherwise; (b) `parseMentions.js` now distinguishes "path absent" (still rejected, ambiguous) from "path empty" (accepted as root reference); empty `target_path` is now a valid root-concept mention. The linkifier regex already accepted both shapes and needed no change; the schema already accepted empty `target_path` arrays.
+
+**Phase 65b-2 (May 26, 2026):** Mentions UI — three surfaces, one shared component. A new `MentionsPanel.jsx` is consumed by: (a) a third "Mentioned by" tab on concept pages in `ConceptLinksPanel`, alongside Links and Situations; (b) a third "Mentioned by (N)" button on each `LinkCard`, alongside the "Other instances on this concept" and "Other instances across all concepts" buttons; (c) a "Mentioned by (N)" button on each tunnel card in `TunnelView`. All three follow the same pattern: always visible with a count, grayed when zero, click expands a panel showing newest-first mentions with Load More pagination (20 per page). Empty-state copy is surface-specific ("this concept" / "this link" / "this tunnel link"). Click on a mention row opens the source's parent link/tunnel in a new browser tab via the Phase 65a share URL (`/link/:id` or `/tunnel/:id`); the existing deep-link infrastructure scrolls and highlights the parent card. Per-mention rendering: author username + `OrcidBadge` + parent context (concept name / parent title) + clamped `LinkifiedText` snippet + relative timestamp. `mentionCount` is included in three existing list endpoints (`GET /web-links/:edgeId`, `GET /concepts/:id`, `GET /tunnels/:edgeId`) via correlated subqueries so badges render without an extra round trip. The 65b-2-fix follow-up aligned the visibility filter in those count subqueries with the canonical filter in `mentionsController.js` — initial implementation lacked the filter, so badges showed counts including mentions with hidden parents while the panel correctly excluded them. With this fix, count and panel agree exactly on all four surfaces.
+
+**Phase 66 (June 2026):** Renamed "superconcept" to "situation" across the entire app — all user-facing UI text, URL routes (`/superconcept/:id` → `/situation/:id` with 301 redirect for old share links), backend regexes (`inOrcaLinks.js`, `parseMentions.js`), CHECK constraint on `comment_mentions.target_type`, data export key, and frontend prop/style key names. Situation page (ComboTabContent) redesigned: concepts grouped into columns by attribute (action, tool, value, question) matching TunnelView's layout; each concept card shows name (clickable), full path, and display-only vote count; client-side hide/show toggle on every card (hidden concepts grayed, their links excluded from aggregated reading list below); transfer ownership moved to a header button. `getCombo` endpoint now returns `save_count` per edge. VotesOverlay legend (saved/context dot) removed. Pre-existing bug fixed: dead `saved_tabs`/`vote_tab_links` references in `addVote` and `addSwapVote` in `votesController.js` that caused 500 errors on concept save votes.
+
+**Current state:** Site is live at orcaconcepts.org. Railway attached, domain connected. An **outreach mode** build flag (added Phase 59a) is available for soft-launching the site with the app gated behind an explanatory landing page while still allowing outreach via The Storm and Using Orca — see "Operational Modes" below.
+
+### Mentions-era architecture decisions (feature since removed)
+
+### In-Orca URL Grammar (Phase 65a, May 24, 2026)
+
+In-orca URLs are recognized by a narrow anchored regex defined in both `backend/src/utils/inOrcaLinks.js` and `frontend/src/components/LinkifiedText.jsx`. The two files must stay character-for-character identical; both carry comments noting this. The grammar accepts:
+
+- Production: `^https://orcaconcepts\.org/(concept|situation|link|tunnel)/[0-9]+(\?path=[0-9,]*)?(#(link|tunnel)-[0-9]+)?$`
+- Local dev: same shape with `https?://localhost(:[0-9]+)?` as the host.
+
+Trailing punctuation in surrounding prose (commas, periods, parens) is NOT absorbed into the URL — match must end at a word boundary. Better to render a URL as plain text than to render a wrong URL as clickable. The grammar is intentionally narrow; URLs with garbage query params, non-numeric IDs, or any other variation do not linkify and do not generate mentions (Phase 65b respects the same grammar with one tightening — see Strict vs Permissive Grammars AD below).
+
+### Mentions Index Design (Phase 65b-1, May 26, 2026)
+
+The `comment_mentions` table is a join table connecting in-orca URL references in user-authored prose to the things they reference. The design has several deliberate properties:
+
+**No foreign keys.** There are four `source_type` values × four `target_type` values, so referential integrity via FK would require multiple nullable FK columns and CHECK gymnastics. Instead, integrity comes from: (a) the parser being deterministic and called only inside source row INSERT transactions; (b) explicit cleanup at known deletion paths (currently just `POST /web-links/remove`); (c) visibility filtering at read time, which catches the case of orphaned mention rows pointing at deleted/hidden/legal-held parents. Trade-off: orphaned mention rows can exist in the table, but the read endpoint hides them. A future cleanup utility could remove them periodically, but it's not necessary for correctness.
+
+**Visibility filter at read time, not write time.** When a link is hidden, its mention rows stay in the database. The `/api/mentions` endpoint LEFT JOINs to source/parent tables and filters out mentions whose source's parent link/tunnel has `is_hidden = true` or `legal_hold = true`. Un-hiding restores mentions automatically. Same forensic question is preserved: "did user X ever mention concept Y?" remains answerable via raw SQL even when the mention is filtered from API responses.
+
+**Write at source-row transaction time.** Parser runs synchronously inside the same transaction as the source row's INSERT. If the parser or mention INSERT fails, the entire write (link/addendum/tunnel/etc.) rolls back. This guarantees that a comment in the DB has correctly-indexed mentions, and a partial state (comment exists, mentions missing) cannot occur. Note: if the parser misses a real mention due to a grammar bug, the comment is still saved without that mention — the parser's contract is "never throw," not "never miss." Missed mentions are a degradation; partial state would be a corruption.
+
+**Backfill is idempotent.** `backend/scripts/backfill-mentions.js` runs DELETE-then-INSERT per source row, so re-running it produces identical row counts. Supports `--dry-run` for pre-flight inspection. Required for picking up mentions written by pre-65b-1 comments; was run once locally and once in production after 65b-1 deploy.
+
+### Strict vs Permissive In-Orca URL Grammars (Phase 65b-1, May 26, 2026)
+
+Phase 65a's `parseInOrcaLinks` and 65b-1's `parseMentions` are two parsers of the in-orca URL grammar with **different strictness**, deliberately:
+
+- **Linkifier grammar (`parseInOrcaLinks`, used by `LinkifiedText.jsx`):** permissive. Any URL matching `^https?://(host)/(concept|situation|link|tunnel)/[0-9]+(\?path=[0-9,]*)?(#(link|tunnel)-[0-9]+)?$` is clickable, including concept URLs with no `?path=` (treated as "the user pasted something concept-y, render it clickable, let the destination handle it").
+- **Mention parser (`parseMentions`, used at write paths and backfill):** strict. Concept URLs MUST have `?path=` to be indexed as mentions. Path-dependent identity is load-bearing for Orca; a mention without a path is a mention to "concept name X regardless of context," which dilutes the identity model. The reason for using a separate strict parser instead of tightening `parseInOrcaLinks` is that the linkifier should NOT break existing user-pasted URLs by suddenly making them non-clickable. The two parsers coexist; the linkifier renders more URLs clickable than the indexer indexes.
+
+This is asymmetric by design. A URL like `https://orcaconcepts.org/concept/5` (no path) renders as clickable in a comment but does not generate a mention. Users pasting such URLs eventually learn (via the absence of an expected mention) that the Share button is the right way to reference a concept — Share emits `?path=` correctly per Phase 65b-1-fix.
+
+### Root Concept Mentions via Empty Path (Phase 65b-1-fix, May 26, 2026)
+
+Root concepts have `graph_path = '{}'` (the empty array — see graph_path Semantics AD #137). The Phase 62b concept share button was conditionally emitting `?path=` only when the path was non-empty, producing `/concept/N` (no query string) for roots. Combined with the Phase 65b-1 strict mention parser, this meant root-concept share URLs were clickable but not indexed as mentions — a design hole.
+
+The fix has two coordinated parts: (a) the share button now ALWAYS emits `?path=` with empty value for roots and the full path for non-roots; (b) `parseMentions.js` distinguishes "path absent" (still rejected, ambiguous) from "path empty" (accepted as root reference). The linkifier was already permissive enough; no change there. The schema already accepted `target_path = '{}'`; no change there.
+
+**Resulting invariant:** every root concept share URL is now `/concept/N?path=` (visibly empty path query). Every non-root concept share URL is `/concept/N?path=A,B,C`. The presence of `?path=` (even when empty) is the signal that the URL is a deliberate concept reference, not a malformed hand-typed string. Backfilled root mentions appear in `comment_mentions` with `target_path = '{}'`.
+
+### Visibility Filter Coupling Across Four Locations (Phase 65b-2, May 26, 2026)
+
+The visibility filter that hides mentions whose source's parent link/tunnel is `is_hidden = true` or `legal_hold = true` now lives in **four places** that must stay in sync:
+
+1. `backend/src/controllers/mentionsController.js` — canonical version in the `/api/mentions/:targetType/:targetId` endpoint. The LEFT JOIN + WHERE conditions filter the paginated results.
+2. `backend/src/controllers/conceptsController.js` — correlated subquery for the concept's `mentionCount` field.
+3. `backend/src/controllers/votesController.js` — correlated subquery for each link's `mentionCount` field in `GET /web-links/:edgeId`.
+4. `backend/src/controllers/tunnelController.js` — correlated subquery for each tunnel's `mentionCount` field in `GET /tunnels/:edgeId`.
+
+If any of these drift from the others, badges (count) and panels (results) disagree. Phase 65b-2 originally shipped with the count subqueries missing the filter entirely — badges showed counts that included hidden-parent mentions while the panel correctly excluded them. The 65b-2-fix follow-up ported the canonical filter to all three count subqueries and added matching code comments noting the four-way coupling.
+
+**Mitigation paths considered (not yet taken):**
+- Extract the filter to a SQL view (`visible_mentions`) that the four locations query.
+- Extract to a Postgres function returning a JOIN-able rowset.
+- Move counts onto materialized columns on `concept_links`/`tunnel_links`/`concepts` updated on mention insert/delete (changes the maintenance burden but avoids the count-vs-panel-divergence class of bug entirely).
+
+For now: code comments and discipline. The "extract to shared SQL helper" cleanup is documented in Tech Debt; revisit when (a) a fifth caller appears, or (b) the count-vs-panel divergence bites again.
+
+### Legacy Bare-Concept URLs Are Not Routable (Phase 65b-2 area, May 26, 2026)
+
+URLs of the form `https://orcaconcepts.org/concept/N` (no `?path=`) — pre-65b-1-fix share URLs hand-typed or copied from elsewhere — are accepted by the linkifier (rendered as clickable hyperlinks in comments) but, when clicked, AppShell's deep-link useEffect cannot parse a path from the URL and produces a blank app shell with sidebar + header but no main content area. There is no toast or error.
+
+This is a real edge case, but narrow: post-65b-1-fix, every share URL emitted by Orca's UI includes `?path=` (empty value for roots). Real-world production URLs going forward all carry the query. The only ways to encounter a bare-concept URL are (a) hand-typing one, (b) copy-pasting from a comment that was authored before 65b-1-fix shipped, or (c) external sources that constructed the URL manually.
+
+Accepted as known limitation, documented as tech debt. Two potential resolutions: (a) make AppShell graceful — treat missing `?path=` as empty path / root concept; (b) show the existing "That link is no longer available" toast and redirect to `/`. Either is a small fix; deferred because the case is genuinely rare. See Tech Debt.
+
+## Phase 66 Completion Narrative
+
+Phase 66 shipped two user-facing changes (the "superconcept" → "situation" rename and the situation page redesign) plus a pre-existing bug fix, bundled because the rename touched nearly every file the redesign also touched.
+
+**The rename:** "Superconcept" was the original technical term for named collections of edges. In user testing and outreach, "situation" better conveyed the feature's purpose — a curated research situation composed of concepts from across the graph. The rename touched: all user-facing UI text, the URL route (`/superconcept/:id` → `/situation/:id`), backend regexes in `inOrcaLinks.js` and `parseMentions.js`, the CHECK constraint on `comment_mentions.target_type`, `VALID_TARGET_TYPES` in `mentionsController.js`, the data export key (`superconcepts_owned` → `situations_owned`), frontend prop names (`onNavigateToSuperconcept` → `onNavigateToSituation`), and style key names in `ConceptLinksPanel`. A 301 redirect from `/superconcept/:id` to `/situation/:id` in `server.js` preserves backwards compatibility for old share links already in the wild.
+
+**The situation page redesign:** `ComboTabContent` was restructured from a flat subconcept list + aggregated links to an attribute-columnar layout matching `TunnelView`'s pattern. Concepts are grouped into columns by attribute (action, tool, value, question). Each card shows the concept name (clickable to navigate), full path breadcrumb, and a display-only save vote count (new `save_count` field from `getCombo`'s correlated subquery). A client-side hide/show toggle on every card (available to everyone, not just owners) grays hidden concepts and excludes their links from the aggregated reading list below. Transfer ownership was moved from a dedicated section to an inline "Transfer" button in the header alongside Share and Unsubscribe.
+
+**Bug fix (pre-existing):** The `addVote` and `addSwapVote` handlers in `votesController.js` referenced the dropped `saved_tabs` and `vote_tab_links` tables, causing 500 errors on any concept save vote. This bug predated the current session (discovered during Phase 62b Level 1 testing, documented in Tech Debt). Fixed by removing the dead table references.
+
+---
+
+## Phase 65b-2 Completion Narrative
+
+Phase 65b-2 shipped the Mentions UI, completing the in-orca-links arc that began with Phase 65a (share buttons + linkification) and continued through 65b-1 (mentions data layer). With 65b-2 live, in-orca URLs are now a first-class feature: write them, click them, and see backreferences accumulate on every targetable surface.
+
+**The phase didn't split.** Earlier analysis suggested splitting into 65b-2a (concept tab) and 65b-2b (link/tunnel affordances), but the three surfaces share enough machinery — same `MentionsPanel` component, same pagination, same click-to-source behavior — that splitting would have introduced refactoring tax for no clear smoke-testing benefit. The combined phase modified one new file (`MentionsPanel.jsx`) and seven existing files, which is bigger than typical but coherent.
+
+**Design choices that mattered:**
+
+- **Always-visible affordances with `(N)` counts, grayed when zero.** Matches the existing "Other instances" pattern on `LinkCard`. The Mentions tab on concept pages is also always visible (not hidden when empty); users always know where to find it, and an empty state with explainer copy ("No mentions yet. When researchers reference this concept...") covers the new-user case.
+
+- **A single `MentionsPanel` component for all three surfaces.** Props: `targetType`, `targetId`, `targetPath`, `emptyStateNoun`, `expanded`. The parent controls activation via `expanded`. This avoids three near-identical components and centralizes the pagination + click-handling logic.
+
+- **`mentionCount` baked into existing list endpoints, not a separate count endpoint.** A correlated subquery per row in `getWebLinks`, `getConceptWithChildren`, and `getTunnelLinks`. No extra round trip per page load. At current row volumes the subquery cost is negligible.
+
+- **Click on a mention row opens a new browser tab via the Phase 65a share URL.** The whole row is the click target. No separate "open" affordance, no inline expansion that breaks the navigation paradigm users learned in 65a. Consistent with the always-new-tab framing of 65a.
+
+- **Addendum-precise scroll-and-highlight deferred.** The destination is the parent link/tunnel card, not the specific addendum within it. Users on the destination page have to eyeball which addendum mentioned them. Documented as a possible future improvement; not in 65b-2.
+
+### Bug 65b-2-fix: visibility filter divergence
+
+Smoke testing surfaced a class of bug that the original spec explicitly warned about: the count subqueries lacked the same visibility filter that the `/api/mentions` endpoint applies. So a concept whose only mention had a hidden source's parent edge would show `Mentioned by (1)` on the badge but render an empty panel when expanded — count and panel disagreed.
+
+The fix ported the canonical filter from `mentionsController.js` to the three count subqueries (in `conceptsController.js`, `votesController.js`, `tunnelController.js`) and added matching code comments noting the four-way coupling. The filter now lives in four places that must stay in sync; documented in the "Visibility Filter Coupling" AD with potential extraction paths if the duplication gets unwieldy.
+
+This is the second time the 65b arc surfaced a count-vs-panel divergence concern at spec time (first was during 65b-2 planning, second was 65b-2-fix actually fixing it). The lesson: when a UI element shows a count, the count must come from a query that runs the same WHERE clauses as the query that produces the panel results. Anything less is a guaranteed-eventual disagreement.
+
+### A second bug: legacy bare-concept URLs
+
+During smoke testing, a single in-orca URL in a comment (`http://localhost:3000/concept/180` — no `?path=`) failed to navigate when clicked. This was diagnosed as a pre-existing issue, NOT a 65b-2 regression: bare-concept URLs were broken before 65b-1-fix shipped (since the share button now always emits `?path=`, no new URL of this form can be generated). The URL was hand-typed during early 65a testing.
+
+Decided to leave it as-is: the case is genuinely narrow (only hand-typed or pre-65b-1-fix URLs are affected), users don't construct URLs manually, and the cost of a graceful-fallback fix is non-zero. Documented as known limitation in Tech Debt. If this becomes a real friction point — e.g., external sites that link into Orca with manually constructed URLs — the fix is a small AppShell change (treat missing `?path=` as empty path, route to the concept as a root reference).
+
+### Meta-lessons (Phase 65b arc complete)
+
+Five distinct bugs surfaced across the 65a → 65b-2 arc, four caught at smoke-test time:
+- `65a-fix`: `graph_path` semantics in `parentPath` field name
+- `65a-fix-2`: async race in `loadAllTabs` vs deep-link useEffect
+- `65a-fix-3`: dead fragment-reading effect for tunnels; correct fix uses `handleOpenConceptTab`'s viewMode arg
+- `65b-1-fix`: root concept share URLs missing `?path=`
+- `65b-2-fix`: visibility filter divergence between count subqueries and `/api/mentions` endpoint
+
+The investigation prompts continue to be the highest-leverage tool in the workflow. Each of the five bugs was correctly diagnosed by a Claude Code investigation before any code change was written. The fixes themselves were all small (1-30 lines); the diagnoses were the hard part.
+
+The pattern across these bugs: **a new producer of a behavior was added without first verifying the assumptions baked into existing consumers.** `graphPath` conventions, mount ordering, fragment survival through navigation, share-button output format, visibility filter coupling — in each case, the new code assumed a behavior of existing code that turned out to be different from what the spec assumed. Catching this at spec time (rather than smoke-test time) requires the spec to explicitly cite the existing pattern being extended and verify the actual behavior, not the inferred behavior.
+
+If/when a custom Claude Code skill for ORCA phase prompts is built (still deferred to post-launch), this should be the top item. Until then, the investigation prompts will continue catching things, just later than ideal.
+
+---
+
+## Phase 65b-1 Completion Narrative
+
+Phase 65b-1 shipped the data layer for Mentions: schema, parser hookup at four write paths, read endpoint, and idempotent backfill. **No UI in this phase** — Mentions panels and counts are 65b-2.
+
+**The split:** the in-orca-links arc was designed as 65a (share + linkify) and 65b (mentions). Mentions itself split into 65b-1 (data flow) and 65b-2 (UI polish). Reason: the data layer is a foundation that benefits from being proven in production before any UI consumes it; if the join table, parser hookup, or visibility filter have bugs, the UI can't tell which layer is misbehaving. Splitting also let the backfill be a clearly-scoped commit with its own risk profile (one-off script across all existing comments).
+
+**Design choices and the reasoning:**
+
+- **No FKs on `comment_mentions`.** Four source × four target = sixteen possible relationships. Modeling them with FKs would require sixteen nullable columns with CHECK constraints, or a polymorphic FK pattern (not natively supported by Postgres). Instead, integrity comes from determinism: the parser runs in the source row's transaction, deletion paths clean up explicitly, and read-time visibility filtering joins to source/parent tables. Orphan rows can exist in the table but are invisible to API consumers. Tradeoff accepted.
+
+- **Two parsers with different strictness.** The linkifier's grammar (Phase 65a's `parseInOrcaLinks`) is permissive — any concept URL with or without `?path=` is clickable. The mention parser (65b-1's `parseMentions`) is strict — concept URLs without `?path=` are rejected. The asymmetry exists because tightening the linkifier would break existing user expectations (a URL that was clickable yesterday shouldn't suddenly not be), but the mention index needs path-dependent identity to be meaningful. The two parsers share a grammar definition philosophy but diverge on strictness for concept URLs specifically. This is the kind of design that needs a clear AD because the asymmetry is non-obvious — see "Strict vs Permissive In-Orca URL Grammars" AD.
+
+- **Visibility filtering at read time.** When a link is hidden by moderation, its mention rows stay in the database. The endpoint LEFT JOINs to the source's parent and filters out hidden/legal-held parents. Un-hiding restores mentions automatically. This is the same pattern Phase 53b established for legal hold and Phase 6 established for `is_hidden`; the alternative (DELETE on hide, INSERT on un-hide) is messier and breaks the principle that hiding is reversible.
+
+- **Backfill is idempotent.** DELETE-then-INSERT per source row means re-running the script produces identical counts. The `--dry-run` flag was load-bearing for the production run; it would have caught a missing table, wrong env var, or grammar misfire before any writes.
+
+### The bug arc — surface in this phase
+
+Three bugs surfaced during smoke testing and were resolved in-arc:
+
+1. **`65a-fix-3` (tunnel view auto-switch).** Discovered when paste-testing tunnel share URLs locally. Opening `/tunnel/:id` resolved to the right concept but rendered in the default view mode (Children) instead of Tunnel View; `TunnelView` was never mounted and the scroll-and-highlight silently failed. The first attempted fix added a fragment-reading effect to `Concept.jsx` that would detect `#tunnel-:id` and call `setViewMode('tunnel')` — but the effect never fired, because `handleOpenConceptTab` manages tab state without using URL fragments and `navigate('/', { replace: true })` strips any hash. The correct fix uses `handleOpenConceptTab`'s existing `viewMode` parameter (sixth positional argument), which the `/tunnel/:id` branch was simply omitting. Lesson: when extending a working pattern with new async steps, verify that the working pattern's ordering wasn't relying on synchronous execution OR specific URL state. The fragment-reading effect was added in 65a as defensive code but turned out to be a dead path because `handleOpenConceptTab` doesn't use fragments.
+
+2. **`65b-1-fix` (root concept share URLs).** Discovered when realizing a root concept share URL `http://localhost:3000/concept/1` was not generating a mention row. The strict mention parser rejected it because it lacked `?path=`. But root concepts have empty `graph_path` and the share button was correctly omitting `?path=` per its existing logic. So this was a real design hole, not a parser bug: roots are first-class navigable entities and should be mention-able, but the strict grammar said otherwise. Resolved by tightening the share button (always emit `?path=`, with empty value for roots) AND relaxing the parser (accept `?path=` with empty value as a root reference, still reject `?path=` absent entirely). The schema already accepted `target_path = '{}'` so no migration was needed.
+
+3. **A non-bug worth noting:** the dry-run found that one existing production addendum (created during 65a smoke testing) had `https://orcaconcepts.org/concept/1` with no `?path=` and was correctly rejected as ambiguous (predates the 65b-1-fix share-button change). Accepted as a one-time grandfathered case — fixing it would require a manual SQL edit, and the cost is "one ungenerated mention that no UI consumes yet."
+
+### Meta-lessons
+
+- The investigation prompts (asking Claude Code to diagnose without writing a fix) continue to be the most leveraged tool in this workflow. All three 65a/65b-1 bugs were correctly diagnosed before any fix was written.
+
+- Migration files modifications need an explicit "actually run migrate" step in the verification checklist. Claude Code reported "Migration runs cleanly" in 65b-1 self-verification when it had only syntax-checked the file. The next phase that adds a migration needs the verification step to be: "run `node src/config/migrate.js` AND THEN `psql -c '\d <tablename>'` confirming the table exists, AND THEN paste the output."
+
+- "When extending an existing pattern, identify the most similar existing pattern and verify the new spec matches its actual behavior, not its inferred behavior." This is the third phase where assuming behavior bit us (65a-fix: graph_path semantics; 65a-fix-2: sync-vs-async race in deep-link useEffect; 65a-fix-3: assumed fragment would survive handleOpenConceptTab). Worth codifying in the eventual Claude Code skill (still deferred to post-launch).
+
+- Production backfill via Railway CLI requires the public Postgres URL, not the internal one. `railway run` injects the production env vars but executes locally, so `postgres.railway.internal` doesn't resolve. The workaround is to manually set `DATABASE_URL` to the public proxy URL (`<random>.proxy.rlwy.net:<port>`) for the duration of one terminal session. This is annotated as future tech debt — if backfill operations become routine, a better pattern would be to add a `migrate-prod` npm script with documented public-URL handling.
+
+---
+
+## Phase 65a Completion Narrative
+
+Phase 65a added share buttons on links and tunnel links plus in-comment linkification of in-orca URLs. The phase shipped with two follow-up bug fixes (`65a-fix` and `65a-fix-2`) that surfaced during smoke testing and are documented here as architectural lessons.
+
+**The trigger:** users wanted to reference other concepts and links inside their comments — to write "see also [other concept]" without copying a clunky URL. The initial design considered a concept picker UI but ruled it out as messy (especially for picking specific links/tunnel-links). Final design: a "Copy share link" button on every targetable surface; users paste the URL into their comment; comment rendering linkifies in-orca URLs only.
+
+**The simplification mid-design:** the original framing involved seamless in-app navigation (jump to existing tab, scroll-and-highlight, etc.). Reframed late in planning to "always open a new browser tab" — cuts a class of edge cases (existing-tab-vs-new decision, click interception, history management) and decouples the navigation model from the mentions feature entirely. New-tab behavior also dovetails with the new browser tab opening the same deep-link URL the share button copies — which routes through the existing deep-link infrastructure rather than a parallel in-app navigation path.
+
+**Why split into 65a + 65b:** the share-and-linkify half is independently useful and testable. The mentions half (`comment_mentions` join table, parsing at write time, mentions panel UI) is a larger architectural addition that benefits from 65a being proven in production first. The `parseInOrcaLinks` utility was scaffolded in 65a so the URL grammar is defined exactly once; 65b will plug it into write-time hooks.
+
+### Bug 1: `65a-fix` — duplicate concept in breadcrumb
+
+The `/location` endpoints originally returned `path: [...row.graph_path, row.concept_id]` — i.e., root-to-concept-inclusive. AppShell's deep-link handler passed that array directly to `handleOpenConceptTab` as the tab path. But `handleOpenConceptTab` expects path-to-parent only (matching the `effectivePath` / `?path=` query-string convention used elsewhere). The redundant `concept_id` at the end caused `getConceptWithChildren`'s response to append the concept again, producing a breadcrumb with the destination concept repeated: `Root > X > Y > Code Availability > Code Availability`.
+
+**Fix:** renamed the response field from `path` to `parentPath` and changed the value to `row.graph_path` directly (no append). The new name makes the convention explicit at every call site. AppShell's `/link/:id` and `/tunnel/:id` branches updated to read `data.parentPath`.
+
+**Lesson:** `graph_path` semantics are subtle. `ORCA_STATUS.md`'s AD #137 explicitly warns "never append parent_name separately," and this bug was the same class of error in a new disguise. When writing a spec touching `graph_path` or paths in general, the spec should identify the most-similar existing consumer (here: Phase 62b's concept share URL, which uses path-to-concept-inclusive in the `?path=` query but treats the tab's stored path as path-to-parent) and match its convention exactly — or explicitly document a new convention with a self-documenting field name.
+
+### Bug 2: `65a-fix-2` — async race causes flash of wrong concept
+
+After fixing Bug 1, share URLs worked but had a different symptom: opening `/link/:id` in a fresh browser tab while logged in briefly showed the user's first saved graph tab (the "originating" concept they were on when they copied the link) before switching to the correct destination. Clicking the same URL again in the same browser tab worked correctly.
+
+**Root cause:** a race between `loadAllTabs`'s default-tab-activation and the async location-resolution.
+
+Mount sequence:
+1. `loadAllTabs` sets `loading=true`, gating the deep-link `useEffect`.
+2. `loadAllTabs` finishes by calling `setActiveTab({ type: 'graph', id: loadedGraph[0].id })` to restore the user's last-viewed tab.
+3. `setLoading(false)` triggers the deep-link `useEffect`.
+4. For `/concept/:id` (synchronous handler): `handleOpenConceptTab` runs before paint, overriding `setActiveTab`. User never sees the originating tab.
+5. For `/link/:id` (async — API call to `/location` first): the originating tab is rendered while the API call is in flight. When `.then()` fires, the destination tab activates, but the user already saw the wrong tab briefly.
+
+On subsequent clicks in the same browser tab, `loadAllTabs` doesn't re-run (it's mount-only), so the race doesn't reproduce.
+
+**Fix:** at mount, detect whether the entry URL matches a deep-link pattern (`/(concept|situation|link|tunnel)/\d+`). If so, suppress `loadAllTabs`'s default-activation. The mount detection is a `useMemo` with an empty dep array (intentional — we want a one-shot snapshot, not a live value that flips when the URL is rewritten during deep-link resolution). The deep-link handler then activates the correct tab once its (possibly async) resolution completes.
+
+**Lesson:** introducing async into a previously-synchronous code path can break implicit ordering assumptions. The Phase 62b deep-link branch happened to win the race against `loadAllTabs`'s default-activation by virtue of being synchronous; the assumption "deep-link handler wins because it runs after `loadAllTabs`" was load-bearing but undocumented. When extending a working pattern with new async steps, verify that the working pattern's ordering wasn't relying on synchronous execution.
+
+### Combined meta-lesson
+
+Both bugs share a pattern: a new producer of a behavior (location endpoint, async deep-link branch) was added without checking the assumptions baked into existing consumers (`handleOpenConceptTab`'s path convention, the implicit ordering between mount effects). The bugs were caught in smoke testing rather than at spec time. Going forward, when writing a Claude Code prompt that adds a new producer of a behavior, the spec should explicitly cite the most-similar existing consumer and either match its conventions or call out the divergence.
+
+If/when a custom Claude Code skill for ORCA phase prompts is built (currently deferred to post-launch), "for every new spec, identify the most similar existing pattern and verify the new spec matches its conventions" should be a top item — possibly the top item.
+
+---
+
+## Phase 64a Completion Narrative
+
+Phase 64a added Google Safe Browsing v4 URL safety checks at the two existing link-submission call sites, replacing the previously-considered domain-allowlist approach.
+
+**The trigger:** revisiting domain restrictions as a defense against "random or dangerous links." The original Phase 60a discussion had rejected an allowlist as too restrictive for cross-disciplinary research. In re-examining the question, the framing shifted: an allowlist defends against the *origin* of a URL (which is a weak proxy for safety — university subdomains and Google Docs both make any allowlist and both get compromised), while what the user actually wanted to defend against was malicious *content* at the URL. Safe Browsing addresses the actual threat directly without the false-positive cost of a domain list.
+
+**Design choices, all of which followed established patterns:**
+- **Two call sites, same utility.** Preview-time check gives early feedback before the user invests effort in the affirmation checkbox; post-time check is the security boundary. Defense-in-depth.
+- **Fail-open never-throws contract.** Mirrors `email.js` and `orcid.js`. Module logs once at startup if the key is missing; every `checkUrl` call returns `{ safe: true, threats: [] }` on any failure. Safe Browsing outages should not take down link posting on a research platform.
+- **Sparse hash-only audit table.** `safe_browsing_rejections` matches `link_removal_log`'s schema and intent. Same forensic capability ("did user X ever attempt URL Y?") without retaining content the user wasn't allowed to post in the first place. The added `source` column distinguishes preview from post — both are signal but they're different signals.
+- **403 with `code: 'unsafe_url'`.** Machine-readable contract for the frontend so it can render a blocking error (no override possible) while distinguishing this case from other 403s (e.g., legal-hold).
+- **No appeal flow.** False positives are expected to be rare. If they become friction, an email-to-admin path is the next iteration. Deferred until needed.
+
+**Implementation notes:**
+- Local dev runs without the API key. The startup warning is the correct local behavior; testing happens against production using Google's published test URL (`http://malware.testing.google.test/testing/malware/`), which Safe Browsing always flags. This preserves the Phase-62c-era security posture of keeping production secrets out of `backend/.env`.
+- The Google Cloud API key is restricted to the Safe Browsing API only — if exfiltrated, it cannot be used to incur cost on other GCP services.
+- The check is positioned BEFORE the OG-fetch at both call sites, so SSRF protection is not the only thing standing between an attacker and a fetched-but-malicious response. The order is: validate format → check Safe Browsing → fetch OG title → INSERT.
+
+**Lessons:**
+- The "domain allowlist" framing surfaced twice (Phase 60a planning, Phase 64a planning) and was rejected both times for the same underlying reason. Worth noting that revisiting a previously-rejected approach is fine — but the second visit should explicitly re-engage with the prior reasoning rather than relitigate from scratch. The framing that finally moved the conversation was "what is the actual threat — origin or content?" — and once that was clear, Safe Browsing was the obvious answer.
+- The pattern of "server-side utility that gates a write path, with sparse hash-only audit logging on rejection" now has two instances (`link_removal_log` and `safe_browsing_rejections`). Both follow the same shape. If a third instance lands (e.g., spam detection, content classifier), the audit-write logic is worth extracting into a small helper. Premature to abstract at N=2.
+- Suggested early in planning to add the production key to `backend/.env` for local smoke-testing, which would have directly undone the Phase-62c security hardening pass. Caught and corrected before any change was made. Going forward: any phase that adds a new external API integration with a production key should default to the fail-open / disabled path locally, with testing happening against production.
+
+---
+
+## Phase 59 Completion Narrative
+
+Phase 59 added tunnel comments and unified the votes overlays.
+
+**59a (commit `f6b1765`):** Two pieces of work landed in one commit.
+- **Tunnel comments + duplicates:** Tunnel links gained an optional `comment` column. The `UNIQUE(origin_edge_id, linked_edge_id)` constraint was dropped and replaced with a non-unique index. Backend tunnel creation no longer rejects existing pairs — every POST creates a new row. Frontend tunnel creation UI gained an optional comment textarea. TunnelView now renders comments via a shared `ClampedText` component extracted from duplicated copies in LinkCard and ConceptLinksPanel.
+- **Outreach mode:** Added the `VITE_OUTREACH_MODE` build flag and `OutreachLanding.jsx` to support soft-launching the site with the app gated behind an explanatory landing page. See "Operational Modes" section above for full details.
+
+**59b (commit `4f1d507`):** `SavedPageOverlay.jsx` and `LinkVotesOverlay.jsx` were merged into a single `VotesOverlay.jsx`. A new endpoint `GET /api/votes/me/all` returns saved edges, the user's link votes, context-only edges (referenced by link votes but not saved), and the full ancestor chain for all of the above — assembled in a single recursive CTE walking upward via graph_path. The overlay renders these as one hierarchical tree, with link votes nested under their edges. All remove/X affordances were stripped from the overlay; mutation now requires navigating into the concept page. The legacy endpoints (`GET /votes/saved`, `GET /web-links/votes/me`) were retained to enable UI rollback without a backend revert; their deletion will happen in a later phase once the new overlay is proven stable in production.
+
+**Lessons:**
+- The "votes pages are display-only" framing only became visible once we tried to write the spec for the merged page. Both prior overlays had inconsistent affordances — Graph Votes had an X button, Link Votes did not — and the merge forced the question. Worth checking for similar inconsistencies elsewhere when components are touched.
+- Commit `f6b1765` bundled two unrelated features (tunnel comments + outreach mode) under a single message. Both are now documented, but the bundling made the doc-update pass harder than it needed to be — required an investigation phase to reconstruct the secondary scope. Future commits should keep features in separate commits, or at minimum the commit message should enumerate both pieces of scope.
+
+---
+
+## Phase 62b Completion Narrative
+
+Phase 62b replaced the editable-comment model with an append-only addendum system, added author ORCID display, and shipped share links with deep-link navigation.
+
+**62b-1 through 62b-4 (core addenda work):** Two new tables (`concept_link_addenda`, `tunnel_link_addenda`) with FK CASCADE. The `PUT /web-links/:linkId/comment` endpoint was removed; two new `POST .../addenda` endpoints were added with atomic `added_by`/`legal_hold` checks and a 2000-character limit. Both `GET /web-links/:edgeId` and `GET /web-links/all/:conceptId` (flip view) now return `addenda[]` and `authorOrcidId` per link. `GET /tunnels/:edgeId` returns the same plus `createdByUserId`. Frontend: LinkCard lost its edit UI, gained addendum display (with `ClampedText`), "Add addendum" modal, and `OrcidBadge` next to author name. TunnelView gained author display, addendum display, and "Add addendum" modal. ConceptLinksPanel cleaned of all edit-related state and props.
+
+**Share links and deep-link navigation:** A Share button was added to both the concept page header and the superconcept (combo) tab header. Clicking it copies a URL (`/concept/:id?path=...` or `/superconcept/:id`) to the clipboard. A new `useEffect` in AppShell handles these URLs on navigation: concepts open a graph tab (works for guests and logged-in users); superconcepts subscribe + open the combo tab (logged-in) or show a read-only `ComboTabContent` with a back button (guests).
+
+**Share link path bug:** The concept share handler used `effectivePath.slice(0, -1)` to build the URL. In tab mode, `effectivePath` is the tab's stored path (`[root, ..., parent]`), not the API response path (`[root, ..., parent, conceptId]`). Slicing `effectivePath` stripped the parent from the URL instead of the concept ID. Fixed to use the `path` state from the API response. This was a pre-existing bug that only became visible once deep-link navigation was added — previously share links just showed the root page for guests.
+
+**Deep-link dependency bug:** The initial `useEffect` depended only on `[loading, authLoading]`, so it never re-ran when a logged-in user navigated to a share link (both values were already `false` and stable). Fixed by adding `location.pathname` to the dependency array.
+
+**Lessons:**
+- `effectivePath` (the tab's stored path) and `path` (the API response's full graph_path) diverge because the backend appends the concept ID to the path param. Any code that needs the full graph_path should use the API response, not the tab state.
+- `useEffect` dependencies for URL-driven effects must include the URL parts they depend on. `location.pathname` is not a derived value from `loading` — omitting it means the effect only fires on mount.
+
+---
+
+## Phase 62a Completion Narrative
+
+Three small frontend fixes plus minor backend cleanup, all triggered by post-Phase-61 testing surfacing zombie UI:
+
+1. **Profile page data-fetch bug:** The profile page was reading user data from auth context, but the auth context doesn't include the `email` field. Newly-registered users saw "Email: not set" until they pressed F5, which triggered a fresh fetch from `GET /api/users/:id/profile` (which DOES include email). Fix: profile page now fetches user data from the API on mount via `useEffect`, with auth context demoted to "identity only" (id, username, JWT). Edit affordances re-fetch after save to avoid stale display.
+
+2. **Annotation filters on concept pages:** Phase 58a dropped the annotation tables but left UI filter options for "annotations" and "top annotations" in place. They were either dead-clicking or silently filtering on columns that no longer existed. Removed from concept pages, sort dropdowns, and any backend route branches that accepted `sort=annotations`.
+
+3. **Corpus/document counters on profile page:** Profile page showed "Corpuses created" and "Documents uploaded" with no numbers — the underlying tables were dropped in 58a, so the JOIN/COUNT queries returned nothing. Removed both the JSX and the backend computation.
+
+**Lesson:** Phase 58 (the document/corpus/annotation layer removal) was a large surgical change and the post-removal UI audit was incomplete. After major schema deletions, every page that consumed the deleted data should be explicitly walked. Filed for next time: when removing a major feature, the deletion PR should include a "consumer checklist" of every page/component that referenced it, with each item explicitly checked off after the corresponding UI is cleaned up.
+
+**Related architecture pattern:** "Auth context = who you are; API call = full data" is now the documented norm (see new AD below). The profile page is the first explicit consumer of this split — future user-data displays should follow the same pattern.
+
+---
+
+## Phase 61 Completion Narrative (through 61c + fix)
+
+Phase 61 replaced Twilio phone OTP authentication with ORCID-first email+password registration.
+
+**The trigger:** Twilio was annoying to deal with for an academic-research target audience (researchers are global, SMS deliverability is uneven internationally, and the SMS cost-per-signup adds up). ORCID was already partially integrated for post-login account linking. Making ORCID required for registration provided soft validation against spam ("you have to have an ORCID to sign up" is moderate friction for bad actors and zero friction for the target audience) without claiming identity verification (anyone can make an ORCID).
+
+**Five sub-phases planned, three complete:**
+- **61a (commit `8f5837e`)** added the Resend integration, the email-sending utility, three HTML email templates, five new `users` columns for email verification and password reset tokens, and a manual test script. No auth logic changed.
+- **61b (commit `34a23f8`)** added five new backend endpoints (`orcid/begin-registration`, `register-with-orcid`, `verify-email`, `forgot-password`, `reset-password`), extracted ORCID logic to a shared `utils/orcid.js`, and left the four Twilio-based endpoints in place untouched.
+- **61c (commit `6a1bbbb`)** reworked `LoginModal.jsx` and `OrcidCallback.jsx` for ORCID-first signup, added standalone `/reset-password` and `/email-verification` pages, and stopped the frontend from calling any of the Twilio endpoints. The backend Twilio endpoints stayed alive as zombie code.
+- **61d/e (combined, shipped May 16, 2026)** combined into a single cleanup commit because the production database had no real users requiring migration — manual SQL linked the admin's ORCID and deleted the test user, after which `orcid_id` could be made NOT NULL safely. The combined phase: dropped `phone_hash` and `phone_lookup` columns, added the NOT NULL constraint on `orcid_id`, deleted four legacy auth endpoints and their controller methods, deleted `backend/src/utils/phoneAuth.js`, uninstalled the `twilio` npm package, removed four Twilio env vars from `.env.example` and from Railway, and added a defensive ORCID-present check at login. The Twilio account itself remains active externally (user's choice whether to cancel it) but nothing in the codebase or Railway references it.
+
+**The verify-URL bug:** Phase 61a's prompt to Claude Code (written by the chat-side Claude) included a specific example URL pattern (`${FRONTEND_BASE_URL}/verify-email?token=...`) that omitted the `/api/auth` prefix. Claude Code followed the example, so the verification email's link pointed at the frontend route instead of the backend endpoint. The frontend route happily rendered "success" regardless of whether the backend had run, so the bug was invisible until manual database inspection showed `email_verified_at` was still NULL for a "verified" user. Fixed in commit `6af90ce`. Documented as an Architecture Decision (see "Verification URLs Point at Backend, Reset URLs Point at Frontend"). One affected test user was manually verified via SQL.
+
+**Resend domain verification:** Initial deployment used Resend's test sender (`onboarding@resend.dev`), which only delivers to the address that signed up for Resend. This blocked multi-email testing. Domain verification for `orcaconcepts.org` was auto-configured via Cloudflare's Resend integration, after which `noreply@orcaconcepts.org` became the production sender.
+
+**Lessons:**
+- When writing a prompt for Claude Code, example URLs in the prose are treated as authoritative patterns. Vague specs Claude Code interprets sensibly; precise but incorrect examples it copies verbatim. Double-check any concrete URLs / file paths / SQL fragments in prompts before sending.
+- A frontend page that renders "success" based purely on a query param is a defensive choice that hides bugs. Whenever a frontend page reports the outcome of a backend operation, the page should verify that outcome via its own backend call, not trust what the URL says. Filed as future improvement, not done in 61c.
+- The "test it with curl" verification done after Phase 61b tested password reset (which had the right URL) but not email verification (which had the wrong URL, because curl can't get an OAuth code). Critical paths that require a browser to test should be flagged in self-verification steps as "deferred to next phase's E2E test" so they don't get implicitly skipped.
+
+---
+
+## Phase 60a Completion Narrative
+
+Phase 60a bundled three coherent link-UX changes triggered by pre-launch legal/copyright thinking.
+
+**The trigger:** considering whether to limit Orca link sources to arXiv-only as a copyright mitigation. That specific restriction was rejected as too narrow (arXiv is mostly STEM; humanities, law, medicine all need other sources). But the conversation surfaced three real changes worth making before launch: (1) the append-only AD's blanket "no user removal" was a holdover from the annotation era and no longer fit a link-only platform, (2) some moment-of-friction at posting time would do real work alongside DMCA registration and the Copyright Policy, (3) the existing add-link UX revealed the auto-fetched title only after submission, which was confusing.
+
+**The reframing of append-only** was the conceptually significant part. The original principle was written when annotations existed and the append-only-ness of annotations was load-bearing for thread integrity and span anchoring. With annotations gone, the principle had been over-generalized — concept_links don't have the same downstream-coupling properties. Narrowing the principle to "shared graph structure" (concepts, edges, votes on shared structure) and explicitly carving out self-authored self-contained content (links, link comments) is a more accurate statement of what the principle was always trying to protect. Tunnel links remain append-only as a deliberate distinction — they're cross-graph artifacts and the symmetric reasoning is weaker.
+
+**Implementation notes:**
+- The `link_removal_log` design (sha256 hash, no plaintext) is the explicit "minimum forensic trail consistent with user-initiated hard delete" — preserves the ability to answer "did user X ever post URL Y?" without preserving the content the user wanted removed.
+- Combining the permission check and `legal_hold` check into a single atomic DELETE statement closes a real race window: an admin setting `legal_hold` between a separate SELECT-for-check and a DELETE could otherwise let a user delete a row that was just placed under hold.
+- The deliberate opaqueness of the 403 response ("Cannot remove this link" regardless of cause) avoids leaking which links are under legal review.
+- The title preview reuses the existing OG-fetch utility rather than duplicating SSRF logic — the price is that SSRF-blocked URLs appear identically to "no OG tag" URLs in the preview. Acceptable for the threat model.
+- A route-ordering issue surfaced during implementation: the new `GET /web-links/preview-title` route would have been swallowed by the existing `GET /web-links/:edgeId` catch-all if registered after it. Fixed by moving literal-path routes above the catch-all. Documented as an architectural note in the API surface section.
+
+**Lessons:**
+- Architectural decisions written for a deleted feature need explicit re-evaluation after the feature is removed. The append-only AD was technically still in force after Phase 58 but was protecting a smaller surface than its language implied. Worth doing a sweep for similar over-generalized ADs from earlier phases — anywhere ORCA_STATUS.md references annotations, citations, or document spans as the rationale for a still-active principle, the rationale may now be stale even if the principle is still useful.
+- The "is this principle protecting shared structure or self-authored self-contained content?" distinction is a useful lens. Likely re-applicable when thinking about future features (e.g., should user-authored situations be deletable? Probably yes if no one else has subscribed; what about after subscriptions exist? Different question).
+
+---
+
+
+## Recent Commits (Phase 59 through 66)
+
+```
+[hash] phase 66: rename "superconcept" to "situation" + situation page redesign
+        — All user-facing UI text, URL routes, backend regexes, CHECK constraints,
+          data export keys updated from "superconcept" to "situation".
+        — /superconcept/:id 301-redirects to /situation/:id for old share links.
+        — ComboTabContent redesigned: concepts grouped by attribute columns
+          (action, tool, value, question); client-side hide/show toggle per card;
+          hidden concepts excluded from aggregated links; transfer ownership
+          moved to header button; getCombo returns save_count per edge.
+        — VotesOverlay legend (saved/context dot) removed.
+        — Bug fix: removed dead saved_tabs / vote_tab_links references from
+          addVote and addSwapVote in votesController.js (pre-existing 500 errors).
+[hash] phase 65b-2: Mentions UI (concept tab, link/tunnel affordances, mentionCount)
+        — New MentionsPanel.jsx shared component used by concept tab + link cards
+          + tunnel cards; always-visible (N) count, grayed when 0; empty-state
+          with surface-specific copy ("this concept" / "this link" / "this tunnel
+          link"); Load More pagination at 20/page; click-to-source opens parent
+          in new tab via Phase 65a share URL.
+        — ConceptLinksPanel.jsx: third "Mentioned by" tab.
+        — LinkCard.jsx: third "Mentioned by" button alongside "Other instances".
+        — TunnelView.jsx: "Mentioned by" button on each tunnel card.
+        — mentionCount via correlated subquery in GET /web-links/:edgeId,
+          /concepts/:id, /tunnels/:edgeId; visibility filter matches /api/mentions
+          (per 65b-2-fix).
+        — Includes 65b-2-fix: aligned count subquery visibility filter with
+          /api/mentions endpoint after smoke testing surfaced badge-vs-panel
+          count divergence.
+[hash] phase 65b-1: mentions data layer (schema, parser hookup, backfill, read endpoint)
+        — comment_mentions table with CHECK constraints (no FKs by design);
+          parseMentions.js strict variant (requires ?path= for concept URLs,
+          accepts empty path as root reference per 65b-1-fix); parser called
+          at four write sites in same transaction as source row; mention
+          rows cleaned up at POST /web-links/remove; new GET /api/mentions
+          endpoint with visibility filter (LEFT JOIN to source/parent tables,
+          hides hidden/legal-held); backfill-mentions.js script (idempotent,
+          --dry-run flag); no UI yet (Phase 65b-2).
+[hash] phase 65b-1-fix: handle root concept share URLs in parser and share button
+        — Concept.jsx share button always emits ?path= (empty for roots);
+          parseMentions.js distinguishes "path absent" (reject) from
+          "path empty" (accept as root reference); schema already allowed
+          target_path '{}'; linkifier regex already accepted both shapes.
+[hash] phase 65a-fix-3 (retry): pass viewMode 'tunnel' to handleOpenConceptTab
+        — /tunnel/:id branch passes 'tunnel' as 6th positional arg;
+          earlier fragment-reading-effect attempt was dead code path since
+          handleOpenConceptTab doesn't use URL fragments.
+[hash] phase 65a-fix-2: suppress default tab activation when URL is a deep-link
+        — Mount-time hasDeepLinkInUrl useMemo (empty deps); loadAllTabs skips
+          its setActiveTab default-restoration when set. Fixes flash of wrong
+          concept on fresh-browser-tab opens of /link/:id and /tunnel/:id.
+[hash] phase 65a-fix: location endpoints return parentPath, not path-to-concept
+        — Renamed response field; returns row.graph_path directly; AppShell
+          reads data.parentPath. Fixes duplicate-concept-in-breadcrumb.
+[hash] phase 65a: share buttons + in-orca linkify in comments
+        — GET /web-links/:linkId/location and /tunnels/:tunnelLinkId/location;
+          Share buttons on LinkCard and TunnelView; AppShell handles /link/:id
+          and /tunnel/:id with client-side resolution + unavailable-link toast;
+          Concept.jsx reads URL fragment for scroll-and-highlight;
+          LinkifiedText replaces ClampedText on user-authored comment surfaces;
+          inOrcaLinks.js shared URL grammar (parseInOrcaLinks scaffolded for 65b).
+[hash] phase 64a: Google Safe Browsing URL check at preview and post
+        — safeBrowsing.js utility (fail-open, 5s timeout, never throws);
+          safe_browsing_rejections audit table (sha256 hash only, no plaintext);
+          reject unsafe URLs at POST /web-links/add and GET /web-links/preview-title;
+          403 with code: 'unsafe_url' for frontend distinction; ConceptLinksPanel
+          shows blocking error and disables submit on unsafe URL; .env.example
+          entry; missing key = fail-open with startup warning.
+9b7f2b4 Phase 63a-fix: disable static directory-index so / hits OG override
+e41d556 Phase 63a: favicon + page-specific Open Graph / Twitter Card tags
+bba3d0e fix: share button styling to match neighboring buttons
+7e8b0d8 fix: deep-link effect missing location.pathname dependency
+45e5c19 fix: share link used effectivePath instead of API path, dropping parent
+f00bfbf feat: deep-link for concepts and guest superconcept viewing
+6b4bc47 feat: share link for superconcepts
+c22cf80 fix: return addenda + authorOrcidId from getAllWebLinksForConcept (flip view)
+5909592 phase 62b-4: TunnelView addendum UI + author + ORCID display
+7a36d66 phase 62b-3: LinkCard addendum UI + ORCID badge
+b855c5a phase 62b-2: addenda endpoints + remove comment edit + return author ORCID
+38637d3 phase 62b-1: addenda tables for concept_links and tunnel_links
+e0a8446 update legal docs
+e05ec40 phase 62a: profile data-fetch fix + remove Phase-58-era zombie UI
+08ae45e phase 61d/e: enforce ORCID required, remove Twilio entirely
+6af90ce fix(61): email verification URL pointed at frontend instead of backend endpoint
+6a1bbbb phase 61c: frontend ORCID-first registration + email-based password reset UI
+34a23f8 phase 61b: ORCID-first registration and email-based auth endpoints
+8f5837e Phase 61a: schema and email infrastructure (resend)
+5eb92bc cleaning up info pages
+515cb54 phase 60a: user-removable links + affirmation checkbox + title preview
+        — Restored POST /web-links/remove with atomic added_by + legal_hold
+          check; new link_removal_log table (sha256 hashes only, no plaintext);
+          new GET /web-links/preview-title endpoint sharing OG-fetch utility;
+          LinkCard Remove button + confirmation modal; affirmation checkbox
+          required on add-link form; on-paste/on-blur title preview with
+          AbortController; append-only AD reframed to "shared graph structure"
+          with carve-out for self-authored self-contained content.
+4f1d507 phase 59b: combine graph and link votes pages
+        — Unified VotesOverlay replacing SavedPageOverlay + LinkVotesOverlay;
+          new GET /votes/me/all endpoint; display-only votes pages AD.
+f6b1765 outreach mode, tunnel link comments added
+        — Phase 59a, two features bundled:
+          (1) tunnel_links.comment column + dropped UNIQUE constraint
+              + allow duplicate tunnels + shared ClampedText component;
+          (2) outreach mode build flag (VITE_OUTREACH_MODE) +
+              OutreachLanding.jsx — see "Operational Modes" section.
+0b382c4 feat: remove remove button and add copy to descendents option (append-only enforcement; path-scoped subtree CTE; CopyLinkPicker)
+3089bbf fix: navigation stale links (clear parentEdgeId on nav + request-gen race protection on link fetch)
+c143810 fix: 58d-2, combo card clickability + readonly votes + restore Graph Votes sidebar
+6b6966c fix: 58d-1 polish, comment clamp + expand toggle + long-string line breaking
+4d4dd09 feat: 58d-1 patches, dedup removed + count buttons + tab reuse + cross-concept scroll/highlight
+276721a feat: 58c, complete frontend pivot — deletions, surgical edits, runtime patches
+b6d2d41 feat: 58c-1, delete retired frontend components and clean API imports
+f3649ae feat: 58b-2, add OG title fetcher and cross-concept/superconcept link endpoints
+2a265a0 feat: 58b-remove retired backend controllers, routes, helpers, and dependencies
+7e413f5 feat: 58a, drop retired tables and update migrate.js
+475d463 docs: Phase 58 plan + deletion inventory for link-based pivot
+dfff99d status doc update phase 58
+```
+
+Note: the Phase 58 LinkCard UI work (prominent vote icon + always-visible instance dropdowns + race guard on ComboTabContent) was bundled into intermediate commits not all reflected in this list. The current state described above is the live behavior.
+
+---
+
+**END OF TECHNICAL REFERENCE**
+
+---
+
 **END OF PHASE HISTORY**

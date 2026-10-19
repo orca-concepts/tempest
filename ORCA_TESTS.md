@@ -269,7 +269,7 @@ Run only the specific section(s) named.
 ## 13. Info Pages
 
 - [ ] Using orca page loads at `/using-orca`
-- [ ] The Storm page loads at `/the-storm`
+- [ ] The "thoroughly-conscious-ignorance" info page loads at `/thoroughly-conscious-ignorance`
 - [ ] Comments load for guests (without vote buttons)
 - [ ] Authenticated users can add comments (max 2000 chars)
 - [ ] Reply nesting is exactly 1 level

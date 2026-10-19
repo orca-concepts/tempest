@@ -600,8 +600,8 @@ const getComboLinks = async (req, res) => {
       LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
       JOIN attributes a ON a.id = e.attribute_id
       LEFT JOIN users u ON u.id = cl.added_by
-      -- Home-context vote count (link votes are context-scoped).
-      LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = cl.edge_id
+      -- One vote per user per link.
+      LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
       WHERE ce.combo_id = $1
         AND e.is_hidden = false
       GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,

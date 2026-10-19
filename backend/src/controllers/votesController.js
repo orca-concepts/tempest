@@ -4,49 +4,6 @@ const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
 const { orcidForDisplay } = require('../utils/orcidValidator');
 
-// Validate a link-vote context for context-scoped link votes.
-// A vote may be cast in: (a) the flip-view pool (contextEdgeId == null),
-// or (b) an edge pool that is the link's own home edge OR an ancestor of
-// it (i.e. the link's home edge is the context edge or a descendant of it).
-// Returns { ok: true } or { ok: false, status, error }.
-async function validateLinkVoteContext(linkId, contextEdgeId) {
-  const linkRes = await pool.query(
-    `SELECT e.id AS edge_id, e.parent_id, e.child_id, e.graph_path
-     FROM concept_links cl JOIN edges e ON e.id = cl.edge_id
-     WHERE cl.id = $1`,
-    [linkId]
-  );
-  if (linkRes.rows.length === 0) {
-    return { ok: false, status: 404, error: 'Web link not found' };
-  }
-  // Flip-view (decontextualized) pool — always allowed.
-  if (contextEdgeId === null || contextEdgeId === undefined) {
-    return { ok: true };
-  }
-  const home = linkRes.rows[0];
-  if (home.edge_id === contextEdgeId) {
-    return { ok: true }; // voting on the link in its own panel
-  }
-  // Otherwise the context edge must be an ancestor: the link's home edge
-  // must be a descendant of the context edge (prefix of home's graph_path).
-  const ctxRes = await pool.query(
-    'SELECT id, parent_id, child_id, graph_path FROM edges WHERE id = $1',
-    [contextEdgeId]
-  );
-  if (ctxRes.rows.length === 0) {
-    return { ok: false, status: 400, error: 'Invalid vote context' };
-  }
-  const ctx = ctxRes.rows[0];
-  const prefix = ctx.parent_id === null ? [ctx.child_id] : [...ctx.graph_path, ctx.child_id];
-  const homePath = home.graph_path || [];
-  const isDescendant = homePath.length >= prefix.length
-    && prefix.every((v, i) => homePath[i] === v);
-  if (!isDescendant) {
-    return { ok: false, status: 400, error: 'Invalid vote context' };
-  }
-  return { ok: true };
-}
-
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
   addVote: async (req, res) => {
@@ -1523,7 +1480,7 @@ const votesController = {
           BOOL_OR(clv.user_id = $2) AS user_voted,
           array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids
         FROM concept_links cl
-        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = $1
+        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE cl.edge_id = $1 AND cl.legal_hold = false
         GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at
@@ -1640,13 +1597,12 @@ const votesController = {
         [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment]
       );
 
-      // Auto-upvote the link by the person who added it, in the link's
-      // own home-edge context (where it was placed).
+      // Auto-upvote the link by the person who added it.
       await pool.query(
-        `INSERT INTO concept_link_votes (user_id, concept_link_id, context_edge_id)
-         VALUES ($1, $2, $3)
-         ON CONFLICT DO NOTHING`,
-        [userId, result.rows[0].id, edgeId]
+        `INSERT INTO concept_link_votes (user_id, concept_link_id)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, concept_link_id) DO NOTHING`,
+        [userId, result.rows[0].id]
       );
 
       res.status(201).json({
@@ -1662,7 +1618,6 @@ const votesController = {
           updatedAt: result.rows[0].updated_at,
           voteCount: 1,
           userVoted: true,
-          isInherited: false,
         }
       });
     } catch (error) {
@@ -1737,11 +1692,11 @@ const votesController = {
         [destEdgeId, source.url, source.title, source.comment, userId]
       );
 
-      // Auto-upvote in the copy's own home-edge context (the destination edge)
+      // Auto-upvote the copied link by the person who copied it.
       await pool.query(
-        `INSERT INTO concept_link_votes (user_id, concept_link_id, context_edge_id)
-         VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-        [userId, result.rows[0].id, destEdgeId]
+        `INSERT INTO concept_link_votes (user_id, concept_link_id)
+         VALUES ($1, $2) ON CONFLICT (user_id, concept_link_id) DO NOTHING`,
+        [userId, result.rows[0].id]
       );
 
       res.status(201).json({
@@ -1754,12 +1709,9 @@ const votesController = {
     }
   },
 
-  // Upvote a web link in a specific context.
-  // contextEdgeId: an edge id (the panel being viewed) or null for flip view.
+  // Upvote a web link. One vote per user per link, in every view.
   upvoteWebLink: async (req, res) => {
     const { linkId } = req.body;
-    // Normalize: missing => flip-view (null) pool.
-    const contextEdgeId = req.body.contextEdgeId == null ? null : req.body.contextEdgeId;
 
     try {
       if (!linkId) {
@@ -1768,36 +1720,23 @@ const votesController = {
 
       const userId = req.user.userId;
 
-      const check = await validateLinkVoteContext(linkId, contextEdgeId);
-      if (!check.ok) {
-        return res.status(check.status).json({ error: check.error });
+      // Verify the link exists
+      const linkCheck = await pool.query('SELECT id FROM concept_links WHERE id = $1', [linkId]);
+      if (linkCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Web link not found' });
       }
 
-      // Insert upvote (ON CONFLICT = already voted). The flip-view (NULL)
-      // pool is guarded by the partial unique index uq_clv_user_link_flip,
-      // so it needs its own arbiter; edge pools use the triple key.
-      const insertResult = contextEdgeId === null
-        ? await pool.query(
-            `INSERT INTO concept_link_votes (user_id, concept_link_id, context_edge_id)
-             VALUES ($1, $2, NULL)
-             ON CONFLICT (user_id, concept_link_id) WHERE context_edge_id IS NULL DO NOTHING
-             RETURNING id`,
-            [userId, linkId]
-          )
-        : await pool.query(
-            `INSERT INTO concept_link_votes (user_id, concept_link_id, context_edge_id)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (user_id, concept_link_id, context_edge_id) DO NOTHING
-             RETURNING id`,
-            [userId, linkId, contextEdgeId]
-          );
+      const insertResult = await pool.query(
+        `INSERT INTO concept_link_votes (user_id, concept_link_id)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id, concept_link_id) DO NOTHING
+         RETURNING id`,
+        [userId, linkId]
+      );
 
-      // Get updated vote count, scoped to the pool.
       const countResult = await pool.query(
-        `SELECT COUNT(*) AS vote_count FROM concept_link_votes
-         WHERE concept_link_id = $1
-           AND ($2::int IS NULL AND context_edge_id IS NULL OR context_edge_id = $2)`,
-        [linkId, contextEdgeId]
+        'SELECT COUNT(*) AS vote_count FROM concept_link_votes WHERE concept_link_id = $1',
+        [linkId]
       );
 
       res.json({
@@ -1843,44 +1782,21 @@ const votesController = {
           cl.comment,
           cl.updated_at AS link_updated_at,
           cl.edge_id AS source_edge_id,
-          cl.source_concept_id,
-          scn.name AS source_concept_name,
-          cl.source_graph_path,
-          (cl.edge_id <> e.id) AS is_inherited,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted
         FROM edges e
         JOIN attributes a ON e.attribute_id = a.id
         LEFT JOIN concepts cp ON e.parent_id = cp.id
-        -- Each parent-context group includes links placed on this edge OR
-        -- on any of its descendants (link inheritance). The descendant
-        -- prefix mirrors the set-based scan used elsewhere; root edges
-        -- (parent_id IS NULL, graph_path '{}') use [child_id].
-        LEFT JOIN LATERAL (
-          SELECT lcl.id, lcl.url, lcl.title, lcl.added_by, lcl.created_at,
-                 lcl.comment, lcl.updated_at, lcl.edge_id,
-                 le.child_id AS source_concept_id,
-                 le.graph_path AS source_graph_path
-          FROM concept_links lcl
-          JOIN edges le ON le.id = lcl.edge_id
-          WHERE lcl.legal_hold = false AND (
-            lcl.edge_id = e.id
-            OR (
-              le.is_hidden = false AND le.legal_hold = false
-              AND le.graph_path[1 : array_length(CASE WHEN e.parent_id IS NULL THEN ARRAY[e.child_id] ELSE e.graph_path || e.child_id END, 1)]
-                    = (CASE WHEN e.parent_id IS NULL THEN ARRAY[e.child_id] ELSE e.graph_path || e.child_id END)
-              AND array_length(le.graph_path, 1) >= array_length(CASE WHEN e.parent_id IS NULL THEN ARRAY[e.child_id] ELSE e.graph_path || e.child_id END, 1)
-            )
-          )
-        ) cl ON true
-        LEFT JOIN concepts scn ON scn.id = cl.source_concept_id
-        -- Flip view is its own decontextualized vote pool (context_edge_id IS NULL).
-        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id IS NULL
+        -- A link applies ONLY to the edge it is placed on. It never surfaces
+        -- on ancestor edges, so each parent-context group lists only its own
+        -- edge's links.
+        LEFT JOIN concept_links cl ON cl.edge_id = e.id AND cl.legal_hold = false
+        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE e.child_id = $1
         GROUP BY e.id, e.parent_id, e.graph_path, e.attribute_id, a.name,
                  cp.name, cl.id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at,
-                 cl.comment, cl.updated_at, cl.edge_id, cl.source_concept_id, scn.name, cl.source_graph_path
+                 cl.comment, cl.updated_at, cl.edge_id
         ORDER BY e.id, COUNT(clv.id) DESC, cl.created_at DESC
       `;
 
@@ -1917,11 +1833,7 @@ const votesController = {
             updatedAt: row.link_updated_at,
             voteCount: parseInt(row.vote_count),
             userVoted: row.user_voted || false,
-            isInherited: row.is_inherited || false,
             sourceEdgeId: row.source_edge_id,
-            sourceConceptId: row.source_concept_id,
-            sourceConceptName: row.source_concept_name,
-            sourceGraphPath: row.source_graph_path || [],
           });
         }
       }
@@ -2023,10 +1935,9 @@ const votesController = {
     }
   },
 
-  // Remove upvote from a web link (scoped to the vote's context pool)
+  // Remove upvote from a web link. One vote per user per link.
   removeWebLinkVote: async (req, res) => {
     const { linkId } = req.body;
-    const contextEdgeId = req.body.contextEdgeId == null ? null : req.body.contextEdgeId;
 
     try {
       if (!linkId) {
@@ -2038,21 +1949,17 @@ const votesController = {
       const deleteResult = await pool.query(
         `DELETE FROM concept_link_votes
          WHERE user_id = $1 AND concept_link_id = $2
-           AND ($3::int IS NULL AND context_edge_id IS NULL OR context_edge_id = $3)
          RETURNING id`,
-        [userId, linkId, contextEdgeId]
+        [userId, linkId]
       );
 
       if (deleteResult.rows.length === 0) {
         return res.status(404).json({ error: 'Upvote not found' });
       }
 
-      // Get updated vote count, scoped to the pool.
       const countResult = await pool.query(
-        `SELECT COUNT(*) AS vote_count FROM concept_link_votes
-         WHERE concept_link_id = $1
-           AND ($2::int IS NULL AND context_edge_id IS NULL OR context_edge_id = $2)`,
-        [linkId, contextEdgeId]
+        'SELECT COUNT(*) AS vote_count FROM concept_link_votes WHERE concept_link_id = $1',
+        [linkId]
       );
 
       res.json({
@@ -2148,9 +2055,8 @@ const votesController = {
         LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
         JOIN attributes a ON a.id = e.attribute_id
         LEFT JOIN users u ON u.id = cl.added_by
-        -- Each instance row is a link at its home edge; show its home-context
-        -- vote count (context_edge_id = the link's own edge).
-        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id AND clv.context_edge_id = cl.edge_id
+        -- Each instance row is a link at its home edge; show its vote count.
+        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         WHERE cl.url = $1
           AND e.is_hidden = false
         GROUP BY cl.id, cl.edge_id, e.child_id, child_c.name,
@@ -2203,9 +2109,8 @@ const votesController = {
         LEFT JOIN concepts parent_c ON parent_c.id = e.parent_id
         JOIN attributes a ON a.id = e.attribute_id
         LEFT JOIN users u ON u.id = cl.added_by
-        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id AND clv_all.context_edge_id = cl.edge_id
+        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id
         WHERE clv_user.user_id = $1
-          AND clv_user.context_edge_id = cl.edge_id
           AND e.is_hidden = false
         GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
                  cl.added_by, u.username, cl.created_at,
@@ -2399,8 +2304,8 @@ const votesController = {
         JOIN concepts child_c ON child_c.id = e.child_id
         JOIN attributes a ON a.id = e.attribute_id
         LEFT JOIN users u ON u.id = cl.added_by
-        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id AND clv_all.context_edge_id = cl.edge_id
-        WHERE clv_user.user_id = $1 AND clv_user.context_edge_id = cl.edge_id AND e.is_hidden = false
+        LEFT JOIN concept_link_votes clv_all ON clv_all.concept_link_id = cl.id
+        WHERE clv_user.user_id = $1 AND e.is_hidden = false
           AND ($2::int IS NULL OR child_c.community_id = $2)
         GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
                  cl.added_by, u.username, cl.created_at,
@@ -2431,13 +2336,13 @@ const votesController = {
 
       // 3. Context edges — edges referenced by linkVotes not in savedEdges
       const savedEdgeIds = new Set(savedEdges.map(e => e.edgeId));
-      const contextEdgeIds = new Set();
+      const contextOnlyEdgeIds = new Set();
       for (const lv of linkVotes) {
-        if (!savedEdgeIds.has(lv.edgeId)) contextEdgeIds.add(lv.edgeId);
+        if (!savedEdgeIds.has(lv.edgeId)) contextOnlyEdgeIds.add(lv.edgeId);
       }
 
       let contextEdges = [];
-      if (contextEdgeIds.size > 0) {
+      if (contextOnlyEdgeIds.size > 0) {
         const ctxResult = await pool.query(
           `SELECT
             e.id AS edge_id, e.parent_id, e.child_id, e.graph_path,
@@ -2452,7 +2357,7 @@ const votesController = {
           WHERE e.id = ANY($1::integer[])
           GROUP BY e.id, e.parent_id, e.child_id, e.graph_path, e.created_at,
                    c.name, a.id, a.name`,
-          [Array.from(contextEdgeIds)]
+          [Array.from(contextOnlyEdgeIds)]
         );
         contextEdges = ctxResult.rows.map(row => ({
           edgeId: row.edge_id,

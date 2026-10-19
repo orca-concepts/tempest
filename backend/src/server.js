@@ -121,12 +121,6 @@ if (process.env.NODE_ENV === 'production') {
       image: 'https://orcaconcepts.org/og-orca-main.png',
       twitterCard: 'summary_large_image',
     },
-    '/the-storm': {
-      title: 'The Categorical Storm',
-      description: 'An essay on conceptual hierarchies, the predictive mind, and the need for a shared sixth sense for category.',
-      image: 'https://orcaconcepts.org/og-the-storm.png',
-      twitterCard: 'summary_large_image',
-    },
     '/using-orca': {
       title: 'What is orca?',
       description: 'Map the categorical relationships between research questions.',

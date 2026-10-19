@@ -250,13 +250,12 @@ export const votesAPI = {
   copyWebLink: (sourceLinkId, destEdgeId) =>
     api.post('/votes/web-links/copy', { sourceLinkId, destEdgeId }),
 
-  // contextEdgeId: the edge whose panel is being voted from, or null for
-  // the decontextualized flip-view pool. Link votes are context-scoped.
-  upvoteWebLink: (linkId, contextEdgeId = null) =>
-    api.post('/votes/web-links/upvote', { linkId, contextEdgeId }),
+  // One vote per user per link, in every view.
+  upvoteWebLink: (linkId) =>
+    api.post('/votes/web-links/upvote', { linkId }),
 
-  removeWebLinkVote: (linkId, contextEdgeId = null) =>
-    api.post('/votes/web-links/unvote', { linkId, contextEdgeId }),
+  removeWebLinkVote: (linkId) =>
+    api.post('/votes/web-links/unvote', { linkId }),
 
   removeWebLink: (linkId) =>
     api.post('/votes/web-links/remove', { linkId }),

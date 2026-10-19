@@ -474,67 +474,47 @@ const createTables = async () => {
     `);
 
     // ============================================================
-    // Link inheritance: context-scoped link votes.
-    // A link placed on an edge "floats" up to every ancestor edge's
-    // panel (read-time aggregation). Votes must NOT float — a vote is
-    // scoped to (link, the edge-panel-you-are-viewing). context_edge_id
-    // names that panel: a specific edge id for a per-edge pool, or NULL
-    // for the decontextualized flip-view pool.
+    // Link inheritance removal.
+    // A link (answer) now applies ONLY to the edge it is placed on — it
+    // never surfaces on ancestor edges, in any view. This reverts the
+    // earlier "context-scoped link votes" model (context_edge_id + the
+    // triple key + the flip-view partial index) back to one vote per user
+    // per link. Idempotent: a safe no-op on a fresh database and on reruns.
     // ============================================================
+    // 1. Collapse any per-context duplicate votes down to one row per
+    //    (user_id, concept_link_id), keeping the oldest (smallest id).
+    await client.query(`
+      DELETE FROM concept_link_votes a
+      USING concept_link_votes b
+      WHERE a.user_id = b.user_id
+        AND a.concept_link_id = b.concept_link_id
+        AND a.id > b.id;
+    `);
+    // 2. Drop the flip-view partial unique index, the triple-key constraint,
+    //    the context index, and the context_edge_id column (all IF EXISTS).
+    await client.query(`DROP INDEX IF EXISTS uq_clv_user_link_flip;`);
     await client.query(`
       ALTER TABLE concept_link_votes
-        ADD COLUMN IF NOT EXISTS context_edge_id INTEGER REFERENCES edges(id) ON DELETE CASCADE;
+        DROP CONSTRAINT IF EXISTS concept_link_votes_user_link_context_key;
     `);
-
-    // Backfill existing votes to their home-edge context — gated to run
-    // exactly once. After the new constraint/index exist, a NULL
-    // context_edge_id legitimately means "flip-view pool," so an
-    // ungated UPDATE would clobber real flip votes on every redeploy.
+    await client.query(`DROP INDEX IF EXISTS idx_concept_link_votes_link_context;`);
+    await client.query(`
+      ALTER TABLE concept_link_votes DROP COLUMN IF EXISTS context_edge_id;
+    `);
+    // 3. Ensure the simple one-vote-per-user-per-link uniqueness exists.
+    //    (On a fresh DB the inline UNIQUE from CREATE TABLE already provides
+    //    this constraint name; on a previously-migrated DB it was dropped.)
     await client.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'concept_link_votes_user_link_context_key'
-        ) AND NOT EXISTS (
-          SELECT 1 FROM pg_class WHERE relname = 'uq_clv_user_link_flip'
-        ) THEN
-          UPDATE concept_link_votes clv
-          SET context_edge_id = cl.edge_id
-          FROM concept_links cl
-          WHERE clv.concept_link_id = cl.id AND clv.context_edge_id IS NULL;
-        END IF;
-      END $$;
-    `);
-
-    // Replace the old UNIQUE(user_id, concept_link_id) with a triple key
-    // that gives each edge-context pool its own one-vote-per-user slot.
-    await client.query(`
-      ALTER TABLE concept_link_votes
-        DROP CONSTRAINT IF EXISTS concept_link_votes_user_id_concept_link_id_key;
-    `);
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'concept_link_votes_user_link_context_key'
+          SELECT 1 FROM pg_constraint WHERE conname = 'concept_link_votes_user_id_concept_link_id_key'
         ) THEN
           ALTER TABLE concept_link_votes
-            ADD CONSTRAINT concept_link_votes_user_link_context_key
-            UNIQUE (user_id, concept_link_id, context_edge_id);
+            ADD CONSTRAINT concept_link_votes_user_id_concept_link_id_key
+            UNIQUE (user_id, concept_link_id);
         END IF;
       END $$;
-    `);
-
-    // Postgres treats NULLs as DISTINCT in UNIQUE, so the triple key
-    // above does NOT prevent duplicate flip-view (NULL-context) votes.
-    // A partial unique index enforces one flip vote per user per link.
-    await client.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS uq_clv_user_link_flip
-        ON concept_link_votes (user_id, concept_link_id) WHERE context_edge_id IS NULL;
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_concept_link_votes_link_context
-        ON concept_link_votes (concept_link_id, context_edge_id);
     `);
 
     // ============================================================
@@ -1272,39 +1252,9 @@ const createTables = async () => {
         ON safe_browsing_rejections(url_hash);
     `);
 
-    // Phase 65b: Comment mentions (in-orca URL references indexed at write time)
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS comment_mentions (
-        id SERIAL PRIMARY KEY,
-        source_type VARCHAR(32) NOT NULL,
-        source_id INTEGER NOT NULL,
-        target_type VARCHAR(16) NOT NULL,
-        target_id INTEGER NOT NULL,
-        target_path INTEGER[],
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        CONSTRAINT comment_mentions_source_type_check
-          CHECK (source_type IN ('concept_link_comment', 'concept_link_addendum',
-                                 'tunnel_link_comment', 'tunnel_link_addendum')),
-        CONSTRAINT comment_mentions_target_type_check
-          CHECK (target_type IN ('concept', 'situation', 'link', 'tunnel'))
-      );
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_comment_mentions_target
-        ON comment_mentions(target_type, target_id);
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_comment_mentions_source
-        ON comment_mentions(source_type, source_id);
-    `);
-
-    // Phase 66: Rename superconcept -> situation in comment_mentions target_type
-    await client.query(`UPDATE comment_mentions SET target_type = 'situation' WHERE target_type = 'superconcept'`);
-    await client.query(`
-      ALTER TABLE comment_mentions DROP CONSTRAINT IF EXISTS comment_mentions_target_type_check;
-      ALTER TABLE comment_mentions ADD CONSTRAINT comment_mentions_target_type_check
-        CHECK (target_type IN ('concept', 'situation', 'link', 'tunnel'));
-    `);
+    // Mentions was intentionally removed. No code reads or writes
+    // comment_mentions; drop the orphaned table (idempotent).
+    await client.query(`DROP TABLE IF EXISTS comment_mentions CASCADE`);
 
     console.log('Database tables created/migrated successfully!');
   } catch (error) {

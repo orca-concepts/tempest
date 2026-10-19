@@ -60,3 +60,15 @@ chaos/last-apply.json
 # The script itself (snapshot.js) is tracked; its generated output is not.
 # Narrow on purpose: must not swallow chaos/episodic/*.json (committed).
 chaos/snapshot.json
+
+# Local-only files — never commit (public repo)
+# Production database dumps contain user data
+orca-prod-backup.sql
+*-backup.sql
+# Retired seeding work (Koios / Chaos) and its caches
+koios/
+chaos (retired)/
+seed-story.js
+SEED_STORY_FINDINGS.md
+# One-off audit output
+STATUS_AUDIT.md

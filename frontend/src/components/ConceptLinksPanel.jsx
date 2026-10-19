@@ -182,11 +182,9 @@ const ConceptLinksPanel = ({
   const handleToggleLinkVote = async (link) => {
     if (isGuest) { if (onRequestLogin) onRequestLogin(); return; }
     const wasVoted = link.userVoted;
-    // Children view votes into the current edge's pool; flip view (aggregated)
-    // votes into the decontextualized pool (contextEdgeId = null).
-    const voteContextEdgeId = isChildrenView ? currentEdgeId : null;
+    // A link has a single vote tally regardless of which view it's shown in.
     setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: !wasVoted, voteCount: wasVoted ? l.voteCount - 1 : l.voteCount + 1 } : l));
-    try { if (wasVoted) await votesAPI.removeWebLinkVote(link.id, voteContextEdgeId); else await votesAPI.upvoteWebLink(link.id, voteContextEdgeId); }
+    try { if (wasVoted) await votesAPI.removeWebLinkVote(link.id); else await votesAPI.upvoteWebLink(link.id); }
     catch { setWebLinks(links => links.map(l => l.id === link.id ? { ...l, userVoted: wasVoted, voteCount: wasVoted ? l.voteCount + 1 : l.voteCount - 1 } : l)); }
   };
 

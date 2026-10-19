@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
 const { orcidForDisplay } = require('../utils/orcidValidator');
+const communityAccess = require('../utils/communityAccess');
 
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
@@ -34,6 +35,12 @@ const votesController = {
 
       if (edgeResult.rows[0].is_hidden) {
         return res.status(400).json({ error: 'Cannot save a hidden concept' });
+      }
+
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
       }
 
       // Find all edges along the path from root to this concept
@@ -134,6 +141,12 @@ const votesController = {
       }
 
       const userId = req.user.userId;
+
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
 
       // Check if the user has a vote on this edge
       const existingVote = await pool.query(
@@ -592,6 +605,12 @@ const votesController = {
 
       const userId = req.user.userId;
 
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(originEdgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       // Verify both edges exist
       const edgeCheck = await pool.query(
         'SELECT id FROM edges WHERE id = ANY($1::integer[])',
@@ -638,8 +657,14 @@ const votesController = {
 
       const userId = req.user.userId;
 
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(originEdgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       const deleteResult = await pool.query(
-        `DELETE FROM similarity_votes 
+        `DELETE FROM similarity_votes
          WHERE user_id = $1 AND origin_edge_id = $2 AND similar_edge_id = $3
          RETURNING id`,
         [userId, originEdgeId, similarEdgeId]
@@ -794,6 +819,12 @@ const votesController = {
 
       const userId = req.user.userId;
 
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       // Fetch both edges with details for sibling validation
       const edgeCheck = await pool.query(
         'SELECT id, parent_id, graph_path, attribute_id, child_id, is_hidden FROM edges WHERE id = ANY($1::integer[])',
@@ -941,8 +972,14 @@ const votesController = {
 
       const userId = req.user.userId;
 
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       const deleteResult = await pool.query(
-        `DELETE FROM replace_votes 
+        `DELETE FROM replace_votes
          WHERE user_id = $1 AND edge_id = $2 AND replacement_edge_id = $3
          RETURNING id`,
         [userId, edgeId, replacementEdgeId]
@@ -1570,6 +1607,14 @@ const votesController = {
         return res.status(400).json({ error: 'Cannot add web links to a hidden concept' });
       }
 
+      // Phase 72a: curated communities are owner-write-only.
+      const writeCheck = await communityAccess.assertCanWriteStructure(
+        await communityAccess.getCommunityForEdge(edgeId), userId
+      );
+      if (!writeCheck.ok) {
+        return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
+      }
+
       // Google Safe Browsing check
       const sbResult = await safeBrowsing.checkUrl(trimmedUrl);
       if (!sbResult.safe) {
@@ -1645,6 +1690,16 @@ const votesController = {
         return res.status(404).json({ error: 'Source link not found' });
       }
       const source = sourceResult.rows[0];
+
+      // Phase 72a: curated communities are owner-write-only. Checked before the
+      // author check below so a curated non-owner gets curated_owner_only (they
+      // could never own a curated link to copy in the first place).
+      const writeCheck = await communityAccess.assertCanWriteStructure(
+        await communityAccess.getCommunityForLink(sourceLinkId), userId
+      );
+      if (!writeCheck.ok) {
+        return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
+      }
 
       // Verify ownership
       if (source.added_by !== userId) {
@@ -1724,6 +1779,12 @@ const votesController = {
       const linkCheck = await pool.query('SELECT id FROM concept_links WHERE id = $1', [linkId]);
       if (linkCheck.rows.length === 0) {
         return res.status(404).json({ error: 'Web link not found' });
+      }
+
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForLink(linkId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
       }
 
       const insertResult = await pool.query(
@@ -1946,6 +2007,12 @@ const votesController = {
 
       const userId = req.user.userId;
 
+      // Phase 72a: voting is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForLink(linkId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       const deleteResult = await pool.query(
         `DELETE FROM concept_link_votes
          WHERE user_id = $1 AND concept_link_id = $2
@@ -2000,6 +2067,16 @@ const votesController = {
       );
       if (linkCheck.rows.length === 0 || linkCheck.rows[0].added_by !== userId || linkCheck.rows[0].legal_hold) {
         return res.status(403).json({ error: 'Cannot add an addendum to this link.' });
+      }
+
+      // Phase 72a: curated communities are owner-write-only. (In curated graphs
+      // only owners authored links, so this is belt-and-suspenders over the
+      // author check above.)
+      const writeCheck = await communityAccess.assertCanWriteStructure(
+        await communityAccess.getCommunityForLink(linkId), userId
+      );
+      if (!writeCheck.ok) {
+        return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
       }
 
       const result = await pool.query(

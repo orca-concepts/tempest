@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { conceptsAPI, votesAPI, moderationAPI } from '../services/api';
+import { conceptsAPI, votesAPI, moderationAPI, communitiesAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import ConceptGrid from '../components/ConceptGrid';
 import SearchField from '../components/SearchField';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 import SwapModal from '../components/SwapModal';
+import CommunityHeaderControls from '../components/CommunityHeaderControls';
 
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
 
-const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityName, onOpenCommunities }) => {
+const Root = ({
+  graphTabId, onNavigate, isGuest = false,
+  communityId, communityName,
+  communityMode = 'open', communityIsOwner = false, communitySlug = null,
+  onCommunitiesChanged,
+  onOpenCommunities,
+}) => {
+  // Phase 72a: curated communities are owner-write-only and have no voting.
+  const votingAllowed = communityMode !== 'curated';
+  const canCreate = communityMode === 'curated' ? communityIsOwner : !isGuest;
   const [concepts, setConcepts] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -237,7 +247,20 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
     <div style={styles.container}>
       <main style={styles.main}>
         {communityName && (
-          <div style={styles.communityTitle}>{communityName}</div>
+          <div style={styles.communityTitleRow}>
+            <div style={styles.communityTitle}>
+              {communityName}
+              {communityMode === 'curated' && <span style={styles.curatedTag}>Curated</span>}
+            </div>
+            {communityId && (
+              <CommunityHeaderControls
+                communityId={communityId}
+                communitySlug={communitySlug}
+                isOwner={communityIsOwner}
+                onCommunitiesChanged={onCommunitiesChanged}
+              />
+            )}
+          </div>
         )}
         {communityId && !loading && !error && (
           <div style={styles.topBar}>
@@ -323,21 +346,21 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
             : concepts.filter(c => c.attribute_name === attributeFilter);
           return filtered.length === 0 ? (
             <div style={styles.emptyState}>
-              <p>{isGuest ? 'No root questions yet.' : 'No root questions yet. Type in the search field to create one!'}</p>
+              <p>{canCreate ? 'No root questions yet. Type in the search field to create one!' : 'No root questions yet.'}</p>
             </div>
           ) : (
             <ConceptGrid
               concepts={filtered}
               onConceptClick={handleConceptClick}
-              onVote={isGuest ? undefined : handleVote}
-              onSwapClick={isGuest ? undefined : handleSwapClick}
-              onNestUnderSibling={isGuest ? undefined : handleNestUnderSibling}
-              onFlag={isGuest ? undefined : handleFlag}
-              onUnflag={isGuest ? undefined : handleUnflag}
+              onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
+              onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
+              onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
+              onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
+              onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
               nestMode={nestMode}
               selectedEdgeIds={selectedEdgeIds}
               onToggleSelect={toggleNestSelect}
-              showVotes={true}
+              showVotes={votingAllowed}
               showAttributeBadge={true}
               path={[]}
             />
@@ -353,7 +376,8 @@ const Root = ({ graphTabId, onNavigate, isGuest = false, communityId, communityN
           path={null}
           viewMode="children"
           onConceptAdded={loadRootConcepts}
-          isRootPage={!isGuest}
+          isRootPage={canCreate}
+          canCreate={canCreate}
           graphTabId={graphTabId}
           onNavigate={onNavigate}
           isGuest={isGuest}
@@ -455,11 +479,29 @@ const styles = {
     padding: '40px 20px',
     position: 'relative',
   },
+  communityTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '10px',
+    marginBottom: '16px',
+  },
   communityTitle: {
     fontSize: '22px',
     fontFamily: '"EB Garamond", Georgia, serif',
     color: '#222',
-    marginBottom: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  curatedTag: {
+    fontSize: '11px',
+    color: '#555',
+    border: '1px solid #cfc9bd',
+    borderRadius: '10px',
+    padding: '1px 8px',
+    backgroundColor: '#f5f0ea',
   },
   loading: {
     textAlign: 'center',

@@ -10,7 +10,12 @@ const ConceptLinksPanel = ({
   pendingScrollLinkId, onPendingScrollLinkConsumed,
   collapsible = false,
   voteSets = [],
+  // Phase 72a: in curated communities only owners add/copy links (canAddLink)
+  // and nobody votes on links (votingAllowed=false). Default to pre-72a behavior.
+  canAddLink,
+  votingAllowed = true,
 }) => {
+  const allowAddLink = canAddLink === undefined ? !isGuest : canAddLink;
   const { user } = useAuth();
   const [collapsed, setCollapsed] = useState(collapsible);
   const [activeTab, setActiveTab] = useState('weblinks');
@@ -180,6 +185,7 @@ const ConceptLinksPanel = ({
 
   // Handlers
   const handleToggleLinkVote = async (link) => {
+    if (!votingAllowed) return; // curated communities: links aren't voted on
     if (isGuest) { if (onRequestLogin) onRequestLogin(); return; }
     const wasVoted = link.userVoted;
     // A link has a single vote tally regardless of which view it's shown in.
@@ -292,7 +298,7 @@ const ConceptLinksPanel = ({
   };
 
   const renderWebLinksTab = () => {
-    const addButton = !isGuest && currentEdgeId && !showAddLinkForm ? (
+    const addButton = allowAddLink && currentEdgeId && !showAddLinkForm ? (
       <div style={styles.addLinkRow}><span onClick={() => setShowAddLinkForm(true)} style={styles.addLinkBtn}>+ Add Link</span></div>
     ) : null;
     const sortToggle = (
@@ -313,6 +319,7 @@ const ConceptLinksPanel = ({
         {addButton}{renderAddLinkForm()}{sortToggle}
         {webLinks.map((link, idx) => (
           <LinkCard key={link.id} link={link} user={user} isGuest={isGuest} isFirst={idx === 0}
+            votingAllowed={votingAllowed}
             onVoteToggle={handleToggleLinkVote}
             showInstances={true} instanceData={instanceData[link.id]} onToggleInstance={toggleInstanceExpansion}
             renderInstanceSnippet={renderInstanceSnippet}

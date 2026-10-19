@@ -135,6 +135,24 @@ const authController = {
         });
       }
 
+      // Phase 72a: block deletion if the user is the sole owner of any curated
+      // community — ownership must be handed off first.
+      const soleCurated = await client.query(
+        `SELECT comm.id, comm.name
+           FROM communities comm
+           JOIN community_owners co ON co.community_id = comm.id AND co.user_id = $1
+          WHERE comm.mode = 'curated'
+            AND (SELECT COUNT(*) FROM community_owners co2 WHERE co2.community_id = comm.id) = 1`,
+        [req.user.userId]
+      );
+      if (soleCurated.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `You are the sole owner of ${soleCurated.rows.length} curated communit${soleCurated.rows.length === 1 ? 'y' : 'ies'}. Add another owner before deleting your account.`,
+          curatedCommunities: soleCurated.rows,
+        });
+      }
+
       // Delete the user row — CASCADE and SET NULL handle all child tables
       await client.query('DELETE FROM users WHERE id = $1', [req.user.userId]);
 

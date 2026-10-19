@@ -124,6 +124,46 @@ const createTables = async () => {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_communities_name ON communities (LOWER(name));
     `);
 
+    // ============================================================
+    // Phase 72a: Curated communities — a second, owner-governed mode.
+    // `mode` is chosen at creation and fixed ('open' = today's behavior,
+    // 'curated' = owner-only writes, no votes). `community_owners` tracks
+    // ownership; the creator is backfilled as the first owner.
+    // ============================================================
+    await client.query(`
+      ALTER TABLE communities ADD COLUMN IF NOT EXISTS mode VARCHAR(16) NOT NULL DEFAULT 'open';
+    `);
+    // Add the CHECK constraint only if it is absent (idempotent).
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'communities_mode_check'
+        ) THEN
+          ALTER TABLE communities
+            ADD CONSTRAINT communities_mode_check CHECK (mode IN ('open', 'curated'));
+        END IF;
+      END $$;
+    `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS community_owners (
+        community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        added_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (community_id, user_id)
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_community_owners_user ON community_owners (user_id);
+    `);
+    // Backfill: every community's creator becomes an owner (skip NULL created_by).
+    await client.query(`
+      INSERT INTO community_owners (community_id, user_id)
+        SELECT id, created_by FROM communities WHERE created_by IS NOT NULL
+        ON CONFLICT DO NOTHING;
+    `);
+
     // Scope concepts to a community + add the normalized match key (immutable
     // expression => valid STORED generated column). Trailing ?/./! stripped so
     // "How does X work?" bridges to "How does X work".

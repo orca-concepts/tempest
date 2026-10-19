@@ -59,6 +59,10 @@ const Concept = ({
     : (searchParams.get('view') === 'flip' ? 'flip' : searchParams.get('view') === 'tunnel' ? 'tunnel' : 'children');
 
   const [concept, setConcept] = useState(null);
+  // Phase 72a: owning community's mode + the caller's ownership, from the
+  // GET /concepts/:id response. Drive the write/vote affordance gating below.
+  const [communityMode, setCommunityMode] = useState('open');
+  const [isCommunityOwner, setIsCommunityOwner] = useState(false);
   const [bridges, setBridges] = useState([]);
   const [children, setChildren] = useState([]);
   const [path, setPath] = useState([]);
@@ -161,6 +165,8 @@ const Concept = ({
       );
       
       setConcept(response.data.concept);
+      setCommunityMode(response.data.communityMode || 'open');
+      setIsCommunityOwner(!!response.data.isCommunityOwner);
       setChildren(response.data.children);
       setPath(response.data.path);
       setCurrentEdgeVoteCount(response.data.currentEdgeVoteCount);
@@ -685,6 +691,9 @@ const Concept = ({
 
   const searchPath = path.slice(0, -1).join(',');
 
+  // Phase 72a: curated communities are owner-write-only and have no voting.
+  const votingAllowed = communityMode !== 'curated';
+  const canCreate = communityMode === 'curated' ? isCommunityOwner : !isGuest;
 
   const effectiveIndices = getEffectiveActiveSetIndices();
   const hasActiveFilters = effectiveIndices.length > 0;
@@ -837,14 +846,16 @@ const Concept = ({
                   </div>
                 )}
 
-                <VoteSetBar
-                  voteSets={voteSets}
-                  activeSetIndices={activeSetIndices}
-                  onSetClick={handleSetClick}
-                  tieredView={tieredView}
-                  onTieredToggle={handleTieredToggle}
-                  userSetIndex={userSetIndex}
-                />
+                {votingAllowed && (
+                  <VoteSetBar
+                    voteSets={voteSets}
+                    activeSetIndices={activeSetIndices}
+                    onSetClick={handleSetClick}
+                    tieredView={tieredView}
+                    onTieredToggle={handleTieredToggle}
+                    userSetIndex={userSetIndex}
+                  />
+                )}
 
                 {hasActiveFilters && (
                   <div style={styles.filterInfo}>
@@ -863,18 +874,18 @@ const Concept = ({
                       key={`tier-${section.matchCount}`}
                       concepts={section.children}
                       onConceptClick={handleConceptClick}
-                      onVote={isGuest ? undefined : handleVote}
-                      onSwapClick={isGuest ? undefined : handleSwapClick}
-                      onNestUnderSibling={isGuest ? undefined : handleNestUnderSibling}
-                      onFlag={isGuest ? undefined : handleFlag}
-                      onUnflag={isGuest ? undefined : handleUnflag}
+                      onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
+                      onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
+                      onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
+                      onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
+                      onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                       onNavigateNested={handleNavigateNested}
                       nestMode={nestMode}
                       selectedEdgeIds={selectedEdgeIds}
                       onToggleSelect={toggleNestSelect}
-                      showVotes={true}
+                      showVotes={votingAllowed}
                       path={path}
-                      edgeToSets={edgeToSets}
+                      edgeToSets={votingAllowed ? edgeToSets : {}}
                       tierLabel={section.label}
                     />
                   ))
@@ -882,18 +893,18 @@ const Concept = ({
                   <ConceptGrid
                     concepts={displayChildren}
                     onConceptClick={handleConceptClick}
-                    onVote={isGuest ? undefined : handleVote}
-                    onSwapClick={isGuest ? undefined : handleSwapClick}
-                    onNestUnderSibling={isGuest ? undefined : handleNestUnderSibling}
-                    onFlag={isGuest ? undefined : handleFlag}
-                    onUnflag={isGuest ? undefined : handleUnflag}
+                    onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
+                    onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
+                    onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
+                    onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
+                    onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                     onNavigateNested={handleNavigateNested}
                     nestMode={nestMode}
                     selectedEdgeIds={selectedEdgeIds}
                     onToggleSelect={toggleNestSelect}
-                    showVotes={true}
+                    showVotes={votingAllowed}
                     path={path}
-                    edgeToSets={edgeToSets}
+                    edgeToSets={votingAllowed ? edgeToSets : {}}
                   />
                 )}
               </>
@@ -916,6 +927,7 @@ const Concept = ({
                 originEdgeId={originEdgeId}
                 mode={isDecontextualized ? 'exploratory' : 'contextual'}
                 isGuest={isGuest}
+                votingAllowed={votingAllowed}
                 onParentClick={handleFlipViewParentClick}
                 onOpenNewTab={handleOpenNewTab}
               />
@@ -928,8 +940,10 @@ const Concept = ({
                 conceptName={concept.name}
                 path={effectivePath}
                 currentEdgeId={parentEdgeId}
-                voteSets={voteSets}
+                voteSets={votingAllowed ? voteSets : []}
                 isGuest={isGuest}
+                canAddLink={canCreate}
+                votingAllowed={votingAllowed}
                 viewMode={effectiveViewMode}
                 onRequestLogin={onRequestLogin}
                 onNavigateToSituation={onNavigateToSituation}
@@ -951,6 +965,7 @@ const Concept = ({
         graphTabId={graphTabId}
         onNavigate={onNavigate}
         isGuest={isGuest}
+        canCreate={canCreate}
         communityId={concept?.community_id}
       />
 

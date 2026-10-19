@@ -30,7 +30,11 @@ const LinkCard = ({
   conceptId, conceptPath, onCopySuccess,
   onRemoveSuccess, onAddendumSuccess,
   voteSets = [],
+  // Phase 72a: curated communities don't vote on links — show the vote as plain
+  // text with no toggle (the author's modify controls stay available).
+  votingAllowed = true,
 }) => {
+  const showVoteReadOnly = readOnlyVote || !votingAllowed;
   const isCreator = user && link.addedBy === user.id;
   // Phase 69: a link gets a vote-set's color dot if ≥1 member of that set upvoted
   // it. Gated naturally — voteSets is empty unless the concept has active sets.
@@ -149,7 +153,7 @@ const LinkCard = ({
         </div>
       )}
       <div style={s.bottomRow}>
-        {readOnlyVote ? (
+        {showVoteReadOnly ? (
           <span style={{ ...s.vote, color: '#888' }}>{'\u25b2'} {link.voteCount}</span>
         ) : (
           <span onClick={handleVote}

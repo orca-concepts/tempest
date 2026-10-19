@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const communityAccess = require('../utils/communityAccess');
 
 const moderationController = {
   // Flag an edge as spam/vandalism — hides it once 10 or more distinct flags
@@ -17,6 +18,12 @@ const moderationController = {
       const edgeCheck = await pool.query('SELECT id FROM edges WHERE id = $1', [edgeId]);
       if (edgeCheck.rows.length === 0) {
         return res.status(404).json({ error: 'Edge not found' });
+      }
+
+      // Phase 72a: flagging is disabled in curated communities.
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
       }
 
       // Check if user already flagged this edge
@@ -197,6 +204,15 @@ const moderationController = {
       if (edgeCheck.rows.length === 0) {
         return res.status(404).json({ error: 'Edge not found' });
       }
+
+      // Phase 72a: moderation voting is disabled in curated communities.
+      // Checked before the is_hidden guard so a curated edge (never hideable)
+      // still returns curated_no_votes rather than "not currently hidden".
+      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(edgeId));
+      if (!voteCheck.ok) {
+        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
+      }
+
       if (!edgeCheck.rows[0].is_hidden) {
         return res.status(400).json({ error: 'This concept is not currently hidden' });
       }

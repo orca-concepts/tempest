@@ -50,6 +50,7 @@ const FlipView = ({
   originEdgeId,
   mode = 'exploratory',
   isGuest = false,
+  votingAllowed = true, // Phase 72a: false in curated communities
   onParentClick: externalParentClick,
   onOpenNewTab,
 }) => {
@@ -367,16 +368,19 @@ const FlipView = ({
                 {parent.attribute_name && (
                   <span style={styles.attributeBadge}>{parent.attribute_name}</span>
                 )}
-                <span style={styles.voteCount}>
-                  ▲ {parent.vote_count}
-                </span>
-                {parent.user_voted && (
+                {votingAllowed && (
+                  <span style={styles.voteCount}>
+                    ▲ {parent.vote_count}
+                  </span>
+                )}
+                {votingAllowed && parent.user_voted && (
                   <span style={styles.userVotedBadge}>Voted</span>
                 )}
               </div>
 
-              {/* Bottom row: link votes + similarity (contextual mode only) */}
-              {isContextual && (
+              {/* Bottom row: link votes + similarity (contextual mode only).
+                  Phase 72a: curated communities hide the link-vote control. */}
+              {isContextual && votingAllowed && (
                 <div style={styles.bottomRow}>
                   <button
                     onClick={isGuest ? undefined : (e) => handleLinkVote(e, parent)}

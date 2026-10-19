@@ -130,8 +130,16 @@ export const communitiesAPI = {
   getCommunityBySlug: (slug) =>
     api.get(`/communities/${slug}`),
 
-  createCommunity: (name, description) =>
-    api.post('/communities', { name, description }),
+  // Phase 72a: mode ('open' | 'curated') chosen at creation.
+  createCommunity: (name, description, mode) =>
+    api.post('/communities', { name, description, mode }),
+
+  // Phase 72a: owner management
+  addOwner: (communityId, username) =>
+    api.post(`/communities/${communityId}/owners/add`, { username }),
+
+  removeOwner: (communityId, userId) =>
+    api.post(`/communities/${communityId}/owners/remove`, { userId }),
 };
 
 // Votes endpoints

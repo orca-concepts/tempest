@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const communityAccess = require('../utils/communityAccess');
 
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
@@ -211,6 +212,21 @@ const conceptsController = {
         tunnelLinkCount = tunnelCountResult.rows[0].cnt || 0;
       }
 
+      // Phase 72a: surface the owning community's mode + the caller's ownership
+      // so the frontend can gate write/vote affordances on the concept page.
+      let communityMode = null;
+      let isCommunityOwner = false;
+      if (concept.community_id) {
+        const commRow = await pool.query(
+          'SELECT mode FROM communities WHERE id = $1',
+          [concept.community_id]
+        );
+        communityMode = commRow.rows[0]?.mode || null;
+        if (req.user) {
+          isCommunityOwner = await communityAccess.isOwner(concept.community_id, req.user.userId);
+        }
+      }
+
       res.json({
         concept,
         path: graphPath,
@@ -220,6 +236,9 @@ const conceptsController = {
         currentEdgeId,
         altParentCount,
         tunnelLinkCount,
+        communityId: concept.community_id,
+        communityMode,
+        isCommunityOwner,
       });
     } catch (error) {
       console.error('Error fetching concept:', error);
@@ -568,6 +587,13 @@ const conceptsController = {
       }
       const communityId = rootConceptRow.rows[0].community_id;
 
+      // Phase 72a: curated communities are owner-write-only.
+      const commModeRow = await pool.query('SELECT id, mode FROM communities WHERE id = $1', [communityId]);
+      const writeCheck = await communityAccess.assertCanWriteStructure(commModeRow.rows[0] || null, req.user.userId);
+      if (!writeCheck.ok) {
+        return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
+      }
+
       const attrResult = await pool.query('SELECT id FROM attributes WHERE id = $1', [attributeId]);
       if (attrResult.rows.length === 0) {
         return res.status(400).json({ error: 'Invalid attribute on root edge' });
@@ -700,9 +726,15 @@ const conceptsController = {
       if (!cid || isNaN(cid)) {
         return res.status(400).json({ error: 'communityId is required' });
       }
-      const communityCheck = await pool.query('SELECT id FROM communities WHERE id = $1', [cid]);
+      const communityCheck = await pool.query('SELECT id, mode FROM communities WHERE id = $1', [cid]);
       if (communityCheck.rows.length === 0) {
         return res.status(400).json({ error: 'Invalid community' });
+      }
+
+      // Phase 72a: curated communities are owner-write-only.
+      const writeCheck = await communityAccess.assertCanWriteStructure(communityCheck.rows[0], req.user.userId);
+      if (!writeCheck.ok) {
+        return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
       }
 
       const attrResult = await pool.query('SELECT id FROM attributes WHERE id = $1', [attributeId]);
@@ -1083,9 +1115,30 @@ const conceptsController = {
         return res.status(400).json({ error: 'Selected questions and target must share the same attribute' });
       }
 
+      // Phase 72a: everything must be in the same community. Matters on the
+      // root-list page (rootMode), where root edges from different communities
+      // pass the sibling check (both parent_id NULL, graph_path '{}') but a
+      // graph_path must never cross communities.
+      const childConceptIds = siblingResult.rows.map((r) => r.child_id);
+      const communityRows = await pool.query(
+        'SELECT DISTINCT community_id FROM concepts WHERE id = ANY($1::int[])',
+        [childConceptIds]
+      );
+      if (communityRows.rows.length > 1) {
+        return res.status(400).json({ error: 'Selected questions and target must be in the same community' });
+      }
+
       const targetRow = siblingResult.rows.find((r) => r.id === targetEdgeId);
       const T = targetRow.child_id;
       const targetName = (await pool.query('SELECT name FROM concepts WHERE id = $1', [T])).rows[0]?.name || null;
+
+      // Phase 72a: curated communities are owner-write-only. The page's community
+      // is that of the target edge (all siblings share it).
+      const nestCommunity = await communityAccess.getCommunityForEdge(targetEdgeId);
+      const nestWriteCheck = await communityAccess.assertCanWriteStructure(nestCommunity, req.user.userId);
+      if (!nestWriteCheck.ok) {
+        return res.status(nestWriteCheck.status).json({ error: nestWriteCheck.error, code: nestWriteCheck.code });
+      }
 
       const client = await pool.connect();
       try {

@@ -33,7 +33,8 @@ const AppShell = () => {
   // Phase 65a-fix-2: suppress default tab activation when the URL is a deep-link.
   // Mount-only — intentionally not reactive (loadAllTabs runs once at mount).
   const hasDeepLinkInUrl = useMemo(() => { // eslint-disable-line react-hooks/exhaustive-deps
-    return /^\/(concept|link|tunnel)\/\d+$/.test(location.pathname);
+    return /^\/(concept|link|tunnel)\/\d+$/.test(location.pathname) ||
+      /^\/c\/[^/]+$/.test(location.pathname);
   }, []);
 
   // Phase 30g: Info page detection and header nav
@@ -138,6 +139,15 @@ const AppShell = () => {
       .catch(() => setCommunities([]));
   }, []);
 
+  // Phase 72a: re-fetch the community list (e.g. after owner add/remove, which
+  // can change `is_owner` for the current user).
+  const refreshCommunities = useCallback(async () => {
+    try {
+      const r = await communitiesAPI.listCommunities();
+      setCommunities(r.data.communities || []);
+    } catch { /* non-critical */ }
+  }, []);
+
   const handleSelectCommunity = useCallback(async (community) => {
     setActiveCommunityId(community.id);
     setActiveCommunityName(community.name);
@@ -237,6 +247,25 @@ const AppShell = () => {
       const path = pathStr ? pathStr.split(',').map(Number).filter(Boolean) : [];
       handleOpenConceptTab(conceptId, path);
       navigate('/', { replace: true });
+      return;
+    }
+
+    // Phase 72a: /c/:slug — community share link. Resolve the slug, select the
+    // community (same path as choosing it in the Communities browser), open its
+    // root page, then replace the URL with '/'. Works for guests. Unknown slug
+    // falls through to the existing "unavailable link" toast.
+    const communityMatch = location.pathname.match(/^\/c\/([^/]+)$/);
+    if (communityMatch) {
+      const slug = decodeURIComponent(communityMatch[1]);
+      communitiesAPI.getCommunityBySlug(slug)
+        .then(({ data }) => {
+          handleSelectCommunity(data.community);
+          navigate('/', { replace: true });
+        })
+        .catch(() => {
+          setUnavailableLinkToast(true);
+          navigate('/', { replace: true });
+        });
       return;
     }
 
@@ -1081,6 +1110,10 @@ const AppShell = () => {
     );
   }
 
+  // Phase 72a: the active community's full record (mode, ownership, slug) for
+  // gating create/vote affordances and the Share / owners controls on Root.
+  const activeCommunity = communities.find((c) => c.id === activeCommunityId) || null;
+
   // Phase 71: a graph tab belongs to the active community if its concept does.
   // Root tabs (and tabs whose concept was deleted) are community-agnostic and always shown.
   const tabInActiveCommunity = (tab) => {
@@ -1577,6 +1610,10 @@ const AppShell = () => {
                         isGuest={isGuest}
                         communityId={activeCommunityId}
                         communityName={activeCommunityName}
+                        communityMode={activeCommunity?.mode || 'open'}
+                        communityIsOwner={!!activeCommunity?.is_owner}
+                        communitySlug={activeCommunity?.slug || null}
+                        onCommunitiesChanged={refreshCommunities}
                         onOpenCommunities={() => setCommunitiesOpen(true)}
                       />
                     ) : (

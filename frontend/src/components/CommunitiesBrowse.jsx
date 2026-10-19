@@ -16,6 +16,7 @@ const CommunitiesBrowse = ({
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [mode, setMode] = useState('open'); // Phase 72a: fixed at creation
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,10 +30,11 @@ const CommunitiesBrowse = ({
     setSubmitting(true);
     setError('');
     try {
-      const res = await communitiesAPI.createCommunity(trimmed, description.trim() || undefined);
+      const res = await communitiesAPI.createCommunity(trimmed, description.trim() || undefined, mode);
       const created = res.data.community;
       setName('');
       setDescription('');
+      setMode('open');
       setShowCreate(false);
       if (onCreated) onCreated(created);
     } catch (err) {
@@ -82,6 +84,22 @@ const CommunitiesBrowse = ({
             style={styles.textarea}
             rows={2}
           />
+          <div style={styles.modeRow}>
+            {[
+              { value: 'open', label: 'Open', hint: 'Anyone logged in adds questions and votes.' },
+              { value: 'curated', label: 'Curated', hint: 'Only owners edit; readers leave feedback. No voting.' },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setMode(opt.value)}
+                style={mode === opt.value ? styles.modeBtnActive : styles.modeBtn}
+              >
+                <span style={styles.modeBtnLabel}>{opt.label}</span>
+                <span style={styles.modeBtnHint}>{opt.hint}</span>
+              </button>
+            ))}
+          </div>
           {error && <div style={styles.error}>{error}</div>}
           <button
             style={{ ...styles.createButton, ...(submitting ? styles.disabled : {}) }}
@@ -111,6 +129,7 @@ const CommunitiesBrowse = ({
               >
                 <div style={styles.cardName}>
                   {c.name}
+                  {c.mode === 'curated' && <span style={styles.curatedTag}>Curated</span>}
                   {isActive && <span style={styles.activeTag}>current</span>}
                 </div>
                 {c.description && <div style={styles.cardDesc}>{c.description}</div>}
@@ -203,6 +222,54 @@ const styles = {
   error: {
     color: '#c33',
     fontSize: '14px',
+  },
+  modeRow: {
+    display: 'flex',
+    gap: '8px',
+  },
+  modeBtn: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    textAlign: 'left',
+    padding: '8px 10px',
+    fontFamily: FONT,
+    backgroundColor: '#faf9f6',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    color: '#555',
+  },
+  modeBtnActive: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    textAlign: 'left',
+    padding: '8px 10px',
+    fontFamily: FONT,
+    backgroundColor: '#f0ece4',
+    border: '1px solid #999',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    color: '#333',
+  },
+  modeBtnLabel: {
+    fontSize: '15px',
+  },
+  modeBtnHint: {
+    fontSize: '12px',
+    color: '#888',
+    lineHeight: 1.3,
+  },
+  curatedTag: {
+    fontSize: '11px',
+    color: '#555',
+    border: '1px solid #cfc9bd',
+    borderRadius: '10px',
+    padding: '1px 8px',
+    backgroundColor: '#f5f0ea',
   },
   createButton: {
     alignSelf: 'flex-start',

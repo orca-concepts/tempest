@@ -3,7 +3,11 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { conceptsAPI } from '../services/api';
 
-const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false, communityId }) => {
+const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false, communityId, canCreate }) => {
+  // Phase 72a: whether add/create affordances show. Defaults to the pre-72a
+  // rule (any logged-in user) when the caller doesn't pass canCreate; curated
+  // communities pass false for non-owners.
+  const allowCreate = canCreate === undefined ? !isGuest : canCreate;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [exactMatch, setExactMatch] = useState(false);
@@ -185,7 +189,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
 
   // "Add as child" logic: on a concept page, in children view, and typed text isn't already a child
   // Guests cannot add concepts
-  const canAddChild = !isGuest && parentId && viewMode === 'children';
+  const canAddChild = allowCreate && parentId && viewMode === 'children';
   const queryIsChild = results.some(
     r => r.name.toLowerCase() === trimmedQuery.toLowerCase() && r.isChild
   );
@@ -197,7 +201,7 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
   // Guests cannot create concepts
   const exactMatchIsFullyRooted = exactMatch && attributes.length > 0 &&
     attributes.every(a => exactMatchRootAttributes.includes(a.name));
-  const showCreateRootOption = !isGuest && isRootPage && trimmedQuery.length > 0 && !exactMatchIsFullyRooted;
+  const showCreateRootOption = allowCreate && isRootPage && trimmedQuery.length > 0 && !exactMatchIsFullyRooted;
 
   const showAddOption = showAddChildOption || showCreateRootOption;
 

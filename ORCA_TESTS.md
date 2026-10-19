@@ -342,4 +342,23 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72a — Curated Communities (Mode, Owners, Share, Write Gating)
+
+- [ ] Migration runs twice cleanly; `\d communities` shows the `mode` column with its CHECK constraint; `\d community_owners` shows the table; every community with a non-null `created_by` has its creator backfilled as an owner
+- [ ] Create an open community and a curated community; the creator is an owner of both (`is_owner` true in the list and get-by-slug payloads)
+- [ ] `POST /api/communities` with an invalid `mode` returns 400
+- [ ] Curated: a non-owner gets 403 `curated_owner_only` on create root, create child, nest-under-sibling, add link, and copy link
+- [ ] Curated: an owner can create a root and a child (201)
+- [ ] Curated: both owners and non-owners get 403 `curated_no_votes` on save, unsave, swap add/remove, link (similarity) add/remove, web-link upvote/unvote, moderation flag, and moderation vote
+- [ ] Open communities behave exactly as before: a logged-in non-owner can create, save, and upvote
+- [ ] Owners: add another owner by username (idempotent; 404 for unknown username); remove an owner; removing the last remaining owner returns 400 `last_owner`
+- [ ] Account deletion is blocked (400, with the community list) for a user who is the sole owner of any curated community
+- [ ] `/c/:slug` opens the community for a guest and for a logged-in user (selects it, opens its root, replaces the URL with `/`); an unknown slug shows the unavailable-link toast
+- [ ] The community header Share control copies `…/c/<slug>`
+- [ ] Curated, non-owner (and guests): no create affordances (root/child create, add-link form, nest-under-sibling, copy link) and no vote/flag affordances (save ▲, swap, vote-set bar/dots, Flip View similarity votes, link upvotes, flag) are shown
+- [ ] Curated, owner: create affordances are shown; vote/flag affordances are hidden; an Owners panel is reachable from the community header
+- [ ] An open community's UI is unchanged aside from the mode label in the create form
+
+---
+
 **END OF TESTING CHECKLIST**

@@ -1,6 +1,6 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** October 19, 2026 (status-doc reconciliation pass after Phase 71 + link-inheritance removal; Phase 72 "curated communities" in planning)
+**Last Updated:** October 19, 2026 (Phase 72a complete: community modes, owners, `/c/:slug` share links, curated write gating. Next: 72b answers + recency sorting)
 
 This file is the canonical technical reference for Orca. It describes the system **as it is now**. Completed-phase narratives, commit lists, and the design history of removed features live in `ORCA_HISTORY.md`. `CLAUDE.md` holds the conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
 
@@ -12,6 +12,7 @@ Orca is an open-source (AGPL v3) research-question graph platform for academics,
 
 What is live:
 - **Communities (Phase 71).** Every question lives in a community. Communities partition the graph: opening one shows only its questions. Anyone logged in can create a community. A cross-community "also asked in" bridge flags questions whose normalized text also exists in another community.
+- **Community modes and owners (Phase 72a).** Each community is `open` or `curated`, chosen at creation and fixed. The creator is the first owner; owners can add and remove owners (any owner can remove any other, but never the last one). In curated communities only owners can add content, and nobody can vote or flag. Every community has a share link, `/c/:slug`.
 - **Question-only graphs.** `question` is the only attribute (`ENABLED_ATTRIBUTES=question`).
 - **Path-dependent identity.** The same question under two parents is two contextual entities with independent children, votes, and links.
 - **Links on edges.** URLs with titles, immutable comments, author addenda, and upvotes, attached to one specific edge. **A link applies only to the question it is placed on and never surfaces on ancestor questions** (link inheritance was fully removed in October 2026).
@@ -20,7 +21,7 @@ What is live:
 - **Auth.** ORCID-first registration plus email/password; Resend for transactional email.
 - **Moderation and legal.** Community flagging (10 flags hides an edge), admin legal removal with `legal_hold`, DMCA strikes, and copyright infringement / counter-notice forms.
 
-What is next: **Phase 72, curated communities** — see "Forward Roadmap" for the locked design decisions. Existing community data is all test data and does not need preserving.
+What is next: **Phase 72b** (answers with publication dates, the in-card answer section, and recency sorting for curated communities) — see `PHASE_72_CURATED_COMMUNITIES.md` and the Forward Roadmap. Existing community data is all test data and does not need preserving.
 
 ### Retired / dead code — do NOT surface as live or propose using
 Backend code for some of these remains intact and must not be "fixed up" into use:
@@ -83,7 +84,9 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 ### Core
 **users** — `id`, `username` (unique), `email`, `password_hash`, `token_issued_after`, `age_verified_at`, `orcid_id` (NOT NULL, partial unique index), `tos_accepted_at`, `tos_version_accepted`, `email_verified_at`, `email_verification_token` / `_expires_at`, `password_reset_token` / `_expires_at`, `created_at`. Tokens are single-use 64-char hex; consuming a token clears it.
 
-**communities** (Phase 71) — `id`, `name`, `slug`, `description`, `created_by` (FK users, SET NULL), `created_at`. Case-insensitive unique indexes on `name` and `slug`.
+**communities** (Phase 71) — `id`, `name`, `slug`, `description`, `mode` (Phase 72a: `'open'` default or `'curated'`, CHECK `communities_mode_check`; fixed after creation), `created_by` (FK users, SET NULL), `created_at`. Case-insensitive unique indexes on `name` and `slug`.
+
+**community_owners** (Phase 72a) — `community_id` (FK communities, CASCADE), `user_id` (FK users, CASCADE), `added_by` (FK users, SET NULL), `created_at`. PRIMARY KEY `(community_id, user_id)`; index on `user_id`. Creators are inserted at creation (and were backfilled). Ownership grants powers only in curated communities.
 
 **concepts** — `id`, `name` (VARCHAR 255), `community_id` (FK communities, **NOT NULL**), `normalized_name` (GENERATED STORED: lowercase, trimmed, whitespace-collapsed, trailing `?`/`.`/`!` stripped — the bridge match key), `created_by` (FK users, SET NULL), `legal_hold`, `created_at`.
 - `idx_concepts_community_name` — UNIQUE `(community_id, LOWER(name))`. A name is unique **within** a community; the same text in two communities is two rows.
@@ -145,7 +148,7 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 | POST | `/reset-password` | No | Sets new password, advances `token_issued_after` (logs out all sessions). |
 | GET | `/me` | Yes | Current user. |
 | POST | `/logout-everywhere` | Yes | Advances `token_issued_after`. |
-| POST | `/delete-account` | Yes | Requires zero owned combos (legacy pre-check). |
+| POST | `/delete-account` | Yes | Requires zero owned combos (legacy pre-check) and not being the sole owner of any curated community (Phase 72a). |
 | GET | `/orcid/authorize-url` | Guest | ORCID OAuth URL (`state` = register / link). |
 | POST | `/orcid/callback` | Yes | Link ORCID to an existing account. |
 | POST | `/orcid/dev-connect` | Yes | Dev-only ORCID linking; 404 in production. |
@@ -157,7 +160,7 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 | GET | `/attributes` | Guest | Enabled attributes (returns only `question`). |
 | GET | `/search?q=&communityId=` | Guest | Trigram search scoped to a community (400 without `communityId`). |
 | GET | `/names/batch` | Guest | Batch name resolution. |
-| GET | `/:id?path=` | Guest | Question with children. Returns per-child link counts, `nestedLocations` (cross-sibling descendant flag), `altParentCount`, `currentEdgeId`. |
+| GET | `/:id?path=` | Guest | Question with children. Returns per-child link counts, `nestedLocations` (cross-sibling descendant flag), `altParentCount`, `currentEdgeId`, and (Phase 72a) `communityId`, `communityMode`, `isCommunityOwner`. |
 | GET | `/:id/parents` | Guest | Flip View parent contexts (excludes root edges). |
 | GET | `/:id/votesets` | Guest | Vote-set analysis. |
 | GET | `/:id/subtree?path=` | Guest | Path-scoped descendant tree (500-edge cap, depth 50); used by CopyLinkPicker. |
@@ -165,14 +168,18 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 | POST | `/batch-children-for-diff` | Guest | DiffModal data. |
 | POST | `/root` | Yes | Create a root question. Body `{ name, attributeId, communityId }`. Rate-limited. |
 | POST | `/child` | Yes | Create a child question; community derived from `graphPath[0]`. Rate-limited. |
-| POST | `/nest-under-sibling` | Yes | Copy selected sibling questions' full subtrees (edges + links, original authors preserved) under another sibling. Additive; originals untouched. Body `{ parentConceptId, path, selectedEdgeIds, targetEdgeId }`. Works on the root list (empty `path`). 1000-edge cap. |
+| POST | `/nest-under-sibling` | Yes | Copy selected sibling questions' full subtrees (edges + links, original authors preserved) under another sibling. Additive; originals untouched. Body `{ parentConceptId, path, selectedEdgeIds, targetEdgeId }`. Works on the root list (empty `path`). All selected and target questions must be in the same community (400 otherwise — matters on the root list). 1000-edge cap. |
 
 ### Communities (`/api/communities`, Phase 71)
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/` | Guest | All communities with `concept_count` and `root_count`, ordered by name. |
-| GET | `/:slug` | Guest | One community by slug (case-insensitive); 404 if missing. |
-| POST | `/` | Yes | Create. Body `{ name, description }`. ≤255 chars; 409 on case-insensitive name clash; slug auto-generated with `-2`, `-3` on collision. |
+| GET | `/` | Guest | All communities with `mode`, `is_owner` (when logged in), `concept_count`, `root_count`, ordered by name. |
+| GET | `/:slug` | Guest | One community by slug (case-insensitive) with `mode`, `is_owner`, and `owners: [{ userId, username, orcidId }]`; 404 if missing. Used by the `/c/:slug` share link. |
+| POST | `/` | Yes | Create. Body `{ name, description, mode }` (`mode` defaults to `open`; 400 if not `open`/`curated`). ≤255 chars; 409 on case-insensitive name clash; slug auto-generated with `-2`, `-3` on collision. Creator inserted into `community_owners` in the same transaction. |
+| POST | `/:id/owners/add` | Yes | Owner only (403 `owner_only`). Body `{ username }`; 404 if no such user; idempotent. |
+| POST | `/:id/owners/remove` | Yes | Owner only. Body `{ userId }`. Locks owner rows (`FOR UPDATE`) then refuses to leave zero owners (400 `last_owner`). An owner may remove themselves if another remains. |
+
+**Curated gating (Phase 72a).** In curated communities these return 403 `{ code: 'curated_owner_only' }` for non-owners: `POST /concepts/root`, `/concepts/child`, `/concepts/nest-under-sibling`, `/votes/web-links/add`, `/votes/web-links/copy`, `/votes/web-links/:linkId/addenda`. These return 403 `{ code: 'curated_no_votes' }` for everyone, owners included: `POST /votes/add`, `/votes/remove`, `/votes/swap/add`, `/votes/swap/remove`, `/votes/link/add`, `/votes/link/remove`, `/votes/web-links/upvote`, `/votes/web-links/unvote`, `/moderation/flag`, `/moderation/vote`. `POST /auth/delete-account` returns 400 with `curatedCommunities` when the user is the sole owner of any curated community.
 
 ### Votes and Links (`/api/votes`)
 | Method | Path | Auth | Description |
@@ -212,6 +219,8 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 
 ## Backend Utilities
 
+- **`utils/communityAccess.js`** (Phase 72a) — the curated permission boundary. `getCommunityForConcept` / `getCommunityForEdge` / `getCommunityForLink` → `{ id, mode }` (an edge's community is its child concept's); `isOwner(communityId, userId)`; `assertCanWriteStructure(community, userId)` and `assertVotingAllowed(community)` return `{ ok }` or `{ ok: false, status, code, error }` for the controller to send. New write or vote endpoints must use these helpers rather than inline permission SQL.
+
 All external-service utilities share one contract: **never throw**; return a result object and log a warning on failure.
 - **`utils/email.js`** — Resend wrapper (`sendVerificationEmail`, `sendWelcomeEmail`, `sendPasswordResetEmail`). Templates in `src/email-templates/`. No key → sends are skipped.
 - **`utils/orcid.js`** — `exchangeOrcidCode`, `fetchOrcidEmails`, `verifyOrcidExists` (5s timeouts).
@@ -227,17 +236,18 @@ All external-service utilities share one contract: **never throw**; return a res
 ## Frontend Component Map
 
 ### Routing
-`App.jsx` routes `/profile/:userId`, `/orcid/callback`, `/reset-password`, `/email-verification`; `/login` and `/register` redirect to `/`; everything else goes to `AppShell`. AppShell handles info slugs (`thoroughly-conscious-ignorance`, `using-orca`), legal slugs, and deep links `/concept/:id?path=`, `/link/:id`, `/tunnel/:id` (dead), `/situation/:id` (redirects to `/`). **There is no community URL route yet** — the active community is held in AppShell state and remembered in `localStorage` (`orca_active_community`, a slug). Phase 72 adds `/c/:slug`.
+`App.jsx` routes `/profile/:userId`, `/orcid/callback`, `/reset-password`, `/email-verification`; `/login` and `/register` redirect to `/`; everything else goes to `AppShell`. AppShell handles info slugs (`thoroughly-conscious-ignorance`, `using-orca`), legal slugs, and deep links `/c/:slug` (Phase 72a), `/concept/:id?path=`, `/link/:id`, `/tunnel/:id` (dead), `/situation/:id` (redirects to `/`). The active community is held in AppShell state and remembered in `localStorage` (`orca_active_community`, a slug). `/c/:slug` resolves the slug, selects the community through the same path as choosing it in Communities, opens its root page, and replaces the URL with `/`; an unknown slug shows the unavailable-link toast. Works for guests.
 
 ### Pages (`frontend/src/pages/`)
 - **Root.jsx** — root questions of the active community; shows a "No community selected" nudge and hides search/create when none is active.
-- **Concept.jsx** — question page: children grid, Flip View, links panel, bridge badge ("also asked in"), nest-under-sibling mode, share button (always emits `?path=`, empty for roots), `#link-:id` scroll-and-highlight.
+- **Concept.jsx** — question page: children grid, Flip View, links panel, bridge badge ("also asked in"), nest-under-sibling mode, share button (always emits `?path=`, empty for roots), `#link-:id` scroll-and-highlight. Derives `votingAllowed` (not curated) and `canCreate` (curated: owner; open: logged in) from the concept response and threads them to ConceptGrid, VoteSetBar, FlipView, ConceptLinksPanel, LinkCard, and SearchField. Root.jsx does the same for the root grid.
 - **ResetPasswordPage.jsx**, **VerifyEmailPage.jsx** — standalone auth pages.
 - **Saved.jsx**, **SavedTabContent.jsx**, **Login.jsx**, **Register.jsx** — legacy files, not routed.
 
 ### Components (`frontend/src/components/`)
 - **AppShell.jsx** — header (shows "Community: <name>"), sidebar, tabs, overlays, deep links, outreach mode. Holds the active community; graph tabs are filtered to it (root tabs always shown; groups with no in-community tabs hidden). `hasDeepLinkInUrl` suppresses default-tab activation during async deep-link resolution.
-- **CommunitiesBrowse.jsx** — community list and inline create form; selecting one sets the active community and opens a root tab.
+- **CommunitiesBrowse.jsx** — community list (plain "Curated" label on curated ones) and inline create form with an Open / Curated choice; selecting one sets the active community and opens a root tab.
+- **CommunityHeaderControls.jsx** (Phase 72a) — in the community header: Share (copies the `/c/:slug` URL) for everyone, and an owners panel (list, add by username, remove; remove disabled for the last owner) for owners.
 - **ConceptGrid.jsx** — child/root cards: `N children · M links`, `↘` cross-sibling-descendant flag, vote-set dots.
 - **ConceptLinksPanel.jsx** — right-hand links panel. Children view shows the current edge's links; Flip View shows the aggregate grouped by parent context. Add-link form with a required affirmation checkbox and title preview on paste/blur. Comments render through `LinkifiedText`.
 - **LinkCard.jsx** — link card: vote, "Other instances" dropdowns, Copy (adder only), Remove (adder only), Add addendum (author only), Share (`/link/:id`), ORCID badge, vote-set color dots.
@@ -265,7 +275,8 @@ All external-service utilities share one contract: **never throw**; return a res
 ### Communities (Phase 71)
 - **Partition, not overlay.** Concept identity is community-scoped; a `graph_path` never crosses communities, so every path- or id-scoped query is automatically community-safe. Only the three entry points that find concepts **by name or list all roots** filter by community: `getRootConcepts`, `searchConcepts`, and the reuse lookups in `createRootConcept` / `createChildConcept`.
 - **Bridge, not shared identity.** Sameness across communities is discovered by `normalized_name` match, never by shared rows. A bridge click goes to the decontextualized Flip View, or to the root page if the target has no non-root placement.
-- **Open governance (current).** Anyone logged in can create communities and add to any community; communities are not user-deletable. Phase 72 adds a second, owner-governed community mode.
+- **Two governance modes (Phase 72a).** Open communities: anyone logged in adds content, votes, and flags. Curated communities: owners only add content; votes and flags are off for everyone. Communities are not user-deletable in either mode. The backend helpers in `communityAccess.js` are the security boundary; hidden UI is cosmetic.
+- **Ownership policy.** Any owner can add or remove any other owner, including the creator; the last owner can never be removed. Owner rows are locked during removal so concurrent removals cannot empty the list.
 - **No default community.** Only a community the browser explicitly chose before is restored on load.
 
 ### Shared structure and authorship
@@ -334,7 +345,10 @@ All external-service utilities share one contract: **never throw**; return a res
 
 ## Forward Roadmap
 
-### Phase 72 — Curated communities (planned; full spec to be written as `PHASE_72_CURATED_COMMUNITIES.md`)
+### Phase 72 — Curated communities (in progress; full spec in `PHASE_72_CURATED_COMMUNITIES.md`)
+- ~~72a: mode + owners + `/c/:slug` + write gating~~ **completed October 19, 2026** (with a follow-up fix: same-community check in nest-under-sibling, row lock in owner removal)
+- **Next: 72b** — answer fields + in-card answer section (curated) + recency sort.
+
 Purpose: let a journal own a community built from its published papers, share it by link, and collect reader feedback. Decisions locked in planning (October 2026):
 
 - **Two community modes, chosen at creation and fixed:** `open` (today's behavior: votes, vote sets, append-only) and `curated`.

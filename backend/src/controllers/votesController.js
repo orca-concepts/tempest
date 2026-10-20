@@ -5,6 +5,36 @@ const safeBrowsing = require('../utils/safeBrowsing');
 const { orcidForDisplay } = require('../utils/orcidValidator');
 const communityAccess = require('../utils/communityAccess');
 
+// Phase 72b: validate an answer's publication date. Accepts a strict YYYY-MM-DD
+// calendar date and rejects dates more than one year in the future. Returns
+// { ok: true, value } (value is the normalized YYYY-MM-DD string) or
+// { ok: false, error }.
+function validatePublishedOn(raw) {
+  const s = String(raw).trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) {
+    return { ok: false, error: 'Publication date must be in YYYY-MM-DD format.' };
+  }
+  const year = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  const day = parseInt(m[3], 10);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  // Reject non-calendar dates (e.g. 2024-02-30 rolls over) by round-tripping.
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() !== month - 1 ||
+    d.getUTCDate() !== day
+  ) {
+    return { ok: false, error: 'Publication date is not a valid calendar date.' };
+  }
+  const oneYearAhead = new Date();
+  oneYearAhead.setUTCFullYear(oneYearAhead.getUTCFullYear() + 1);
+  if (d.getTime() > oneYearAhead.getTime()) {
+    return { ok: false, error: 'Publication date cannot be more than a year in the future.' };
+  }
+  return { ok: true, value: s };
+}
+
 const votesController = {
   // Save a concept — creates votes on every edge along the full path.
   addVote: async (req, res) => {
@@ -1513,6 +1543,7 @@ const votesController = {
           cl.created_at,
           cl.comment,
           cl.updated_at,
+          to_char(cl.published_on, 'YYYY-MM-DD') AS published_on,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted,
           array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids
@@ -1520,7 +1551,7 @@ const votesController = {
         LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE cl.edge_id = $1 AND cl.legal_hold = false
-        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at, cl.published_on
         ${orderClause}`,
         [parseInt(edgeId, 10), userId]
       );
@@ -1562,6 +1593,7 @@ const votesController = {
           createdAt: row.created_at,
           comment: row.comment,
           updatedAt: row.updated_at,
+          publishedOn: row.published_on,
           voteCount: parseInt(row.vote_count),
           userVoted: row.user_voted || false,
           voterUserIds: row.voter_user_ids || [],
@@ -1576,7 +1608,7 @@ const votesController = {
 
   // Add a new web link to an edge
   addWebLink: async (req, res) => {
-    const { edgeId, url, title, comment } = req.body;
+    const { edgeId, url, title, comment, publishedOn } = req.body;
 
     try {
       if (!edgeId || !url) {
@@ -1608,11 +1640,27 @@ const votesController = {
       }
 
       // Phase 72a: curated communities are owner-write-only.
-      const writeCheck = await communityAccess.assertCanWriteStructure(
-        await communityAccess.getCommunityForEdge(edgeId), userId
-      );
+      const community = await communityAccess.getCommunityForEdge(edgeId);
+      const writeCheck = await communityAccess.assertCanWriteStructure(community, userId);
       if (!writeCheck.ok) {
         return res.status(writeCheck.status).json({ error: writeCheck.error, code: writeCheck.code });
+      }
+
+      // Phase 72b: publication date. Required in curated communities (a link there
+      // is an "answer" and its date drives recency sorting); optional in open ones.
+      const isCurated = community && community.mode === 'curated';
+      let resolvedPublishedOn = null;
+      const rawPublishedOn = publishedOn != null ? String(publishedOn).trim() : '';
+      if (!rawPublishedOn) {
+        if (isCurated) {
+          return res.status(400).json({ error: 'A publication date is required.', code: 'published_on_required' });
+        }
+      } else {
+        const validation = validatePublishedOn(rawPublishedOn);
+        if (!validation.ok) {
+          return res.status(400).json({ error: validation.error, code: 'invalid_published_on' });
+        }
+        resolvedPublishedOn = validation.value;
       }
 
       // Google Safe Browsing check
@@ -1636,19 +1684,23 @@ const votesController = {
       const trimmedComment = comment ? comment.trim() : null;
 
       const result = await pool.query(
-        `INSERT INTO concept_links (edge_id, url, title, added_by, comment)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, edge_id, url, title, added_by, created_at, comment, updated_at`,
-        [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment]
+        `INSERT INTO concept_links (edge_id, url, title, added_by, comment, published_on)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, edge_id, url, title, added_by, created_at, comment, updated_at,
+                   to_char(published_on, 'YYYY-MM-DD') AS published_on`,
+        [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment, resolvedPublishedOn]
       );
 
-      // Auto-upvote the link by the person who added it.
-      await pool.query(
-        `INSERT INTO concept_link_votes (user_id, concept_link_id)
-         VALUES ($1, $2)
-         ON CONFLICT (user_id, concept_link_id) DO NOTHING`,
-        [userId, result.rows[0].id]
-      );
+      // Auto-upvote the link by the person who added it — but NOT in curated
+      // communities, where links are answers and voting is disabled entirely.
+      if (!isCurated) {
+        await pool.query(
+          `INSERT INTO concept_link_votes (user_id, concept_link_id)
+           VALUES ($1, $2)
+           ON CONFLICT (user_id, concept_link_id) DO NOTHING`,
+          [userId, result.rows[0].id]
+        );
+      }
 
       res.status(201).json({
         message: 'Web link added',
@@ -1661,8 +1713,9 @@ const votesController = {
           createdAt: result.rows[0].created_at,
           comment: result.rows[0].comment,
           updatedAt: result.rows[0].updated_at,
-          voteCount: 1,
-          userVoted: true,
+          publishedOn: result.rows[0].published_on,
+          voteCount: isCurated ? 0 : 1,
+          userVoted: !isCurated,
         }
       });
     } catch (error) {
@@ -1683,7 +1736,7 @@ const votesController = {
 
       // Load source link
       const sourceResult = await pool.query(
-        'SELECT id, edge_id, url, title, comment, added_by FROM concept_links WHERE id = $1',
+        'SELECT id, edge_id, url, title, comment, added_by, published_on FROM concept_links WHERE id = $1',
         [sourceLinkId]
       );
       if (sourceResult.rows.length === 0) {
@@ -1739,12 +1792,14 @@ const votesController = {
         return res.status(400).json({ error: 'Destination must be in the same root graph' });
       }
 
-      // Insert the copy
+      // Insert the copy — Phase 72b: carry the source's publication date so a
+      // copied answer keeps its date (and its place in recency sorting).
       const result = await pool.query(
-        `INSERT INTO concept_links (edge_id, url, title, comment, added_by)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, edge_id, url, title, comment, added_by, created_at, updated_at`,
-        [destEdgeId, source.url, source.title, source.comment, userId]
+        `INSERT INTO concept_links (edge_id, url, title, comment, added_by, published_on)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, edge_id, url, title, comment, added_by, created_at, updated_at,
+                   to_char(published_on, 'YYYY-MM-DD') AS published_on`,
+        [destEdgeId, source.url, source.title, source.comment, userId, source.published_on]
       );
 
       // Auto-upvote the copied link by the person who copied it.
@@ -2561,11 +2616,23 @@ const votesController = {
     try {
       await client.query('BEGIN');
 
+      // Phase 72b: in a curated community any owner may remove any answer there.
+      // Open communities keep the self-authored-only rule. legal_hold still blocks
+      // removal in both cases, enforced inside the single atomic DELETE below.
+      // Kept inside the try so a DB error here returns 500, not an unhandled rejection.
+      const community = await communityAccess.getCommunityForLink(linkId);
+      const ownerOverride = !!(
+        community &&
+        community.mode === 'curated' &&
+        (await communityAccess.isOwner(community.id, userId))
+      );
+
       const result = await client.query(
         `DELETE FROM concept_links
-         WHERE id = $1 AND added_by = $2 AND legal_hold = false
+         WHERE id = $1 AND legal_hold = false
+           AND ($3::boolean = true OR added_by = $2)
          RETURNING id, edge_id, url, added_by`,
-        [linkId, userId]
+        [linkId, userId, ownerOverride]
       );
 
       if (result.rows.length === 0) {
@@ -2638,9 +2705,12 @@ const votesController = {
 
     try {
       const result = await pool.query(
-        `SELECT cl.id AS link_id, cl.edge_id, e.child_id AS concept_id, e.graph_path
+        `SELECT cl.id AS link_id, cl.edge_id, e.child_id AS concept_id, e.graph_path,
+                comm.mode AS community_mode
          FROM concept_links cl
          JOIN edges e ON cl.edge_id = e.id
+         JOIN concepts c ON c.id = e.child_id
+         JOIN communities comm ON comm.id = c.community_id
          WHERE cl.id = $1
            AND cl.legal_hold = false
            AND e.legal_hold = false
@@ -2651,11 +2721,21 @@ const votesController = {
       if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
 
       const row = result.rows[0];
+      const graphPath = row.graph_path || [];
+      // Phase 72b: a curated "answer" renders inside the child card in the PARENT's
+      // grid, not on the child's own page (the links panel is hidden there). So the
+      // page to open is the parent question. For a root edge there is no parent
+      // concept — the card lives in the community root list (cardConceptId = null).
+      const cardConceptId = graphPath.length > 0 ? graphPath[graphPath.length - 1] : null;
+      const cardPath = graphPath.length > 0 ? graphPath.slice(0, -1) : [];
       return res.json({
         linkId: row.link_id,
         edgeId: row.edge_id,
         conceptId: row.concept_id,
-        parentPath: row.graph_path
+        parentPath: graphPath,
+        communityMode: row.community_mode,
+        cardConceptId,
+        cardPath,
       });
     } catch (err) {
       console.error('getWebLinkLocation error:', err);

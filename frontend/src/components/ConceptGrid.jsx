@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getSetColor } from './VoteSetBar';
+import CardAnswerSection from './CardAnswerSection';
 
 const ConceptGrid = ({
   concepts,
@@ -19,6 +20,12 @@ const ConceptGrid = ({
   path = [],
   edgeToSets = {},
   tierLabel = null,
+  // Phase 72b: curated communities show an answer section inside each card.
+  showAnswers = false,
+  canManageAnswers = false,
+  onAnswersChanged,
+  isGuest = false,
+  onRequestLogin,
 }) => {
   const isSelected = (edgeId) =>
     !!(selectedEdgeIds && (selectedEdgeIds.has ? selectedEdgeIds.has(edgeId) : selectedEdgeIds.includes(edgeId)));
@@ -167,15 +174,25 @@ const ConceptGrid = ({
                     </div>
                   )}
                 </div>
-                {(concept.child_count !== undefined || concept.link_count != null) && (
-                  <div style={styles.childCount}>
-                    {concept.child_count !== undefined &&
-                      `${concept.child_count} ${Number(concept.child_count) === 1 ? 'child' : 'children'}`}
-                    {concept.child_count !== undefined && concept.link_count != null && ' · '}
-                    {concept.link_count != null &&
-                      `${concept.link_count} ${Number(concept.link_count) === 1 ? 'link' : 'links'}`}
-                  </div>
-                )}
+                {(() => {
+                  // Phase 72b: curated cards count answers instead of links.
+                  const hasChild = concept.child_count !== undefined;
+                  const metaVal = showAnswers
+                    ? (concept.answers ? concept.answers.length : 0)
+                    : (concept.link_count != null ? concept.link_count : null);
+                  const noun = showAnswers ? 'answer' : 'link';
+                  const hasMeta = metaVal != null;
+                  if (!hasChild && !hasMeta) return null;
+                  return (
+                    <div style={styles.childCount}>
+                      {hasChild &&
+                        `${concept.child_count} ${Number(concept.child_count) === 1 ? 'child' : 'children'}`}
+                      {hasChild && hasMeta && ' · '}
+                      {hasMeta &&
+                        `${metaVal} ${Number(metaVal) === 1 ? noun : noun + 's'}`}
+                    </div>
+                  );
+                })()}
                 {concept.flag_count != null && Number(concept.flag_count) > 0 && Number(concept.flag_count) < 10 && (
                   <div style={styles.flagCount}>
                     {concept.flag_count} {Number(concept.flag_count) === 1 ? 'user has' : 'users have'} flagged this as spam
@@ -183,6 +200,17 @@ const ConceptGrid = ({
                 )}
               </div>
               
+              {showAnswers && !nestMode && (
+                <CardAnswerSection
+                  answers={concept.answers || []}
+                  edgeId={concept.edge_id}
+                  canManage={canManageAnswers}
+                  isGuest={isGuest}
+                  onRequestLogin={onRequestLogin}
+                  onChanged={onAnswersChanged}
+                />
+              )}
+
               {showVotes && (
                 <div style={styles.voteSection}>
                   <button

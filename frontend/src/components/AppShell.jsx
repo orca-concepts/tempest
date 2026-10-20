@@ -283,7 +283,19 @@ const AppShell = () => {
       votesAPI.getWebLinkLocation(linkId)
         .then(({ data }) => {
           setPendingScrollLinkId(linkId);
-          handleOpenConceptTab(data.conceptId, data.parentPath);
+          // Phase 72b: a curated answer renders inside the child card on the PARENT
+          // question's page, so open that page (cardConceptId/cardPath). Root-edge
+          // answers (cardConceptId null) fall back to the child page. Open
+          // communities keep the existing behavior (child page + links panel).
+          // handleOpenConceptTab reuses an existing tab by concept_id (via
+          // graphTabsRef), so pass the concept id as a Number and the path as an
+          // array of ids — the same form tabs store — so the reuse match succeeds
+          // instead of spawning a duplicate tab.
+          if (data.communityMode === 'curated' && data.cardConceptId) {
+            handleOpenConceptTab(Number(data.cardConceptId), (data.cardPath || []).map(Number));
+          } else {
+            handleOpenConceptTab(Number(data.conceptId), (data.parentPath || []).map(Number));
+          }
           navigate('/', { replace: true });
         })
         .catch(() => {

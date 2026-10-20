@@ -111,6 +111,7 @@ const Concept = ({
   const [showComboPicker, setShowComboPicker] = useState(false);
   const [comboFeedback, setComboFeedback] = useState(null); // null, 'added', 'duplicate', or error string
   const comboPickerRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Phase 27d: Responsive layout
   const [isNarrow, setIsNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 900);
@@ -263,6 +264,25 @@ const Concept = ({
     // Clear the fragment so it doesn't retrigger on rerender.
     navigate(window.location.pathname + window.location.search, { replace: true });
   }, [concept?.id]);
+
+  // Phase 72b: curated deep link (/link/:id) — the answer renders inside a child
+  // card here, so scroll to and highlight the answer row (the links panel, which
+  // handles this in open communities, is hidden in curated children view).
+  useEffect(() => {
+    if (communityMode !== 'curated' || effectiveViewMode !== 'children') return;
+    if (!pendingScrollLinkId || loading || children.length === 0) return;
+    const root = containerRef.current;
+    if (!root) return;
+    const el = root.querySelector(`#answer-${pendingScrollLinkId}`);
+    if (!el) return;
+    const timer = setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.backgroundColor = '#fffbcc';
+      setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
+      if (onPendingScrollLinkConsumed) onPendingScrollLinkConsumed();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pendingScrollLinkId, loading, children, communityMode, effectiveViewMode]);
 
   // ─── Navigation helpers ──────────────────────────────────
 
@@ -695,6 +715,11 @@ const Concept = ({
   const votingAllowed = communityMode !== 'curated';
   const canCreate = communityMode === 'curated' ? isCommunityOwner : !isGuest;
 
+  // Phase 72b: in curated children view the side links panel is replaced by the
+  // in-card answer section, so hide the panel (Flip View keeps it).
+  const curatedChildrenView = communityMode === 'curated' && effectiveViewMode === 'children';
+  const showLinksPanel = !!effectiveConceptId && effectiveViewMode !== 'tunnel' && !curatedChildrenView;
+
   const effectiveIndices = getEffectiveActiveSetIndices();
   const hasActiveFilters = effectiveIndices.length > 0;
   const displayChildren = getFilteredChildren();
@@ -703,7 +728,7 @@ const Concept = ({
   const totalActiveFilterCount = activeSetIndices.length;
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} ref={containerRef}>
       {/* Breadcrumb / header area (no app-level header — that's in AppShell) */}
       <div style={styles.headerBar}>
         <div style={styles.headerContent}>
@@ -791,38 +816,42 @@ const Concept = ({
 
       <main style={styles.main}>
         <div style={effectiveConceptId ? (isNarrow ? styles.twoColumnLayoutNarrow : styles.twoColumnLayout) : undefined}>
-          <div style={effectiveConceptId ? (effectiveViewMode === 'tunnel' ? { flex: 1, width: '100%' } : (isNarrow ? styles.leftColumnNarrow : styles.leftColumn)) : undefined}>
+          <div style={effectiveConceptId ? ((effectiveViewMode === 'tunnel' || !showLinksPanel) ? { flex: 1, width: '100%' } : (isNarrow ? styles.leftColumnNarrow : styles.leftColumn)) : undefined}>
             {effectiveViewMode === 'children' ? (
               <>
                 <div style={styles.conceptHeader}>
                   <h2 style={styles.conceptName} title={concept.name}>
                     {concept.name}
                   </h2>
-                  {currentEdgeVoteCount !== null && (
+                  {/* Phase 72b: hide the vote-only "N votes" count and the
+                      Votes/Newest sort toggle in curated communities. */}
+                  {votingAllowed && currentEdgeVoteCount !== null && (
                     <span style={styles.voteTotal}>
                       {currentEdgeVoteCount} {currentEdgeVoteCount === 1 ? 'vote' : 'votes'}
                     </span>
                   )}
-                  <div style={{ ...styles.sortRow, marginLeft: 'auto', flexShrink: 0 }}>
-                    {[
-                      { value: 'saves', label: 'Votes' },
-                      { value: 'new', label: 'Newest' },
-                    ].map((opt, i) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setSortMode(opt.value)}
-                        style={{
-                          ...styles.sortBtn,
-                          ...(sortMode === opt.value ? styles.sortBtnActive : {}),
-                          ...(i < 3 ? { borderRight: '1px solid #eee' } : {}),
-                        }}
-                      >{opt.label}</button>
-                    ))}
-                  </div>
+                  {votingAllowed && (
+                    <div style={{ ...styles.sortRow, marginLeft: 'auto', flexShrink: 0 }}>
+                      {[
+                        { value: 'saves', label: 'Votes' },
+                        { value: 'new', label: 'Newest' },
+                      ].map((opt, i) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setSortMode(opt.value)}
+                          style={{
+                            ...styles.sortBtn,
+                            ...(sortMode === opt.value ? styles.sortBtnActive : {}),
+                            ...(i < 3 ? { borderRight: '1px solid #eee' } : {}),
+                          }}
+                        >{opt.label}</button>
+                      ))}
+                    </div>
+                  )}
                   {hiddenCount > 0 && user && (
                     <button
                       onClick={() => setShowHiddenPanel(true)}
-                      style={styles.hiddenBadge}
+                      style={{ ...styles.hiddenBadge, ...(votingAllowed ? {} : { marginLeft: 'auto' }) }}
                       title={`${hiddenCount} hidden question${hiddenCount !== 1 ? 's' : ''} — click to review`}
                     >
                       {hiddenCount} hidden
@@ -887,6 +916,11 @@ const Concept = ({
                       path={path}
                       edgeToSets={votingAllowed ? edgeToSets : {}}
                       tierLabel={section.label}
+                      showAnswers={communityMode === 'curated'}
+                      canManageAnswers={isCommunityOwner}
+                      onAnswersChanged={loadConcept}
+                      isGuest={isGuest}
+                      onRequestLogin={onRequestLogin}
                     />
                   ))
                 ) : (
@@ -905,6 +939,11 @@ const Concept = ({
                     showVotes={votingAllowed}
                     path={path}
                     edgeToSets={votingAllowed ? edgeToSets : {}}
+                    showAnswers={communityMode === 'curated'}
+                    canManageAnswers={isCommunityOwner}
+                    onAnswersChanged={loadConcept}
+                    isGuest={isGuest}
+                    onRequestLogin={onRequestLogin}
                   />
                 )}
               </>
@@ -933,7 +972,7 @@ const Concept = ({
               />
             )}
           </div>
-          {effectiveConceptId && effectiveViewMode !== 'tunnel' && (
+          {showLinksPanel && (
             <div style={isNarrow ? styles.rightColumnNarrow : styles.rightColumn}>
               <ConceptLinksPanel
                 conceptId={effectiveConceptId}
@@ -1176,7 +1215,9 @@ const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '40px 20px',
+    // Bottom padding clears the fixed Add/Search bar (≈54px tall, 30px above the
+    // viewport bottom) so it never overlaps the last card / add-answer form.
+    padding: '40px 20px 120px',
   },
   twoColumnLayout: {
     display: 'flex',

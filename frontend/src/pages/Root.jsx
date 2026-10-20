@@ -262,11 +262,15 @@ const Root = ({
             )}
           </div>
         )}
-        {communityId && !loading && !error && (
+        {/* Phase 72b: in curated communities the vote-only "N users" count and
+            the Votes/New sort toggle are hidden (siblings sort by recency). */}
+        {communityId && !loading && !error && (votingAllowed || (hiddenCount > 0 && user)) && (
           <div style={styles.topBar}>
-            <div style={styles.totalUsers}>
-              {totalUsers} {totalUsers === 1 ? 'user' : 'users'}
-            </div>
+            {votingAllowed ? (
+              <div style={styles.totalUsers}>
+                {totalUsers} {totalUsers === 1 ? 'user' : 'users'}
+              </div>
+            ) : <div />}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {hiddenCount > 0 && user && (
                 <button
@@ -277,22 +281,24 @@ const Root = ({
                   {hiddenCount} hidden
                 </button>
               )}
-              <div style={styles.sortRow}>
-                {[
-                  { value: 'saves', label: 'Votes' },
-                  { value: 'new', label: 'New' },
-                ].map((opt, i) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setSortMode(opt.value)}
-                    style={{
-                      ...styles.sortBtn,
-                      ...(sortMode === opt.value ? styles.sortBtnActive : {}),
-                      ...(i < 3 ? { borderRight: '1px solid #eee' } : {}),
-                    }}
-                  >{opt.label}</button>
-                ))}
-              </div>
+              {votingAllowed && (
+                <div style={styles.sortRow}>
+                  {[
+                    { value: 'saves', label: 'Votes' },
+                    { value: 'new', label: 'New' },
+                  ].map((opt, i) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSortMode(opt.value)}
+                      style={{
+                        ...styles.sortBtn,
+                        ...(sortMode === opt.value ? styles.sortBtnActive : {}),
+                        ...(i < 3 ? { borderRight: '1px solid #eee' } : {}),
+                      }}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -363,6 +369,10 @@ const Root = ({
               showVotes={votingAllowed}
               showAttributeBadge={true}
               path={[]}
+              showAnswers={communityMode === 'curated'}
+              canManageAnswers={communityIsOwner}
+              onAnswersChanged={loadRootConcepts}
+              isGuest={isGuest}
             />
           );
         })()}
@@ -476,7 +486,9 @@ const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '40px 20px',
+    // Bottom padding clears the fixed Add/Search bar (≈54px tall, 30px above the
+    // viewport bottom) so it never overlaps the last card / add-answer form.
+    padding: '40px 20px 120px',
     position: 'relative',
   },
   communityTitleRow: {

@@ -1,6 +1,65 @@
 const pool = require('../config/database');
 const communityAccess = require('../utils/communityAccess');
 
+// ============================================================
+// Phase 72b: curated answers + recency sorting (shared helpers)
+// ============================================================
+
+// Fetch all non-legal-held answers on the given edges and return a Map of
+// edge_id → answers[], each list newest publication date first (ties: newest
+// created_at). One query, no N+1. Dates are returned as 'YYYY-MM-DD' strings
+// (lexicographically == chronologically comparable).
+async function loadAnswersByEdge(edgeIds) {
+  const byEdge = new Map();
+  if (!edgeIds || edgeIds.length === 0) return byEdge;
+  const result = await pool.query(
+    `SELECT cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
+            to_char(cl.published_on, 'YYYY-MM-DD') AS published_on,
+            cl.created_at, cl.added_by
+       FROM concept_links cl
+      WHERE cl.edge_id = ANY($1::int[]) AND cl.legal_hold = false
+      ORDER BY cl.published_on DESC NULLS LAST, cl.created_at DESC`,
+    [edgeIds]
+  );
+  for (const row of result.rows) {
+    if (!byEdge.has(row.edge_id)) byEdge.set(row.edge_id, []);
+    byEdge.get(row.edge_id).push({
+      id: row.id,
+      edgeId: row.edge_id,
+      url: row.url,
+      title: row.title,
+      comment: row.comment,
+      publishedOn: row.published_on,
+      createdAt: row.created_at,
+      addedBy: row.added_by,
+    });
+  }
+  return byEdge;
+}
+
+// Order rows by the curated recency rule, in two groups:
+//   a. Open questions FIRST — no answer on the row's own edge and none on any
+//      descendant edge (recency == null). Ordered by edge created_at DESC.
+//   b. Answered questions NEXT — ordered by recency date (own newest answer,
+//      else newest descendant answer) DESC, then edge created_at DESC.
+// recencyOf(row) → 'YYYY-MM-DD' | null; createdAtOf(row) → timestamp value.
+// Mutates and returns the array.
+function sortByRecency(rows, recencyOf, createdAtOf) {
+  return rows.sort((a, b) => {
+    const ra = recencyOf(a);
+    const rb = recencyOf(b);
+    const aOpen = !ra;
+    const bOpen = !rb;
+    if (aOpen !== bOpen) return aOpen ? -1 : 1; // open questions first
+    if (!aOpen && !bOpen && ra !== rb) return ra < rb ? 1 : -1; // answered: date desc
+    const ca = createdAtOf(a);
+    const cb = createdAtOf(b);
+    if (ca < cb) return 1;
+    if (ca > cb) return -1;
+    return 0;
+  });
+}
+
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
@@ -43,6 +102,51 @@ const conceptsController = {
       `;
 
       const result = await pool.query(query, [req.user ? req.user.userId : -1, cid]);
+
+      // Phase 72b: in curated communities, attach per-root answers[] and sortDate
+      // and re-order by the recency rule (sort param ignored). Open communities
+      // return exactly what they returned before (no new fields, SQL order kept).
+      const modeRow = await pool.query('SELECT mode FROM communities WHERE id = $1', [cid]);
+      if (modeRow.rows[0]?.mode === 'curated' && result.rows.length > 0) {
+        const rootEdgeIds = result.rows.map((r) => r.edge_id);
+        const rootConceptIds = result.rows.map((r) => r.id);
+
+        const answersByEdge = await loadAnswersByEdge(rootEdgeIds);
+
+        // Newest answer date on any descendant edge of each root. A root's
+        // descendants have graph_path starting with [rootConceptId].
+        const descResult = await pool.query(
+          `SELECT e.graph_path[1] AS root_id,
+                  to_char(MAX(cl.published_on), 'YYYY-MM-DD') AS max_date
+             FROM edges e
+             JOIN concept_links cl ON cl.edge_id = e.id AND cl.legal_hold = false
+            WHERE e.graph_path[1] = ANY($1::int[])
+              AND array_length(e.graph_path, 1) >= 1
+              AND e.is_hidden = false
+            GROUP BY e.graph_path[1]`,
+          [rootConceptIds]
+        );
+        const descDateByRoot = new Map();
+        for (const row of descResult.rows) descDateByRoot.set(row.root_id, row.max_date);
+
+        for (const root of result.rows) {
+          const answers = answersByEdge.get(root.edge_id) || [];
+          root.answers = answers;
+          const ownDate = answers.length > 0 ? answers[0].publishedOn : null;
+          const recency = ownDate || descDateByRoot.get(root.id) || null;
+          // Open questions (no own or descendant answer) have a null sortDate —
+          // they are not ranked by date but sorted first by created_at (see
+          // sortByRecency). Do not fall back to created_at in the returned field.
+          root.sortDate = recency;
+          root._recency = recency;
+        }
+        sortByRecency(
+          result.rows,
+          (r) => r._recency,
+          (r) => r.edge_created_at
+        );
+        for (const root of result.rows) delete root._recency;
+      }
 
       const userCountResult = await pool.query('SELECT COUNT(*) as total_users FROM users');
       const totalUsers = parseInt(userCountResult.rows[0].total_users);
@@ -225,6 +329,54 @@ const conceptsController = {
         if (req.user) {
           isCommunityOwner = await communityAccess.isOwner(concept.community_id, req.user.userId);
         }
+      }
+
+      // Phase 72b: in curated communities, attach per-child answers[] and sortDate
+      // and re-order by the recency rule. The sort param is ignored here. Open
+      // communities return exactly what they returned before (no new fields).
+      if (communityMode === 'curated' && childrenResult.rows.length > 0) {
+        const childEdgeIds = childrenResult.rows.map((r) => r.edge_id);
+        const childIds = childrenResult.rows.map((r) => r.id);
+
+        const answersByEdge = await loadAnswersByEdge(childEdgeIds);
+
+        // Newest answer date on any descendant edge, keyed by which direct child's
+        // subtree it falls in. A descendant's graph_path extends the children's
+        // graph_path (length L) by the child's id at position L+1, then deeper ids.
+        const L = graphPath.length;
+        const marker = L + 1;
+        const descResult = await pool.query(
+          `SELECT e.graph_path[${marker}] AS child_id,
+                  to_char(MAX(cl.published_on), 'YYYY-MM-DD') AS max_date
+             FROM edges e
+             JOIN concept_links cl ON cl.edge_id = e.id AND cl.legal_hold = false
+            WHERE e.graph_path[1:${L}] = $1::int[]
+              AND array_length(e.graph_path, 1) > ${L}
+              AND e.is_hidden = false
+              AND e.graph_path[${marker}] = ANY($2::int[])
+            GROUP BY e.graph_path[${marker}]`,
+          [graphPath, childIds]
+        );
+        const descDateByChild = new Map();
+        for (const row of descResult.rows) descDateByChild.set(row.child_id, row.max_date);
+
+        for (const child of childrenResult.rows) {
+          const answers = answersByEdge.get(child.edge_id) || [];
+          child.answers = answers;
+          const ownDate = answers.length > 0 ? answers[0].publishedOn : null;
+          const recency = ownDate || descDateByChild.get(child.id) || null;
+          // Open questions (no own or descendant answer) have a null sortDate —
+          // they are not ranked by date but sorted first by created_at (see
+          // sortByRecency). Do not fall back to created_at in the returned field.
+          child.sortDate = recency;
+          child._recency = recency;
+        }
+        sortByRecency(
+          childrenResult.rows,
+          (r) => r._recency,
+          (r) => r.edge_created_at
+        );
+        for (const child of childrenResult.rows) delete child._recency;
       }
 
       res.json({

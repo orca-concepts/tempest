@@ -494,6 +494,11 @@ const createTables = async () => {
       END $$;
     `);
 
+    // Phase 72b: publication date for answers (curated communities). A concept_link
+    // doubles as an "answer" in curated graphs; its publication date drives recency
+    // sorting. Nullable (optional in open communities, required in curated at the API).
+    await client.query(`ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS published_on DATE`);
+
     // ============================================================
     // Concept Link Votes table (Phase 6)
     // Simple upvote system for web links. One vote per user per

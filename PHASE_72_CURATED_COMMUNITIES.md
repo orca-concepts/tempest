@@ -116,3 +116,49 @@ Answers and publication dates, recency sorting, edit mode, soft delete, rename, 
 - Owners add/remove, including the last-owner rule.
 - `/c/:slug` opens the community for a guest and a logged-in user; bad slug shows the toast.
 - Account deletion blocked for a sole curated owner.
+
+---
+
+## Phase 72b — Answers, in-card answer section, recency sorting (curated)
+
+### Data model: answers are `concept_links` rows
+Answers reuse `concept_links` (url, title, comment, added_by, edge_id) so Safe Browsing, OG title fetch, share URLs (`/link/:id`), legal removal, and `link_removal_log` all keep working. One new column:
+
+```sql
+ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS published_on DATE;
+```
+
+- Curated communities: `published_on` is **required** when adding an answer (400 `published_on_required` otherwise). Valid ISO date (`YYYY-MM-DD`), not more than one year in the future.
+- Open communities: accepted but optional and not displayed (open-mode answer UI is 72f).
+- An edge may have any number of answers; they display newest `published_on` first (ties: newest `created_at`).
+
+### Endpoints
+- `POST /api/votes/web-links/add` accepts `publishedOn`. Existing gates apply (curated: owners only).
+- `GET /api/votes/web-links/:edgeId` returns `publishedOn` per link.
+- `POST /api/votes/web-links/remove`: in a **curated** community, any owner may remove any answer in that community (still blocked by `legal_hold`; still one atomic DELETE; still writes `link_removal_log`). Open communities keep the author-only rule.
+- `GET /api/concepts/:id` and `GET /api/concepts/root`: in curated communities each child/root row includes `answers: [{ id, url, title, comment, publishedOn, addedByUsername, authorOrcidId, createdAt }]` (visible links only: `legal_hold = false`), newest first, and `sortDate`. Open communities: unchanged (no `answers` array).
+
+### Recency sorting (curated only)
+Siblings (children of one page, and the root list) are ordered by `sortDate` DESC, then edge `created_at` DESC:
+1. the newest `published_on` among answers on the child's own edge; else
+2. the newest `published_on` among answers on any **descendant** edge of that child (path-scoped: descendant edges are those whose `graph_path` starts with the child's full path, i.e. `[...P, childId]`, or `[childId]` for a root); else
+3. the child edge's `created_at`.
+Computed in SQL. The existing `sort` parameter is ignored in curated communities. Hidden edges and legal-held links are excluded.
+
+### Frontend (curated communities)
+- **Answer section in each card** (ConceptGrid, children and root grids): under the question text, each answer shows its title as a link (new tab, `rel="noopener noreferrer"`), the publication date, and the comment (clamped, via `LinkifiedText`). No vote controls. Cards with no answers show no answer section (no placeholder text for readers).
+- **Owners:** each card has a small "Add answer" control opening an inline form: URL (title preview on paste/blur, reusing the existing preview endpoint), title, comment, publication date (`<input type="date">`), and the existing required affirmation checkbox. Each answer row has a "Remove" control with an inline confirm (no browser `confirm()` dialogs). 72c moves these into edit mode.
+- **The side links panel is hidden in curated communities' children view.** Flip View is unchanged.
+- **Deep links:** `/link/:id` to a curated answer scrolls to and highlights that answer row inside its card (reusing the `pendingScrollLinkId` pattern), since the side panel is hidden.
+- **Open communities:** no visible change.
+
+### Non-goals (72b)
+Edit mode and inline editing of answers or questions, soft delete, precedent/subsequent links, graph view, feedback, open-mode answer UI, displaying `sortDate` on cards.
+
+### Tests to add to ORCA_TESTS.md
+- Migration twice; `published_on` column present.
+- Curated: owner adds answers with dates; non-owner gets `curated_owner_only`; missing date → `published_on_required`; bad/far-future date → 400.
+- Answers appear in the card newest-first; side panel hidden; open community unchanged.
+- Sorting: leaf with newer answer sorts above older; a parent with no answers sorts by its newest descendant answer; an unanswered childless question sorts by creation date; root list follows the same rule.
+- A second owner can remove the first owner's answer in curated; a non-owner cannot; legal-held answers cannot be removed.
+- `/link/:id` for a curated answer highlights the row in its card.

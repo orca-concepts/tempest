@@ -252,8 +252,8 @@ export const votesAPI = {
   getAllWebLinksForConcept: (conceptId, path) =>
     api.get(`/votes/web-links/all/${conceptId}`, { params: path ? { path } : {} }),
 
-  addWebLink: (edgeId, url, title, comment) =>
-    api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined }),
+  addWebLink: (edgeId, url, title, comment, publishedOn) =>
+    api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined, publishedOn: publishedOn || undefined }),
 
   copyWebLink: (sourceLinkId, destEdgeId) =>
     api.post('/votes/web-links/copy', { sourceLinkId, destEdgeId }),

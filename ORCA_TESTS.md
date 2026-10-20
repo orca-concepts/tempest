@@ -361,4 +361,23 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72b — Answers, Card Answer Section (Curated), Recency Sorting
+
+- [ ] Migration runs twice cleanly; `\d concept_links` shows a nullable `published_on DATE` column
+- [ ] Curated: adding an answer requires a publication date — missing date returns 400 `published_on_required`; a malformed date and a date more than one year in the future both return 400 `invalid_published_on`; a valid `YYYY-MM-DD` succeeds (201) and the response echoes `publishedOn`
+- [ ] Open: `publishedOn` is optional on add-link (link saves with or without it) and is echoed back when supplied
+- [ ] Curated: a non-owner (and guest) gets 403 `curated_owner_only` on add answer; an owner can add
+- [ ] `GET /votes/web-links/:edgeId` returns `publishedOn` for each link
+- [ ] Curated `GET /concepts/:id`: each child carries `answers[]` (legal-held links excluded, newest `published_on` first, ties newest `created_at`) and `sortDate`; children are ordered in two groups — (a) **open questions first** (no answer on their own edge and none on any descendant edge; `sortDate` is `null`, not a `created_at` fallback), ordered by edge `created_at` DESC; then (b) **answered questions**, ordered by `sortDate` DESC (own newest answer date, else newest descendant answer date), then edge `created_at` DESC. Reference build (R1 → L1 2021-05-01, L2 2024-03-01, P→Q 2023-01-01, U1 created first, U2 created second, both no answers) orders **U2, U1, L2, P, L1**, with `sortDate` null for U2 and U1
+- [ ] Curated `GET /concepts/root?communityId=` follows the same two-group rule (descendant dates included; open roots first by `created_at` DESC); the `sort` param is ignored in curated
+- [ ] Open `GET /concepts/:id` and `/concepts/root` responses are unchanged in shape (no `answers`/`sortDate` keys) and order (votes/newest)
+- [ ] Curated removal: any owner may remove any answer in the community; a non-owner cannot (403); a `legal_hold` answer cannot be removed even by an owner (403). Open communities keep author-only removal
+- [ ] Curated UI: each question card in the children grid and the root grid shows its answers (title link opens in a new tab with `rel="noopener noreferrer"`, publication date, comment via LinkifiedText, clamped); no vote controls; no answer section on a card with no answers (non-owners/guests)
+- [ ] Curated owner UI: a per-card "Add answer" form (URL with title preview on paste/blur, title, comment, `date` input, required affirmation checkbox) and a per-answer "Remove" with an inline confirm (no `window.confirm`/`alert`)
+- [ ] Curated children view: the side links panel (ConceptLinksPanel) is hidden; Flip View still shows the links panel
+- [ ] `/link/:id` to a curated answer opens the parent question's page and scrolls to + highlights the answer row inside its card (300ms delay, 2s highlight)
+- [ ] Open communities show no visible change (no card answer section; links panel intact)
+
+---
+
 **END OF TESTING CHECKLIST**

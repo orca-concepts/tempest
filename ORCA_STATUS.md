@@ -351,10 +351,8 @@ All external-service utilities share one contract: **never throw**; return a res
 
 Purpose: let a journal own a community built from its published papers, share it by link, and collect reader feedback. Decisions locked in planning (October 2026):
 
-- **Two community modes, chosen at creation and fixed:** `open` (today's behavior: votes, vote sets, append-only) and `curated`.
-- **Ownership:** a `community_owners` table; the creator is the first owner and can add others (the journal's editor pool). Account deletion requires handing off ownership if you are the last owner. Anyone can create a community.
-- **Share URL:** `/c/:slug` route (does not exist yet). Required for journals to post their community link.
-- **Curated write gating:** only owners create/edit/delete questions, answers, and precedent/subsequent links. Votes UI hidden. Deletes are soft (`deleted_at`) so feedback threads on removed questions can be archived. Owner edits are in place (comments mutable in curated, unlike open).
+- **Built in 72a:** community modes, `community_owners`, `/c/:slug`, and curated gating for existing write/vote endpoints (see API Surface). Remaining decisions for later sub-phases:
+- **Curated editing (72c):** only owners create/edit/delete questions, answers, and precedent/subsequent links. Deletes are soft (`deleted_at`) so feedback threads on removed questions can be archived. Owner edits are in place (comments mutable in curated, unlike open).
 - **Navigation stays page-based.** Path-dependent identity is kept.
 - **Answer information** (both modes, replacing the side links panel with an answer section inside the child card): comment, link, and **publication date**. **Multiple answers per question** allowed, ordered newest-first. Answers live on the edge, like links today. Not restricted to leaves — owners simply don't add answers to non-leaf questions.
 - **Recency sorting (curated):** siblings sort by newest publication date; a leaf's date is its newest answer, a parent's is its newest descendant's.
@@ -363,7 +361,7 @@ Purpose: let a journal own a community built from its published papers, share it
 - **Edit mode / view mode toggle** in the header, owners only, defaulting to view. Edit mode uses dotted outlines; fields are click-to-edit; plus/X icons add/remove precedent/subsequent links; a bottom-corner plus adds a child.
 - **Graph view:** a header button opens the whole graph from the root as a collapsible tree (built from VotesOverlay's tree rendering), answers as nested rows, current position highlighted, click to navigate. Offered in open communities too.
 - **Reader feedback (curated only):** a feedback icon on each card (suggest edits to the question or its answers; suggest adding/removing precedent or subsequent links) and a bottom-corner icon (suggest a new child, optionally with its own children — a whole branch). Each item has free-text comments and is shown as a public thread. Readers can reply; owner replies are marked. Statuses: open / incorporated / declined. Readers can vote on feedback (visible only inside the feedback menu; sorts feedback, never the graph). Each item snapshots the text it was written against. Login required to submit; guests can read. Owners get a feedback inbox across the community plus count badges. Needs moderation, rate limits, and Safe Browsing on suggested links.
-- **Proposed sub-phases:** 72a mode + owners + `/c/:slug` + write gating; 72b answer fields + card answer section (curated) + recency sort; 72c precedent/subsequent + edit mode; 72d graph view; 72e feedback system + owner inbox; 72f card answer section for open graphs. Later: one-click "incorporate" and email notifications.
+- **Remaining sub-phases:** 72b answer fields + card answer section (curated) + recency sort; 72c precedent/subsequent + edit mode; 72d graph view; 72e feedback system + owner inbox; 72f card answer section for open graphs. Later: one-click "incorporate" and email notifications.
 - **Docs to revise alongside:** ToS / Copyright Policy (editorial ownership, public feedback); the append-only AD (curated exception).
 
 ### Other

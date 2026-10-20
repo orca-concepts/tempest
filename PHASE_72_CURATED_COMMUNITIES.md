@@ -26,7 +26,7 @@ Existing communities are all test data; nothing needs migrating beyond defaults.
 3. **Anyone logged in can create a community** of either mode. Communities are shared by link (`/c/:slug`) — journals post that link on their site.
 4. **Navigation stays page-based** with path-dependent identity. Precedent/subsequent links and answers live on edges.
 5. **Answers:** each question (edge) can carry **multiple** answers (comment, link URL, publication date), ordered newest-first. No leaf/non-leaf distinction in the data — owners simply don't add answers to non-leaf questions.
-6. **Recency sorting (curated):** siblings sort by sort-date, newest first. A question's sort-date is its newest answer's publication date; a question without answers uses its newest descendant's date; fallback is the edge's `created_at`.
+6. **Recency sorting (curated):** open questions first, then answered ones. A question is "open" when neither it nor any descendant has an answer; open questions sort newest-added first (edge `created_at`). Answered questions follow, by sort-date newest first: its own newest answer's publication date, else its newest descendant answer's date.
 7. **Precedent / subsequent:** directional links between **sibling** edges only (same parent and `graph_path`, enforced server-side). Stored once (A precedes B), shown on both cards. Removing from either card removes the row. Direct A↔B loops are rejected. Edit mode shows a soft warning when a subsequent's sort-date is earlier than its precedent's.
 8. **Renaming** a question changes the concept's name everywhere it appears in the community. Edit mode notes "also appears under X". A rename that collides with an existing name in the community is rejected with a clear message.
 9. **Deletes in curated are soft** (`deleted_at`), cascading to the edge's subtree, so feedback threads on removed questions can be archived rather than lost.
@@ -139,11 +139,11 @@ ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS published_on DATE;
 - `GET /api/concepts/:id` and `GET /api/concepts/root`: in curated communities each child/root row includes `answers: [{ id, url, title, comment, publishedOn, addedByUsername, authorOrcidId, createdAt }]` (visible links only: `legal_hold = false`), newest first, and `sortDate`. Open communities: unchanged (no `answers` array).
 
 ### Recency sorting (curated only)
-Siblings (children of one page, and the root list) are ordered by `sortDate` DESC, then edge `created_at` DESC:
-1. the newest `published_on` among answers on the child's own edge; else
-2. the newest `published_on` among answers on any **descendant** edge of that child (path-scoped: descendant edges are those whose `graph_path` starts with the child's full path, i.e. `[...P, childId]`, or `[childId]` for a root); else
-3. the child edge's `created_at`.
-Computed in SQL. The existing `sort` parameter is ignored in curated communities. Hidden edges and legal-held links are excluded.
+Siblings (children of one page, and the root list) are ordered in two groups:
+1. **Open questions first** — no answer on the question's own edge and none on any descendant edge. Ordered by edge `created_at` DESC (newest added first).
+2. **Answered questions next** — ordered by `sortDate` DESC, then edge `created_at` DESC, where `sortDate` is the newest `published_on` among answers on the child's own edge, else the newest `published_on` among answers on any **descendant** edge (path-scoped: descendant edges are those whose `graph_path` starts with the child's full path, i.e. `[...P, childId]`, or `[childId]` for a root).
+
+`sortDate` is null for open questions. Computed server-side. The existing `sort` parameter is ignored in curated communities. Hidden edges and legal-held links are excluded.
 
 ### Frontend (curated communities)
 - **Answer section in each card** (ConceptGrid, children and root grids): under the question text, each answer shows its title as a link (new tab, `rel="noopener noreferrer"`), the publication date, and the comment (clamped, via `LinkifiedText`). No vote controls. Cards with no answers show no answer section (no placeholder text for readers).
@@ -159,6 +159,6 @@ Edit mode and inline editing of answers or questions, soft delete, precedent/sub
 - Migration twice; `published_on` column present.
 - Curated: owner adds answers with dates; non-owner gets `curated_owner_only`; missing date → `published_on_required`; bad/far-future date → 400.
 - Answers appear in the card newest-first; side panel hidden; open community unchanged.
-- Sorting: leaf with newer answer sorts above older; a parent with no answers sorts by its newest descendant answer; an unanswered childless question sorts by creation date; root list follows the same rule.
+- Sorting: open questions (no answers anywhere in their subtree) come first, newest added first; then answered questions newest date first, where a parent with no own answer uses its newest descendant answer; root list follows the same rule.
 - A second owner can remove the first owner's answer in curated; a non-owner cannot; legal-held answers cannot be removed.
 - `/link/:id` for a curated answer highlights the row in its card.

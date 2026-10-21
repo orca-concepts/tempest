@@ -414,4 +414,26 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72c-2 — Precedent / subsequent sibling links (curated)
+
+### Schema
+- [ ] Migration runs twice cleanly; `\d question_sequence_links` shows `from_edge_id`/`to_edge_id` (NOT NULL, FK edges ON DELETE CASCADE), `created_by` (FK users ON DELETE SET NULL), a `CHECK (from_edge_id <> to_edge_id)`, a UNIQUE `(from_edge_id, to_edge_id)`, and indexes `idx_qseq_from` / `idx_qseq_to`
+
+### Endpoints (`POST /api/concepts/sequence-links/add|remove`)
+- [ ] Owner A adds X→Y (siblings, curated); GET shows Y in X.subsequents and X in Y.precedents, each entry `{ linkId, edgeId, conceptId, name }`
+- [ ] Rejections each with their own code: Y→X → 409 `reverse_exists`; X→Y again → 409 `duplicate_link`; X→X → 400 `self_link`; X→W (different parent) → 400 `not_siblings`; non-owner B → 403 `curated_owner_only`; open community → 403 `curated_only`; a soft-deleted edge → 400 `edge_deleted`
+- [ ] Curated root-level siblings can be linked; two roots from different communities → 400 `not_siblings`
+- [ ] Remove X→Y by linkId clears it from both cards; a non-owner remove → 403 `curated_owner_only`
+- [ ] Soft-deleting Y (72c-1) removes the link from the surviving sibling X (read filter excludes deleted/hidden edges)
+- [ ] Reads add `precedents[]`/`subsequents[]` to each curated row in `GET /concepts/:id` and `/concepts/root` in one extra query (no N+1); open community responses carry no `precedents`/`subsequents` keys
+
+### Frontend (curated only)
+- [ ] Each card shows two columns, "Precedent questions" and "Subsequent questions", below the answer section; clicking a name scrolls to that sibling's card and highlights it (300ms delay, 2s highlight)
+- [ ] View mode hides the whole row when both lists are empty; edit mode always shows both columns, with "No precedent/subsequent questions" when empty
+- [ ] Edit mode: each column's "+" opens a picker of eligible siblings (not itself, not already linked in either direction); adding a precedent P to card C creates P→C, a subsequent S creates C→S; each entry has an "✕" to remove; the page refreshes so both cards update
+- [ ] Edit mode soft warning: a subsequent entry dated earlier than this card (both `sortDate` non-null) reads "dated earlier than its precedent"
+- [ ] All controls are `<button>`s (no `window.confirm`/`alert`); open communities show no sequence-link UI
+
+---
+
 **END OF TESTING CHECKLIST**

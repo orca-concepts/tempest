@@ -330,6 +330,31 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_edges_delete_batch ON edges(delete_batch_id) WHERE deleted_at IS NOT NULL;
     `);
 
+    // Phase 72c-2: precedent / subsequent links between SIBLING questions in a
+    // curated community. Directional and stored once: a row (from_edge_id,
+    // to_edge_id) means "from precedes to" — from is the precedent, to is the
+    // subsequent — and is shown on both cards. The siblings-only rule and the
+    // "no reverse link" rule are enforced in the controller, not the schema.
+    // CASCADE on both edge FKs: deleting an edge row drops its sequence links;
+    // soft delete (deleted_at) is handled by the read filter instead.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS question_sequence_links (
+        id SERIAL PRIMARY KEY,
+        from_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,
+        to_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT question_sequence_links_not_self CHECK (from_edge_id <> to_edge_id),
+        CONSTRAINT question_sequence_links_unique UNIQUE (from_edge_id, to_edge_id)
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_qseq_from ON question_sequence_links(from_edge_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_qseq_to ON question_sequence_links(to_edge_id);
+    `);
+
     // Votes table (saves)
     await client.query(`
       CREATE TABLE IF NOT EXISTS votes (

@@ -124,6 +124,13 @@ export const conceptsAPI = {
   softDeleteEdge: (edgeId) =>
     api.post(`/concepts/edges/${edgeId}/delete`),
 
+  // Phase 72c-2: precedent/subsequent links between sibling questions (curated)
+  addSequenceLink: (fromEdgeId, toEdgeId) =>
+    api.post('/concepts/sequence-links/add', { fromEdgeId, toEdgeId }),
+
+  removeSequenceLink: (linkId) =>
+    api.post('/concepts/sequence-links/remove', { linkId }),
+
   // Phase 14a: Batch children for diff modal
   getBatchChildrenForDiff: (panes) =>
     api.post('/concepts/batch-children-for-diff', { panes }),

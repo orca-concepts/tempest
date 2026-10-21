@@ -60,6 +60,52 @@ function sortByRecency(rows, recencyOf, createdAtOf) {
   });
 }
 
+// Phase 72c-2: load precedent/subsequent sibling links for a set of page edges in
+// ONE query (no N+1). Returns a Map edgeId → { precedents: [], subsequents: [] }.
+// A row (from→to) means "from precedes to": the TO question is a SUBSEQUENT entry
+// on the FROM card, and the FROM question is a PRECEDENT entry on the TO card.
+// Links touching a deleted (deleted_at) or hidden (is_hidden) edge on either side
+// are excluded, so a deleted question's links vanish from its surviving siblings.
+// Entry shape: { linkId, edgeId, conceptId, name }.
+async function loadSequenceLinksByEdge(edgeIds) {
+  const byEdge = new Map();
+  if (!edgeIds || edgeIds.length === 0) return byEdge;
+  const ensure = (id) => {
+    if (!byEdge.has(id)) byEdge.set(id, { precedents: [], subsequents: [] });
+    return byEdge.get(id);
+  };
+  const result = await pool.query(
+    `SELECT ql.id AS link_id,
+            ql.from_edge_id, ql.to_edge_id,
+            fe.child_id AS from_concept_id, fc.name AS from_name,
+            te.child_id AS to_concept_id, tc.name AS to_name
+       FROM question_sequence_links ql
+       JOIN edges fe ON fe.id = ql.from_edge_id
+       JOIN edges te ON te.id = ql.to_edge_id
+       JOIN concepts fc ON fc.id = fe.child_id
+       JOIN concepts tc ON tc.id = te.child_id
+      WHERE (ql.from_edge_id = ANY($1::int[]) OR ql.to_edge_id = ANY($1::int[]))
+        AND fe.deleted_at IS NULL AND te.deleted_at IS NULL
+        AND fe.is_hidden = false AND te.is_hidden = false
+      ORDER BY ql.id`,
+    [edgeIds]
+  );
+  const onPage = new Set(edgeIds);
+  for (const r of result.rows) {
+    if (onPage.has(r.from_edge_id)) {
+      ensure(r.from_edge_id).subsequents.push({
+        linkId: r.link_id, edgeId: r.to_edge_id, conceptId: r.to_concept_id, name: r.to_name,
+      });
+    }
+    if (onPage.has(r.to_edge_id)) {
+      ensure(r.to_edge_id).precedents.push({
+        linkId: r.link_id, edgeId: r.from_edge_id, conceptId: r.from_concept_id, name: r.from_name,
+      });
+    }
+  }
+  return byEdge;
+}
+
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
@@ -146,6 +192,14 @@ const conceptsController = {
           (r) => r.edge_created_at
         );
         for (const root of result.rows) delete root._recency;
+
+        // Phase 72c-2: precedent/subsequent sibling links for the root list.
+        const seqByEdge = await loadSequenceLinksByEdge(rootEdgeIds);
+        for (const root of result.rows) {
+          const seq = seqByEdge.get(root.edge_id);
+          root.precedents = seq ? seq.precedents : [];
+          root.subsequents = seq ? seq.subsequents : [];
+        }
       }
 
       const userCountResult = await pool.query('SELECT COUNT(*) as total_users FROM users');
@@ -377,6 +431,14 @@ const conceptsController = {
           (r) => r.edge_created_at
         );
         for (const child of childrenResult.rows) delete child._recency;
+
+        // Phase 72c-2: precedent/subsequent sibling links for these children.
+        const seqByEdge = await loadSequenceLinksByEdge(childEdgeIds);
+        for (const child of childrenResult.rows) {
+          const seq = seqByEdge.get(child.edge_id);
+          child.precedents = seq ? seq.precedents : [];
+          child.subsequents = seq ? seq.subsequents : [];
+        }
       }
 
       res.json({
@@ -1613,6 +1675,123 @@ const conceptsController = {
       }
     } catch (error) {
       console.error('Error deleting edge:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 72c-2: create a precedent/subsequent link between two SIBLING questions
+  // in a curated community. Stored once as (from precedes to); shown on both cards.
+  // Curated-owner-only. Each rule has its own error code so the UI can message it.
+  addSequenceLink: async (req, res) => {
+    const { fromEdgeId, toEdgeId } = req.body;
+
+    try {
+      const fromId = parseInt(fromEdgeId, 10);
+      const toId = parseInt(toEdgeId, 10);
+      if (!fromId || isNaN(fromId) || !toId || isNaN(toId)) {
+        return res.status(400).json({ error: 'fromEdgeId and toEdgeId are required' });
+      }
+      if (fromId === toId) {
+        return res.status(400).json({ error: 'A question cannot link to itself.', code: 'self_link' });
+      }
+
+      const edgeRows = await pool.query(
+        `SELECT e.id, e.parent_id, e.graph_path, e.child_id, e.deleted_at,
+                c.community_id, comm.mode
+           FROM edges e
+           JOIN concepts c ON c.id = e.child_id
+           JOIN communities comm ON comm.id = c.community_id
+          WHERE e.id = ANY($1::int[])`,
+        [[fromId, toId]]
+      );
+      const byId = new Map(edgeRows.rows.map((r) => [r.id, r]));
+      const fromRow = byId.get(fromId);
+      const toRow = byId.get(toId);
+      if (!fromRow || !toRow) {
+        return res.status(404).json({ error: 'Question not found' });
+      }
+      if (fromRow.deleted_at || toRow.deleted_at) {
+        return res.status(400).json({ error: 'One of these questions has been deleted.', code: 'edge_deleted' });
+      }
+
+      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
+      const gate = await communityAccess.assertCuratedOwner(
+        { id: fromRow.community_id, mode: fromRow.mode },
+        req.user.userId
+      );
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      // Siblings only. Roots: both root edges (parent_id NULL, graph_path '{}')
+      // whose concepts share a community. Non-roots: same parent_id and graph_path
+      // (a graph_path never crosses communities, so that already pins the community).
+      const samePath = (fromRow.graph_path || []).join(',') === (toRow.graph_path || []).join(',');
+      const bothRoots = fromRow.parent_id === null && toRow.parent_id === null;
+      const siblings = bothRoots
+        ? (samePath && fromRow.community_id === toRow.community_id)
+        : (fromRow.parent_id !== null && fromRow.parent_id === toRow.parent_id && samePath);
+      if (!siblings) {
+        return res.status(400).json({ error: 'Links can only connect sibling questions.', code: 'not_siblings' });
+      }
+
+      const dup = await pool.query(
+        'SELECT id FROM question_sequence_links WHERE from_edge_id = $1 AND to_edge_id = $2',
+        [fromId, toId]
+      );
+      if (dup.rows.length > 0) {
+        return res.status(409).json({ error: 'This link already exists.', code: 'duplicate_link' });
+      }
+      const rev = await pool.query(
+        'SELECT id FROM question_sequence_links WHERE from_edge_id = $1 AND to_edge_id = $2',
+        [toId, fromId]
+      );
+      if (rev.rows.length > 0) {
+        return res.status(409).json({ error: 'The reverse link already exists; remove it first.', code: 'reverse_exists' });
+      }
+
+      const inserted = await pool.query(
+        'INSERT INTO question_sequence_links (from_edge_id, to_edge_id, created_by) VALUES ($1, $2, $3) RETURNING id',
+        [fromId, toId, req.user.userId]
+      );
+      res.status(201).json({ message: 'Link added', linkId: inserted.rows[0].id });
+    } catch (error) {
+      console.error('Error adding sequence link:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 72c-2: remove a precedent/subsequent link by id. The one row backs both
+  // cards, so deleting it removes the link from both sides. Curated-owner-only;
+  // any owner may remove any link in the community.
+  removeSequenceLink: async (req, res) => {
+    const { linkId } = req.body;
+
+    try {
+      const lid = parseInt(linkId, 10);
+      if (!lid || isNaN(lid)) {
+        return res.status(400).json({ error: 'linkId is required' });
+      }
+
+      const linkRow = await pool.query(
+        'SELECT from_edge_id FROM question_sequence_links WHERE id = $1',
+        [lid]
+      );
+      if (linkRow.rows.length === 0) {
+        return res.status(404).json({ error: 'Link not found' });
+      }
+
+      // Gate on the link's from-edge community (both edges share one community).
+      const community = await communityAccess.getCommunityForEdge(linkRow.rows[0].from_edge_id);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      await pool.query('DELETE FROM question_sequence_links WHERE id = $1', [lid]);
+      res.json({ message: 'Link removed' });
+    } catch (error) {
+      console.error('Error removing sequence link:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

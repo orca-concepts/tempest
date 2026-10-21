@@ -35,6 +35,8 @@ const Concept = ({
   onPendingScrollTunnelLinkConsumed,
   editMode = false,
   onToggleEditMode,
+  onConceptRenamed,
+  renamedConcept,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -395,6 +397,9 @@ const Concept = ({
   const handleRename = async (conceptId, newName) => {
     await conceptsAPI.renameConcept(conceptId, newName);
     await loadConcept();
+    // Tab-mgmt fix 3: tell AppShell so other open tabs of this concept (and their
+    // sidebar labels) refresh without a reload.
+    if (onConceptRenamed) onConceptRenamed(conceptId, newName);
   };
 
   const handleDeleteEdge = async (edgeId) => {
@@ -544,6 +549,19 @@ const Concept = ({
     const canEdit = communityMode === 'curated' && isCommunityOwner && editMode && effectiveViewMode === 'children';
     if (!canEdit) setShowNewCard(false);
   }, [communityMode, isCommunityOwner, editMode, effectiveViewMode, effectiveConceptId, effectivePath?.join(',')]);
+
+  // Tab-mgmt fix 3: when a concept is renamed (in this or any other tab), refresh
+  // this tab if it shows that concept — as its own question, a breadcrumb
+  // ancestor, or a visible child. loadConcept re-pulls child names and bridges too.
+  useEffect(() => {
+    if (!renamedConcept) return;
+    const cid = Number(renamedConcept.conceptId);
+    const shows =
+      Number(effectiveConceptId) === cid ||
+      (path || []).some((id) => Number(id) === cid) ||
+      children.some((ch) => Number(ch.id) === cid);
+    if (shows) loadConcept();
+  }, [renamedConcept]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When user clicks an alt parent card in Flip View, stay on the current concept
   // but switch to the clicked parent's context (Phase 38a)

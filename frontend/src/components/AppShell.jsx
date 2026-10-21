@@ -37,6 +37,13 @@ const AppShell = () => {
       /^\/c\/[^/]+$/.test(location.pathname);
   }, []);
 
+  // Tab-mgmt fix: the ?gtab= tab id the page was loaded with (if any), captured
+  // mount-only. On reload we re-activate this tab instead of blindly picking the
+  // first tab, and it takes precedence over the localStorage community restore.
+  const initialGtabParam = useMemo(() => { // eslint-disable-line react-hooks/exhaustive-deps
+    return new URLSearchParams(window.location.search).get('gtab') || null;
+  }, []);
+
   // Phase 30g: Info page detection and header nav
   const INFO_SLUGS = ['thoroughly-conscious-ignorance', 'using-orca'];
   const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'report-infringement', 'counter-notice', 'admin/legal'];
@@ -125,6 +132,17 @@ const AppShell = () => {
   const [editMode, setEditMode] = useState(false);
   useEffect(() => { setEditMode(false); }, [activeCommunityId]);
 
+  // Tab-mgmt fix 1: becomes true only once graphTabs reflect the resolved auth
+  // identity (set by loadAllTabs for a user, or the guest branch). The deep-link
+  // effect waits on this so it never resolves against the ephemeral guest tab
+  // during the guest→authenticated transition (which caused blank /c/:slug and
+  // duplicate tabs from deep links).
+  const [tabsLoaded, setTabsLoaded] = useState(false);
+
+  // Tab-mgmt fix 3: a rename signal broadcast to all mounted Concept/Root tabs so
+  // they refresh the renamed concept (title, children, breadcrumb, bridges).
+  const [renamedConcept, setRenamedConcept] = useState(null); // { conceptId, newName, nonce }
+
   useEffect(() => {
     communitiesAPI.listCommunities()
       .then((r) => {
@@ -135,6 +153,10 @@ const AppShell = () => {
         // community" nudge — new users pick one consciously instead of landing
         // in an arbitrary community. (A stale slug for a missing community also
         // falls through to the nudge.)
+        // Tab-mgmt fix 2: when the page was loaded with ?gtab=, that tab's
+        // community wins (reconciled in loadAllTabs / the sync effect below), so
+        // skip the localStorage community restore to avoid a header/content clash.
+        if (initialGtabParam) return;
         const storedSlug = localStorage.getItem('orca_active_community');
         const pick = storedSlug ? list.find((c) => c.slug === storedSlug) : undefined;
         if (pick) {
@@ -144,6 +166,41 @@ const AppShell = () => {
       })
       .catch(() => setCommunities([]));
   }, []);
+
+  // Tab-mgmt fix 2: keep the active community's name + persisted slug in sync with
+  // its id. Covers the ?gtab reload path (loadAllTabs sets only the id there) and
+  // is a no-op in every other flow (name/slug already match).
+  useEffect(() => {
+    if (activeCommunityId == null) return;
+    const c = communities.find((x) => x.id === activeCommunityId);
+    if (!c) return;
+    if (c.name !== activeCommunityName) setActiveCommunityName(c.name);
+    if (localStorage.getItem('orca_active_community') !== c.slug) {
+      localStorage.setItem('orca_active_community', c.slug);
+    }
+  }, [communities, activeCommunityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tab-mgmt fix 2 (defensive, one-shot): after the initial load, never leave a
+  // tab from a different community than the active one showing. Runs once, after
+  // both tabs and the community list have resolved, so it does not interfere with
+  // later cross-community navigation (e.g. "also asked in" bridges).
+  const initialReconcileDoneRef = useRef(false);
+  useEffect(() => {
+    if (initialReconcileDoneRef.current) return;
+    if (loading || !tabsLoaded || communities.length === 0) return;
+    if (!activeTab || activeTab.type !== 'graph') return;
+    initialReconcileDoneRef.current = true;
+    if (activeCommunityId == null) return;
+    const tab = graphTabs.find((t) => t.id === activeTab.id);
+    if (!tab) return;
+    // Root / community-agnostic tabs belong to any community.
+    if (tab.tab_type === 'root' || tab.concept_id == null || tab.community_id == null) return;
+    if (tab.community_id === activeCommunityId) return;
+    const candidate = graphTabs.find(
+      (t) => t.tab_type === 'root' || t.concept_id == null || t.community_id === activeCommunityId
+    );
+    if (candidate) setActiveTab({ type: 'graph', id: candidate.id });
+  }, [loading, tabsLoaded, communities, activeTab, graphTabs, activeCommunityId]);
 
   // Phase 72a: re-fetch the community list (e.g. after owner add/remove, which
   // can change `is_owner` for the current user).
@@ -181,6 +238,25 @@ const AppShell = () => {
     setCommunities((prev) => [...prev, community].sort((a, b) => a.name.localeCompare(b.name)));
     handleSelectCommunity(community);
   }, [handleSelectCommunity]);
+
+  // Tab-mgmt fix 3: a question was renamed (curated edit mode). Concept identity is
+  // community-scoped, so the rename applies everywhere the concept appears. (a)
+  // Update + persist the label of every open graph tab pointing at that concept,
+  // so sidebar/tab titles update without a reload. (b) Broadcast a signal that
+  // every mounted Concept/Root tab watches to re-fetch if it shows that concept.
+  const handleConceptRenamed = useCallback((conceptId, newName) => {
+    const cid = Number(conceptId);
+    setGraphTabs((prev) => prev.map((t) => {
+      if (Number(t.concept_id) === cid && t.label !== newName) {
+        if (!isGuest && typeof t.id === 'number') {
+          votesAPI.updateGraphTab(t.id, { label: newName }).catch(() => {});
+        }
+        return { ...t, label: newName };
+      }
+      return t;
+    }));
+    setRenamedConcept({ conceptId: cid, newName, nonce: Date.now() });
+  }, [isGuest]);
 
   // Phase 39b: Combo subscriptions (persistent combo tabs)
   const [comboSubscriptions, setComboSubscriptions] = useState([]);
@@ -221,6 +297,11 @@ const AppShell = () => {
   // Load all tabs + groups on mount (skip for guests)
   useEffect(() => {
     document.title = 'orca';
+    // Tab-mgmt fix 1: wait for auth to settle before choosing the guest vs. user
+    // path. `isGuest` is true during the auth check (user is null), so running the
+    // guest branch then would set loading=false and populate an ephemeral guest
+    // tab prematurely — the deep-link effect could then resolve against it.
+    if (authLoading) return;
     if (isGuest) {
       // Guest mode: create one ephemeral local-only graph tab
       const guestTab = {
@@ -234,15 +315,19 @@ const AppShell = () => {
       };
       setGraphTabs([guestTab]);
       setActiveTab({ type: 'graph', id: 'guest-1' });
+      setTabsLoaded(true);
       setLoading(false);
     } else {
       loadAllTabs();
     }
-  }, [isGuest]);
+  }, [isGuest, authLoading]);
 
   // Deep link: /concept/:id and /situation/:id
   useEffect(() => {
-    if (loading || authLoading) return;
+    // Tab-mgmt fix 1: `tabsLoaded` ensures graphTabs/graphTabsRef reflect the
+    // resolved identity before a deep link resolves (so reuse matches and the
+    // activated tab still exists).
+    if (loading || authLoading || !tabsLoaded) return;
 
     // /concept/:id?path=1,2,3
     const conceptMatch = location.pathname.match(/^\/concept\/(\d+)$/);
@@ -327,7 +412,7 @@ const AppShell = () => {
         });
       return;
     }
-  }, [loading, authLoading, location.pathname]);
+  }, [loading, authLoading, tabsLoaded, location.pathname]);
 
   // Phase 30c: Build URL for graph tab history entries
   const buildGraphTabUrl = (tabId, tabType, conceptId, path, viewMode) => {
@@ -459,7 +544,21 @@ const AppShell = () => {
       // Skip when a deep-link is present — the deep-link useEffect will
       // activate the correct tab once its (possibly async) resolution completes.
       if (loadedGraph.length > 0 && !hasDeepLinkInUrl) {
-        setActiveTab({ type: 'graph', id: loadedGraph[0].id });
+        // Tab-mgmt fix 2: honor ?gtab= on reload — re-activate that exact tab
+        // instead of blindly picking the first one, and adopt its community so
+        // the header, sidebar, and content agree. (The community name/slug are
+        // filled in by the sync effect once the community list has loaded.)
+        const gtabTab = initialGtabParam
+          ? loadedGraph.find((t) => String(t.id) === String(initialGtabParam))
+          : null;
+        if (gtabTab) {
+          setActiveTab({ type: 'graph', id: gtabTab.id });
+          if (gtabTab.community_id != null) {
+            setActiveCommunityId(gtabTab.community_id);
+          }
+        } else {
+          setActiveTab({ type: 'graph', id: loadedGraph[0].id });
+        }
       } else if (loadedGraph.length === 0) {
         // No tabs at all — will auto-create a default graph tab
         createDefaultGraphTab();
@@ -467,6 +566,7 @@ const AppShell = () => {
     } catch (err) {
       console.error('Failed to load tabs:', err);
     } finally {
+      setTabsLoaded(true);
       setLoading(false);
     }
   };
@@ -1635,6 +1735,8 @@ const AppShell = () => {
                         onOpenCommunities={() => setCommunitiesOpen(true)}
                         editMode={editMode}
                         onToggleEditMode={() => setEditMode((v) => !v)}
+                        onConceptRenamed={handleConceptRenamed}
+                        renamedConcept={renamedConcept}
                       />
                     ) : (
                       <Concept
@@ -1655,6 +1757,8 @@ const AppShell = () => {
                         onPendingScrollTunnelLinkConsumed={() => setPendingScrollTunnelLinkId(null)}
                         editMode={editMode}
                         onToggleEditMode={() => setEditMode((v) => !v)}
+                        onConceptRenamed={handleConceptRenamed}
+                        renamedConcept={renamedConcept}
                       />
                     )}
                   </div>

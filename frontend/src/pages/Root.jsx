@@ -18,6 +18,7 @@ const Root = ({
   onCommunitiesChanged,
   onOpenCommunities,
   editMode = false, onToggleEditMode,
+  onConceptRenamed, renamedConcept,
 }) => {
   // Phase 72a: curated communities are owner-write-only and have no voting.
   const votingAllowed = communityMode !== 'curated';
@@ -83,6 +84,14 @@ const Root = ({
     loadRootConcepts();
     loadHiddenCount();
   }, [sortMode, user, communityId]);
+
+  // Tab-mgmt fix 3: refresh the root list if a renamed concept appears in it
+  // (renamed in this or another tab), so its card title updates without a reload.
+  useEffect(() => {
+    if (!renamedConcept) return;
+    const cid = Number(renamedConcept.conceptId);
+    if (concepts.some((c) => Number(c.id) === cid)) loadRootConcepts();
+  }, [renamedConcept]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadHiddenCount = async () => {
     if (!user) { setHiddenCount(0); return; }
@@ -238,6 +247,8 @@ const Root = ({
   const handleRename = async (conceptId, newName) => {
     await conceptsAPI.renameConcept(conceptId, newName);
     await loadRootConcepts();
+    // Tab-mgmt fix 3: propagate to other open tabs + sidebar labels.
+    if (onConceptRenamed) onConceptRenamed(conceptId, newName);
   };
 
   const handleDeleteEdge = async (edgeId) => {

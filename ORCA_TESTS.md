@@ -436,4 +436,32 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72d — Graph view (both modes)
+
+### Endpoint (`GET /api/concepts/graph?communityId=&rootConceptId=`, guest-accessible)
+- [ ] Registered before `/:id` in `routes/concepts.js`: `GET /concepts/graph?communityId=` returns 200 with a `nodes` array (not swallowed by `/:id` and treated as a concept id)
+- [ ] `communityId` only returns every root's graph for the community; `rootConceptId` returns only that root's graph (its root edge + path-scoped descendants)
+- [ ] Soft-deleted edges and their subtree are absent; `is_hidden` edges absent; legal-held links are excluded from each node's `answers[]`
+- [ ] Curated nodes carry `answers[]` (newest publication date first) and `sortDate`; open nodes carry `saveCount` and `linkCount` and no `answers`/`sortDate`
+- [ ] Curated sibling order (open questions first by newest `created_at`, then answered by `sortDate` desc, then `created_at` desc) matches `GET /concepts/:id` for the same parent; reference build orders `U2, U1, L2, P, L1`
+- [ ] Open sibling order is `saveCount` desc, then newest `created_at`
+- [ ] `parentEdgeId` links every non-root node to the edge whose child is `graph_path[last]` with path `graph_path[0..last-1]`; root nodes have `parentEdgeId: null`
+- [ ] 400 without `communityId`; 404 when `rootConceptId` is not a live root of that community
+- [ ] The number of SQL queries is small and fixed regardless of graph size (mode lookup + optional root validation + one edges query + one curated answers query; no per-node queries). Verified: identical count for a 5-node and a 50-node root scope (4 each with `rootConceptId`)
+- [ ] Capped at 2000 edges with `truncated: true` when hit (ordered shallow-to-deep so dropped rows are the deepest leaves)
+
+### Frontend (`GraphViewOverlay.jsx`)
+- [ ] A "Graph" button in the page header on the community root page and on question pages, both modes, guests included, opens the overlay
+- [ ] Full-pane overlay like the Votes overlay: `←` Back, "Graph" title, Collapse all / Expand all, Escape closes
+- [ ] Each question row with children (or, in curated communities, answers) shows a `▸`/`▾` toggle as its own `<button>` separate from the question text; the toggle expands/collapses without navigating; collapsing a question hides its answers too
+- [ ] Expand all / Collapse all apply to the whole tree; per-branch toggles work independently afterward; collapse state persists while the overlay stays open
+- [ ] Siblings ordered per the spec (curated recency rule; open save count desc then newest)
+- [ ] Clicking a question row navigates the current tab to that question with the correct path and closes the overlay
+- [ ] Curated: answers nested under their question (`↗`, title link opening in a new tab with `rel="noopener noreferrer"`, publication date, comment clamped to two lines). Open: questions plus muted "N links"
+- [ ] Opened from a question page: that question is highlighted (light background tint), its ancestor path expanded, and scrolled into view; other branches start expanded when ≤ 150 questions, otherwise collapsed below the current path
+- [ ] Truncation note shown when the response is truncated
+- [ ] Stale-state guard on the fetch; all controls are `<button>`s (external answer links are anchors); VotesOverlay behavior unchanged
+
+---
+
 **END OF TESTING CHECKLIST**

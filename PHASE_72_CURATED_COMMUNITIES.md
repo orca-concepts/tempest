@@ -250,3 +250,40 @@ CREATE INDEX IF NOT EXISTS idx_qsl_to ON question_sequence_links (to_edge_id);
 - Non-sibling, cross-community, deleted, self, duplicate, and reverse links rejected with the right codes.
 - Deleting a question hides its links on the surviving sibling.
 - Picker excludes ineligible siblings; soft warning appears when dates are out of order.
+
+---
+
+## Phase 72d — Graph view (both modes)
+
+Mockup: `docs/mockups/graph-view.png` (layout reference only).
+
+### Behavior
+- A **"Graph"** button in the page header (community root page and question pages), visible to everyone in both modes, opens a full-pane overlay styled like the Votes overlay (← Back, title, Expand all / Collapse all).
+- **Scope:** opened from a question page, it shows that question's whole root graph (from `graph_path[0]`, or the question itself if it is a root). Opened from the community root page, it shows every root of the community.
+- **Tree:** a collapsible hierarchy built from edges (path identity: a question placed under two parents appears in both places). Siblings use the same order as the grid: curated → the 72b recency rule (open questions first, then newest date); open → save count descending, then newest.
+- **Rows:** question rows are clickable and navigate the current tab to that question (correct path), then close the overlay. In curated communities each question's answers appear as nested rows (↗ marker, title linking to the URL in a new tab, publication date, comment clamped to two lines). Open communities show only questions, with the existing "N links" count in muted text.
+- **Current position:** when opened from a question page, the path to the current question is expanded, the current question's row is highlighted (not a color button — a light background tint consistent with the existing highlight), and scrolled into view. Other branches start expanded if the graph has ≤ 150 questions, otherwise collapsed below the current path.
+- Deleted and hidden edges, and legal-held links, never appear.
+
+### Endpoint
+`GET /api/concepts/graph?communityId=&rootConceptId=` (guest-accessible)
+- `communityId` required. `rootConceptId` optional: when given, return only that root's graph; otherwise every root in the community.
+- Returns `{ mode, truncated, nodes: [{ edgeId, parentEdgeId, conceptId, name, graphPath, childCount, linkCount, saveCount (open only), sortDate (curated only), answers: [...] (curated only) }] }`.
+- Implementation: a small, fixed number of queries (edges by path prefix or community, one answers query, one sort-date pass reusing the 72b logic) — no per-node queries. `parentEdgeId` is derived in code from `graph_path` (the edge whose child is `graph_path[last]` with path `graph_path[0..last-1]`).
+- Cap at 2000 edges; set `truncated: true` if hit (the overlay shows a one-line note).
+- Register before the `/:id` route in `routes/concepts.js`.
+
+### Frontend
+- New `GraphViewOverlay.jsx` (tree rendering may borrow from `VotesOverlay.jsx`'s styles; do not change VotesOverlay's behavior).
+- Opened from AppShell like the Votes overlay; receives the active community, the current question and path (if any), and a navigate callback that uses the existing in-tab navigation.
+- Stale-State Guard on the fetch; Escape closes; all controls are `<button>`s.
+
+### Non-goals (72d)
+Editing from the graph view, showing precedent/subsequent links in the tree, feedback, drag-and-drop, cross-community graphs.
+
+### Tests (72d)
+- Button visible in both modes, for guests and users.
+- From a question page: the current question is highlighted and scrolled into view with its path expanded.
+- From the root page: all roots shown.
+- Curated sibling order matches the grid; answers nested with working links; open communities show questions and link counts only.
+- Clicking a question navigates and closes; deleted/hidden questions absent; truncation note when capped.

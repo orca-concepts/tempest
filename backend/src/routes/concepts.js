@@ -9,6 +9,9 @@ const { rootConceptCreateLimiter, childConceptCreateLimiter } = require('../util
 // POST routes use authenticateToken — must be logged in to create
 
 router.get('/root', optionalAuth, conceptsController.getRootConcepts);
+// Phase 72d: graph view (guest-accessible). Registered before `/:id` so the
+// literal `/graph` path isn't captured by the id param.
+router.get('/graph', optionalAuth, conceptsController.getGraph);
 router.get('/attributes', optionalAuth, conceptsController.getAttributes);
 router.get('/search', optionalAuth, conceptsController.searchConcepts);
 router.get('/names/batch', optionalAuth, conceptsController.getConceptNames);

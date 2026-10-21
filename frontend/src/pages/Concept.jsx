@@ -37,6 +37,7 @@ const Concept = ({
   onToggleEditMode,
   onConceptRenamed,
   renamedConcept,
+  onOpenGraph,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -478,6 +479,18 @@ const Concept = ({
     navigateInTab(newConceptId, newPath, newViewMode || 'children');
   };
 
+  // Phase 72d: open the graph-view overlay scoped to this question's root graph,
+  // with this question highlighted. `path` is root-to-current inclusive, so the
+  // last element is the current concept and the rest is its graph_path.
+  const handleOpenGraphView = () => {
+    if (!onOpenGraph) return;
+    const fullPath = path || [];
+    const cid = fullPath.length ? fullPath[fullPath.length - 1] : Number(effectiveConceptId);
+    const parentPath = fullPath.slice(0, -1);
+    const root = fullPath.length ? fullPath[0] : cid;
+    onOpenGraph(root, cid, parentPath);
+  };
+
   const handleShareLink = async () => {
     const pathStr = (path || []).slice(0, -1).join(',');
     const url = `${window.location.origin}/concept/${effectiveConceptId}?path=${pathStr}`;
@@ -826,6 +839,13 @@ const Concept = ({
                     : 'Children View'}
               </button>
             )}
+            <button
+              onClick={handleOpenGraphView}
+              style={styles.shareButton}
+              title="Open the whole graph as a collapsible tree"
+            >
+              Graph
+            </button>
             <div style={styles.shareButtonWrapper}>
               <button
                 onClick={handleShareLink}

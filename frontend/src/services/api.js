@@ -92,6 +92,11 @@ export const conceptsAPI = {
   getConceptBridges: (id) =>
     api.get(`/concepts/${id}/bridges`),
 
+  // Phase 72d: whole-graph tree for the graph-view overlay. rootConceptId
+  // optional (one root's graph vs. the whole community).
+  getGraph: (communityId, rootConceptId) =>
+    api.get('/concepts/graph', { params: { communityId, ...(rootConceptId ? { rootConceptId } : {}) } }),
+
   getConceptNames: (ids) =>
     api.get('/concepts/names/batch', { params: { ids } }),
 

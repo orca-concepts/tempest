@@ -19,6 +19,7 @@ const Root = ({
   onOpenCommunities,
   editMode = false, onToggleEditMode,
   onConceptRenamed, renamedConcept,
+  onOpenGraph,
 }) => {
   // Phase 72a: curated communities are owner-write-only and have no voting.
   const votingAllowed = communityMode !== 'curated';
@@ -295,6 +296,13 @@ const Root = ({
               {communityMode === 'curated' && <span style={styles.curatedTag}>Curated</span>}
             </div>
             <div style={styles.headerControls}>
+              {communityId && (
+                <button
+                  onClick={() => onOpenGraph && onOpenGraph(null, null, [])}
+                  style={styles.editToggle}
+                  title="Open the whole graph as a collapsible tree"
+                >Graph</button>
+              )}
               {canEditMode && (
                 <button
                   onClick={onToggleEditMode}

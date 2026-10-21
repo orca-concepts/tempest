@@ -1796,6 +1796,181 @@ const conceptsController = {
     }
   },
 
+  // Phase 72d: the whole graph (collapsible tree) for the graph-view overlay.
+  // Guest-accessible. Scope is either ONE root's graph (rootConceptId given:
+  // the root edge + every descendant, matched by graph_path prefix) or the
+  // WHOLE community (every root and descendant). Deleted and hidden edges, and
+  // legal-held links, never appear. A small, fixed number of queries regardless
+  // of graph size (no per-node queries): one community-mode lookup, an optional
+  // root-validation lookup, one edges query (with correlated count subqueries),
+  // and — in curated — one answers query. parentEdgeId and sortDate are derived
+  // in JS. Capped at 2000 edges (truncated: true if hit).
+  getGraph: async (req, res) => {
+    const GRAPH_EDGE_CAP = 2000;
+    try {
+      const cid = parseInt(req.query.communityId, 10);
+      if (!cid || isNaN(cid)) {
+        return res.status(400).json({ error: 'communityId is required' });
+      }
+
+      const commRow = await pool.query('SELECT mode FROM communities WHERE id = $1', [cid]);
+      if (commRow.rows.length === 0) {
+        return res.status(404).json({ error: 'Community not found' });
+      }
+      const mode = commRow.rows[0].mode;
+      const curated = mode === 'curated';
+
+      // rootConceptId is optional. When present it must be a live root of THIS
+      // community (a non-hidden, non-deleted root edge).
+      let rootConceptId = null;
+      const ridRaw = req.query.rootConceptId;
+      if (ridRaw !== undefined && ridRaw !== null && String(ridRaw).trim().length > 0) {
+        rootConceptId = parseInt(ridRaw, 10);
+        if (!rootConceptId || isNaN(rootConceptId)) {
+          return res.status(400).json({ error: 'Invalid rootConceptId' });
+        }
+        const rootCheck = await pool.query(
+          `SELECT 1 FROM edges e
+             JOIN concepts c ON c.id = e.child_id
+            WHERE e.parent_id IS NULL AND e.child_id = $1
+              AND e.is_hidden = false AND e.deleted_at IS NULL
+              AND c.community_id = $2`,
+          [rootConceptId, cid]
+        );
+        if (rootCheck.rows.length === 0) {
+          return res.status(404).json({ error: 'Root question not found in this community' });
+        }
+      }
+
+      // One edges query. The per-edge counts are correlated subqueries (one SQL
+      // statement — not a JS loop). Ordered shallow-to-deep so, if we hit the
+      // cap, the dropped rows are the deepest leaves and a kept child always has
+      // its parent kept (no orphans above a missing parent).
+      const selectCols = `
+        e.id AS edge_id, e.parent_id, e.child_id, e.graph_path, e.created_at,
+        c.name,
+        (SELECT COUNT(*) FROM concept_links cl WHERE cl.edge_id = e.id AND cl.legal_hold = false)::int AS link_count,
+        (SELECT COUNT(*) FROM votes v WHERE v.edge_id = e.id)::int AS save_count,
+        (SELECT COUNT(*) FROM edges ce
+           WHERE ce.parent_id = e.child_id
+             AND ce.graph_path = e.graph_path || e.child_id
+             AND ce.is_hidden = false)::int AS child_count`;
+
+      let edgeResult;
+      if (rootConceptId) {
+        // Root edge (graph_path '{}') OR any edge whose graph_path starts with
+        // this root concept. A graph_path never crosses communities, so this is
+        // automatically community-safe.
+        edgeResult = await pool.query(
+          `SELECT ${selectCols}
+             FROM edges e
+             JOIN concepts c ON c.id = e.child_id
+            WHERE ((e.parent_id IS NULL AND e.child_id = $1) OR e.graph_path[1] = $1)
+              AND e.is_hidden = false AND e.deleted_at IS NULL
+            ORDER BY array_length(e.graph_path, 1) NULLS FIRST, e.id
+            LIMIT $2`,
+          [rootConceptId, GRAPH_EDGE_CAP + 1]
+        );
+      } else {
+        edgeResult = await pool.query(
+          `SELECT ${selectCols}
+             FROM edges e
+             JOIN concepts c ON c.id = e.child_id
+            WHERE c.community_id = $1
+              AND e.is_hidden = false AND e.deleted_at IS NULL
+            ORDER BY array_length(e.graph_path, 1) NULLS FIRST, e.id
+            LIMIT $2`,
+          [cid, GRAPH_EDGE_CAP + 1]
+        );
+      }
+
+      const truncated = edgeResult.rows.length > GRAPH_EDGE_CAP;
+      const rows = truncated ? edgeResult.rows.slice(0, GRAPH_EDGE_CAP) : edgeResult.rows;
+
+      // Derive parentEdgeId from graph_path (AD #137): the parent edge is the
+      // one whose child is graph_path[last] with path graph_path[0..last-1].
+      const edgeByChildPath = new Map();
+      for (const r of rows) {
+        edgeByChildPath.set(`${r.child_id}|${(r.graph_path || []).join(',')}`, r.edge_id);
+      }
+      const parentEdgeIdOf = (r) => {
+        const gp = r.graph_path || [];
+        if (r.parent_id === null || gp.length === 0) return null;
+        const parentChild = gp[gp.length - 1];
+        const parentPath = gp.slice(0, -1);
+        const found = edgeByChildPath.get(`${parentChild}|${parentPath.join(',')}`);
+        return found === undefined ? null : found;
+      };
+
+      const nodes = rows.map((r) => {
+        const node = {
+          edgeId: r.edge_id,
+          parentEdgeId: parentEdgeIdOf(r),
+          conceptId: r.child_id,
+          name: r.name,
+          graphPath: r.graph_path || [],
+          childCount: r.child_count,
+          linkCount: r.link_count,
+          createdAt: r.created_at,
+        };
+        if (!curated) node.saveCount = r.save_count;
+        return node;
+      });
+
+      if (curated) {
+        const edgeIds = rows.map((r) => r.edge_id);
+        const answersByEdge = await loadAnswersByEdge(edgeIds);
+        const nodeByEdge = new Map(nodes.map((n) => [n.edgeId, n]));
+
+        for (const n of nodes) {
+          const answers = answersByEdge.get(n.edgeId) || [];
+          n.answers = answers;
+          n._ownDate = answers.length > 0 ? answers[0].publishedOn : null;
+        }
+
+        // children keyed by parentEdgeId, for a subtree-date aggregation pass.
+        const childrenByParent = new Map();
+        for (const n of nodes) {
+          if (n.parentEdgeId != null) {
+            if (!childrenByParent.has(n.parentEdgeId)) childrenByParent.set(n.parentEdgeId, []);
+            childrenByParent.get(n.parentEdgeId).push(n.edgeId);
+          }
+        }
+
+        // Dates are 'YYYY-MM-DD' strings — lexicographic max == chronological max.
+        const maxDate = (a, b) => (!a ? (b || null) : (!b ? a : (a >= b ? a : b)));
+        const computeSubtree = (edgeId) => {
+          const n = nodeByEdge.get(edgeId);
+          let descMax = null;
+          for (const k of (childrenByParent.get(edgeId) || [])) {
+            descMax = maxDate(descMax, computeSubtree(k));
+          }
+          n._descMax = descMax;
+          return maxDate(n._ownDate, descMax);
+        };
+        // Forest roots: no parent in the fetched set.
+        for (const n of nodes) {
+          if (n.parentEdgeId == null || !nodeByEdge.has(n.parentEdgeId)) {
+            computeSubtree(n.edgeId);
+          }
+        }
+        for (const n of nodes) {
+          // Phase 72b recency rule: own newest answer date, else newest
+          // descendant answer date; null when the question (and its whole
+          // subtree) has no answers.
+          n.sortDate = n._ownDate || n._descMax || null;
+          delete n._ownDate;
+          delete n._descMax;
+        }
+      }
+
+      res.json({ mode, truncated, nodes });
+    } catch (error) {
+      console.error('Error fetching graph:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // Phase 71: cross-community exact-name bridge. For the concept being viewed,
   // find same-normalized-name concepts in OTHER communities. Precompute the click
   // destination: 'flip' when the target has a non-root placement (the

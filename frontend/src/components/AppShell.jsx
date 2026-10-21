@@ -6,6 +6,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import Root from '../pages/Root';
 import Concept from '../pages/Concept';
 import VotesOverlay from '../components/VotesOverlay';
+import GraphViewOverlay from '../components/GraphViewOverlay';
 import LoginModal from '../components/LoginModal';
 import DeleteAccountFlow from '../components/DeleteAccountFlow';
 import SidebarDndContext, { SortableItem, SortableGroupWrapper, GroupMemberContext } from '../components/SidebarDndContext';
@@ -114,6 +115,9 @@ const AppShell = () => {
 
   // Phase 59b: Unified Votes overlay
   const [votesOpen, setVotesOpen] = useState(false);
+
+  // Phase 72d: graph-view overlay. null | { rootConceptId, currentConceptId, currentPath }.
+  const [graphView, setGraphView] = useState(null);
 
   // Phase 39b: Combo browse overlay state
   const [comboView, setComboView] = useState(null); // null | { view: 'list' }
@@ -947,6 +951,35 @@ const AppShell = () => {
     }
   }, [isGuest, tabGroups]);
 
+  // ─── Phase 72d: graph-view overlay ────────────────────────
+  // Opened from the page header (Root or Concept, both modes, guests included).
+  // rootConceptId scopes the tree to one root (null → the whole community);
+  // currentConceptId/currentPath highlight the question it was opened from.
+  const handleOpenGraph = useCallback((rootConceptId, currentConceptId, currentPath) => {
+    setGraphView({
+      rootConceptId: rootConceptId == null ? null : rootConceptId,
+      currentConceptId: currentConceptId == null ? null : currentConceptId,
+      currentPath: currentPath || [],
+    });
+  }, []);
+
+  // Navigate the current tab to a question from the graph overlay. Mirrors a
+  // card click: a graph tab is navigated in place (a root-list tab becomes a
+  // concept view); otherwise a concept tab is opened/reused.
+  const handleGraphNavigate = useCallback((conceptId, path, name) => {
+    if (activeTab?.type === 'graph') {
+      handleGraphTabNavigate(activeTab.id, {
+        tabType: 'concept',
+        conceptId,
+        path: path || [],
+        viewMode: 'children',
+        label: name || 'Question',
+      });
+    } else {
+      handleOpenConceptTab(conceptId, path || [], name, undefined, undefined, 'children');
+    }
+  }, [activeTab, handleGraphTabNavigate, handleOpenConceptTab]);
+
   // ─── Combo Subscribe/Unsubscribe (Phase 39b) ──────────────
 
   const reloadComboSubscriptions = useCallback(async () => {
@@ -1675,8 +1708,20 @@ const AppShell = () => {
             />
           )}
 
+          {/* Phase 72d: graph-view overlay */}
+          {!communitiesOpen && !votesOpen && graphView && (
+            <GraphViewOverlay
+              communityId={activeCommunityId}
+              rootConceptId={graphView.rootConceptId}
+              currentConceptId={graphView.currentConceptId}
+              currentPath={graphView.currentPath}
+              onBack={() => setGraphView(null)}
+              onNavigate={handleGraphNavigate}
+            />
+          )}
+
           {/* Phase 39b: Browse Combos overlay */}
-          {!communitiesOpen && !votesOpen && comboView && comboView.view === 'list' && (
+          {!communitiesOpen && !votesOpen && !graphView && comboView && comboView.view === 'list' && (
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
@@ -1692,7 +1737,7 @@ const AppShell = () => {
           )}
 
           {/* Guest deep-link combo view */}
-          {!communitiesOpen && !votesOpen && !comboView && guestComboId && (
+          {!communitiesOpen && !votesOpen && !graphView && !comboView && guestComboId && (
             <div>
               <div style={{ padding: '12px 20px 0', fontFamily: '"EB Garamond", Georgia, serif' }}>
                 <span onClick={() => setGuestComboId(null)} style={{ cursor: 'pointer', color: '#888', fontSize: '14px', textDecoration: 'underline' }}>{'\u2190'} Back</span>
@@ -1708,7 +1753,7 @@ const AppShell = () => {
           )}
 
           {/* Normal tab content — hidden when overlays are active */}
-          {!communitiesOpen && !votesOpen && !comboView && !guestComboId && (
+          {!communitiesOpen && !votesOpen && !graphView && !comboView && !guestComboId && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {
@@ -1753,6 +1798,7 @@ const AppShell = () => {
                         onToggleEditMode={() => setEditMode((v) => !v)}
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
+                        onOpenGraph={handleOpenGraph}
                       />
                     ) : (
                       <Concept
@@ -1775,6 +1821,7 @@ const AppShell = () => {
                         onToggleEditMode={() => setEditMode((v) => !v)}
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
+                        onOpenGraph={handleOpenGraph}
                       />
                     )}
                   </div>

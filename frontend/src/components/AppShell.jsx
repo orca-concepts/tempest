@@ -199,7 +199,23 @@ const AppShell = () => {
     const candidate = graphTabs.find(
       (t) => t.tab_type === 'root' || t.concept_id == null || t.community_id === activeCommunityId
     );
-    if (candidate) setActiveTab({ type: 'graph', id: candidate.id });
+    if (candidate) {
+      setActiveTab({ type: 'graph', id: candidate.id });
+      // Keep the URL + history state in sync with the tab now displayed, the same
+      // way in-tab navigation does — but replace (not push), so no spurious back
+      // entry and a later reload reads the correct ?gtab (the seed-history effect
+      // below bails on reload because history.state.orcaNav is already set).
+      const state = {
+        orcaNav: true,
+        tabId: candidate.id,
+        tabType: candidate.tab_type,
+        conceptId: candidate.concept_id,
+        path: candidate.path || [],
+        viewMode: candidate.view_mode || 'children',
+      };
+      const url = buildGraphTabUrl(candidate.id, candidate.tab_type, candidate.concept_id, candidate.path, candidate.view_mode);
+      window.history.replaceState(state, '', url);
+    }
   }, [loading, tabsLoaded, communities, activeTab, graphTabs, activeCommunityId]);
 
   // Phase 72a: re-fetch the community list (e.g. after owner add/remove, which

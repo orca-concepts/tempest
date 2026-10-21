@@ -1,6 +1,6 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** October 19, 2026 (Phase 72a complete: community modes, owners, `/c/:slug` share links, curated write gating. Next: 72b answers + recency sorting)
+**Last Updated:** October 21, 2026 (Phase 72c complete: owner edit mode, rename, answer editing, soft delete, precedent/subsequent links; tab-state fixes. Next: 72d graph view)
 
 This file is the canonical technical reference for Orca. It describes the system **as it is now**. Completed-phase narratives, commit lists, and the design history of removed features live in `ORCA_HISTORY.md`. `CLAUDE.md` holds the conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
 
@@ -13,6 +13,8 @@ Orca is an open-source (AGPL v3) research-question graph platform for academics,
 What is live:
 - **Communities (Phase 71).** Every question lives in a community. Communities partition the graph: opening one shows only its questions. Anyone logged in can create a community. A cross-community "also asked in" bridge flags questions whose normalized text also exists in another community.
 - **Community modes and owners (Phase 72a).** Each community is `open` or `curated`, chosen at creation and fixed. The creator is the first owner; owners can add and remove owners (any owner can remove any other, but never the last one). In curated communities only owners can add content, and nobody can vote or flag. Every community has a share link, `/c/:slug`.
+- **Curated answers (Phase 72b).** In curated communities, links are shown as *answers* inside each question's card (title, publication date, comment), with no side links panel and no vote UI. Siblings sort open-questions-first, then by newest publication date.
+- **Curated editing (Phase 72c).** Owners switch between View (exactly what readers see) and Edit. Edit mode: dashed outlines, click-to-edit question text (renames the question everywhere it appears in the community) and answer fields, add/remove answers, a "+" button to add questions, soft delete of a question and its subtree, and precedent/subsequent links between sibling questions. In curated communities the Add / Search bar is search-only.
 - **Question-only graphs.** `question` is the only attribute (`ENABLED_ATTRIBUTES=question`).
 - **Path-dependent identity.** The same question under two parents is two contextual entities with independent children, votes, and links.
 - **Links on edges.** URLs with titles, immutable comments, author addenda, and upvotes, attached to one specific edge. **A link applies only to the question it is placed on and never surfaces on ancestor questions** (link inheritance was fully removed in October 2026).
@@ -21,7 +23,7 @@ What is live:
 - **Auth.** ORCID-first registration plus email/password; Resend for transactional email.
 - **Moderation and legal.** Community flagging (10 flags hides an edge), admin legal removal with `legal_hold`, DMCA strikes, and copyright infringement / counter-notice forms.
 
-What is next: **Phase 72b** (answers with publication dates, the in-card answer section, and recency sorting for curated communities) — see `PHASE_72_CURATED_COMMUNITIES.md` and the Forward Roadmap. Existing community data is all test data and does not need preserving.
+What is next: **Phase 72d** (graph view: the whole graph as a collapsible tree from the header) — see `PHASE_72_CURATED_COMMUNITIES.md` and the Forward Roadmap.
 
 ### Retired / dead code — do NOT surface as live or propose using
 Backend code for some of these remains intact and must not be "fixed up" into use:
@@ -94,7 +96,7 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 
 **attributes** — `id`, `name` (unique), `created_by`, `created_at`. Four rows seeded; only `question` enabled.
 
-**edges** — `id`, `parent_id` (FK concepts, CASCADE), `child_id` (FK concepts, CASCADE), `graph_path` (int[], root-to-parent inclusive), `attribute_id` (NOT NULL), `created_by`, `is_hidden`, `legal_hold`, `created_at`. UNIQUE `(parent_id, child_id, graph_path, attribute_id)`. Root edges: `parent_id = NULL`, `graph_path = '{}'`. Edges inherit their community from their concepts (no `community_id` column on edges).
+**edges** — `id`, `parent_id` (FK concepts, CASCADE), `child_id` (FK concepts, CASCADE), `graph_path` (int[], root-to-parent inclusive), `attribute_id` (NOT NULL), `created_by`, `is_hidden`, `legal_hold`, `created_at`. UNIQUE `(parent_id, child_id, graph_path, attribute_id)`. Root edges: `parent_id = NULL`, `graph_path = '{}'`. Edges inherit their community from their concepts (no `community_id` column on edges). Phase 72c-1 soft delete: `deleted_at`, `deleted_by` (FK users, SET NULL), `delete_batch_id` (UUID, one per delete action; partial index). A deleted edge also has `is_hidden = true`, so all ordinary visibility filters exclude it; moderation surfaces additionally exclude `deleted_at IS NOT NULL`.
 
 ### Votes
 - **votes** — save votes on edges. UNIQUE `(user_id, edge_id)`.
@@ -103,7 +105,7 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 - **vote_set_changes** — append-only save/unsave event log.
 
 ### Links
-- **concept_links** — `id`, `edge_id` (FK edges, CASCADE), `url`, `title`, `comment` (immutable after creation), `added_by` (FK users, SET NULL), `legal_hold`, `created_at`, `updated_at`. No uniqueness on `(edge_id, url)` — duplicate URLs with different comments are allowed. Hard-deletable by `added_by` when `legal_hold = false`.
+- **concept_links** — `id`, `edge_id` (FK edges, CASCADE), `url`, `title`, `comment` (immutable after creation), `published_on` (DATE, Phase 72b; required for curated answers, optional elsewhere), `added_by` (FK users, SET NULL), `legal_hold`, `created_at`, `updated_at`. No uniqueness on `(edge_id, url)` — duplicate URLs with different comments are allowed. Hard-deletable by `added_by` when `legal_hold = false`; in curated communities any owner may delete any answer. In curated communities these rows are the "answers".
 - **concept_link_votes** — UNIQUE `(user_id, concept_link_id)`: one vote per user per link. (The `context_edge_id` column and its constraints were dropped in the link-inheritance removal.)
 - **concept_link_addenda** — `id`, `concept_link_id` (CASCADE), `author_id` (SET NULL), `body`, `created_at`. Author must be the link's `added_by` (enforced in backend).
 
@@ -111,6 +113,8 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 - **graph_tabs** — persistent in-app tabs (type, concept_id, path, view_mode, label, group_id). The API attaches `community_id` derived from the tab's concept (root tabs: null).
 - **tab_groups** — flat named groups. **sidebar_items** — polymorphic ordering (`group` / `graph_tab` / `combo`).
 - **child_rankings** — dormant.
+
+**question_sequence_links** (Phase 72c-2) — `id`, `from_edge_id` (the precedent; FK edges, CASCADE), `to_edge_id` (the subsequent; FK edges, CASCADE), `created_by` (FK users, SET NULL), `created_at`. UNIQUE `(from_edge_id, to_edge_id)`, CHECK `from_edge_id <> to_edge_id`, indexes on both columns. Sibling, same-community, no-direct-loop, and not-deleted rules are enforced in the controller.
 
 ### Moderation
 - **concept_flags** — edge flags; 10 flags from distinct users hides the edge. UNIQUE `(user_id, edge_id)`.
@@ -156,11 +160,11 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 ### Concepts (`/api/concepts`)
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/root?communityId=&sort=` | Guest | Root questions of a community (400 without `communityId`). Includes per-card link count. |
+| GET | `/root?communityId=&sort=` | Guest | Root questions of a community (400 without `communityId`). Includes per-card link count. Curated (72b): each row adds `answers[]` and `sortDate`, rows use the curated recency order, and `sort` is ignored. |
 | GET | `/attributes` | Guest | Enabled attributes (returns only `question`). |
-| GET | `/search?q=&communityId=` | Guest | Trigram search scoped to a community (400 without `communityId`). |
+| GET | `/search?q=&communityId=` | Guest | Trigram search scoped to a community (400 without `communityId`). Excludes concepts with no visible edge (so deleted and fully hidden questions drop out). |
 | GET | `/names/batch` | Guest | Batch name resolution. |
-| GET | `/:id?path=` | Guest | Question with children. Returns per-child link counts, `nestedLocations` (cross-sibling descendant flag), `altParentCount`, `currentEdgeId`, and (Phase 72a) `communityId`, `communityMode`, `isCommunityOwner`. |
+| GET | `/:id?path=` | Guest | Question with children. Returns per-child link counts, `nestedLocations` (cross-sibling descendant flag), `altParentCount`, `currentEdgeId`, and (Phase 72a) `communityId`, `communityMode`, `isCommunityOwner`. Curated (72b): each child adds `answers[]` (`id, edgeId, url, title, comment, publishedOn, createdAt, addedBy`; legal-held excluded; newest `published_on` first) and `sortDate`, in the curated recency order. Curated (72c-2): each child (and each root row in `/root`) adds `precedents[]` / `subsequents[]` (`linkId, edgeId, conceptId, name`), excluding links touching deleted or hidden edges. |
 | GET | `/:id/parents` | Guest | Flip View parent contexts (excludes root edges). |
 | GET | `/:id/votesets` | Guest | Vote-set analysis. |
 | GET | `/:id/subtree?path=` | Guest | Path-scoped descendant tree (500-edge cap, depth 50); used by CopyLinkPicker. |
@@ -168,6 +172,10 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 | POST | `/batch-children-for-diff` | Guest | DiffModal data. |
 | POST | `/root` | Yes | Create a root question. Body `{ name, attributeId, communityId }`. Rate-limited. |
 | POST | `/child` | Yes | Create a child question; community derived from `graphPath[0]`. Rate-limited. |
+| POST | `/:id/rename` | Yes | Phase 72c-1. Body `{ name }`. Curated only (403 `curated_only`), owners only (403 `curated_owner_only`). Renames the concept row, so the text changes everywhere it is placed in the community. 409 `name_taken` (with the clashing id) on a case-insensitive clash; 403 on legal-held concepts. |
+| POST | `/edges/:edgeId/delete` | Yes | Phase 72c-1 soft delete. Curated owners only. Marks the edge and its path-scoped descendant edges deleted (one transaction, one `delete_batch_id`, `is_hidden = true`). 409 `legal_hold` if any affected edge or link is held. Returns `deletedCount`. Re-creating the same concept under the same parent and path (via `/root` or `/child`) restores that one edge. |
+| POST | `/sequence-links/add` | Yes | Phase 72c-2. Body `{ fromEdgeId, toEdgeId }` (from precedes to). Codes: `self_link`, `edge_deleted`, `curated_only`, `curated_owner_only`, `not_siblings` (same parent and `graph_path`; roots must share a community), `duplicate_link`, `reverse_exists`. |
+| POST | `/sequence-links/remove` | Yes | Phase 72c-2. Body `{ linkId }`. Curated owners only. |
 | POST | `/nest-under-sibling` | Yes | Copy selected sibling questions' full subtrees (edges + links, original authors preserved) under another sibling. Additive; originals untouched. Body `{ parentConceptId, path, selectedEdgeIds, targetEdgeId }`. Works on the root list (empty `path`). All selected and target questions must be in the same community (400 otherwise — matters on the root list). 1000-edge cap. |
 
 ### Communities (`/api/communities`, Phase 71)
@@ -188,12 +196,13 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 | GET | `/web-links/all/:conceptId?path=` | Guest | Flip View aggregate: links grouped by parent context. Each group contains **only links placed on that group's edge**. |
 | GET | `/web-links/preview-title?url=` | Yes | Safe Browsing check, then OG title fetch for the add-link form. 403 `{ code: 'unsafe_url' }` on unsafe URLs. |
 | GET | `/web-links/votes/me` | Yes | Legacy (retained for rollback). |
-| GET | `/web-links/:linkId/location` | Guest | Resolves a link to `{ linkId, edgeId, conceptId, parentPath }` for `/link/:id` share URLs; opaque 404 if hidden/held/deleted. |
-| GET | `/web-links/:edgeId?sort=top\|new` | Guest | Links on one edge, with `addenda[]`, `authorOrcidId`, vote count, `voterUserIds`. |
-| POST | `/web-links/add` | Yes | Add a link. Safe Browsing check, then OG title fallback. |
+| GET | `/web-links/:linkId/location` | Guest | Resolves a link to `{ linkId, edgeId, conceptId, parentPath }` (plus `communityMode`, `cardConceptId`, `cardPath` so a curated answer opens the parent page whose card shows it) for `/link/:id` share URLs; opaque 404 if hidden/held/deleted. |
+| GET | `/web-links/:edgeId?sort=top\|new` | Guest | Links on one edge, with `addenda[]`, `authorOrcidId`, vote count, `voterUserIds`, `publishedOn`. |
+| POST | `/web-links/add` | Yes | Add a link. Safe Browsing check, then OG title fallback. Accepts `publishedOn` (YYYY-MM-DD, ≤1 year ahead; 400 `invalid_published_on`); required in curated (400 `published_on_required`). Open: the author's upvote is added automatically; curated: no vote row is written. |
 | POST | `/web-links/copy` | Yes | Copy own link to a descendant edge in the same root graph. |
-| POST | `/web-links/remove` | Yes | Hard-delete own link (single atomic DELETE checking `added_by` and `legal_hold`; generic 403). Writes `link_removal_log`. |
+| POST | `/web-links/remove` | Yes | Hard-delete a link (single atomic DELETE with `legal_hold = false`; generic 403). Open: author only. Curated: any owner of the community. Writes `link_removal_log`. |
 | POST | `/web-links/upvote`, `/web-links/unvote` | Yes | Body `{ linkId }`. One vote per user per link. |
+| POST | `/web-links/:linkId/edit` | Yes | Phase 72c-1. Body any of `{ title, comment, url, publishedOn }`. Curated owners only (403 `curated_only` in open communities, whose comments stay immutable). Safe Browsing on URL change; `publishedOn` cannot be cleared; blank title falls back to OG fetch; updates `updated_at`; legal-held links refused. |
 | POST | `/web-links/:linkId/addenda` | Yes | Author-only addendum, 2000 chars. |
 | GET | `/me/all?communityId=` | Yes | Votes overlay payload `{ savedEdges, linkVotes, contextEdges, ancestorEdges }`, optionally scoped to a community. |
 | GET | `/saved` | Yes | Legacy (retained for rollback). |
@@ -240,22 +249,26 @@ All external-service utilities share one contract: **never throw**; return a res
 
 ### Pages (`frontend/src/pages/`)
 - **Root.jsx** — root questions of the active community; shows a "No community selected" nudge and hides search/create when none is active.
-- **Concept.jsx** — question page: children grid, Flip View, links panel, bridge badge ("also asked in"), nest-under-sibling mode, share button (always emits `?path=`, empty for roots), `#link-:id` scroll-and-highlight. Derives `votingAllowed` (not curated) and `canCreate` (curated: owner; open: logged in) from the concept response and threads them to ConceptGrid, VoteSetBar, FlipView, ConceptLinksPanel, LinkCard, and SearchField. Root.jsx does the same for the root grid.
+- **Concept.jsx** — question page: children grid, Flip View, links panel, bridge badge ("also asked in"), nest-under-sibling mode, share button (always emits `?path=`, empty for roots), `#link-:id` scroll-and-highlight. Derives `votingAllowed` (not curated) and `canCreate` (curated: owner; open: logged in) from the concept response and threads them to ConceptGrid, VoteSetBar, FlipView, ConceptLinksPanel, LinkCard, and SearchField. Root.jsx does the same for the root grid. In curated communities both pages hide the sort toggle, the "N votes" count, and the "N users" count, and Concept hides the side links panel in children view (Flip View unchanged). Both pages pad the bottom of the content so the fixed Add / Search bar never covers it.
 - **ResetPasswordPage.jsx**, **VerifyEmailPage.jsx** — standalone auth pages.
 - **Saved.jsx**, **SavedTabContent.jsx**, **Login.jsx**, **Register.jsx** — legacy files, not routed.
 
 ### Components (`frontend/src/components/`)
-- **AppShell.jsx** — header (shows "Community: <name>"), sidebar, tabs, overlays, deep links, outreach mode. Holds the active community; graph tabs are filtered to it (root tabs always shown; groups with no in-community tabs hidden). `hasDeepLinkInUrl` suppresses default-tab activation during async deep-link resolution.
+- **AppShell.jsx** — header (shows "Community: <name>"), sidebar, tabs, overlays, deep links, outreach mode. Holds the active community; graph tabs are filtered to it (root tabs always shown; groups with no in-community tabs hidden). `hasDeepLinkInUrl` suppresses default-tab activation during async deep-link resolution. Tab-state rules (October 2026 fixes): the mount effect waits for `authLoading` to settle and a `tabsLoaded` flag gates the deep-link effect, so deep links and `/c/:slug` resolve against the user's real tabs (no duplicates, no blank page); `?gtab=` is read on load and activates that tab and its community; a one-shot reconcile switches to a tab in the active community if the restored tab belongs elsewhere and corrects the URL with `replaceState`; `handleConceptRenamed` updates other tabs' labels and broadcasts `renamedConcept` so mounted Concept/Root tabs showing that question reload. Holds the per-community `editMode` (default View, not persisted, reset on community switch).
 - **CommunitiesBrowse.jsx** — community list (plain "Curated" label on curated ones) and inline create form with an Open / Curated choice; selecting one sets the active community and opens a root tab.
 - **CommunityHeaderControls.jsx** (Phase 72a) — in the community header: Share (copies the `/c/:slug` URL) for everyone, and an owners panel (list, add by username, remove; remove disabled for the last owner) for owners.
-- **ConceptGrid.jsx** — child/root cards: `N children · M links`, `↘` cross-sibling-descendant flag, vote-set dots.
+- **ConceptGrid.jsx** — child/root cards: `N children · M links` (curated: `N answers`, plus the in-card answer section), `↘` cross-sibling-descendant flag, vote-set dots.
 - **ConceptLinksPanel.jsx** — right-hand links panel. Children view shows the current edge's links; Flip View shows the aggregate grouped by parent context. Add-link form with a required affirmation checkbox and title preview on paste/blur. Comments render through `LinkifiedText`.
+- **EditableField.jsx** (Phase 72c-1) — click-to-edit text/textarea/date field with inline error; Enter (single-line) or blur saves, Escape cancels.
+- **NewQuestionCard.jsx** (Phase 72c-1) — inline new-question card opened by the edit-mode "+" button.
+- **CardSequenceSection.jsx** (Phase 72c-2) — curated precedent/subsequent columns on each card. Names scroll to and highlight the sibling card (`qcard-<edgeId>` ids). Edit mode: placeholders, "+" opens an inline picker of eligible siblings (rendered in normal flow so the card cannot clip it; Escape/Cancel closes), "✕" removes, and a "dated earlier than its precedent" warning when both dates exist and are out of order. View mode hides the row when both lists are empty.
+- **CardAnswerSection.jsx** (Phase 72b) — curated in-card answers: title link (new tab), publication date, comment via `LinkifiedText`; in edit mode owners get "+ Add answer" (URL with title preview, title, comment, date, affirmation) and per-answer "Remove" with an inline Yes/No confirm. All controls are `<button>` elements. `/link/:id` highlights the row.
 - **LinkCard.jsx** — link card: vote, "Other instances" dropdowns, Copy (adder only), Remove (adder only), Add addendum (author only), Share (`/link/:id`), ORCID badge, vote-set color dots.
 - **LinkifiedText.jsx** — comment renderer that turns in-orca URLs into links (new tab); external URLs stay plain text. **ClampedText.jsx** — line-clamp with expand.
 - **CopyLinkPicker.jsx** — subtree picker for copy-to-descendant.
 - **FlipView.jsx** — alternate parent contexts with Jaccard similarity.
 - **VotesOverlay.jsx** — display-only Votes tree (saved + context + ancestor edges, link votes nested), community-scoped. Its tree rendering is the planned base for the Phase 72 graph view.
-- **SearchField.jsx** (add/search, community-scoped), **AddConceptModal.jsx**, **Breadcrumb.jsx**, **DiffModal.jsx**, **SwapModal.jsx**, **VoteSetBar.jsx**, **HiddenConceptsView.jsx**.
+- **SearchField.jsx** (add/search, community-scoped; search-only in curated communities), **AddConceptModal.jsx**, **Breadcrumb.jsx**, **DiffModal.jsx**, **SwapModal.jsx**, **VoteSetBar.jsx**, **HiddenConceptsView.jsx**.
 - **LoginModal.jsx** (ORCID-first registration, password login, forgot password), **OrcidBadge.jsx**, **OrcidCallback.jsx**, **ProfilePage.jsx**, **DeleteAccountFlow.jsx**, **ProtectedRoute.jsx**, **SidebarDndContext.jsx**.
 - **InfoPage.jsx** — generic info page with comments (used for both info slugs). **OutreachLanding.jsx**.
 - **LegalPage.jsx**, **TermsPage.jsx**, **PrivacyPage.jsx**, **CopyrightPage.jsx**, **CopyrightPolicyPage.jsx**, **InfringementNoticePage.jsx**, **CounterNoticePage.jsx**, **AdminLegalRemovalsPanel.jsx**.
@@ -280,9 +293,11 @@ All external-service utilities share one contract: **never throw**; return a res
 - **No default community.** Only a community the browser explicitly chose before is restored on load.
 
 ### Shared structure and authorship
-- **Append-only for shared graph structure.** Concepts and edges are never user-deletable; they are hidden by moderation or removed by legal action. (Phase 72 curated communities will be an explicit, owner-scoped exception.)
+- **Append-only for shared graph structure (open communities).** Concepts and edges are never user-deletable; they are hidden by moderation or removed by legal action. **Curated exception (72c-1):** owners may rename questions, edit answers, and soft-delete edges (never hard-delete); deletions are batched and reversible by re-adding. (Phase 72 curated communities will be an explicit, owner-scoped exception.)
 - **Self-authored link removal.** A user may hard-delete their own link when not under legal hold: one atomic DELETE, generic 403 on failure, votes cascade, sparse `link_removal_log` row. User removal, moderation hide, and legal removal are three separate pathways with separate audit trails — never substitute one for another.
 - **Immutable comments + addenda.** Link comments cannot be edited; authors post timestamped addenda.
+- **Curated answers reuse `concept_links`** (Phase 72b) so Safe Browsing, OG titles, share URLs, legal removal and the removal log apply unchanged; `published_on` is the only addition.
+- **Curated recency sort** (Phase 72b, server-side in `conceptsController` `sortByRecency`): **open questions first** — no answer on the question's edge or any descendant edge (path-scoped) — newest added first; then **answered questions** by `sortDate` (own newest `published_on`, else newest descendant `published_on`) DESC, then edge `created_at` DESC. `sortDate` is null for open questions.
 - **Links live on edges, and only there.** A link applies only to the edge it was placed on. It does not surface on ancestors in any view, and votes are one per user per link. Duplicate URLs on one edge are allowed (different comments are different contributions).
 - **Copy-to-descendant.** The adder may copy a link to a descendant edge in the same root graph; a new row with zero votes.
 - **Votes pages are display-only.** The Votes overlay only navigates; votes change from question pages.
@@ -332,6 +347,10 @@ All external-service utilities share one contract: **never throw**; return a res
 - **Dead code** for situations and tunnels (backend + frontend) could be deleted in a dedicated cleanup phase. `DeleteAccountFlow` and `/delete-account` still pre-check owned combos.
 - **Legacy page files** `Saved.jsx`, `SavedTabContent.jsx`, `Login.jsx`, `Register.jsx` are unrouted.
 - **Bare `/concept/N` URLs** (no `?path=`) produce a blank shell when opened; UI no longer generates them.
+- **Root-question answer share links** open the root question's page without scrolling to the answer (the answer card lives on the community root list, which has no scroll threading).
+- **DOI title fetch:** publisher pages often serve bot checks, so pasted DOI links get titles like "Client Challenge". Better: for DOI URLs, fill title and publication date from the Crossref API. Valuable for journals.
+- **"Also appears under N"** rename warning shows only on a question's own page, not when renaming from a card.
+- **Copy on curated create form** says readers "leave feedback"; true only after 72e.
 - **Deep-link tab labels** default to "Concept" until the name loads; update the label after the API response.
 - **In-orca URL regex** is duplicated between `inOrcaLinks.js` and `LinkifiedText.jsx` with no enforcement.
 - **Email verification page** trusts the redirect's `status` param; could confirm via a backend call.
@@ -347,21 +366,17 @@ All external-service utilities share one contract: **never throw**; return a res
 
 ### Phase 72 — Curated communities (in progress; full spec in `PHASE_72_CURATED_COMMUNITIES.md`)
 - ~~72a: mode + owners + `/c/:slug` + write gating~~ **completed October 19, 2026** (with a follow-up fix: same-community check in nest-under-sibling, row lock in owner removal)
-- **Next: 72b** — answer fields + in-card answer section (curated) + recency sort.
+- ~~72c: edit mode, rename, answer editing, soft delete, precedent/subsequent links~~ **completed October 21, 2026** (follow-ups: picker clipping; tab-state fixes for auth transition, `?gtab` restore, URL sync, and cross-tab rename)
+- ~~72b: answers + in-card answer section + recency sort~~ **completed October 19, 2026** (sort rule revised to open-questions-first; follow-ups: no auto-vote in curated, vote UI hidden, "answers" wording, button accessibility, bottom padding)
+- **Next: 72d** — graph view (both modes).
 
 Purpose: let a journal own a community built from its published papers, share it by link, and collect reader feedback. Decisions locked in planning (October 2026):
 
-- **Built in 72a:** community modes, `community_owners`, `/c/:slug`, and curated gating for existing write/vote endpoints (see API Surface). Remaining decisions for later sub-phases:
-- **Curated editing (72c):** only owners create/edit/delete questions, answers, and precedent/subsequent links. Deletes are soft (`deleted_at`) so feedback threads on removed questions can be archived. Owner edits are in place (comments mutable in curated, unlike open).
+- **Built so far:** 72a (modes, owners, `/c/:slug`, gating), 72b (answers, in-card answer section, open-first recency sort), 72c (edit mode, rename, answer editing, soft delete, precedent/subsequent links). Remaining decisions:
 - **Navigation stays page-based.** Path-dependent identity is kept.
-- **Answer information** (both modes, replacing the side links panel with an answer section inside the child card): comment, link, and **publication date**. **Multiple answers per question** allowed, ordered newest-first. Answers live on the edge, like links today. Not restricted to leaves — owners simply don't add answers to non-leaf questions.
-- **Recency sorting (curated):** siblings sort by newest publication date; a leaf's date is its newest answer, a parent's is its newest descendant's.
-- **Precedent / subsequent links:** directional links between **sibling** edges only (same parent and `graph_path`, enforced server-side). One row per link, shown on both cards; removing it from either side removes it from both. Block direct A↔B loops. Soft warning in edit mode when a subsequent's date is earlier than its precedent's.
-- **Renaming** a question renames it everywhere it appears in the community (concept-level name); show "also appears under X" in edit mode; handle the within-community uniqueness conflict.
-- **Edit mode / view mode toggle** in the header, owners only, defaulting to view. Edit mode uses dotted outlines; fields are click-to-edit; plus/X icons add/remove precedent/subsequent links; a bottom-corner plus adds a child.
 - **Graph view:** a header button opens the whole graph from the root as a collapsible tree (built from VotesOverlay's tree rendering), answers as nested rows, current position highlighted, click to navigate. Offered in open communities too.
 - **Reader feedback (curated only):** a feedback icon on each card (suggest edits to the question or its answers; suggest adding/removing precedent or subsequent links) and a bottom-corner icon (suggest a new child, optionally with its own children — a whole branch). Each item has free-text comments and is shown as a public thread. Readers can reply; owner replies are marked. Statuses: open / incorporated / declined. Readers can vote on feedback (visible only inside the feedback menu; sorts feedback, never the graph). Each item snapshots the text it was written against. Login required to submit; guests can read. Owners get a feedback inbox across the community plus count badges. Needs moderation, rate limits, and Safe Browsing on suggested links.
-- **Remaining sub-phases:** 72b answer fields + card answer section (curated) + recency sort; 72c precedent/subsequent + edit mode; 72d graph view; 72e feedback system + owner inbox; 72f card answer section for open graphs. Later: one-click "incorporate" and email notifications.
+- **Remaining sub-phases:** 72d graph view; 72e feedback system + owner inbox (feedback threads on removed questions are archived via `delete_batch_id`); 72f card answer section for open graphs. Later: one-click "incorporate", email notifications, Crossref auto-fill for DOIs, a restore UI for deleted batches.
 - **Docs to revise alongside:** ToS / Copyright Policy (editorial ownership, public feedback); the append-only AD (curated exception).
 
 ### Other

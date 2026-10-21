@@ -2,7 +2,7 @@
 
 **Status:** Planned (spec for implementation). 72a is the first sub-phase.
 **Design sessions:** October 6 and October 19, 2026
-**Mockups:** keep in `docs/mockups/` (reader view, edit mode, parent view, graph view). Mockups show layout only — the existing Orca UI style rules in `CLAUDE.md` always apply.
+**Mockups:** `docs/mockups/` — `reader-leaf-view.png`, `reader-parent-view.png`, `edit-mode-leaf-view.png`, `graph-view.png`. Mockups show layout only — the existing Orca UI style rules in `CLAUDE.md` always apply.
 
 ## Summary
 
@@ -26,7 +26,7 @@ Existing communities are all test data; nothing needs migrating beyond defaults.
 3. **Anyone logged in can create a community** of either mode. Communities are shared by link (`/c/:slug`) — journals post that link on their site.
 4. **Navigation stays page-based** with path-dependent identity. Precedent/subsequent links and answers live on edges.
 5. **Answers:** each question (edge) can carry **multiple** answers (comment, link URL, publication date), ordered newest-first. No leaf/non-leaf distinction in the data — owners simply don't add answers to non-leaf questions.
-6. **Recency sorting (curated):** open questions first, then answered ones. A question is "open" when neither it nor any descendant has an answer; open questions sort newest-added first (edge `created_at`). Answered questions follow, by sort-date newest first: its own newest answer's publication date, else its newest descendant answer's date.
+6. **Recency sorting (curated):** siblings sort by sort-date, newest first. A question's sort-date is its newest answer's publication date; a question without answers uses its newest descendant's date; fallback is the edge's `created_at`.
 7. **Precedent / subsequent:** directional links between **sibling** edges only (same parent and `graph_path`, enforced server-side). Stored once (A precedes B), shown on both cards. Removing from either card removes the row. Direct A↔B loops are rejected. Edit mode shows a soft warning when a subsequent's sort-date is earlier than its precedent's.
 8. **Renaming** a question changes the concept's name everywhere it appears in the community. Edit mode notes "also appears under X". A rename that collides with an existing name in the community is rejected with a clear message.
 9. **Deletes in curated are soft** (`deleted_at`), cascading to the edge's subtree, so feedback threads on removed questions can be archived rather than lost.
@@ -139,11 +139,11 @@ ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS published_on DATE;
 - `GET /api/concepts/:id` and `GET /api/concepts/root`: in curated communities each child/root row includes `answers: [{ id, url, title, comment, publishedOn, addedByUsername, authorOrcidId, createdAt }]` (visible links only: `legal_hold = false`), newest first, and `sortDate`. Open communities: unchanged (no `answers` array).
 
 ### Recency sorting (curated only)
-Siblings (children of one page, and the root list) are ordered in two groups:
-1. **Open questions first** — no answer on the question's own edge and none on any descendant edge. Ordered by edge `created_at` DESC (newest added first).
-2. **Answered questions next** — ordered by `sortDate` DESC, then edge `created_at` DESC, where `sortDate` is the newest `published_on` among answers on the child's own edge, else the newest `published_on` among answers on any **descendant** edge (path-scoped: descendant edges are those whose `graph_path` starts with the child's full path, i.e. `[...P, childId]`, or `[childId]` for a root).
-
-`sortDate` is null for open questions. Computed server-side. The existing `sort` parameter is ignored in curated communities. Hidden edges and legal-held links are excluded.
+Siblings (children of one page, and the root list) are ordered by `sortDate` DESC, then edge `created_at` DESC:
+1. the newest `published_on` among answers on the child's own edge; else
+2. the newest `published_on` among answers on any **descendant** edge of that child (path-scoped: descendant edges are those whose `graph_path` starts with the child's full path, i.e. `[...P, childId]`, or `[childId]` for a root); else
+3. the child edge's `created_at`.
+Computed in SQL. The existing `sort` parameter is ignored in curated communities. Hidden edges and legal-held links are excluded.
 
 ### Frontend (curated communities)
 - **Answer section in each card** (ConceptGrid, children and root grids): under the question text, each answer shows its title as a link (new tab, `rel="noopener noreferrer"`), the publication date, and the comment (clamped, via `LinkifiedText`). No vote controls. Cards with no answers show no answer section (no placeholder text for readers).
@@ -159,6 +159,94 @@ Edit mode and inline editing of answers or questions, soft delete, precedent/sub
 - Migration twice; `published_on` column present.
 - Curated: owner adds answers with dates; non-owner gets `curated_owner_only`; missing date → `published_on_required`; bad/far-future date → 400.
 - Answers appear in the card newest-first; side panel hidden; open community unchanged.
-- Sorting: open questions (no answers anywhere in their subtree) come first, newest added first; then answered questions newest date first, where a parent with no own answer uses its newest descendant answer; root list follows the same rule.
+- Sorting: leaf with newer answer sorts above older; a parent with no answers sorts by its newest descendant answer; an unanswered childless question sorts by creation date; root list follows the same rule.
 - A second owner can remove the first owner's answer in curated; a non-owner cannot; legal-held answers cannot be removed.
 - `/link/:id` for a curated answer highlights the row in its card.
+
+---
+
+## Phase 72c — Owner edit mode, precedent/subsequent links
+
+72c ships in two runs: **72c-1** (edit mode, inline editing, renaming, soft delete) and **72c-2** (precedent/subsequent links). Mockups: `docs/mockups/edit-mode-leaf-view.png` (edit mode) and `docs/mockups/reader-leaf-view.png` (view mode). Layout only — house style rules apply.
+
+### 72c-1 — Edit mode, inline editing, renaming, soft delete
+
+**Edit / view toggle**
+- Owners of a curated community see an "Edit" / "View" toggle in the page header on both the community root page and question pages. Non-owners and open communities never see it.
+- State lives in AppShell, per community, defaults to View, is not persisted across reloads, and resets when the active community changes.
+- **View mode** shows exactly what readers see: no Add answer, Remove, or create controls (these moved out of view mode in 72c-1).
+- **Edit mode**: cards and editable fields get a dashed outline (`1px dashed`, neutral gray). Everything below is edit-mode only.
+
+**Inline question editing (rename)**
+- Clicking a question's text (card title, or the page title on its own page) turns it into an input. Enter or blur saves, Escape cancels; empty is rejected.
+- `POST /api/concepts/:id/rename` body `{ name }`. Curated communities only (open → 403 `curated_only`); owners only (403 `curated_owner_only`). Renames the **concept row**, so the new text appears everywhere that question is placed in the community. A case-insensitive clash with another concept in the same community → 409 `name_taken` with the clashing question's id. Rejects legal-held concepts (403).
+- When the question also appears under other parents (`altParentCount > 0`, already returned by `GET /concepts/:id`), the input shows "Also appears under N other question(s) — renaming changes it everywhere."
+
+**Inline answer editing**
+- In edit mode each answer's title, comment, URL, and publication date are click-to-edit; the per-answer Remove and the card's "+ Add answer" live here now.
+- `POST /api/votes/web-links/:linkId/edit` body any of `{ title, comment, url, publishedOn }`. Curated only (open → 403 `curated_only`, since open-community comments stay immutable); owners only. Same validation as add: `publishedOn` required to remain set, URL must be http(s) and passes the Safe Browsing check when changed, title may not be emptied (fall back to OG fetch if blank). Updates `updated_at`. Rejects legal-held links.
+
+**Adding questions in edit mode**
+- A "+" control fixed at the bottom-right of the page opens an inline "New question" card at the top of the list (input, Enter to save, Escape to cancel), using the existing create root / create child endpoints.
+- In curated communities the Add / Search field becomes search-only for everyone (its "Create … as root question / Add … as child" option is removed); adding happens only through edit mode.
+
+**Soft delete**
+- Edit mode shows an "✕" on each card. Clicking it shows an inline confirm on the card: "Delete this question? It has N sub-questions; they will be removed too." Yes / No (no browser dialogs).
+- `POST /api/concepts/edges/:edgeId/delete` — curated only, owners only. Marks the edge and **all its descendant edges** (path-scoped: `graph_path` starts with the edge's full path) as deleted: `deleted_at = NOW()`, `deleted_by = user`, `delete_batch_id` (one UUID per delete action), **and `is_hidden = true`** so every existing visibility filter excludes them with no further query changes. The concept rows are untouched (the same question may still be placed elsewhere). Answers on deleted edges stay in the table but are unreachable. Refuses if any affected edge or link is under `legal_hold` (409 `legal_hold`). Returns the number of edges deleted.
+- Moderation surfaces must never show deleted edges as moderated content: the hidden-questions list, unhide (admin and community), flag/vote/comment endpoints, and the hidden-count badges exclude rows where `deleted_at IS NOT NULL`.
+- **Re-adding** a deleted question under the same parent (same parent, path, and concept) restores that one edge (clears `deleted_at`, `deleted_by`, `delete_batch_id`, `is_hidden`) instead of hitting the edges uniqueness constraint. Its old sub-questions stay deleted. A restore-batch UI is out of scope.
+
+**Schema (72c-1)**
+```sql
+ALTER TABLE edges ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+ALTER TABLE edges ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE edges ADD COLUMN IF NOT EXISTS delete_batch_id UUID;
+CREATE INDEX IF NOT EXISTS idx_edges_deleted_batch ON edges (delete_batch_id) WHERE delete_batch_id IS NOT NULL;
+```
+(Use `gen_random_uuid()`; it is built into PostgreSQL 13+.)
+
+**Non-goals (72c-1):** precedent/subsequent links, graph view, feedback, a restore UI, editing in open communities, moving a question to a different parent.
+
+**Tests (72c-1)**
+- Toggle visible only to curated owners; defaults to View; resets on community switch.
+- View mode shows no edit controls even for owners.
+- Rename: succeeds for owner; appears under every parent; 409 `name_taken` on clash; 403 for non-owner and in open communities.
+- Answer edit: each field; Safe Browsing on URL change; cannot clear `publishedOn`; 403 in open communities.
+- Delete: subtree removed from every view (grid, root list, search, Votes overlay, Flip View, counts); never appears in moderation lists; legal-hold refusal; re-adding restores just that edge.
+- Curated Add / Search has no create option.
+
+### 72c-2 — Precedent / subsequent links
+
+**Schema**
+```sql
+CREATE TABLE IF NOT EXISTS question_sequence_links (
+  id SERIAL PRIMARY KEY,
+  from_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,  -- the precedent
+  to_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,    -- the subsequent
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (from_edge_id, to_edge_id),
+  CHECK (from_edge_id <> to_edge_id)
+);
+CREATE INDEX IF NOT EXISTS idx_qsl_to ON question_sequence_links (to_edge_id);
+```
+
+**Rules (enforced server-side)**
+- Both edges are siblings: same `parent_id` and `graph_path` (root siblings: both root edges in the same community), neither deleted, community is curated.
+- No direct loop: reject if the reverse link (B→A) exists (409 `reverse_exists`). Longer chains are allowed.
+- Owners only. Links whose edges are deleted are excluded from reads.
+
+**Endpoints**
+- `POST /api/concepts/sequence-links/add` body `{ fromEdgeId, toEdgeId }`; `POST /api/concepts/sequence-links/remove` body `{ linkId }`.
+- `GET /concepts/:id` and `GET /concepts/root` (curated): each row adds `precedents: [{ linkId, edgeId, conceptId, name }]` and `subsequents: [...]` in one extra query, no N+1.
+
+**UI**
+- Each curated card gets a two-column row below its answers: "Precedent questions" and "Subsequent questions" (mockup), listing sibling names. Clicking a name scrolls to that sibling's card and highlights it (same 2s highlight). View mode hides the row when both lists are empty.
+- Edit mode: each column has "+" (opens a picker listing eligible siblings: not itself, not already linked that direction, not one that would create a direct loop) and an "✕" per entry. Empty columns show "No precedent questions" / "No subsequent questions".
+- Soft warning (edit mode only): when a subsequent's `sortDate` is earlier than its precedent's, show "dated earlier than its precedent" beside that entry.
+
+**Tests (72c-2)**
+- Add/remove both directions; shown on both cards; removing from either side removes it from both.
+- Non-sibling, cross-community, deleted, self, duplicate, and reverse links rejected with the right codes.
+- Deleting a question hides its links on the surviving sibling.
+- Picker excludes ineligible siblings; soft warning appears when dates are out of order.

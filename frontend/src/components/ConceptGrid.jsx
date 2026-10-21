@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSetColor } from './VoteSetBar';
 import CardAnswerSection from './CardAnswerSection';
+import EditableField from './EditableField';
 
 const ConceptGrid = ({
   concepts,
@@ -26,7 +27,30 @@ const ConceptGrid = ({
   onAnswersChanged,
   isGuest = false,
   onRequestLogin,
+  // Phase 72c-1: curated edit mode. onRename(conceptId, newName) and
+  // onDeleteEdge(edgeId) must return promises that reject on failure.
+  editMode = false,
+  onRename,
+  onDeleteEdge,
 }) => {
+  // Which card's delete confirm is open (keyed by edge_id), and any delete error.
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleConfirmDelete = async (edgeId) => {
+    if (deletingId) return;
+    setDeletingId(edgeId);
+    setDeleteError(null);
+    try {
+      await onDeleteEdge(edgeId);
+      setConfirmingDeleteId(null);
+    } catch (err) {
+      setDeleteError(err?.response?.data?.error || 'Could not delete this question');
+    } finally {
+      setDeletingId(null);
+    }
+  };
   const isSelected = (edgeId) =>
     !!(selectedEdgeIds && (selectedEdgeIds.has ? selectedEdgeIds.has(edgeId) : selectedEdgeIds.includes(edgeId)));
   // Phase 14a: Right-click context menu for concept diffing
@@ -81,6 +105,7 @@ const ConceptGrid = ({
               key={concept.edge_id || concept.id}
               style={{
                 ...styles.card,
+                ...(editMode ? styles.cardEdit : {}),
                 ...(nestMode && isSelected(concept.edge_id) ? styles.cardSelected : {}),
               }}
             >
@@ -113,8 +138,25 @@ const ConceptGrid = ({
                 )}
                 <div style={styles.nameRow}>
                   <h3 style={styles.conceptName}>
-                    {concept.name}
+                    {editMode && onRename ? (
+                      <EditableField
+                        value={concept.name}
+                        onSave={(newName) => onRename(concept.id, newName)}
+                        inputStyle={{ fontSize: '18px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif' }}
+                        displayStyle={{ color: '#333' }}
+                      />
+                    ) : (
+                      concept.name
+                    )}
                   </h3>
+                  {editMode && onDeleteEdge && (
+                    <button
+                      type="button"
+                      style={styles.deleteBtn}
+                      title="Delete this question"
+                      onClick={(e) => { e.stopPropagation(); setDeleteError(null); setConfirmingDeleteId(concept.edge_id); }}
+                    >✕</button>
+                  )}
                   {setIndices.length > 0 && (
                     <div style={styles.dotsContainer}>
                       {setIndices.map((setIndex) => {
@@ -198,13 +240,33 @@ const ConceptGrid = ({
                     {concept.flag_count} {Number(concept.flag_count) === 1 ? 'user has' : 'users have'} flagged this as spam
                   </div>
                 )}
+                {editMode && onDeleteEdge && confirmingDeleteId === concept.edge_id && (
+                  <div style={styles.deleteConfirm} onClick={(e) => e.stopPropagation()}>
+                    <div style={styles.deleteConfirmText}>
+                      Delete “{concept.name}”
+                      {Number(concept.child_count) > 0
+                        ? ` and its ${concept.child_count} sub-question${Number(concept.child_count) === 1 ? '' : 's'}?`
+                        : '?'}
+                    </div>
+                    {deleteError && <div style={styles.deleteErr}>{deleteError}</div>}
+                    <div style={styles.deleteConfirmBtns}>
+                      <button type="button" style={styles.deleteYes} disabled={deletingId === concept.edge_id}
+                        onClick={() => handleConfirmDelete(concept.edge_id)}>
+                        {deletingId === concept.edge_id ? 'Deleting…' : 'Delete'}
+                      </button>
+                      <button type="button" style={styles.deleteNo}
+                        onClick={() => { setConfirmingDeleteId(null); setDeleteError(null); }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
               </div>
-              
+
               {showAnswers && !nestMode && (
                 <CardAnswerSection
                   answers={concept.answers || []}
                   edgeId={concept.edge_id}
                   canManage={canManageAnswers}
+                  editMode={editMode}
                   isGuest={isGuest}
                   onRequestLogin={onRequestLogin}
                   onChanged={onAnswersChanged}
@@ -367,6 +429,63 @@ const styles = {
   },
   cardSelected: {
     boxShadow: '0 0 0 2px #333',
+  },
+  cardEdit: {
+    border: '1px dashed #999',
+    cursor: 'default',
+  },
+  deleteBtn: {
+    flexShrink: 0,
+    fontSize: '14px',
+    lineHeight: 1,
+    color: '#999',
+    cursor: 'pointer',
+    border: 'none',
+    background: 'none',
+    padding: '2px 4px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  deleteConfirm: {
+    marginTop: '10px',
+    padding: '10px',
+    border: '1px solid #e0d9cf',
+    borderRadius: '4px',
+    backgroundColor: '#faf6f0',
+  },
+  deleteConfirmText: {
+    fontSize: '13px',
+    color: '#333',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    marginBottom: '8px',
+  },
+  deleteErr: {
+    fontSize: '12px',
+    color: '#c44',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    marginBottom: '8px',
+  },
+  deleteConfirmBtns: {
+    display: 'flex',
+    gap: '10px',
+  },
+  deleteYes: {
+    fontSize: '12px',
+    color: '#333',
+    cursor: 'pointer',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    border: '1px solid #e0d9cf',
+    padding: '3px 12px',
+    borderRadius: '3px',
+    backgroundColor: '#faf9f6',
+  },
+  deleteNo: {
+    fontSize: '12px',
+    color: '#999',
+    cursor: 'pointer',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    border: 'none',
+    background: 'none',
+    padding: 0,
   },
   cardContent: {
     padding: '20px',

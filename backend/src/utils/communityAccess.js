@@ -73,6 +73,33 @@ async function assertCanWriteStructure(community, userId) {
   };
 }
 
+// Curated-only owner actions (Phase 72c-1): rename a question, edit an answer,
+// soft-delete an edge. These exist ONLY in curated communities and only for
+// owners. Two distinct failure codes so the frontend can message precisely:
+//   - open community            → 403 'curated_only'
+//   - curated, non-owner / guest → 403 'curated_owner_only'
+// Returns { ok: true } or { ok: false, status, code, error }.
+async function assertCuratedOwner(community, userId) {
+  if (!community) {
+    return { ok: false, status: 404, code: 'community_not_found', error: 'Community not found' };
+  }
+  if (community.mode !== 'curated') {
+    return {
+      ok: false,
+      status: 403,
+      code: 'curated_only',
+      error: 'This action is only available in curated communities.',
+    };
+  }
+  if (await isOwner(community.id, userId)) return { ok: true };
+  return {
+    ok: false,
+    status: 403,
+    code: 'curated_owner_only',
+    error: 'Only community owners can make changes in a curated community.',
+  };
+}
+
 // Votes and flags. Rejected outright in curated communities (for everyone,
 // owners included). Synchronous — no ownership lookup needed.
 function assertVotingAllowed(community) {
@@ -96,5 +123,6 @@ module.exports = {
   getCommunityForLink,
   isOwner,
   assertCanWriteStructure,
+  assertCuratedOwner,
   assertVotingAllowed,
 };

@@ -3,11 +3,13 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { conceptsAPI } from '../services/api';
 
-const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false, communityId, canCreate }) => {
+const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, graphTabId, onNavigate, isGuest = false, communityId, canCreate, curated = false }) => {
   // Phase 72a: whether add/create affordances show. Defaults to the pre-72a
   // rule (any logged-in user) when the caller doesn't pass canCreate; curated
   // communities pass false for non-owners.
-  const allowCreate = canCreate === undefined ? !isGuest : canCreate;
+  // Phase 72c-1: in curated communities the search field never creates — questions
+  // are added through edit mode's "+ New question" affordance. Search still works.
+  const allowCreate = curated ? false : (canCreate === undefined ? !isGuest : canCreate);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [exactMatch, setExactMatch] = useState(false);

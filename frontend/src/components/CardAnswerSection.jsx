@@ -1,19 +1,24 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { votesAPI } from '../services/api';
 import LinkifiedText from './LinkifiedText';
+import EditableField from './EditableField';
 
 // Phase 72b: the answer section rendered inside a question card in curated
 // communities. Reader view shows each answer's title (external link), publication
-// date, and comment. Owners get an inline "Add answer" form and a per-answer
-// "Remove" with an inline confirm. There are no vote controls here.
+// date, and comment. There are no vote controls here.
+// Phase 72c-1: owner management (add / remove / inline click-to-edit of each
+// field) is gated behind edit mode. In view mode even owners see read-only answers.
 const CardAnswerSection = ({
   answers = [],
   edgeId,
   canManage = false,
+  editMode = false,
   isGuest = false,
   onRequestLogin,
   onChanged,
 }) => {
+  // Owner management (add/remove/edit) shows only in edit mode.
+  const canEdit = canManage && editMode;
   const [showForm, setShowForm] = useState(false);
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
@@ -116,9 +121,17 @@ const CardAnswerSection = ({
     }
   };
 
+  // Phase 72c-1: save a single edited field. Throws on failure so EditableField
+  // keeps the field open and shows the error inline.
+  const handleEditField = async (answerId, patch) => {
+    await votesAPI.editWebLink(answerId, patch);
+    if (onChanged) onChanged();
+  };
+
   const hasAnswers = answers && answers.length > 0;
-  // Reader with no answers: render nothing. Owners always see the add affordance.
-  if (!hasAnswers && !canManage) return null;
+  // Reader (or owner in view mode) with no answers: render nothing. The add
+  // affordance appears only in edit mode.
+  if (!hasAnswers && !canEdit) return null;
 
   return (
     <div style={styles.wrap} onClick={(e) => e.stopPropagation()}>
@@ -127,7 +140,17 @@ const CardAnswerSection = ({
           {answers.map((a) => (
             <div key={a.id} id={`answer-${a.id}`} style={styles.answerRow}>
               <div style={styles.answerTopRow}>
-                {a.url ? (
+                {canEdit ? (
+                  <EditableField
+                    value={a.title || ''}
+                    onSave={(v) => handleEditField(a.id, { title: v })}
+                    placeholder="Title"
+                    inputStyle={{ fontSize: '14px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif' }}
+                    displayStyle={styles.answerTitle}
+                  >
+                    {a.title || a.url}
+                  </EditableField>
+                ) : a.url ? (
                   <a
                     href={a.url}
                     target="_blank"
@@ -139,12 +162,52 @@ const CardAnswerSection = ({
                 ) : (
                   <span style={styles.answerTitle}>{a.title}</span>
                 )}
-                {a.publishedOn && <span style={styles.answerDate}>{a.publishedOn}</span>}
+                {canEdit ? (
+                  <EditableField
+                    value={a.publishedOn || ''}
+                    type="date"
+                    onSave={(v) => handleEditField(a.id, { publishedOn: v })}
+                    inputStyle={{ fontSize: '12px', fontFamily: '"EB Garamond", Georgia, serif' }}
+                    displayStyle={styles.answerDate}
+                  >
+                    {a.publishedOn || 'set date'}
+                  </EditableField>
+                ) : (
+                  a.publishedOn && <span style={styles.answerDate}>{a.publishedOn}</span>
+                )}
               </div>
-              {a.comment && (
-                <LinkifiedText text={a.comment} lines={3} style={styles.answerComment} />
+              {canEdit && (
+                <div style={styles.answerUrlRow}>
+                  <span style={styles.answerUrlLabel}>URL </span>
+                  <EditableField
+                    value={a.url || ''}
+                    onSave={(v) => handleEditField(a.id, { url: v })}
+                    placeholder="https://..."
+                    inputStyle={{ fontSize: '12px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif' }}
+                    displayStyle={styles.answerUrlText}
+                  />
+                </div>
               )}
-              {canManage && (
+              {canEdit ? (
+                <div style={styles.answerCommentEdit}>
+                  <EditableField
+                    value={a.comment || ''}
+                    type="textarea"
+                    onSave={(v) => handleEditField(a.id, { comment: v })}
+                    placeholder="Comment"
+                    inputStyle={{ fontSize: '13px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif', resize: 'vertical' }}
+                    displayStyle={styles.answerComment}
+                    emptyLabel="add comment"
+                  >
+                    {a.comment || 'add comment'}
+                  </EditableField>
+                </div>
+              ) : (
+                a.comment && (
+                  <LinkifiedText text={a.comment} lines={3} style={styles.answerComment} />
+                )
+              )}
+              {canEdit && (
                 <div style={styles.answerActions}>
                   {confirmingId === a.id ? (
                     <>
@@ -162,13 +225,13 @@ const CardAnswerSection = ({
         </div>
       )}
 
-      {canManage && !showForm && (
+      {canEdit && !showForm && (
         <div style={styles.addRow}>
           <button type="button" onClick={() => setShowForm(true)} style={styles.addBtn}>+ Add answer</button>
         </div>
       )}
 
-      {canManage && showForm && (
+      {canEdit && showForm && (
         <div style={styles.form}>
           <input
             type="text"
@@ -249,6 +312,10 @@ const styles = {
   answerTitle: { fontSize: '14px', color: '#333', textDecoration: 'underline', fontFamily: FONT, overflowWrap: 'anywhere', wordBreak: 'break-word' },
   answerDate: { fontSize: '12px', color: '#888', fontFamily: FONT, flexShrink: 0 },
   answerComment: { fontSize: '13px', color: '#555', fontFamily: FONT, lineHeight: 1.4, marginTop: '3px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  answerUrlRow: { display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '3px' },
+  answerUrlLabel: { fontSize: '11px', color: '#999', fontFamily: FONT, flexShrink: 0 },
+  answerUrlText: { fontSize: '12px', color: '#777', fontFamily: FONT, overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  answerCommentEdit: { marginTop: '3px' },
   answerActions: { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' },
   confirmPrompt: { fontSize: '12px', color: '#666', fontFamily: FONT },
   // Link-style buttons: reset the native button chrome so they render as the

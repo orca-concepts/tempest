@@ -35,6 +35,7 @@ router.post('/web-links/remove', authenticateToken, votesController.removeWebLin
 router.post('/web-links/upvote', authenticateToken, votesController.upvoteWebLink);
 router.post('/web-links/unvote', authenticateToken, votesController.removeWebLinkVote);
 router.post('/web-links/:linkId/addenda', authenticateToken, votesController.addConceptLinkAddendum);
+router.post('/web-links/:linkId/edit', authenticateToken, votesController.editWebLink); // Phase 72c-1 — curated answer edit
 
 // All remaining vote routes require authentication
 router.use(authenticateToken);

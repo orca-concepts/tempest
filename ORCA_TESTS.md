@@ -380,4 +380,38 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72c-1 — Curated Edit Mode (rename, answer edit, soft delete, inline add)
+
+### Schema
+- [ ] Migration runs twice cleanly; `\d edges` shows `deleted_at TIMESTAMP`, `deleted_by INTEGER` (FK users ON DELETE SET NULL), `delete_batch_id UUID`, and the partial index `idx_edges_delete_batch` (`WHERE deleted_at IS NOT NULL`)
+
+### Rename (`POST /api/concepts/:id/rename`)
+- [ ] Curated owner renames a question; the new name shows under every placement of that concept in the community (concept-level rename)
+- [ ] Rename to a name already used by another concept in the community → 409 `name_taken` with the clashing `conceptId`; a no-op rename to the same text (any case) succeeds
+- [ ] Non-owner (and guest) → 403 `curated_owner_only`; in an open community → 403 `curated_only`; a legal-held concept → 403 `legal_hold`
+
+### Answer edit (`POST /api/votes/web-links/:linkId/edit`)
+- [ ] Curated owner edits each field independently (title, comment, URL, publication date); `updated_at` advances
+- [ ] A changed URL is re-checked by Safe Browsing (unsafe → 403 `unsafe_url`); a malformed URL → 400
+- [ ] `publishedOn` cannot be cleared (empty → 400 `published_on_required`); a blank title falls back to the OG fetch of the resolved URL
+- [ ] Non-owner → 403 `curated_owner_only`; open community → 403 `curated_only`; legal-held answer → 403 `legal_hold`
+
+### Soft delete (`POST /api/concepts/edges/:edgeId/delete`)
+- [ ] Deleting a question with two levels of sub-questions marks the edge and its entire path-scoped subtree `deleted_at` + `is_hidden = true` under one shared `delete_batch_id`
+- [ ] The deleted questions vanish from `GET /concepts/:id`, `/concepts/root`, `/concepts/search`, Flip View parent data, `/votes/me/all`, and child counts
+- [ ] `GET /moderation/hidden/:parentId` does not list a deleted edge; unhide (admin), flag, moderation vote, and moderation comment on a deleted edge are refused
+- [ ] If any affected edge or link is under `legal_hold`, the delete is refused with 409 `legal_hold` and nothing changes
+- [ ] Re-adding the same concept under the same parent+path (create root/child) restores only that single edge (`restored: true`), leaving its former subtree deleted
+- [ ] Non-owner → 403 `curated_owner_only`; open community → 403 `curated_only`
+
+### Frontend — edit/view toggle and UI
+- [ ] An Edit/View toggle appears in the header only for owners of curated communities (root page and question pages); state lives in AppShell per community, defaults to View, is not persisted, and resets on community change
+- [ ] View mode is read-only: the per-card "+ Add answer" form and per-answer "Remove" (72b) appear only in edit mode
+- [ ] Edit mode: cards get dashed outlines; question titles (cards and the page title) are inline click-to-edit (Enter/blur saves, Escape cancels); the "Also appears under N other question(s)" note shows when `altParentCount > 0`
+- [ ] Edit mode: answer title/URL/comment/date are inline click-to-edit; each answer has a "Remove" with an inline confirm (no `window.confirm`)
+- [ ] Edit mode: a bottom-right "+" opens an inline New question card at the top of the list (root → create root, child → create child); each card's "✕" soft-deletes with an inline confirm stating the sub-question count (no `window.confirm`/`alert`)
+- [ ] In curated communities the search field never offers create (for anyone); search still works. Open communities are unchanged (no edit toggle, no dashed cards, search create intact)
+
+---
+
 **END OF TESTING CHECKLIST**

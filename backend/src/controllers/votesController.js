@@ -2661,6 +2661,129 @@ const votesController = {
     }
   },
 
+  // Phase 72c-1: edit an answer (curated communities only, owners only). Any of
+  // url / title / comment / publishedOn may be supplied; omitted fields are left
+  // unchanged. A changed URL is re-checked by Safe Browsing. A blank title falls
+  // back to an OG fetch of the (new) URL. publishedOn cannot be cleared. Comments
+  // are mutable here (curated), unlike open communities. Legal-held links refused.
+  editWebLink: async (req, res) => {
+    const linkId = parseInt(req.params.linkId, 10);
+    const { url, title, comment, publishedOn } = req.body;
+    const userId = req.user.userId;
+
+    try {
+      if (!linkId || isNaN(linkId)) {
+        return res.status(400).json({ error: 'Invalid link id' });
+      }
+
+      const existingRes = await pool.query(
+        `SELECT id, edge_id, url, title, comment, legal_hold,
+                to_char(published_on, 'YYYY-MM-DD') AS published_on
+           FROM concept_links WHERE id = $1`,
+        [linkId]
+      );
+      if (existingRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Answer not found' });
+      }
+      const existing = existingRes.rows[0];
+
+      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
+      const community = await communityAccess.getCommunityForLink(linkId);
+      const gate = await communityAccess.assertCuratedOwner(community, userId);
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      if (existing.legal_hold) {
+        return res.status(403).json({ error: 'This answer is held for legal reasons and cannot be edited.', code: 'legal_hold' });
+      }
+
+      // ── URL (with Safe Browsing on change) ──
+      let newUrl = existing.url;
+      const urlProvided = url !== undefined;
+      if (urlProvided) {
+        const trimmedUrl = String(url).trim();
+        if (!/^https?:\/\/.+/i.test(trimmedUrl)) {
+          return res.status(400).json({ error: 'URL must start with http:// or https://' });
+        }
+        if (trimmedUrl.length > 2048) {
+          return res.status(400).json({ error: 'URL is too long (max 2048 characters)' });
+        }
+        if (trimmedUrl !== existing.url) {
+          const sbResult = await safeBrowsing.checkUrl(trimmedUrl);
+          if (!sbResult.safe) {
+            const urlHash = crypto.createHash('sha256').update(trimmedUrl.toLowerCase()).digest('hex');
+            await pool.query(
+              `INSERT INTO safe_browsing_rejections (attempted_by_user_id, url_hash, threat_types, source)
+               VALUES ($1, $2, $3, $4)`,
+              [userId, urlHash, sbResult.threats, 'add']
+            );
+            return res.status(403).json({ error: 'This URL was flagged by Google Safe Browsing and cannot be posted.', code: 'unsafe_url' });
+          }
+        }
+        newUrl = trimmedUrl;
+      }
+
+      // ── publication date (cannot be cleared) ──
+      let newPublishedOn = existing.published_on;
+      if (publishedOn !== undefined) {
+        const raw = publishedOn != null ? String(publishedOn).trim() : '';
+        if (!raw) {
+          return res.status(400).json({ error: 'A publication date is required.', code: 'published_on_required' });
+        }
+        const validation = validatePublishedOn(raw);
+        if (!validation.ok) {
+          return res.status(400).json({ error: validation.error, code: 'invalid_published_on' });
+        }
+        newPublishedOn = validation.value;
+      }
+
+      // ── title (blank → OG fetch of the resolved URL, else the URL itself) ──
+      let newTitle = existing.title;
+      if (title !== undefined) {
+        const trimmedTitle = String(title).trim();
+        if (trimmedTitle) {
+          newTitle = trimmedTitle.substring(0, 255);
+        } else {
+          const ogTitle = await fetchOgTitle(newUrl);
+          newTitle = ogTitle || newUrl.substring(0, 255);
+        }
+      }
+
+      // ── comment (mutable in curated) ──
+      let newComment = existing.comment;
+      if (comment !== undefined) {
+        newComment = comment != null && String(comment).trim() ? String(comment).trim() : null;
+      }
+
+      const updated = await pool.query(
+        `UPDATE concept_links
+            SET url = $2, title = $3, comment = $4, published_on = $5, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+          RETURNING id, edge_id, url, title, comment, updated_at,
+                    to_char(published_on, 'YYYY-MM-DD') AS published_on`,
+        [linkId, newUrl, newTitle, newComment, newPublishedOn]
+      );
+
+      const row = updated.rows[0];
+      res.json({
+        message: 'Answer updated',
+        webLink: {
+          id: row.id,
+          edgeId: row.edge_id,
+          url: row.url,
+          title: row.title,
+          comment: row.comment,
+          updatedAt: row.updated_at,
+          publishedOn: row.published_on,
+        },
+      });
+    } catch (error) {
+      console.error('Error editing web link:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   // Phase 60a: Preview OG title for a URL
   previewTitle: async (req, res) => {
     const { url } = req.query;

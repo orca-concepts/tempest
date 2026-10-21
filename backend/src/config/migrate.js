@@ -311,6 +311,25 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_edges_attribute ON edges(attribute_id);
     `);
 
+    // Phase 72c-1: soft delete for curated communities. Owners delete a question's
+    // edge and its path-scoped subtree; the rows are kept (deleted_at set, is_hidden
+    // also set true) so feedback threads on removed questions can later be archived.
+    // One delete action stamps every affected edge with a shared delete_batch_id.
+    await client.query(`
+      ALTER TABLE edges ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+    `);
+    await client.query(`
+      ALTER TABLE edges ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+    `);
+    await client.query(`
+      ALTER TABLE edges ADD COLUMN IF NOT EXISTS delete_batch_id UUID;
+    `);
+    // Partial index over just the deleted rows — groups/looks up a delete batch
+    // (future archival + restore) without bloating the common active-edge path.
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_edges_delete_batch ON edges(delete_batch_id) WHERE deleted_at IS NOT NULL;
+    `);
+
     // Votes table (saves)
     await client.query(`
       CREATE TABLE IF NOT EXISTS votes (

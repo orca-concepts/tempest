@@ -11,6 +11,8 @@ import SwapModal from '../components/SwapModal';
 import VoteSetBar from '../components/VoteSetBar';
 import ConceptLinksPanel from '../components/ConceptLinksPanel';
 import HiddenConceptsView from '../components/HiddenConceptsView';
+import NewQuestionCard from '../components/NewQuestionCard';
+import EditableField from '../components/EditableField';
 
 import TunnelView from '../components/TunnelView';
 
@@ -31,6 +33,8 @@ const Concept = ({
   onPendingScrollLinkConsumed,
   pendingScrollTunnelLinkId,
   onPendingScrollTunnelLinkConsumed,
+  editMode = false,
+  onToggleEditMode,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -106,6 +110,9 @@ const Concept = ({
   // Phase 16c: Hidden concepts state
   const [hiddenCount, setHiddenCount] = useState(0);
   const [showHiddenPanel, setShowHiddenPanel] = useState(false);
+
+  // Phase 72c-1: curated edit mode
+  const [showNewCard, setShowNewCard] = useState(false);
   
   // Phase 39d: Add to Combo picker
   const [showComboPicker, setShowComboPicker] = useState(false);
@@ -383,6 +390,25 @@ const Concept = ({
     }
   };
 
+  // Phase 72c-1: edit-mode handlers (curated owners). Reject on failure so inline
+  // editors (EditableField / NewQuestionCard) surface the error in place.
+  const handleRename = async (conceptId, newName) => {
+    await conceptsAPI.renameConcept(conceptId, newName);
+    await loadConcept();
+  };
+
+  const handleDeleteEdge = async (edgeId) => {
+    await conceptsAPI.softDeleteEdge(edgeId);
+    await loadConcept();
+  };
+
+  const handleCreateChildInline = async (name) => {
+    const pathString = path.slice(0, -1).join(',');
+    await conceptsAPI.createChildConcept(name, effectiveConceptId, pathString);
+    setShowNewCard(false);
+    await loadConcept();
+  };
+
   const handleVote = async (edgeId, hasVoted, childPath) => {
     try {
       if (hasVoted) {
@@ -511,6 +537,13 @@ const Concept = ({
     setShowComboPicker(false);
     setComboFeedback(null);
   }, [effectiveConceptId, effectivePath?.join(',')]);
+
+  // Phase 72c-1: close the inline new-question card whenever edit mode isn't active
+  // (left edit mode, switched to flip/tunnel, lost ownership, or navigated).
+  useEffect(() => {
+    const canEdit = communityMode === 'curated' && isCommunityOwner && editMode && effectiveViewMode === 'children';
+    if (!canEdit) setShowNewCard(false);
+  }, [communityMode, isCommunityOwner, editMode, effectiveViewMode, effectiveConceptId, effectivePath?.join(',')]);
 
   // When user clicks an alt parent card in Flip View, stay on the current concept
   // but switch to the clicked parent's context (Phase 38a)
@@ -715,6 +748,10 @@ const Concept = ({
   const votingAllowed = communityMode !== 'curated';
   const canCreate = communityMode === 'curated' ? isCommunityOwner : !isGuest;
 
+  // Phase 72c-1: curated edit mode (owners only), only in children view.
+  const canEditMode = communityMode === 'curated' && isCommunityOwner;
+  const editing = canEditMode && editMode && effectiveViewMode === 'children';
+
   // Phase 72b: in curated children view the side links panel is replaced by the
   // in-card answer section, so hide the panel (Flip View keeps it).
   const curatedChildrenView = communityMode === 'curated' && effectiveViewMode === 'children';
@@ -750,6 +787,13 @@ const Concept = ({
             )}
           </div>
           <div style={styles.buttonSection}>
+            {canEditMode && effectiveViewMode === 'children' && (
+              <button
+                onClick={onToggleEditMode}
+                style={editMode ? styles.editToggleActive : styles.editToggle}
+                title={editMode ? 'Return to reader view' : 'Edit this community'}
+              >{editMode ? 'Done' : 'Edit'}</button>
+            )}
             {!(isDecontextualized && !userToggledFlip.current) && (
               <button
                 onClick={handleToggleView}
@@ -821,8 +865,22 @@ const Concept = ({
               <>
                 <div style={styles.conceptHeader}>
                   <h2 style={styles.conceptName} title={concept.name}>
-                    {concept.name}
+                    {editing ? (
+                      <EditableField
+                        value={concept.name}
+                        onSave={(newName) => handleRename(concept.id, newName)}
+                        inputStyle={{ fontSize: '32px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif' }}
+                        displayStyle={{ color: '#333' }}
+                      />
+                    ) : (
+                      concept.name
+                    )}
                   </h2>
+                  {editing && altParentCount > 0 && (
+                    <span style={styles.alsoAppears}>
+                      Also appears under {altParentCount} other question{altParentCount === 1 ? '' : 's'}
+                    </span>
+                  )}
                   {/* Phase 72b: hide the vote-only "N votes" count and the
                       Votes/Newest sort toggle in curated communities. */}
                   {votingAllowed && currentEdgeVoteCount !== null && (
@@ -893,9 +951,15 @@ const Concept = ({
                   </div>
                 )}
 
-                {children.length === 0 ? (
+                {editing && showNewCard && (
+                  <div style={styles.newCardWrap}>
+                    <NewQuestionCard onCreate={handleCreateChildInline} onCancel={() => setShowNewCard(false)} placeholder="New child question…" />
+                  </div>
+                )}
+
+                {children.length === 0 && !(editing && showNewCard) ? (
                   <div style={styles.emptyState}>
-                    <p>{isGuest ? 'No child questions yet.' : 'No child questions yet. Add one to get started!'}</p>
+                    <p>{isGuest ? 'No child questions yet.' : (editing ? 'No child questions yet. Use the + button to add one.' : 'No child questions yet. Add one to get started!')}</p>
                   </div>
                 ) : tieredSections ? (
                   tieredSections.map((section) => (
@@ -929,7 +993,7 @@ const Concept = ({
                     onConceptClick={handleConceptClick}
                     onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
                     onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
-                    onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
+                    onNestUnderSibling={(canCreate && !editing) ? handleNestUnderSibling : undefined}
                     onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
                     onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                     onNavigateNested={handleNavigateNested}
@@ -944,6 +1008,9 @@ const Concept = ({
                     onAnswersChanged={loadConcept}
                     isGuest={isGuest}
                     onRequestLogin={onRequestLogin}
+                    editMode={editing}
+                    onRename={editing ? handleRename : undefined}
+                    onDeleteEdge={editing ? handleDeleteEdge : undefined}
                   />
                 )}
               </>
@@ -1006,7 +1073,17 @@ const Concept = ({
         isGuest={isGuest}
         canCreate={canCreate}
         communityId={concept?.community_id}
+        curated={communityMode === 'curated'}
       />
+
+      {/* Phase 72c-1: edit-mode add-child button (curated owners, children view) */}
+      {editing && !showNewCard && !nestMode && (
+        <button
+          style={styles.addFab}
+          onClick={() => setShowNewCard(true)}
+          title="Add a child question"
+        >+</button>
+      )}
 
       {showAddModal && (
         <AddConceptModal
@@ -1148,6 +1225,53 @@ const styles = {
     fontSize: '14px',
     fontFamily: '"EB Garamond", Georgia, serif',
     fontWeight: '500',
+  },
+  editToggle: {
+    padding: '8px 16px',
+    backgroundColor: 'transparent',
+    color: '#333',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontWeight: '500',
+  },
+  editToggleActive: {
+    padding: '8px 16px',
+    backgroundColor: '#333',
+    color: '#faf9f6',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontWeight: '500',
+  },
+  alsoAppears: {
+    fontSize: '13px',
+    color: '#888',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  newCardWrap: {
+    maxWidth: '420px',
+  },
+  addFab: {
+    position: 'fixed',
+    bottom: '96px',
+    right: '28px',
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    border: '1px solid #333',
+    backgroundColor: '#faf9f6',
+    color: '#333',
+    fontSize: '26px',
+    lineHeight: '1',
+    cursor: 'pointer',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+    zIndex: 1001,
   },
   shareButtonWrapper: {
     position: 'relative',

@@ -562,6 +562,11 @@ const conceptsController = {
         ? `AND EXISTS (SELECT 1 FROM edges e_attr WHERE e_attr.child_id = c.id AND e_attr.attribute_id = ${parseInt(attributeId)} AND e_attr.is_hidden = false)`
         : '';
 
+      // Phase 72c-1: a concept whose every edge is hidden (moderation or soft
+      // delete — deleted edges carry is_hidden = true) has no live placement in
+      // the graph, so it should not surface in search.
+      const visibleFilter = `AND EXISTS (SELECT 1 FROM edges e_vis WHERE e_vis.child_id = c.id AND e_vis.is_hidden = false)`;
+
       const searchQuery = `
         WITH exact_matches AS (
           SELECT c.id, c.name, 1 as match_type,
@@ -572,6 +577,7 @@ const conceptsController = {
           FROM concepts c
           WHERE LOWER(c.name) LIKE LOWER($1) || '%'
             AND c.community_id = $2
+          ${visibleFilter}
           ${attrFilter}
           LIMIT 10
         ),
@@ -582,6 +588,7 @@ const conceptsController = {
           WHERE similarity(c.name, $1) > 0.15
             AND c.community_id = $2
             AND c.id NOT IN (SELECT id FROM exact_matches)
+          ${visibleFilter}
           ${attrFilter}
           ORDER BY similarity(c.name, $1) DESC
           LIMIT 10
@@ -784,6 +791,27 @@ const conceptsController = {
         );
 
         if (existingEdge.rows.length > 0) {
+          // Phase 72c-1: re-adding a soft-deleted question under the same
+          // parent+path restores just that one edge (not its former subtree),
+          // rather than colliding with the unique constraint.
+          if (existingEdge.rows[0].deleted_at) {
+            const restored = await client.query(
+              `UPDATE edges
+                  SET deleted_at = NULL, deleted_by = NULL, delete_batch_id = NULL, is_hidden = false
+                WHERE id = $1
+                RETURNING *`,
+              [existingEdge.rows[0].id]
+            );
+            await client.query('COMMIT');
+            const attrName = (await pool.query('SELECT name FROM attributes WHERE id = $1', [attributeId])).rows[0].name;
+            return res.status(201).json({
+              message: 'Child concept restored',
+              concept: conceptResult.rows[0],
+              edge: restored.rows[0],
+              attribute: { id: parseInt(attributeId), name: attrName },
+              restored: true,
+            });
+          }
           if (existingEdge.rows[0].is_hidden) {
             await client.query('ROLLBACK');
             return res.status(409).json({
@@ -912,10 +940,28 @@ const conceptsController = {
           conceptRow = existingConcept.rows[0];
 
           const existingRootEdge = await client.query(
-            'SELECT id FROM edges WHERE parent_id IS NULL AND child_id = $1 AND attribute_id = $2',
+            'SELECT id, deleted_at FROM edges WHERE parent_id IS NULL AND child_id = $1 AND attribute_id = $2',
             [conceptId, attributeId]
           );
           if (existingRootEdge.rows.length > 0) {
+            // Phase 72c-1: re-adding a soft-deleted root question restores that
+            // single root edge instead of colliding with the unique constraint.
+            if (existingRootEdge.rows[0].deleted_at) {
+              await client.query(
+                `UPDATE edges
+                    SET deleted_at = NULL, deleted_by = NULL, delete_batch_id = NULL, is_hidden = false
+                  WHERE id = $1`,
+                [existingRootEdge.rows[0].id]
+              );
+              await client.query('COMMIT');
+              const attrName = (await pool.query('SELECT name FROM attributes WHERE id = $1', [attributeId])).rows[0].name;
+              return res.status(201).json({
+                message: 'Root concept restored',
+                concept: conceptRow,
+                attribute: { id: parseInt(attributeId), name: attrName },
+                restored: true,
+              });
+            }
             await client.query('ROLLBACK');
             return res.status(400).json({
               error: 'A root concept with this name and attribute already exists'
@@ -1397,6 +1443,176 @@ const conceptsController = {
       }
     } catch (error) {
       console.error('Error nesting under sibling:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 72c-1: rename a question. Concept identity is community-scoped, so a
+  // rename changes the name everywhere the concept appears in that community.
+  // Curated-owner-only. A collision with another name in the community is 409
+  // name_taken (with the clashing concept id); a legal-held concept is refused.
+  renameConcept: async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    try {
+      const conceptId = parseInt(id, 10);
+      if (!conceptId || isNaN(conceptId)) {
+        return res.status(400).json({ error: 'Invalid concept id' });
+      }
+      const trimmed = typeof name === 'string' ? name.trim() : '';
+      if (!trimmed) {
+        return res.status(400).json({ error: 'A name is required' });
+      }
+      if (trimmed.length > 255) {
+        return res.status(400).json({ error: 'Concept name must be 255 characters or fewer' });
+      }
+
+      const conceptRow = await pool.query(
+        'SELECT id, name, community_id, legal_hold FROM concepts WHERE id = $1',
+        [conceptId]
+      );
+      if (conceptRow.rows.length === 0) {
+        return res.status(404).json({ error: 'Concept not found' });
+      }
+      const concept = conceptRow.rows[0];
+
+      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
+      const community = await communityAccess.getCommunityForConcept(conceptId);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      if (concept.legal_hold) {
+        return res.status(403).json({ error: 'This question has been held for legal reasons and cannot be renamed.', code: 'legal_hold' });
+      }
+
+      // No-op rename (same text) short-circuits — avoids a self-collision on the
+      // case-insensitive unique index.
+      if (concept.name.toLowerCase() !== trimmed.toLowerCase()) {
+        const clash = await pool.query(
+          'SELECT id FROM concepts WHERE community_id = $1 AND LOWER(name) = LOWER($2) AND id <> $3',
+          [concept.community_id, trimmed, conceptId]
+        );
+        if (clash.rows.length > 0) {
+          return res.status(409).json({
+            error: 'Another question in this community already has this name.',
+            code: 'name_taken',
+            conceptId: clash.rows[0].id,
+          });
+        }
+      }
+
+      const updated = await pool.query(
+        'UPDATE concepts SET name = $1 WHERE id = $2 RETURNING id, name',
+        [trimmed, conceptId]
+      );
+
+      res.json({ message: 'Question renamed', concept: updated.rows[0] });
+    } catch (error) {
+      console.error('Error renaming concept:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 72c-1: soft-delete an edge and its path-scoped subtree in a curated
+  // community. Curated-owner-only. All affected edges (this edge + every edge
+  // whose graph_path starts with this edge's full path) are stamped with one
+  // delete_batch_id, get deleted_at/deleted_by set, and are hidden. Refused with
+  // 409 legal_hold if any affected edge or link is held. One transaction.
+  softDeleteEdge: async (req, res) => {
+    const { edgeId } = req.params;
+
+    try {
+      const eid = parseInt(edgeId, 10);
+      if (!eid || isNaN(eid)) {
+        return res.status(400).json({ error: 'Invalid edge id' });
+      }
+
+      const edgeRow = await pool.query(
+        'SELECT id, child_id, graph_path, deleted_at FROM edges WHERE id = $1',
+        [eid]
+      );
+      if (edgeRow.rows.length === 0) {
+        return res.status(404).json({ error: 'Edge not found' });
+      }
+      const edge = edgeRow.rows[0];
+      if (edge.deleted_at) {
+        return res.status(400).json({ error: 'This question is already deleted' });
+      }
+
+      // Curated-owner gating.
+      const community = await communityAccess.getCommunityForEdge(eid);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      // The affected set = this edge + every edge whose graph_path begins with
+      // this edge's FULL path (root-to-this-concept inclusive). Path-scoped per
+      // the recursive-descendant AD: a prefix match on graph_path never leaks
+      // across sibling contexts.
+      const fullPath = [...(edge.graph_path || []), edge.child_id];
+      const N = fullPath.length;
+      const fullPathLiteral = '{' + fullPath.join(',') + '}';
+      // Match-either predicate reused for the legal-hold scan and the update.
+      const affectedPredicate = '(e.id = $1 OR e.graph_path[1:$2] = $3::integer[])';
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // Refuse if any affected edge is legally held.
+        const heldEdge = await client.query(
+          `SELECT 1 FROM edges e WHERE ${affectedPredicate} AND e.legal_hold = true LIMIT 1`,
+          [eid, N, fullPathLiteral]
+        );
+        if (heldEdge.rows.length > 0) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'This question (or part of its subtree) is held for legal reasons and cannot be deleted.', code: 'legal_hold' });
+        }
+
+        // Refuse if any link on any affected edge is legally held.
+        const heldLink = await client.query(
+          `SELECT 1 FROM concept_links cl
+             JOIN edges e ON e.id = cl.edge_id
+            WHERE ${affectedPredicate} AND cl.legal_hold = true LIMIT 1`,
+          [eid, N, fullPathLiteral]
+        );
+        if (heldLink.rows.length > 0) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'A link on this question (or its subtree) is held for legal reasons, so it cannot be deleted.', code: 'legal_hold' });
+        }
+
+        // One shared batch id for the whole delete action.
+        const updateResult = await client.query(
+          `WITH b AS (SELECT gen_random_uuid() AS batch_id)
+           UPDATE edges e
+              SET deleted_at = CURRENT_TIMESTAMP,
+                  deleted_by = $4,
+                  delete_batch_id = (SELECT batch_id FROM b),
+                  is_hidden = true
+            WHERE ${affectedPredicate} AND e.deleted_at IS NULL
+           RETURNING e.id, e.delete_batch_id`,
+          [eid, N, fullPathLiteral, req.user.userId]
+        );
+
+        await client.query('COMMIT');
+
+        res.json({
+          message: 'Question deleted',
+          deletedCount: updateResult.rows.length,
+          batchId: updateResult.rows[0]?.delete_batch_id || null,
+        });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error deleting edge:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

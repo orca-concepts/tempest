@@ -117,6 +117,13 @@ export const conceptsAPI = {
   nestUnderSibling: ({ parentConceptId, path, selectedEdgeIds, targetEdgeId }) =>
     api.post('/concepts/nest-under-sibling', { parentConceptId, path, selectedEdgeIds, targetEdgeId }),
 
+  // Phase 72c-1: curated edit mode
+  renameConcept: (id, name) =>
+    api.post(`/concepts/${id}/rename`, { name }),
+
+  softDeleteEdge: (edgeId) =>
+    api.post(`/concepts/edges/${edgeId}/delete`),
+
   // Phase 14a: Batch children for diff modal
   getBatchChildrenForDiff: (panes) =>
     api.post('/concepts/batch-children-for-diff', { panes }),
@@ -267,6 +274,10 @@ export const votesAPI = {
 
   removeWebLink: (linkId) =>
     api.post('/votes/web-links/remove', { linkId }),
+
+  // Phase 72c-1: edit an answer (curated owners only). Pass only changed fields.
+  editWebLink: (linkId, updates) =>
+    api.post(`/votes/web-links/${linkId}/edit`, updates),
 
   previewTitle: (url) =>
     api.get('/votes/web-links/preview-title', { params: { url } }),

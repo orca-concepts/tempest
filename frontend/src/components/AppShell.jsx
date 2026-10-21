@@ -119,6 +119,12 @@ const AppShell = () => {
   const [activeCommunityName, setActiveCommunityName] = useState('');
   const [communitiesOpen, setCommunitiesOpen] = useState(false);
 
+  // Phase 72c-1: curated edit mode. One flag for the active community (every
+  // visible tab belongs to it). Owners of curated communities only; defaults to
+  // view, not persisted, and reset whenever the active community changes.
+  const [editMode, setEditMode] = useState(false);
+  useEffect(() => { setEditMode(false); }, [activeCommunityId]);
+
   useEffect(() => {
     communitiesAPI.listCommunities()
       .then((r) => {
@@ -1627,6 +1633,8 @@ const AppShell = () => {
                         communitySlug={activeCommunity?.slug || null}
                         onCommunitiesChanged={refreshCommunities}
                         onOpenCommunities={() => setCommunitiesOpen(true)}
+                        editMode={editMode}
+                        onToggleEditMode={() => setEditMode((v) => !v)}
                       />
                     ) : (
                       <Concept
@@ -1645,6 +1653,8 @@ const AppShell = () => {
                         onPendingScrollLinkConsumed={() => setPendingScrollLinkId(null)}
                         pendingScrollTunnelLinkId={isActive ? pendingScrollTunnelLinkId : null}
                         onPendingScrollTunnelLinkConsumed={() => setPendingScrollTunnelLinkId(null)}
+                        editMode={editMode}
+                        onToggleEditMode={() => setEditMode((v) => !v)}
                       />
                     )}
                   </div>

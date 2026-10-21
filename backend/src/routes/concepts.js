@@ -30,4 +30,9 @@ router.post('/child', authenticateToken, childConceptCreateLimiter, conceptsCont
 // Copy selected sibling questions' subtrees under another sibling (requires login)
 router.post('/nest-under-sibling', authenticateToken, conceptsController.nestUnderSibling);
 
+// Phase 72c-1: curated edit mode — rename a question, soft-delete an edge+subtree.
+// Both are curated-owner-only (gated in the controller via communityAccess).
+router.post('/edges/:edgeId/delete', authenticateToken, conceptsController.softDeleteEdge);
+router.post('/:id/rename', authenticateToken, conceptsController.renameConcept);
+
 module.exports = router;

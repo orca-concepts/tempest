@@ -6,6 +6,7 @@ import SearchField from '../components/SearchField';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 import SwapModal from '../components/SwapModal';
 import CommunityHeaderControls from '../components/CommunityHeaderControls';
+import NewQuestionCard from '../components/NewQuestionCard';
 
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
@@ -16,10 +17,17 @@ const Root = ({
   communityMode = 'open', communityIsOwner = false, communitySlug = null,
   onCommunitiesChanged,
   onOpenCommunities,
+  editMode = false, onToggleEditMode,
 }) => {
   // Phase 72a: curated communities are owner-write-only and have no voting.
   const votingAllowed = communityMode !== 'curated';
   const canCreate = communityMode === 'curated' ? communityIsOwner : !isGuest;
+  // Phase 72c-1: curated edit mode is available to owners only; it drives inline
+  // rename, soft delete, and the "+ New question" affordance.
+  const isCurated = communityMode === 'curated';
+  const canEditMode = isCurated && communityIsOwner;
+  const editing = canEditMode && editMode;
+  const [showNewCard, setShowNewCard] = useState(false);
   const [concepts, setConcepts] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -225,6 +233,29 @@ const Root = ({
 
   const handleSwapModalClose = () => setSwapModalEdge(null);
 
+  // Phase 72c-1: edit-mode handlers (curated owners). These reject on failure so
+  // the inline editors (EditableField / NewQuestionCard) show the error in place.
+  const handleRename = async (conceptId, newName) => {
+    await conceptsAPI.renameConcept(conceptId, newName);
+    await loadRootConcepts();
+  };
+
+  const handleDeleteEdge = async (edgeId) => {
+    await conceptsAPI.softDeleteEdge(edgeId);
+    await loadRootConcepts();
+  };
+
+  const handleCreateRoot = async (name) => {
+    const questionAttr = availableAttributes.find((a) => a.name === 'question') || availableAttributes[0];
+    if (!questionAttr) throw new Error('No attribute available');
+    await conceptsAPI.createRootConcept(name, questionAttr.id, communityId);
+    setShowNewCard(false);
+    await loadRootConcepts();
+  };
+
+  // Leaving edit mode closes the new-question card.
+  useEffect(() => { if (!editing) setShowNewCard(false); }, [editing]);
+
   const handleSwapVoteChanged = () => {
     // Optimistically clear any save for this edge in local state (mutual exclusivity)
     if (swapModalEdge) {
@@ -252,14 +283,23 @@ const Root = ({
               {communityName}
               {communityMode === 'curated' && <span style={styles.curatedTag}>Curated</span>}
             </div>
-            {communityId && (
-              <CommunityHeaderControls
-                communityId={communityId}
-                communitySlug={communitySlug}
-                isOwner={communityIsOwner}
-                onCommunitiesChanged={onCommunitiesChanged}
-              />
-            )}
+            <div style={styles.headerControls}>
+              {canEditMode && (
+                <button
+                  onClick={onToggleEditMode}
+                  style={editMode ? styles.editToggleActive : styles.editToggle}
+                  title={editMode ? 'Return to reader view' : 'Edit this community'}
+                >{editMode ? 'Done' : 'Edit'}</button>
+              )}
+              {communityId && (
+                <CommunityHeaderControls
+                  communityId={communityId}
+                  communitySlug={communitySlug}
+                  isOwner={communityIsOwner}
+                  onCommunitiesChanged={onCommunitiesChanged}
+                />
+              )}
+            </div>
           </div>
         )}
         {/* Phase 72b: in curated communities the vote-only "N users" count and
@@ -350,30 +390,40 @@ const Root = ({
           const filtered = attributeFilter === 'all' || availableAttributes.length <= 1
             ? concepts
             : concepts.filter(c => c.attribute_name === attributeFilter);
-          return filtered.length === 0 ? (
+          return (filtered.length === 0 && !(editing && showNewCard)) ? (
             <div style={styles.emptyState}>
-              <p>{canCreate ? 'No root questions yet. Type in the search field to create one!' : 'No root questions yet.'}</p>
+              <p>{canCreate ? (editing ? 'No root questions yet. Use the + button to add one.' : 'No root questions yet. Type in the search field to create one!') : 'No root questions yet.'}</p>
             </div>
           ) : (
-            <ConceptGrid
-              concepts={filtered}
-              onConceptClick={handleConceptClick}
-              onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
-              onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
-              onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
-              onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
-              onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
-              nestMode={nestMode}
-              selectedEdgeIds={selectedEdgeIds}
-              onToggleSelect={toggleNestSelect}
-              showVotes={votingAllowed}
-              showAttributeBadge={true}
-              path={[]}
-              showAnswers={communityMode === 'curated'}
-              canManageAnswers={communityIsOwner}
-              onAnswersChanged={loadRootConcepts}
-              isGuest={isGuest}
-            />
+            <>
+              {editing && showNewCard && (
+                <div style={styles.newCardWrap}>
+                  <NewQuestionCard onCreate={handleCreateRoot} onCancel={() => setShowNewCard(false)} placeholder="New root question…" />
+                </div>
+              )}
+              <ConceptGrid
+                concepts={filtered}
+                onConceptClick={handleConceptClick}
+                onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
+                onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
+                onNestUnderSibling={(canCreate && !editing) ? handleNestUnderSibling : undefined}
+                onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
+                onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
+                nestMode={nestMode}
+                selectedEdgeIds={selectedEdgeIds}
+                onToggleSelect={toggleNestSelect}
+                showVotes={votingAllowed}
+                showAttributeBadge={true}
+                path={[]}
+                showAnswers={communityMode === 'curated'}
+                canManageAnswers={communityIsOwner}
+                onAnswersChanged={loadRootConcepts}
+                isGuest={isGuest}
+                editMode={editing}
+                onRename={editing ? handleRename : undefined}
+                onDeleteEdge={editing ? handleDeleteEdge : undefined}
+              />
+            </>
           );
         })()}
       </main>
@@ -392,7 +442,17 @@ const Root = ({
           onNavigate={onNavigate}
           isGuest={isGuest}
           communityId={communityId}
+          curated={isCurated}
         />
+      )}
+
+      {/* Phase 72c-1: edit-mode add-question button (curated owners) */}
+      {editing && !showNewCard && (
+        <button
+          style={styles.addFab}
+          onClick={() => setShowNewCard(true)}
+          title="Add a root question"
+        >+</button>
       )}
 
       {/* Phase 38b: Swap Modal for root concepts */}
@@ -514,6 +574,52 @@ const styles = {
     borderRadius: '10px',
     padding: '1px 8px',
     backgroundColor: '#f5f0ea',
+  },
+  headerControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
+  editToggle: {
+    padding: '6px 14px',
+    backgroundColor: 'transparent',
+    color: '#333',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  editToggleActive: {
+    padding: '6px 14px',
+    backgroundColor: '#333',
+    color: '#faf9f6',
+    border: '1px solid #333',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  newCardWrap: {
+    maxWidth: '420px',
+  },
+  addFab: {
+    position: 'fixed',
+    bottom: '96px',
+    right: '28px',
+    width: '48px',
+    height: '48px',
+    borderRadius: '50%',
+    border: '1px solid #333',
+    backgroundColor: '#faf9f6',
+    color: '#333',
+    fontSize: '26px',
+    lineHeight: '1',
+    cursor: 'pointer',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+    zIndex: 1001,
   },
   loading: {
     textAlign: 'center',

@@ -14,9 +14,9 @@ const moderationController = {
       const validReasons = ['spam', 'vandalism', 'offensive'];
       const flagReason = validReasons.includes(reason) ? reason : 'spam';
 
-      // Verify edge exists
-      const edgeCheck = await pool.query('SELECT id FROM edges WHERE id = $1', [edgeId]);
-      if (edgeCheck.rows.length === 0) {
+      // Verify edge exists (Phase 72c-1: soft-deleted edges are treated as gone)
+      const edgeCheck = await pool.query('SELECT id, deleted_at FROM edges WHERE id = $1', [edgeId]);
+      if (edgeCheck.rows.length === 0 || edgeCheck.rows[0].deleted_at) {
         return res.status(404).json({ error: 'Edge not found' });
       }
 
@@ -157,6 +157,7 @@ const moderationController = {
         WHERE ${parentClause}
           AND e.graph_path = $1
           AND e.is_hidden = true
+          AND e.deleted_at IS NULL
         ORDER BY flag_count DESC, e.created_at DESC`,
         params
       );
@@ -198,10 +199,10 @@ const moderationController = {
 
       // Verify edge exists and is hidden
       const edgeCheck = await pool.query(
-        'SELECT id, is_hidden FROM edges WHERE id = $1',
+        'SELECT id, is_hidden, deleted_at FROM edges WHERE id = $1',
         [edgeId]
       );
-      if (edgeCheck.rows.length === 0) {
+      if (edgeCheck.rows.length === 0 || edgeCheck.rows[0].deleted_at) {
         return res.status(404).json({ error: 'Edge not found' });
       }
 
@@ -305,10 +306,10 @@ const moderationController = {
 
       // Verify edge exists and is hidden
       const edgeCheck = await pool.query(
-        'SELECT id, is_hidden FROM edges WHERE id = $1',
+        'SELECT id, is_hidden, deleted_at FROM edges WHERE id = $1',
         [edgeId]
       );
-      if (edgeCheck.rows.length === 0) {
+      if (edgeCheck.rows.length === 0 || edgeCheck.rows[0].deleted_at) {
         return res.status(404).json({ error: 'Edge not found' });
       }
       if (!edgeCheck.rows[0].is_hidden) {
@@ -400,10 +401,10 @@ const moderationController = {
 
       // Verify edge exists and is hidden
       const edgeCheck = await pool.query(
-        'SELECT id, is_hidden, legal_hold FROM edges WHERE id = $1',
+        'SELECT id, is_hidden, legal_hold, deleted_at FROM edges WHERE id = $1',
         [edgeId]
       );
-      if (edgeCheck.rows.length === 0) {
+      if (edgeCheck.rows.length === 0 || edgeCheck.rows[0].deleted_at) {
         return res.status(404).json({ error: 'Edge not found' });
       }
       if (!edgeCheck.rows[0].is_hidden) {

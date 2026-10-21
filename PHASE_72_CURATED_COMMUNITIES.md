@@ -287,3 +287,121 @@ Editing from the graph view, showing precedent/subsequent links in the tree, fee
 - From the root page: all roots shown.
 - Curated sibling order matches the grid; answers nested with working links; open communities show questions and link counts only.
 - Clicking a question navigates and closes; deleted/hidden questions absent; truncation note when capped.
+
+---
+
+## Phase 72e — Reader feedback (curated only)
+
+Mockups: `docs/mockups/reader-leaf-view.png` and `reader-parent-view.png` (the page-with-pencil icon on each card and in the page's bottom corner). Layout only — house style applies; the icon is an inline SVG, not an emoji.
+
+### Decisions (October 21, 2026)
+- **Visible immediately.** Feedback is public as soon as it is posted; owners can hide items or replies.
+- **Author edits until locked.** The author may edit or delete their item until it is **locked**: an owner has replied in its thread, or its status is no longer `open`. Replies follow the same rule: editable/deletable by their author until an owner replies after them or the item's status changes.
+- **In-app only.** Owners learn about feedback through an inbox and count badges. No email in 72e.
+- **Archived on delete.** Feedback whose target question (or, for new-question suggestions, whose parent) has been soft-deleted is **archived**: read-only, hidden from the card, listed under "Archived" in the owner inbox with its snapshot. Restoring the question un-archives it (archive state is computed from `edges.deleted_at`, not stored).
+- Guests can read; posting, replying, and voting require login. Open communities have no feedback.
+- Feedback votes: one upvote per user per item, toggleable. Shown only inside the feedback menu; they sort feedback, never the graph.
+
+### Schema (72e-1)
+```sql
+CREATE TABLE IF NOT EXISTS feedback_items (
+  id SERIAL PRIMARY KEY,
+  community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  edge_id INTEGER REFERENCES edges(id) ON DELETE CASCADE,          -- the card the feedback is about; for new_child, the parent's edge (NULL = community root list)
+  kind VARCHAR(24) NOT NULL,  -- edit_question | edit_answer | add_precedent | remove_precedent | add_subsequent | remove_subsequent | new_child | general
+  target_link_id INTEGER REFERENCES concept_links(id) ON DELETE SET NULL,   -- edit_answer: which answer
+  target_edge_id INTEGER REFERENCES edges(id) ON DELETE SET NULL,          -- sequence suggestions: the sibling
+  proposal JSONB,             -- kind-specific proposed values (new question text; proposed answer fields; etc.)
+  snapshot JSONB NOT NULL,    -- what the reader was looking at: question text, answer fields, sibling name
+  comment TEXT,               -- free text, up to 2000 chars
+  author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'open',  -- open | incorporated | declined
+  status_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  status_at TIMESTAMP,
+  is_hidden BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- CHECK constraints for kind and status values; indexes on (community_id, status), (edge_id).
+
+CREATE TABLE IF NOT EXISTS feedback_replies (
+  id SERIAL PRIMARY KEY,
+  feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+  author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  is_owner_reply BOOLEAN NOT NULL DEFAULT false,   -- author was a community owner when posting
+  body TEXT NOT NULL,                               -- up to 2000 chars
+  is_hidden BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- index on feedback_id
+
+CREATE TABLE IF NOT EXISTS feedback_votes (
+  feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (feedback_id, user_id)
+);
+```
+72e-2 adds `feedback_suggested_nodes` (below).
+
+### Kinds and validation (server-side)
+| kind | target | proposal | Rule |
+|---|---|---|---|
+| `edit_question` | `edge_id` | `{ name }` | non-empty, ≤255 |
+| `edit_answer` | `edge_id`, `target_link_id` | any of `{ title, comment, url, publishedOn }` | link must be on that edge; URL http(s) + Safe Browsing; date valid |
+| `add_precedent` / `add_subsequent` | `edge_id`, `target_edge_id` | — | target is a sibling (72c-2 rules), not already linked that way |
+| `remove_precedent` / `remove_subsequent` | `edge_id`, `target_edge_id` | — | that link currently exists |
+| `general` | `edge_id` | — | `comment` required |
+| `new_child` | parent `edge_id` or NULL | 72e-2 | 72e-2 |
+- Community must be curated (403 `curated_only`); target edges must be live (not deleted) and in that community.
+- `snapshot` is built by the server from current data, never trusted from the client.
+- `comment` optional except for `general`; ≤2000 chars. Rate-limited with the existing per-user limiter.
+
+### Endpoints (72e-1) — new `feedbackController.js` + `routes/feedback.js`, mounted at `/api/feedback`
+- `GET /edge/:edgeId` (guest) — live feedback for one card: items (not hidden) with snapshot, proposal, comment, author (username + ORCID badge data), status, vote count, `userVoted`, `locked`, `canEdit`, and replies (not hidden; owner replies flagged). Sorted: `open` first, then votes desc, then newest. Owners also receive hidden items and replies, flagged `isHidden`.
+- `GET /edge/:edgeId/count` is not needed if `GET /concepts/:id` and `/root` return `openFeedbackCount` per curated row (one extra grouped query).
+- `POST /` — create (body: `edgeId`, `kind`, `targetLinkId?`, `targetEdgeId?`, `proposal?`, `comment?`).
+- `POST /:id/edit` / `POST /:id/delete` — author only, unlocked only (409 `locked`). Delete is a hard delete (self-authored content).
+- `POST /:id/replies` — any logged-in user; `is_owner_reply` set server-side. `POST /replies/:replyId/edit` and `/delete` — author only, unlocked only.
+- `POST /:id/vote` — toggle; returns `{ voted, voteCount }`.
+- `POST /:id/status` — owners only; body `{ status: 'open' | 'incorporated' | 'declined', reply? }` (optional reply posted as an owner reply in the same transaction).
+- `POST /:id/hide`, `POST /replies/:replyId/hide` — owners (and the site admin) only; body `{ hidden: true | false }`.
+- Archived items (target edge deleted) reject every write with 409 `archived`.
+
+### UI (72e-1)
+- Each curated card shows a feedback icon button with the open count when > 0 (e.g. icon + "3"). Visible to everyone, in view mode and edit mode.
+- Clicking opens a **feedback panel** for that card (an overlay or side panel consistent with existing overlays; Escape closes):
+  - Header: the question text.
+  - "Suggest a change" (login required; guests see a "Log in to suggest a change" prompt): choose a kind, then kind-specific fields — proposed question text (prefilled); which answer + proposed fields (prefilled); which sibling (eligible list, as in the 72c-2 picker); or just a comment for "Something else". Free-text comment box on every kind.
+  - The list of feedback items: kind label ("Suggested rewording", "Suggested answer change", "Suggested precedent", …), what was proposed vs the snapshot (plain before → after text), comment, author + ORCID badge, time, status label, vote button with count, replies (owner replies marked "Owner"), reply box, and edit/delete for the author while unlocked.
+  - Owners additionally see status controls (Mark incorporated / Decline / Reopen, each with an optional reply) and Hide / Unhide on items and replies.
+- No browser dialogs; all controls `<button>`s; house style.
+
+### 72e-2 — New-question/branch suggestions, owner inbox, badges
+- **Schema:**
+```sql
+CREATE TABLE IF NOT EXISTS feedback_suggested_nodes (
+  id SERIAL PRIMARY KEY,
+  feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+  parent_node_id INTEGER REFERENCES feedback_suggested_nodes(id) ON DELETE CASCADE,  -- NULL = top of the suggested branch
+  name VARCHAR(255) NOT NULL,
+  answer_url TEXT, answer_title VARCHAR(255), answer_published_on DATE, answer_comment TEXT,
+  position INTEGER NOT NULL DEFAULT 0
+);
+```
+- **Page-level icon** (bottom corner of the community root page and each question page, mockup): opens a panel listing existing `new_child` feedback for this page and a **branch builder**: one or more suggested questions, each optionally with its own children (nested to any reasonable depth, cap 50 nodes) and an optional answer (URL with Safe Browsing, title, date, comment), plus a free-text comment. Stored as one `new_child` item plus its nodes.
+- **Owner inbox:** an "Inbox" button in the curated community header for owners, with the open count. Overlay listing every feedback item in the community with filters Open / Incorporated / Declined / Archived, sorted newest first (votes shown), each linking to its card (navigate + open that card's panel). Archived items show their snapshot and are read-only.
+- **Badges:** open counts on card icons (from 72e-1) and on the page-level icon; the Inbox button shows the community's total open count.
+
+### Non-goals (72e)
+One-click "incorporate" (applying a suggestion automatically), email notifications, feedback in open communities, feedback on the graph view.
+
+### Tests (72e)
+- Create each kind; validation errors; open community rejected; guest read-only.
+- Snapshot reflects data at submit time even after the owner edits the question.
+- Author edit/delete until an owner replies or status changes, then 409 `locked`.
+- Votes toggle; sorting open → votes → newest.
+- Owner status changes (with reply), hide/unhide items and replies; hidden items invisible to non-owners.
+- Deleting the target question archives its feedback (read-only, 409 `archived`); re-adding the question un-archives it.
+- 72e-2: branch suggestions with nested nodes and answers; inbox filters and counts; navigation from inbox to the card's panel.

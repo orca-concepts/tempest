@@ -106,6 +106,22 @@ async function loadSequenceLinksByEdge(edgeIds) {
   return byEdge;
 }
 
+// Phase 72e-1: open-feedback count per edge for curated cards. One grouped query;
+// counts only live (status = 'open'), not-hidden items. Returns Map edgeId → int.
+async function loadOpenFeedbackCountByEdge(edgeIds) {
+  const byEdge = new Map();
+  if (!edgeIds || edgeIds.length === 0) return byEdge;
+  const result = await pool.query(
+    `SELECT edge_id, COUNT(*)::int AS cnt
+       FROM feedback_items
+      WHERE edge_id = ANY($1::int[]) AND is_hidden = false AND status = 'open'
+      GROUP BY edge_id`,
+    [edgeIds]
+  );
+  for (const row of result.rows) byEdge.set(row.edge_id, row.cnt);
+  return byEdge;
+}
+
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
@@ -199,6 +215,12 @@ const conceptsController = {
           const seq = seqByEdge.get(root.edge_id);
           root.precedents = seq ? seq.precedents : [];
           root.subsequents = seq ? seq.subsequents : [];
+        }
+
+        // Phase 72e-1: open-feedback count per curated card.
+        const feedbackByEdge = await loadOpenFeedbackCountByEdge(rootEdgeIds);
+        for (const root of result.rows) {
+          root.openFeedbackCount = feedbackByEdge.get(root.edge_id) || 0;
         }
       }
 
@@ -438,6 +460,12 @@ const conceptsController = {
           const seq = seqByEdge.get(child.edge_id);
           child.precedents = seq ? seq.precedents : [];
           child.subsequents = seq ? seq.subsequents : [];
+        }
+
+        // Phase 72e-1: open-feedback count per curated card.
+        const feedbackByEdge = await loadOpenFeedbackCountByEdge(childEdgeIds);
+        for (const child of childrenResult.rows) {
+          child.openFeedbackCount = feedbackByEdge.get(child.edge_id) || 0;
         }
       }
 

@@ -464,4 +464,32 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72e-1 — Reader feedback (curated)
+
+### Schema
+- [ ] Migration runs twice cleanly; `\d feedback_items` shows `kind` CHECK (allowing `new_child`), `status` CHECK (`open`/`incorporated`/`declined`), FKs (community CASCADE, edge CASCADE, target_link SET NULL, target_edge SET NULL, author/status_by SET NULL), and indexes `idx_feedback_items_community_status` / `idx_feedback_items_edge`; `feedback_replies` has `is_owner_reply`, `is_hidden`, and `idx_feedback_replies_feedback`; `feedback_votes` has PK `(feedback_id, user_id)`
+
+### Endpoints (`/api/feedback`, curated only)
+- [ ] Reader B can create one item of each 72e-1 kind (`edit_question`, `edit_answer`, `general`, `add_precedent`, `add_subsequent`, `remove_precedent`, `remove_subsequent`) on a curated card → 201
+- [ ] Validation: empty `edit_question` name → 400 `name_required`; `edit_answer` with a link not on that edge → 400 `link_not_on_edge`; `add_precedent` to a non-sibling → 400 `not_siblings`; `remove_subsequent` with no such link → 400 `link_not_found`; `general` with empty comment → 400 `comment_required`; comment > 2000 → 400 `comment_too_long`; `new_child` → 400 `unsupported_kind`
+- [ ] Feedback in an open community → 403 `curated_only`; guest POST → 401; guest GET → 200
+- [ ] Snapshot: after the owner renames the question, an earlier `edit_question` item's `snapshot.questionText` still shows the old text
+- [ ] Author edits/deletes their item before any owner reply (200); after an owner replies, or the status changes, both → 409 `locked`
+- [ ] Reply: author edits own reply before an owner replies (200); after a later owner reply, → 409 `locked`
+- [ ] Vote toggles on/off (`{ voted, voteCount }`); list ordering is open-first, then votes desc, then newest
+- [ ] Owner sets `incorporated` with an optional reply in one transaction (owner reply appears, marked owner); owner hides an item and a reply — both vanish for readers and guests; owner still sees them flagged `isHidden`
+- [ ] Non-owner hide / status → 403; site admin may also hide (existing admin check)
+- [ ] Soft-deleting the target question archives its feedback: the card's feedback disappears, every write (create/vote/reply/status/hide/edit) → 409 `archived`; re-adding the question un-archives it (reachable again, `archived: false`)
+- [ ] `GET /concepts/:id` and `/concepts/root` return `openFeedbackCount` per curated row (live, not hidden, status open), matching the live open count; no per-node N+1 (one grouped query)
+- [ ] Create and reply are covered by the existing per-user rate limiter
+
+### Frontend (`FeedbackPanel.jsx`, curated cards)
+- [ ] A page-with-pencil feedback icon (inline SVG, not emoji) with the open count when > 0 shows on every curated card in both view and edit mode; clicking opens the feedback panel (overlay, Escape closes)
+- [ ] Header shows the question text; "Suggest a change" form offers a kind picker with kind-specific prefilled fields (proposed question; which answer + proposed fields; sibling picker for sequence kinds; comment on every kind); guests see "Log in to suggest a change"
+- [ ] The list shows each item's kind label, before → after summary, comment, author + ORCID badge, time, status, vote button + count, replies (owner replies marked "Owner"), reply box, and author edit/delete while unlocked
+- [ ] Owners additionally see status controls (Mark incorporated / Decline / Reopen, optional reply) and Hide/Unhide on items and replies
+- [ ] The list and the card's open count refresh after every action; all controls are `<button>`s; no `window.confirm`/`alert`; comment and reply bodies render via `LinkifiedText`; Stale-State Guard on the panel fetch
+
+---
+
 **END OF TESTING CHECKLIST**

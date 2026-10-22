@@ -165,9 +165,15 @@ const Concept = ({
     }
   }, [initialConceptId, initialPathKey, initialViewMode]);
 
-  const loadConcept = async () => {
+  // `opts.silent` skips the full-page loading flash. The loading flash makes
+  // Concept hit its `if (loading) return <Loading/>` early return, which unmounts
+  // the whole subtree — including ConceptGrid and any open FeedbackPanel. The
+  // feedback panel refreshes data through a silent reload so it stays mounted
+  // (Phase 72e-1 fix); its own list re-fetches in place.
+  const loadConcept = async (opts = {}) => {
+    const silent = !!opts.silent;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setParentEdgeId(null);
       const pathParam = effectivePath.join(',');
       const sortParam = sortMode === 'saves' ? undefined : sortMode;
@@ -208,9 +214,13 @@ const Concept = ({
       setError('Failed to load concept');
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  // Phase 72e-1: a feedback action refreshes the card's open count without the
+  // loading flash, so the open FeedbackPanel is not unmounted.
+  const refreshFeedbackCounts = () => loadConcept({ silent: true });
 
   // Phase 71: open the matched question in another community.
   const handleBridgeClick = (bridge) => {
@@ -1023,6 +1033,9 @@ const Concept = ({
                       onAnswersChanged={loadConcept}
                       isGuest={isGuest}
                       onRequestLogin={onRequestLogin}
+                      showFeedback={communityMode === 'curated'}
+                      currentUserId={user?.id || null}
+                      onFeedbackChanged={refreshFeedbackCounts}
                     />
                   ))
                 ) : (
@@ -1049,6 +1062,9 @@ const Concept = ({
                     editMode={editing}
                     onRename={editing ? handleRename : undefined}
                     onDeleteEdge={editing ? handleDeleteEdge : undefined}
+                    showFeedback={communityMode === 'curated'}
+                    currentUserId={user?.id || null}
+                    onFeedbackChanged={refreshFeedbackCounts}
                   />
                 )}
               </>

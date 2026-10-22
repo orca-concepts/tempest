@@ -3,6 +3,18 @@ import { getSetColor } from './VoteSetBar';
 import CardAnswerSection from './CardAnswerSection';
 import CardSequenceSection from './CardSequenceSection';
 import EditableField from './EditableField';
+import FeedbackPanel from './FeedbackPanel';
+
+// Phase 72e-1: page-with-pencil feedback icon (inline SVG, not an emoji).
+const FeedbackIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+    style={{ display: 'block' }}>
+    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+    <path d="M8 8h5M8 12h3" />
+    <path d="M19 12.5l2.5 2.5-4.5 4.5H14.5v-2.5l4.5-4.5z" />
+  </svg>
+);
 
 const ConceptGrid = ({
   concepts,
@@ -33,7 +45,16 @@ const ConceptGrid = ({
   editMode = false,
   onRename,
   onDeleteEdge,
+  // Phase 72e-1: curated reader feedback. showFeedback enables the per-card icon;
+  // currentUserId is the viewer's id (owner controls come from canManageAnswers).
+  // onFeedbackChanged refreshes the card's open count WITHOUT a full-page reload,
+  // so the open panel is not unmounted (falls back to onAnswersChanged).
+  showFeedback = false,
+  currentUserId = null,
+  onFeedbackChanged,
 }) => {
+  // Phase 72e-1: which card's feedback panel is open (keyed by edge_id).
+  const [feedbackEdgeId, setFeedbackEdgeId] = useState(null);
   // Which card's delete confirm is open (keyed by edge_id), and any delete error.
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
@@ -299,6 +320,23 @@ const ConceptGrid = ({
                 />
               )}
 
+              {/* Phase 72e-1: reader feedback icon (curated, view + edit mode). */}
+              {showFeedback && !nestMode && concept.edge_id != null && (
+                <div style={styles.feedbackFooter} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    style={styles.feedbackBtn}
+                    onClick={() => setFeedbackEdgeId(concept.edge_id)}
+                    title="Reader feedback — suggest a change"
+                  >
+                    <FeedbackIcon />
+                    {Number(concept.openFeedbackCount) > 0 && (
+                      <span style={styles.feedbackCount}>{concept.openFeedbackCount}</span>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {showVotes && (
                 <div style={styles.voteSection}>
                   <button
@@ -422,6 +460,25 @@ const ConceptGrid = ({
           )}
         </div>
       )}
+
+      {/* Phase 72e-1: feedback panel for the card whose icon was clicked. The
+          concept is re-derived from the live list so its name/answers stay fresh. */}
+      {feedbackEdgeId != null && (() => {
+        const fbConcept = concepts.find((c) => c.edge_id === feedbackEdgeId);
+        if (!fbConcept) return null;
+        return (
+          <FeedbackPanel
+            concept={fbConcept}
+            siblings={concepts}
+            isOwner={canManageAnswers}
+            isGuest={isGuest}
+            currentUserId={currentUserId}
+            onRequestLogin={onRequestLogin}
+            onClose={() => setFeedbackEdgeId(null)}
+            onChanged={onFeedbackChanged || onAnswersChanged}
+          />
+        );
+      })()}
     </>
   );
 };
@@ -610,6 +667,31 @@ const styles = {
   childCount: {
     fontSize: '14px',
     color: '#888',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  feedbackFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: '8px 14px',
+    borderTop: '1px solid #eee',
+    backgroundColor: '#fafafa',
+  },
+  feedbackBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '13px',
+    color: '#777',
+    cursor: 'pointer',
+    border: '1px solid #e0d9cf',
+    background: '#faf9f6',
+    borderRadius: '3px',
+    padding: '3px 9px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  feedbackCount: {
+    fontSize: '12px',
+    color: '#555',
     fontFamily: '"EB Garamond", Georgia, serif',
   },
   flagCount: {

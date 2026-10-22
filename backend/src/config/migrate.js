@@ -355,6 +355,74 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_qseq_to ON question_sequence_links(to_edge_id);
     `);
 
+    // Phase 72e-1: reader feedback (curated communities only). A feedback item is a
+    // public suggestion attached to a question card (edge): reword the question,
+    // change an answer, add/remove a precedent or subsequent sibling link, or just
+    // a free-text note. Each item snapshots the text it was written against so the
+    // thread stays legible after the owner edits the question. Replies thread under
+    // an item; votes are one-per-user and only sort feedback inside its menu.
+    //   - kind CHECK already allows 'new_child' (72e-2 new-question/branch
+    //     suggestions) even though 72e-1 does not create it.
+    //   - edge_id / target_edge_id ON DELETE CASCADE: hard-deleting an edge row drops
+    //     the feedback; soft delete (deleted_at) only archives it via the read filter.
+    //   - target_link_id ON DELETE SET NULL: a removed answer leaves the suggestion.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback_items (
+        id SERIAL PRIMARY KEY,
+        community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+        edge_id INTEGER REFERENCES edges(id) ON DELETE CASCADE,
+        kind VARCHAR(24) NOT NULL,
+        target_link_id INTEGER REFERENCES concept_links(id) ON DELETE SET NULL,
+        target_edge_id INTEGER REFERENCES edges(id) ON DELETE SET NULL,
+        proposal JSONB,
+        snapshot JSONB NOT NULL,
+        comment TEXT,
+        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'open',
+        status_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        status_at TIMESTAMP,
+        is_hidden BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT feedback_items_kind_check CHECK (kind IN (
+          'edit_question', 'edit_answer', 'add_precedent', 'remove_precedent',
+          'add_subsequent', 'remove_subsequent', 'new_child', 'general'
+        )),
+        CONSTRAINT feedback_items_status_check CHECK (status IN ('open', 'incorporated', 'declined'))
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_feedback_items_community_status ON feedback_items(community_id, status);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_feedback_items_edge ON feedback_items(edge_id);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback_replies (
+        id SERIAL PRIMARY KEY,
+        feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        is_owner_reply BOOLEAN NOT NULL DEFAULT false,
+        body TEXT NOT NULL,
+        is_hidden BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_feedback_replies_feedback ON feedback_replies(feedback_id);
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback_votes (
+        feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (feedback_id, user_id)
+      );
+    `);
+
     // Votes table (saves)
     await client.query(`
       CREATE TABLE IF NOT EXISTS votes (

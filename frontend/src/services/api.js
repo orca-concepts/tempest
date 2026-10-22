@@ -161,6 +161,42 @@ export const communitiesAPI = {
     api.post(`/communities/${communityId}/owners/remove`, { userId }),
 };
 
+// Phase 72e-1: reader feedback (curated communities)
+export const feedbackAPI = {
+  getForEdge: (edgeId) =>
+    api.get(`/feedback/edge/${edgeId}`),
+
+  create: ({ edgeId, kind, targetLinkId, targetEdgeId, proposal, comment }) =>
+    api.post('/feedback', { edgeId, kind, targetLinkId, targetEdgeId, proposal, comment }),
+
+  edit: (id, updates) =>
+    api.post(`/feedback/${id}/edit`, updates),
+
+  remove: (id) =>
+    api.post(`/feedback/${id}/delete`),
+
+  vote: (id) =>
+    api.post(`/feedback/${id}/vote`),
+
+  setStatus: (id, status, reply) =>
+    api.post(`/feedback/${id}/status`, { status, ...(reply ? { reply } : {}) }),
+
+  hide: (id, hidden) =>
+    api.post(`/feedback/${id}/hide`, { hidden }),
+
+  addReply: (id, body) =>
+    api.post(`/feedback/${id}/replies`, { body }),
+
+  editReply: (replyId, body) =>
+    api.post(`/feedback/replies/${replyId}/edit`, { body }),
+
+  removeReply: (replyId) =>
+    api.post(`/feedback/replies/${replyId}/delete`),
+
+  hideReply: (replyId, hidden) =>
+    api.post(`/feedback/replies/${replyId}/hide`, { hidden }),
+};
+
 // Votes endpoints
 export const votesAPI = {
   // Phase 59b: Unified votes endpoint. Phase 71: optionally community-scoped.

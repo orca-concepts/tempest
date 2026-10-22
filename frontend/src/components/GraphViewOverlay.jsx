@@ -319,7 +319,9 @@ const GraphViewOverlay = ({
 };
 
 const styles = {
-  container: { minHeight: '100%', backgroundColor: '#faf9f7' },
+  // position/zIndex: own stacking context above the fixed Add / Search bar
+  // (z 1000), so the overlay is never underlapped by it (Phase 72e-1 fix 3).
+  container: { minHeight: '100%', backgroundColor: '#faf9f7', position: 'relative', zIndex: 10050 },
   headerBar: { display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px 0 20px', maxWidth: '1200px', margin: '0 auto' },
   backButton: { padding: '6px 12px', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: 'white', cursor: 'pointer', fontSize: '14px', fontFamily: '"EB Garamond", Georgia, serif', color: '#555' },
   heading: { margin: 0, fontSize: '22px', fontFamily: '"EB Garamond", Georgia, serif', fontWeight: '600', color: '#333' },

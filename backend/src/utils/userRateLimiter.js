@@ -31,4 +31,7 @@ module.exports = {
 
   // Child concept creation — more generous budget (normal usage)
   childConceptCreateLimiter: perUserHourly(100, 'child concept create'),
+
+  // Phase 72e: reader feedback — public-facing spam target (items + replies).
+  feedbackCreateLimiter: perUserHourly(30, 'feedback'),
 };

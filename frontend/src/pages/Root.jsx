@@ -12,7 +12,7 @@ const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
 
 const Root = ({
-  graphTabId, onNavigate, isGuest = false,
+  graphTabId, onNavigate, isGuest = false, onRequestLogin,
   communityId, communityName,
   communityMode = 'open', communityIsOwner = false, communitySlug = null,
   onCommunitiesChanged,
@@ -105,10 +105,14 @@ const Root = ({
     }
   };
 
-  const loadRootConcepts = async () => {
-    if (!communityId) { setConcepts([]); setLoading(false); return; }
+  // `opts.silent` skips the loading flash. Root only renders the grid when
+  // `!loading`, so a non-silent reload unmounts ConceptGrid (and any open
+  // FeedbackPanel). Feedback actions refresh silently to keep the panel mounted.
+  const loadRootConcepts = async (opts = {}) => {
+    const silent = !!opts.silent;
+    if (!communityId) { setConcepts([]); if (!silent) setLoading(false); return; }
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const sortParam = sortMode === 'saves' ? undefined : sortMode;
       const response = await conceptsAPI.getRootConcepts(sortParam, communityId);
       setConcepts(response.data.concepts);
@@ -118,9 +122,12 @@ const Root = ({
       setError('Failed to load root concepts');
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  // Phase 72e-1: refresh card feedback counts without unmounting the panel.
+  const refreshFeedbackCounts = () => loadRootConcepts({ silent: true });
 
   const handleConceptClick = (conceptId) => {
     // Look up the concept name for the tab label
@@ -438,9 +445,13 @@ const Root = ({
                 canManageAnswers={communityIsOwner}
                 onAnswersChanged={loadRootConcepts}
                 isGuest={isGuest}
+                onRequestLogin={onRequestLogin}
                 editMode={editing}
                 onRename={editing ? handleRename : undefined}
                 onDeleteEdge={editing ? handleDeleteEdge : undefined}
+                showFeedback={communityMode === 'curated'}
+                currentUserId={user?.id || null}
+                onFeedbackChanged={refreshFeedbackCounts}
               />
             </>
           );

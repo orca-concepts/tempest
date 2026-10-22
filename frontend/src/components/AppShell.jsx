@@ -147,6 +147,17 @@ const AppShell = () => {
   // they refresh the renamed concept (title, children, breadcrumb, bridges).
   const [renamedConcept, setRenamedConcept] = useState(null); // { conceptId, newName, nonce }
 
+  // Restore the community this browser last chose, from a known community list.
+  // Used by the mount effect and as the fallback when a deep link fails to resolve.
+  const applyStoredCommunity = useCallback((list) => {
+    const storedSlug = localStorage.getItem('orca_active_community');
+    const pick = storedSlug ? list.find((c) => c.slug === storedSlug) : undefined;
+    if (pick) {
+      setActiveCommunityId(pick.id);
+      setActiveCommunityName(pick.name);
+    }
+  }, []);
+
   useEffect(() => {
     communitiesAPI.listCommunities()
       .then((r) => {
@@ -160,13 +171,11 @@ const AppShell = () => {
         // Tab-mgmt fix 2: when the page was loaded with ?gtab=, that tab's
         // community wins (reconciled in loadAllTabs / the sync effect below), so
         // skip the localStorage community restore to avoid a header/content clash.
-        if (initialGtabParam) return;
-        const storedSlug = localStorage.getItem('orca_active_community');
-        const pick = storedSlug ? list.find((c) => c.slug === storedSlug) : undefined;
-        if (pick) {
-          setActiveCommunityId(pick.id);
-          setActiveCommunityName(pick.name);
-        }
+        // Phase 72e-1 fix 2: a deep link (concept / link / /c:slug) likewise decides
+        // the community — skip the stored restore so it can't clobber the target
+        // community the deep-link branch adopts below.
+        if (initialGtabParam || hasDeepLinkInUrl) return;
+        applyStoredCommunity(list);
       })
       .catch(() => setCommunities([]));
   }, []);
@@ -192,6 +201,10 @@ const AppShell = () => {
   useEffect(() => {
     if (initialReconcileDoneRef.current) return;
     if (loading || !tabsLoaded || communities.length === 0) return;
+    // Phase 72e-1 fix 2: on a deep-link load the deep link decides both the active
+    // tab and the active community — never reconcile toward the stored community,
+    // or we'd switch away from the deep-linked (possibly cross-community) tab.
+    if (hasDeepLinkInUrl) { initialReconcileDoneRef.current = true; return; }
     if (!activeTab || activeTab.type !== 'graph') return;
     initialReconcileDoneRef.current = true;
     if (activeCommunityId == null) return;
@@ -313,6 +326,10 @@ const AppShell = () => {
   useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
   const graphTabsRef = useRef(graphTabs);
   useEffect(() => { graphTabsRef.current = graphTabs; }, [graphTabs]);
+  // Fresh community list for the deep-link effect's async callbacks (its deps do
+  // not include `communities`, so the closure's copy can be stale).
+  const communitiesRef = useRef(communities);
+  useEffect(() => { communitiesRef.current = communities; }, [communities]);
 
   // Load all tabs + groups on mount (skip for guests)
   useEffect(() => {
@@ -356,7 +373,12 @@ const AppShell = () => {
       const params = new URLSearchParams(location.search);
       const pathStr = params.get('path');
       const path = pathStr ? pathStr.split(',').map(Number).filter(Boolean) : [];
-      handleOpenConceptTab(conceptId, path);
+      // Phase 72e-1 fix 2: adopt the target concept's community (from the resolved
+      // tab) so the header/sidebar match the deep-linked question even when it
+      // lives in a different community than the stored one.
+      handleOpenConceptTab(conceptId, path).then((tab) => {
+        if (tab && tab.community_id != null) setActiveCommunityId(tab.community_id);
+      });
       navigate('/', { replace: true });
       return;
     }
@@ -374,6 +396,9 @@ const AppShell = () => {
           navigate('/', { replace: true });
         })
         .catch(() => {
+          // Deep link failed — fall back to the stored community (we skipped the
+          // mount restore for deep links) so the user isn't left with none.
+          applyStoredCommunity(communitiesRef.current);
           setUnavailableLinkToast(true);
           navigate('/', { replace: true });
         });
@@ -392,7 +417,7 @@ const AppShell = () => {
     if (linkMatch) {
       const linkId = parseInt(linkMatch[1], 10);
       votesAPI.getWebLinkLocation(linkId)
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           setPendingScrollLinkId(linkId);
           // Phase 72b: a curated answer renders inside the child card on the PARENT
           // question's page, so open that page (cardConceptId/cardPath). Root-edge
@@ -402,14 +427,19 @@ const AppShell = () => {
           // graphTabsRef), so pass the concept id as a Number and the path as an
           // array of ids — the same form tabs store — so the reuse match succeeds
           // instead of spawning a duplicate tab.
+          let tab;
           if (data.communityMode === 'curated' && data.cardConceptId) {
-            handleOpenConceptTab(Number(data.cardConceptId), (data.cardPath || []).map(Number));
+            tab = await handleOpenConceptTab(Number(data.cardConceptId), (data.cardPath || []).map(Number));
           } else {
-            handleOpenConceptTab(Number(data.conceptId), (data.parentPath || []).map(Number));
+            tab = await handleOpenConceptTab(Number(data.conceptId), (data.parentPath || []).map(Number));
           }
+          // Phase 72e-1 fix 2: adopt the link's community so a /link to a curated
+          // question doesn't get reconciled back to the stored community.
+          if (tab && tab.community_id != null) setActiveCommunityId(tab.community_id);
           navigate('/', { replace: true });
         })
         .catch(() => {
+          applyStoredCommunity(communitiesRef.current);
           setUnavailableLinkToast(true);
           navigate('/', { replace: true });
         });
@@ -421,12 +451,14 @@ const AppShell = () => {
     if (tunnelMatch) {
       const tunnelLinkId = parseInt(tunnelMatch[1], 10);
       tunnelsAPI.getTunnelLocation(tunnelLinkId)
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           setPendingScrollTunnelLinkId(tunnelLinkId);
-          handleOpenConceptTab(data.conceptId, data.parentPath, undefined, undefined, undefined, 'tunnel');
+          const tab = await handleOpenConceptTab(data.conceptId, data.parentPath, undefined, undefined, undefined, 'tunnel');
+          if (tab && tab.community_id != null) setActiveCommunityId(tab.community_id);
           navigate('/', { replace: true });
         })
         .catch(() => {
+          applyStoredCommunity(communitiesRef.current);
           setUnavailableLinkToast(true);
           navigate('/', { replace: true });
         });
@@ -920,7 +952,8 @@ const AppShell = () => {
       if (!isGuest) {
         votesAPI.updateGraphTab(existingTab.id, { path: updates.path, viewMode: updates.viewMode, label }).catch(() => {});
       }
-      return;
+      // Return the resolved tab so deep-link callers can adopt its community.
+      return existingTab;
     }
 
     if (isGuest) {
@@ -936,7 +969,7 @@ const AppShell = () => {
       };
       setGraphTabs(prev => [...prev, newTab]);
       setActiveTab({ type: 'graph', id: newTab.id });
-      return;
+      return newTab;
     }
 
     try {
@@ -946,8 +979,10 @@ const AppShell = () => {
       setGraphTabs(prev => [...prev, newTab]);
       setActiveTab({ type: 'graph', id: newTab.id });
       await refreshSidebarItems();
+      return newTab;
     } catch (err) {
       console.error('Failed to open concept tab:', err);
+      return null;
     }
   }, [isGuest, tabGroups]);
 
@@ -1787,6 +1822,7 @@ const AppShell = () => {
                         graphTabId={tab.id}
                         onNavigate={handleGraphTabNavigate}
                         isGuest={isGuest}
+                        onRequestLogin={handleRequestLogin}
                         communityId={activeCommunityId}
                         communityName={activeCommunityName}
                         communityMode={activeCommunity?.mode || 'open'}

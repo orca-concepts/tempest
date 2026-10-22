@@ -14,6 +14,7 @@ const userRoutes = require('./routes/users');
 const legalRoutes = require('./routes/legal');
 const adminLegalRoutes = require('./routes/adminLegal');
 const communityRoutes = require('./routes/communities');
+const feedbackRoutes = require('./routes/feedback');
 
 const pool = require('./config/database');
 
@@ -99,6 +100,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/admin', adminLegalRoutes);
 app.use('/api/communities', communityRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

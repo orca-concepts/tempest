@@ -1,6 +1,6 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** October 21, 2026 (Phase 72d complete: graph view. Next: 72e reader feedback)
+**Last Updated:** October 22, 2026 (Phase 72e-1 complete: reader feedback threads on curated cards; cross-community deep-link fix. Next: 72e-2 branch suggestions + owner inbox)
 
 This file is the canonical technical reference for Orca. It describes the system **as it is now**. Completed-phase narratives, commit lists, and the design history of removed features live in `ORCA_HISTORY.md`. `CLAUDE.md` holds the conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
 
@@ -16,6 +16,7 @@ What is live:
 - **Curated answers (Phase 72b).** In curated communities, links are shown as *answers* inside each question's card (title, publication date, comment), with no side links panel and no vote UI. Siblings sort open-questions-first, then by newest publication date.
 - **Curated editing (Phase 72c).** Owners switch between View (exactly what readers see) and Edit. Edit mode: dashed outlines, click-to-edit question text (renames the question everywhere it appears in the community) and answer fields, add/remove answers, a "+" button to add questions, soft delete of a question and its subtree, and precedent/subsequent links between sibling questions. In curated communities the Add / Search bar is search-only.
 - **Graph view (Phase 72d, both modes).** A "Graph" button on community and question pages opens the whole graph as a collapsible tree: from a question, that question's root graph with the current question highlighted and its path expanded; from the community page, every root. Curated trees nest answers; open trees show link counts.
+- **Reader feedback (Phase 72e-1, curated only).** Each card has a feedback icon (with the open count) opening a panel where logged-in readers suggest a rewording, an answer change, adding/removing a precedent or subsequent, or something else, with a comment. Feedback is public immediately; anyone logged in can reply and upvote; owners mark items incorporated/declined (optionally with a reply) and hide items or replies. Authors can edit/delete until an owner replies or the status changes. Feedback on deleted questions is archived (read-only).
 - **Question-only graphs.** `question` is the only attribute (`ENABLED_ATTRIBUTES=question`).
 - **Path-dependent identity.** The same question under two parents is two contextual entities with independent children, votes, and links.
 - **Links on edges.** URLs with titles, immutable comments, author addenda, and upvotes, attached to one specific edge. **A link applies only to the question it is placed on and never surfaces on ancestor questions** (link inheritance was fully removed in October 2026).
@@ -24,7 +25,7 @@ What is live:
 - **Auth.** ORCID-first registration plus email/password; Resend for transactional email.
 - **Moderation and legal.** Community flagging (10 flags hides an edge), admin legal removal with `legal_hold`, DMCA strikes, and copyright infringement / counter-notice forms.
 
-What is next: **Phase 72e** (reader feedback: suggestion threads, owner replies and statuses, feedback votes, owner inbox) — spec still to be planned; see the Forward Roadmap.
+What is next: **Phase 72e-2** (suggest a new question or branch from the page-level icon; owner inbox; badges) — see `PHASE_72_CURATED_COMMUNITIES.md`.
 
 ### Retired / dead code — do NOT surface as live or propose using
 Backend code for some of these remains intact and must not be "fixed up" into use:
@@ -116,6 +117,12 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 - **child_rankings** — dormant.
 
 **question_sequence_links** (Phase 72c-2) — `id`, `from_edge_id` (the precedent; FK edges, CASCADE), `to_edge_id` (the subsequent; FK edges, CASCADE), `created_by` (FK users, SET NULL), `created_at`. UNIQUE `(from_edge_id, to_edge_id)`, CHECK `from_edge_id <> to_edge_id`, indexes on both columns. Sibling, same-community, no-direct-loop, and not-deleted rules are enforced in the controller.
+
+**feedback_items** (Phase 72e-1) — `id`, `community_id` (FK, CASCADE), `edge_id` (the card; for future `new_child` items the parent edge, NULL = root list), `kind` (CHECK: `edit_question`, `edit_answer`, `add_precedent`, `remove_precedent`, `add_subsequent`, `remove_subsequent`, `new_child`, `general`), `target_link_id` (FK concept_links, SET NULL), `target_edge_id` (FK edges, SET NULL), `proposal` JSONB, `snapshot` JSONB NOT NULL (server-built at submit time), `comment`, `author_id` (SET NULL), `status` (CHECK `open`/`incorporated`/`declined`), `status_by`, `status_at`, `is_hidden`, `created_at`, `updated_at`. Indexes on `(community_id, status)` and `edge_id`. Archived state is computed (target edge `deleted_at` set), not stored.
+
+**feedback_replies** (Phase 72e-1) — `id`, `feedback_id` (CASCADE), `author_id` (SET NULL), `is_owner_reply` (set server-side), `body`, `is_hidden`, `created_at`, `updated_at`.
+
+**feedback_votes** (Phase 72e-1) — PRIMARY KEY `(feedback_id, user_id)`, `created_at`.
 
 ### Moderation
 - **concept_flags** — edge flags; 10 flags from distinct users hides the edge. UNIQUE `(user_id, edge_id)`.
@@ -218,6 +225,20 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 
 **Route-ordering gotcha:** literal `/web-links/*` routes must be registered before the `/web-links/:edgeId` catch-all in `routes/votes.js`.
 
+### Feedback (`/api/feedback`, Phase 72e-1 — curated communities only)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/edge/:edgeId` | Guest | Live feedback for one card with snapshot, proposal, comment, author + ORCID, status, vote count, `userVoted`, `locked`, `canEdit`, replies. Sorted open first, then votes, then newest. Owners also get hidden items/replies flagged `isHidden`. |
+| POST | `/` | Yes | Create. Body `{ edgeId, kind, targetLinkId?, targetEdgeId?, proposal?, comment? }`. Kind-specific validation (sibling rules from 72c-2, Safe Browsing for URLs); `new_child` returns 400 `unsupported_kind` until 72e-2. Rate-limited (`feedbackCreateLimiter`). |
+| POST | `/:id/edit`, `/:id/delete` | Yes | Author only, while unlocked (409 `locked`). Delete is hard. |
+| POST | `/:id/replies` | Yes | Any logged-in user; rate-limited. |
+| POST | `/replies/:replyId/edit`, `/replies/:replyId/delete` | Yes | Reply author only, while unlocked. |
+| POST | `/:id/vote` | Yes | Toggle; returns `{ voted, voteCount }`. |
+| POST | `/:id/status` | Yes | Owners. Body `{ status, reply? }`; the optional reply is posted as an owner reply in the same transaction. |
+| POST | `/:id/hide`, `/replies/:replyId/hide` | Yes | Owners or the site admin (`ADMIN_USER_ID`). Body `{ hidden }`. |
+
+Every write returns 409 `archived` when the target question is deleted, and 403 `curated_only` outside curated communities. **Locked** = an owner has replied or the status is not `open` (replies: an owner replied after them or the status changed). `GET /concepts/:id` and `/root` return `openFeedbackCount` per curated row.
+
 ### Other namespaces
 - **Moderation (`/api/moderation`):** POST `/flag`, `/unflag`, `/vote`, `/vote/remove`, `/comment`, `/unhide` (admin); GET `/hidden/:parentId`, `/comments/:edgeId`.
 - **Pages (`/api/pages`):** GET/POST `/:slug/comments`, POST `/comments/:commentId/vote`.
@@ -256,11 +277,12 @@ All external-service utilities share one contract: **never throw**; return a res
 - **Saved.jsx**, **SavedTabContent.jsx**, **Login.jsx**, **Register.jsx** — legacy files, not routed.
 
 ### Components (`frontend/src/components/`)
-- **AppShell.jsx** — header (shows "Community: <name>"), sidebar, tabs, overlays, deep links, outreach mode. Holds the active community; graph tabs are filtered to it (root tabs always shown; groups with no in-community tabs hidden). `hasDeepLinkInUrl` suppresses default-tab activation during async deep-link resolution. Tab-state rules (October 2026 fixes): the mount effect waits for `authLoading` to settle and a `tabsLoaded` flag gates the deep-link effect, so deep links and `/c/:slug` resolve against the user's real tabs (no duplicates, no blank page); `?gtab=` is read on load and activates that tab and its community; a one-shot reconcile switches to a tab in the active community if the restored tab belongs elsewhere and corrects the URL with `replaceState`; `handleConceptRenamed` updates other tabs' labels and broadcasts `renamedConcept` so mounted Concept/Root tabs showing that question reload. Holds the per-community `editMode` (default View, not persisted, reset on community switch).
+- **AppShell.jsx** — header (shows "Community: <name>"), sidebar, tabs, overlays, deep links, outreach mode. Holds the active community; graph tabs are filtered to it (root tabs always shown; groups with no in-community tabs hidden). `hasDeepLinkInUrl` suppresses default-tab activation during async deep-link resolution. Tab-state rules (October 2026 fixes): the mount effect waits for `authLoading` to settle and a `tabsLoaded` flag gates the deep-link effect, so deep links and `/c/:slug` resolve against the user's real tabs (no duplicates, no blank page); `?gtab=` is read on load and activates that tab and its community; a one-shot reconcile switches to a tab in the active community if the restored tab belongs elsewhere and corrects the URL with `replaceState`; `handleConceptRenamed` updates other tabs' labels and broadcasts `renamedConcept` so mounted Concept/Root tabs showing that question reload. **A deep link decides the community:** on a deep-link load (`/concept`, `/link`, `/c/:slug`) the stored community is not restored, the deep-link branch adopts the target tab's `community_id`, and the reconcile effect is skipped (`handleOpenConceptTab` returns the resolved tab). Holds the per-community `editMode` (default View, not persisted, reset on community switch).
 - **CommunitiesBrowse.jsx** — community list (plain "Curated" label on curated ones) and inline create form with an Open / Curated choice; selecting one sets the active community and opens a root tab.
 - **CommunityHeaderControls.jsx** (Phase 72a) — in the community header: Share (copies the `/c/:slug` URL) for everyone, and an owners panel (list, add by username, remove; remove disabled for the last owner) for owners.
 - **ConceptGrid.jsx** — child/root cards: `N children · M links` (curated: `N answers`, plus the in-card answer section), `↘` cross-sibling-descendant flag, vote-set dots.
 - **ConceptLinksPanel.jsx** — right-hand links panel. Children view shows the current edge's links; Flip View shows the aggregate grouped by parent context. Add-link form with a required affirmation checkbox and title preview on paste/blur. Comments render through `LinkifiedText`.
+- **FeedbackPanel.jsx** (Phase 72e-1) — per-card feedback overlay rendered through a portal to `document.body` (above the fixed Add / Search bar). Header with the question; "Suggest a change" form offering only the kinds that make sense for that card (prefilled fields, sibling picker, comment); the list with From → To proposals, comments and replies via `LinkifiedText`, votes, Reply, Edit/Delete for unlocked authors, and owner status controls and Hide/Unhide. Stays open across actions (pages refresh counts silently via `loadConcept({ silent: true })` / `loadRootConcepts({ silent: true })`). Guests: Reply, vote and "Log in to suggest a change" close the panel and open the login prompt.
 - **GraphViewOverlay.jsx** (Phase 72d) — full-pane graph view (← Back, Collapse all / Expand all, Escape closes). Per-row ▸/▾ toggle buttons are separate from the question text (toggle expands/collapses; text navigates the current tab and closes). Siblings follow the grid order (curated recency; open save count then newest). Curated answers nested (↗ title link, date, 2-line comment). Current question highlighted and scrolled into view; graphs of 150 questions or fewer start fully expanded, larger ones collapsed below the current path. Opened from AppShell like the Votes overlay.
 - **EditableField.jsx** (Phase 72c-1) — click-to-edit text/textarea/date field with inline error; Enter (single-line) or blur saves, Escape cancels.
 - **NewQuestionCard.jsx** (Phase 72c-1) — inline new-question card opened by the edit-mode "+" button.
@@ -354,7 +376,6 @@ All external-service utilities share one contract: **never throw**; return a res
 - **DOI title fetch:** publisher pages often serve bot checks, so pasted DOI links get titles like "Client Challenge". Better: for DOI URLs, fill title and publication date from the Crossref API. Valuable for journals.
 - **Question-page header crowding:** with Edit, Flip View, Graph, and Share, a narrow window squeezes the breadcrumb into a thin wrapped column; let the buttons wrap below the breadcrumb.
 - **"Also appears under N"** rename warning shows only on a question's own page, not when renaming from a card.
-- **Copy on curated create form** says readers "leave feedback"; true only after 72e.
 - **Deep-link tab labels** default to "Concept" until the name loads; update the label after the API response.
 - **In-orca URL regex** is duplicated between `inOrcaLinks.js` and `LinkifiedText.jsx` with no enforcement.
 - **Email verification page** trusts the redirect's `status` param; could confirm via a backend call.
@@ -370,17 +391,17 @@ All external-service utilities share one contract: **never throw**; return a res
 
 ### Phase 72 — Curated communities (in progress; full spec in `PHASE_72_CURATED_COMMUNITIES.md`)
 - ~~72a: mode + owners + `/c/:slug` + write gating~~ **completed October 19, 2026** (with a follow-up fix: same-community check in nest-under-sibling, row lock in owner removal)
+- ~~72e-1: reader feedback threads, votes, owner status and moderation~~ **completed October 22, 2026** (follow-ups: panel stays open across actions, overlays above the search bar, guest prompts; fixed cross-community deep links)
 - ~~72d: graph view (both modes)~~ **completed October 21, 2026**
 - ~~72c: edit mode, rename, answer editing, soft delete, precedent/subsequent links~~ **completed October 21, 2026** (follow-ups: picker clipping; tab-state fixes for auth transition, `?gtab` restore, URL sync, and cross-tab rename)
 - ~~72b: answers + in-card answer section + recency sort~~ **completed October 19, 2026** (sort rule revised to open-questions-first; follow-ups: no auto-vote in curated, vote UI hidden, "answers" wording, button accessibility, bottom padding)
-- **Next: 72e** — reader feedback. Plan the spec first; open decisions include whether feedback is visible immediately or after owner approval, moderation of feedback, and notification to owners.
+- **Next: 72e-2** — page-level new-question/branch suggestions (`feedback_suggested_nodes`), owner inbox, badges. Spec written.
 
 Purpose: let a journal own a community built from its published papers, share it by link, and collect reader feedback. Decisions locked in planning (October 2026):
 
-- **Built so far:** 72a (modes, owners, `/c/:slug`, gating), 72b (answers, in-card answer section, open-first recency sort), 72c (edit mode, rename, answer editing, soft delete, precedent/subsequent links), 72d (graph view). Remaining decisions:
+- **Built so far:** 72a (modes, owners, `/c/:slug`, gating), 72b (answers, in-card answer section, open-first recency sort), 72c (edit mode, rename, answer editing, soft delete, precedent/subsequent links), 72d (graph view), 72e-1 (feedback threads on cards). Remaining decisions:
 - **Navigation stays page-based.** Path-dependent identity is kept.
-- **Reader feedback (curated only):** a feedback icon on each card (suggest edits to the question or its answers; suggest adding/removing precedent or subsequent links) and a bottom-corner icon (suggest a new child, optionally with its own children — a whole branch). Each item has free-text comments and is shown as a public thread. Readers can reply; owner replies are marked. Statuses: open / incorporated / declined. Readers can vote on feedback (visible only inside the feedback menu; sorts feedback, never the graph). Each item snapshots the text it was written against. Login required to submit; guests can read. Owners get a feedback inbox across the community plus count badges. Needs moderation, rate limits, and Safe Browsing on suggested links.
-- **Remaining sub-phases:** 72e feedback system + owner inbox (feedback threads on removed questions are archived via `delete_batch_id`); 72f card answer section for open graphs. Later: one-click "incorporate", email notifications, Crossref auto-fill for DOIs, a restore UI for deleted batches, precedent/subsequent links in the graph view.
+- **Remaining sub-phases:** 72e-2 branch suggestions + owner inbox + badges; 72f card answer section for open graphs. Later: one-click "incorporate", email notifications, Crossref auto-fill for DOIs, a restore UI for deleted batches, precedent/subsequent links in the graph view.
 - **Docs to revise alongside:** ToS / Copyright Policy (editorial ownership, public feedback); the append-only AD (curated exception).
 
 ### Other

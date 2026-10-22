@@ -13,7 +13,7 @@ const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
 
 const Root = ({
-  graphTabId, onNavigate, isGuest = false, onRequestLogin,
+  graphTabId, onNavigate, onOpenConceptTab, isGuest = false, onRequestLogin,
   communityId, communityName,
   communityMode = 'open', communityIsOwner = false, communitySlug = null,
   onCommunitiesChanged,
@@ -455,6 +455,11 @@ const Root = ({
                 showAnswers={communityMode === 'curated'}
                 canManageAnswers={communityIsOwner}
                 onAnswersChanged={loadRootConcepts}
+                showLinks={communityMode !== 'curated'}
+                canAddLink={!isGuest}
+                voteSets={[]}
+                onLinksChanged={() => loadRootConcepts({ silent: true })}
+                onOpenConceptTab={onOpenConceptTab}
                 isGuest={isGuest}
                 onRequestLogin={onRequestLogin}
                 editMode={editing}

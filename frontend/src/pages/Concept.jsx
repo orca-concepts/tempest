@@ -10,6 +10,8 @@ import SearchField from '../components/SearchField';
 import SwapModal from '../components/SwapModal';
 import VoteSetBar from '../components/VoteSetBar';
 import ConceptLinksPanel from '../components/ConceptLinksPanel';
+import CardLinksSection from '../components/CardLinksSection';
+import CardAnswerSection from '../components/CardAnswerSection';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 import NewQuestionCard from '../components/NewQuestionCard';
 import EditableField from '../components/EditableField';
@@ -79,6 +81,10 @@ const Concept = ({
   const [path, setPath] = useState([]);
   const [currentEdgeVoteCount, setCurrentEdgeVoteCount] = useState(null);
   const [currentAttribute, setCurrentAttribute] = useState(null);
+  // Phase 72f: the current question's own edge id and (curated) its own answers,
+  // for the own-page answer/link section rendered under the question title.
+  const [currentEdgeId, setCurrentEdgeId] = useState(null);
+  const [currentAnswers, setCurrentAnswers] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -192,6 +198,8 @@ const Concept = ({
       setPath(response.data.path);
       setCurrentEdgeVoteCount(response.data.currentEdgeVoteCount);
       setCurrentAttribute(response.data.currentAttribute || null);
+      setCurrentEdgeId(response.data.currentEdgeId || null);
+      setCurrentAnswers(response.data.currentAnswers || null);
       setAltParentCount(response.data.altParentCount || 0);
       setTunnelLinkCount(response.data.tunnelLinkCount || 0);
       setError(null);
@@ -289,12 +297,13 @@ const Concept = ({
     navigate(window.location.pathname + window.location.search, { replace: true });
   }, [concept?.id]);
 
-  // Phase 72b: curated deep link (/link/:id) — the answer renders inside a child
-  // card here, so scroll to and highlight the answer row (the links panel, which
-  // handles this in open communities, is hidden in curated children view).
+  // Phase 72f: curated deep link (/link/:id) — the answer renders in the question's
+  // own-page answer section under the title (or inside a child card if the answer
+  // is on a child). Scroll to and highlight the answer row. Open communities are
+  // handled by the own-page CardLinksSection, which consumes pendingScrollLinkId.
   useEffect(() => {
     if (communityMode !== 'curated' || effectiveViewMode !== 'children') return;
-    if (!pendingScrollLinkId || loading || children.length === 0) return;
+    if (!pendingScrollLinkId || loading) return;
     const root = containerRef.current;
     if (!root) return;
     const el = root.querySelector(`#answer-${pendingScrollLinkId}`);
@@ -306,7 +315,7 @@ const Concept = ({
       if (onPendingScrollLinkConsumed) onPendingScrollLinkConsumed();
     }, 300);
     return () => clearTimeout(timer);
-  }, [pendingScrollLinkId, loading, children, communityMode, effectiveViewMode]);
+  }, [pendingScrollLinkId, loading, children, currentAnswers, communityMode, effectiveViewMode]);
 
   // ─── Navigation helpers ──────────────────────────────────
 
@@ -797,10 +806,12 @@ const Concept = ({
   const canEditMode = communityMode === 'curated' && isCommunityOwner;
   const editing = canEditMode && editMode && effectiveViewMode === 'children';
 
-  // Phase 72b: in curated children view the side links panel is replaced by the
-  // in-card answer section, so hide the panel (Flip View keeps it).
-  const curatedChildrenView = communityMode === 'curated' && effectiveViewMode === 'children';
-  const showLinksPanel = !!effectiveConceptId && effectiveViewMode !== 'tunnel' && !curatedChildrenView;
+  // Phase 72f: the side links panel is gone from children view in BOTH modes
+  // (curated → in-card answers since 72b; open → in-card link section now). The
+  // question's own links/answers render under its title instead. Flip View keeps
+  // its aggregated per-context links panel in both modes.
+  const showLinksPanel = !!effectiveConceptId && effectiveViewMode === 'flip';
+  const openChildrenView = communityMode !== 'curated' && effectiveViewMode === 'children';
 
   // Phase 72e-2: inbox navigation can target a child card's feedback panel, or
   // this question's own page branch panel (pageEdgeId === this page's edge).
@@ -975,6 +986,43 @@ const Concept = ({
                   )}
                 </div>
 
+                {/* Phase 72f: the question's OWN answers/links under its title,
+                    both modes. Curated → its answers (owners add/edit/remove in
+                    edit mode); open → top link + expandable full list. */}
+                {communityMode === 'curated' && currentEdgeId
+                  && (editing || (currentAnswers && currentAnswers.length > 0)) && (
+                  <div style={styles.ownPageSection}>
+                    <CardAnswerSection
+                      answers={currentAnswers || []}
+                      edgeId={currentEdgeId}
+                      canManage={isCommunityOwner}
+                      editMode={editing}
+                      isGuest={isGuest}
+                      onRequestLogin={onRequestLogin}
+                      onChanged={loadConcept}
+                    />
+                  </div>
+                )}
+                {openChildrenView && currentEdgeId && (
+                  <div style={styles.ownPageSection}>
+                    <CardLinksSection
+                      mode="page"
+                      edgeId={currentEdgeId}
+                      conceptId={effectiveConceptId}
+                      path={path}
+                      isGuest={isGuest}
+                      user={user}
+                      onRequestLogin={onRequestLogin}
+                      allowAddLink={!isGuest}
+                      voteSets={voteSets}
+                      onChanged={() => loadConcept({ silent: true })}
+                      onOpenConceptTab={onOpenConceptTab}
+                      pendingScrollLinkId={pendingScrollLinkId}
+                      onPendingScrollLinkConsumed={onPendingScrollLinkConsumed}
+                    />
+                  </div>
+                )}
+
                 {bridges.length > 0 && (
                   <div style={styles.bridgeBar}>
                     <span style={styles.bridgeLabel}>Also asked in:</span>
@@ -1041,6 +1089,11 @@ const Concept = ({
                       showAnswers={communityMode === 'curated'}
                       canManageAnswers={isCommunityOwner}
                       onAnswersChanged={loadConcept}
+                      showLinks={communityMode !== 'curated'}
+                      canAddLink={!isGuest}
+                      voteSets={votingAllowed ? voteSets : []}
+                      onLinksChanged={() => loadConcept({ silent: true })}
+                      onOpenConceptTab={onOpenConceptTab}
                       isGuest={isGuest}
                       onRequestLogin={onRequestLogin}
                       showFeedback={communityMode === 'curated'}
@@ -1069,6 +1122,11 @@ const Concept = ({
                     showAnswers={communityMode === 'curated'}
                     canManageAnswers={isCommunityOwner}
                     onAnswersChanged={loadConcept}
+                    showLinks={communityMode !== 'curated'}
+                    canAddLink={!isGuest}
+                    voteSets={votingAllowed ? voteSets : []}
+                    onLinksChanged={() => loadConcept({ silent: true })}
+                    onOpenConceptTab={onOpenConceptTab}
                     isGuest={isGuest}
                     onRequestLogin={onRequestLogin}
                     editMode={editing}
@@ -1465,6 +1523,14 @@ const styles = {
     alignItems: 'baseline',
     flexWrap: 'wrap',
     gap: '8px 12px',
+    marginBottom: '20px',
+  },
+  // Phase 72f: the question's own answers/links block under its title.
+  ownPageSection: {
+    backgroundColor: 'white',
+    border: '1px solid #e8e4dc',
+    borderRadius: '8px',
+    overflow: 'hidden',
     marginBottom: '20px',
   },
   bridgeBar: {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getSetColor } from './VoteSetBar';
 import CardAnswerSection from './CardAnswerSection';
+import CardLinksSection from './CardLinksSection';
 import CardSequenceSection from './CardSequenceSection';
 import EditableField from './EditableField';
 import FeedbackPanel from './FeedbackPanel';
@@ -38,6 +39,15 @@ const ConceptGrid = ({
   showAnswers = false,
   canManageAnswers = false,
   onAnswersChanged,
+  // Phase 72f: open communities show an in-card link section (top link + expand).
+  // showLinks enables it; canAddLink allows the expanded add-link form; voteSets
+  // feeds LinkCard vote-set dots; onLinksChanged is a SILENT refresh so expanded
+  // panels are not unmounted; onOpenConceptTab powers "other instances" navigation.
+  showLinks = false,
+  canAddLink = false,
+  voteSets = [],
+  onLinksChanged,
+  onOpenConceptTab,
   isGuest = false,
   onRequestLogin,
   // Phase 72c-1: curated edit mode. onRename(conceptId, newName) and
@@ -318,6 +328,25 @@ const ConceptGrid = ({
                   isGuest={isGuest}
                   onRequestLogin={onRequestLogin}
                   onChanged={onAnswersChanged}
+                />
+              )}
+
+              {/* Phase 72f: open-community in-card link section. */}
+              {showLinks && !nestMode && concept.edge_id != null && (
+                <CardLinksSection
+                  mode="card"
+                  edgeId={concept.edge_id}
+                  conceptId={concept.id}
+                  path={path}
+                  topLink={concept.topLink || null}
+                  linkCount={concept.link_count != null ? Number(concept.link_count) : 0}
+                  isGuest={isGuest}
+                  user={currentUserId != null ? { id: currentUserId } : null}
+                  onRequestLogin={onRequestLogin}
+                  allowAddLink={canAddLink}
+                  voteSets={voteSets}
+                  onChanged={onLinksChanged || onAnswersChanged}
+                  onOpenConceptTab={onOpenConceptTab}
                 />
               )}
 

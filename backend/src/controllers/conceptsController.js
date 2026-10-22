@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const communityAccess = require('../utils/communityAccess');
+const { orcidForDisplay } = require('../utils/orcidValidator');
 
 // ============================================================
 // Phase 72b: curated answers + recency sorting (shared helpers)
@@ -123,6 +124,47 @@ async function loadOpenFeedbackCountByEdge(edgeIds) {
   return byEdge;
 }
 
+// Phase 72f: top link per edge for OPEN-community cards and root rows — the
+// highest-voted link (ties: newest created_at), legal-held excluded. One query
+// with DISTINCT ON, no N+1. Returns Map edgeId → topLink | (absent). Shape mirrors
+// the GET /votes/web-links/:edgeId link shape the frontend already renders.
+async function loadTopLinkByEdge(edgeIds, userId) {
+  const byEdge = new Map();
+  if (!edgeIds || edgeIds.length === 0) return byEdge;
+  const result = await pool.query(
+    `SELECT DISTINCT ON (cl.edge_id)
+            cl.id, cl.edge_id, cl.url, cl.title, cl.comment, cl.created_at,
+            cl.added_by, u.username AS added_by_username, u.orcid_id AS author_orcid_id,
+            COALESCE(vc.cnt, 0) AS vote_count,
+            EXISTS (SELECT 1 FROM concept_link_votes clv
+                     WHERE clv.concept_link_id = cl.id AND clv.user_id = $2) AS user_voted
+       FROM concept_links cl
+       LEFT JOIN users u ON u.id = cl.added_by
+       LEFT JOIN (SELECT concept_link_id, COUNT(*) AS cnt
+                    FROM concept_link_votes GROUP BY concept_link_id) vc
+         ON vc.concept_link_id = cl.id
+      WHERE cl.edge_id = ANY($1::int[]) AND cl.legal_hold = false
+      ORDER BY cl.edge_id, COALESCE(vc.cnt, 0) DESC, cl.created_at DESC`,
+    [edgeIds, userId]
+  );
+  for (const row of result.rows) {
+    byEdge.set(row.edge_id, {
+      id: row.id,
+      edgeId: row.edge_id,
+      url: row.url,
+      title: row.title,
+      comment: row.comment,
+      voteCount: parseInt(row.vote_count, 10),
+      userVoted: row.user_voted || false,
+      addedBy: row.added_by,
+      addedByUsername: row.added_by_username,
+      authorOrcidId: orcidForDisplay(row.author_orcid_id),
+      createdAt: row.created_at,
+    });
+  }
+  return byEdge;
+}
+
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
@@ -222,6 +264,14 @@ const conceptsController = {
         const feedbackByEdge = await loadOpenFeedbackCountByEdge(rootEdgeIds);
         for (const root of result.rows) {
           root.openFeedbackCount = feedbackByEdge.get(root.edge_id) || 0;
+        }
+      } else if (modeRow.rows[0]?.mode !== 'curated' && result.rows.length > 0) {
+        // Phase 72f: open communities attach the top link per root row for the
+        // in-card link preview. link_count is already selected above.
+        const rootEdgeIds = result.rows.map((r) => r.edge_id);
+        const topLinkByEdge = await loadTopLinkByEdge(rootEdgeIds, req.user ? req.user.userId : -1);
+        for (const root of result.rows) {
+          root.topLink = topLinkByEdge.get(root.edge_id) || null;
         }
       }
 
@@ -468,6 +518,23 @@ const conceptsController = {
         for (const child of childrenResult.rows) {
           child.openFeedbackCount = feedbackByEdge.get(child.edge_id) || 0;
         }
+      } else if (communityMode !== 'curated' && childrenResult.rows.length > 0) {
+        // Phase 72f: open communities attach the top link per child row for the
+        // in-card link preview. link_count is already selected above.
+        const childEdgeIds = childrenResult.rows.map((r) => r.edge_id);
+        const topLinkByEdge = await loadTopLinkByEdge(childEdgeIds, req.user ? req.user.userId : -1);
+        for (const child of childrenResult.rows) {
+          child.topLink = topLinkByEdge.get(child.edge_id) || null;
+        }
+      }
+
+      // Phase 72f: curated own-page section shows the current question's OWN
+      // answers under its title (leaf questions have no child rows). One small
+      // indexed query; same shape as the children answers[].
+      let currentAnswers = null;
+      if (communityMode === 'curated' && currentEdgeId) {
+        const m = await loadAnswersByEdge([currentEdgeId]);
+        currentAnswers = m.get(currentEdgeId) || [];
       }
 
       res.json({
@@ -477,6 +544,7 @@ const conceptsController = {
         currentEdgeVoteCount,
         currentAttribute,
         currentEdgeId,
+        currentAnswers,
         altParentCount,
         tunnelLinkCount,
         communityId: concept.community_id,

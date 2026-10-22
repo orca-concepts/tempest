@@ -514,4 +514,37 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72f — Answers and links in cards and on the question's own page (open mode)
+
+### Backend (`GET /concepts/:id`, `GET /concepts/root`)
+- [ ] Open community: each child row (`GET /concepts/:id`) and each root row (`GET /concepts/root`) carries `topLink` — the highest-vote link (ties: newest `created_at`), legal-held excluded, or `null` when the edge has no visible link. Fields: `{ id, edgeId, url, title, comment, voteCount, userVoted, addedBy, addedByUsername, authorOrcidId, createdAt }`. `link_count` unchanged
+- [ ] `topLink.userVoted` is true for a link the requesting user upvoted; false for guests
+- [ ] Reference build (child with 0 / 1 / 3 links, two of the three tied on votes, plus a legal-held higher-voted link): C0 → `null`; C1 → its single link; C3 → the newer of the two tied 3-vote links; the legal-held link is never chosen
+- [ ] `topLink` added in ONE extra query per page (DISTINCT ON), no per-row N+1
+- [ ] Curated responses are unchanged apart from the own-page `currentAnswers`: curated child/root rows still carry `answers[]`/`sortDate` and carry NO `topLink` key
+- [ ] `GET /concepts/:id` returns `currentAnswers` — the current question's OWN edge answers (curated: the `answers[]` shape, newest date first; a leaf question with no children still returns its own answers; `null`/absent in open mode is acceptable)
+- [ ] `GET /votes/web-links/:linkId/location` returns the link's own `conceptId` + `parentPath` so `/link/:id` opens the link's own question page — verified for an open child link (`parentPath=[parent]`), a curated answer, and a link on a ROOT question (`parentPath=[]`)
+
+### Frontend — open-community cards (`ConceptGrid` → `CardLinksSection`)
+- [ ] Each open-community card (children grid and root grid) shows its top link below the question: title link (new tab, `rel="noopener noreferrer"`), one-line clamped comment via `LinkifiedText`, and a vote button with count; a card with no links shows no link section (readers/guests)
+- [ ] The vote button uses the existing upvote/unvote endpoints; guests clicking it get the login prompt
+- [ ] "Show N more links" (N = `link_count - 1`) appears only when `link_count > 1`; clicking expands the full list inside the card via `GET /votes/web-links/:edgeId?sort=`
+- [ ] The expanded list renders each link with the existing `LinkCard` (vote, Other instances, Copy, Remove, Add addendum, Share, ORCID badge, vote-set dots all intact), a Top / New sort toggle, and — for logged-in users — the existing add-link form (URL with title preview on paste/blur, title, comment, required affirmation checkbox) adding to that card's edge
+- [ ] "Show fewer" collapses back to the top-link preview; the card's existing ▲ vote / ⇄ swap footer is unchanged
+- [ ] Adding/removing/voting inside the expanded list refreshes the card/counts without unmounting the open panel (silent refresh)
+
+### Frontend — own-page section (`Concept.jsx`, under the question title)
+- [ ] Both modes show the question's own answers/links under its title, including root questions. Curated: the question's own answers in the 72b style; in edit mode owners can add/edit/remove them there exactly as on cards. Open: the same top-link + "Show N more links" pattern for the current edge, expanding to the full list with sort and the add-link form
+- [ ] The open own-page section always lets logged-in users reach the add-link form (an "Add a link" affordance when there are 0–1 links)
+- [ ] The side links panel (`ConceptLinksPanel`) is gone from the children view in open communities (curated already hid it); no empty column/space remains. Flip View's aggregated per-context links panel is unchanged in both modes
+
+### Frontend — `/link/:id` deep link (`AppShell`)
+- [ ] `/link/:id` opens the link's own question page in both modes (conceptId + parentPath from the location endpoint), expands its own-page section, and highlights the link (300ms delay, scrollIntoView, 2s highlight) — for an open link, a curated answer, and an answer on a root question
+- [ ] The 72b `cardConceptId`/`cardPath` parent-page navigation branch is retired (the endpoint may still return the fields)
+
+### Conventions
+- [ ] All controls are `<button>`s; no `window.confirm`/`alert`; inline styles with explicit `fontFamily`; no colored buttons, emoji, or italics; Stale-State Guard on the new on-demand fetches; `Promise.all` members in the instance-count fetch tolerate failures
+
+---
+
 **END OF TESTING CHECKLIST**

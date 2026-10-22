@@ -427,20 +427,16 @@ const AppShell = () => {
       votesAPI.getWebLinkLocation(linkId)
         .then(async ({ data }) => {
           setPendingScrollLinkId(linkId);
-          // Phase 72b: a curated answer renders inside the child card on the PARENT
-          // question's page, so open that page (cardConceptId/cardPath). Root-edge
-          // answers (cardConceptId null) fall back to the child page. Open
-          // communities keep the existing behavior (child page + links panel).
+          // Phase 72f: in both modes a /link/:id opens the link's OWN question page
+          // (conceptId + parentPath = the link's edge path) and the own-page
+          // section expands and highlights the link. This also covers answers on
+          // root questions (parentPath = []). The 72b cardConceptId/cardPath
+          // parent-page branch is retired.
           // handleOpenConceptTab reuses an existing tab by concept_id (via
           // graphTabsRef), so pass the concept id as a Number and the path as an
           // array of ids — the same form tabs store — so the reuse match succeeds
           // instead of spawning a duplicate tab.
-          let tab;
-          if (data.communityMode === 'curated' && data.cardConceptId) {
-            tab = await handleOpenConceptTab(Number(data.cardConceptId), (data.cardPath || []).map(Number));
-          } else {
-            tab = await handleOpenConceptTab(Number(data.conceptId), (data.parentPath || []).map(Number));
-          }
+          const tab = await handleOpenConceptTab(Number(data.conceptId), (data.parentPath || []).map(Number));
           // Phase 72e-1 fix 2: adopt the link's community so a /link to a curated
           // question doesn't get reconciled back to the stored community.
           if (tab && tab.community_id != null) setActiveCommunityId(tab.community_id);
@@ -1870,6 +1866,7 @@ const AppShell = () => {
                       <Root
                         graphTabId={tab.id}
                         onNavigate={handleGraphTabNavigate}
+                        onOpenConceptTab={handleOpenConceptTab}
                         isGuest={isGuest}
                         onRequestLogin={handleRequestLogin}
                         communityId={activeCommunityId}

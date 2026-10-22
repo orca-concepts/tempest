@@ -405,3 +405,30 @@ One-click "incorporate" (applying a suggestion automatically), email notificatio
 - Owner status changes (with reply), hide/unhide items and replies; hidden items invisible to non-owners.
 - Deleting the target question archives its feedback (read-only, 409 `archived`); re-adding the question un-archives it.
 - 72e-2: branch suggestions with nested nodes and answers; inbox filters and counts; navigation from inbox to the card's panel.
+
+---
+
+## Phase 72f — Answers and links in cards and on the question's own page (both modes)
+
+### Decisions (October 22, 2026)
+- **Open-community cards** show the question's **top link** (highest vote count, ties newest): title (opens in a new tab), a one-line clamped comment, and its vote button with count. Below it, **"Show N more links"** expands the full list **inside the card**.
+- **The expanded list in open cards** uses the existing `LinkCard` with all its features (vote, other instances, Copy, Remove, addenda, Share), a Top / New sort toggle, and the existing add-link form (affirmation checkbox, title preview) at the bottom for logged-in users. "Show fewer" collapses it.
+- **Every question page shows the question's own answers/links under its title**, in both modes:
+  - Curated: the question's own answers, newest date first, in the 72b answer style; in edit mode owners can add, edit, and remove them there exactly as on cards.
+  - Open: the same top-link + "Show N more links" pattern as the cards, expanding to the full list with sort and the add-link form.
+- **The side links panel (`ConceptLinksPanel`) is removed from the children view in open communities** (curated already hides it). Flip View keeps its aggregated per-context links panel unchanged in both modes.
+- **`/link/:id` share links** open **the link's own question page** (in both modes), expand its own-page section, and highlight the link (300ms delay, scroll, 2s highlight). This replaces the 72b behavior of opening the parent page, and also covers answers on root questions.
+
+### Data
+- `GET /concepts/:id` and `GET /concepts/root` (open communities): each row adds `topLink` (`{ id, url, title, comment, voteCount, userVoted, addedBy, addedByUsername, authorOrcidId, createdAt }` or null) in one extra query for the page (no N+1); `link_count` already exists. Curated rows are unchanged (they already carry `answers[]`).
+- The expanded card list and the open own-page section load on demand with the existing `GET /votes/web-links/:edgeId?sort=top|new`. The curated own-page section uses the current edge's answers (add `currentAnswers` to the curated `GET /concepts/:id` response, same shape as `answers[]`, or reuse the existing edge links endpoint, whichever needs fewer changes).
+- `GET /votes/web-links/:linkId/location` returns what the AppShell needs to open the link's own question page (the link's `conceptId` and `parentPath`, which it already returns); the 72b `cardConceptId`/`cardPath` branch is no longer used for navigation.
+
+### Non-goals (72f)
+Changing link voting rules, Flip View's panel, curated card answers, feedback, or the graph view.
+
+### Tests (72f)
+- Open card: top link correct (votes, then newest); "Show N more" expands the full LinkCard list with every existing feature; sort toggle; add-link form adds to that card's question; collapse.
+- Own-page section in both modes; curated edit-mode add/edit/remove on the own page.
+- Side links panel gone from the open children view; Flip View unchanged.
+- `/link/:id` opens the link's own question page and highlights it, for an open link, a curated answer, and an answer on a root question.

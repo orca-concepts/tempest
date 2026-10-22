@@ -7,6 +7,7 @@ import Root from '../pages/Root';
 import Concept from '../pages/Concept';
 import VotesOverlay from '../components/VotesOverlay';
 import GraphViewOverlay from '../components/GraphViewOverlay';
+import FeedbackInboxOverlay from '../components/FeedbackInboxOverlay';
 import LoginModal from '../components/LoginModal';
 import DeleteAccountFlow from '../components/DeleteAccountFlow';
 import SidebarDndContext, { SortableItem, SortableGroupWrapper, GroupMemberContext } from '../components/SidebarDndContext';
@@ -118,6 +119,13 @@ const AppShell = () => {
 
   // Phase 72d: graph-view overlay. null | { rootConceptId, currentConceptId, currentPath }.
   const [graphView, setGraphView] = useState(null);
+
+  // Phase 72e-2: owner feedback inbox overlay (communityId | null); a refresh key
+  // bumped on close so the header's Inbox count re-reads after owner actions; and
+  // a pending-feedback signal that opens a card/page panel after inbox navigation.
+  const [feedbackInbox, setFeedbackInbox] = useState(null);
+  const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
+  const [pendingFeedback, setPendingFeedback] = useState(null);
 
   // Phase 39b: Combo browse overlay state
   const [comboView, setComboView] = useState(null); // null | { view: 'list' }
@@ -998,6 +1006,38 @@ const AppShell = () => {
     });
   }, []);
 
+  // ─── Phase 72e-2: owner feedback inbox ────────────────────
+  const handleOpenInbox = useCallback((communityId) => {
+    setFeedbackInbox(communityId || activeCommunityId);
+  }, [activeCommunityId]);
+
+  const handleCloseInbox = useCallback(() => {
+    setFeedbackInbox(null);
+    setInboxRefreshKey((k) => k + 1); // re-read the header's Inbox count
+  }, []);
+
+  // Clicking a live inbox item: navigate to its page, then signal the target page
+  // to open the relevant panel (a card's FeedbackPanel, or the page branch panel).
+  const handleInboxNavigate = useCallback((nav) => {
+    setFeedbackInbox(null);
+    setInboxRefreshKey((k) => k + 1);
+    if (!nav) return;
+    const pending = nav.kind === 'card'
+      ? { cardEdgeId: nav.cardEdgeId }
+      : { pageEdgeId: nav.parentEdgeId == null ? null : nav.parentEdgeId };
+    if (nav.conceptId != null) {
+      handleOpenConceptTab(nav.conceptId, nav.path || [], undefined, undefined, undefined, 'children');
+      setPendingFeedback(pending);
+    } else {
+      // Root list: activate a root tab in the active community.
+      const rootTab = graphTabs.find(
+        (t) => t.tab_type === 'root' && (t.concept_id == null) && (t.community_id === activeCommunityId || t.community_id == null)
+      );
+      if (rootTab) setActiveTab({ type: 'graph', id: rootTab.id });
+      setPendingFeedback(pending);
+    }
+  }, [handleOpenConceptTab, graphTabs, activeCommunityId]);
+
   // Navigate the current tab to a question from the graph overlay. Mirrors a
   // card click: a graph tab is navigated in place (a root-list tab becomes a
   // concept view); otherwise a concept tab is opened/reused.
@@ -1755,8 +1795,17 @@ const AppShell = () => {
             />
           )}
 
+          {/* Phase 72e-2: owner feedback inbox overlay */}
+          {!communitiesOpen && !votesOpen && !graphView && feedbackInbox && (
+            <FeedbackInboxOverlay
+              communityId={feedbackInbox}
+              onBack={handleCloseInbox}
+              onNavigate={handleInboxNavigate}
+            />
+          )}
+
           {/* Phase 39b: Browse Combos overlay */}
-          {!communitiesOpen && !votesOpen && !graphView && comboView && comboView.view === 'list' && (
+          {!communitiesOpen && !votesOpen && !graphView && !feedbackInbox && comboView && comboView.view === 'list' && (
             <ComboListView
               onBack={() => setComboView(null)}
               isGuest={isGuest}
@@ -1772,7 +1821,7 @@ const AppShell = () => {
           )}
 
           {/* Guest deep-link combo view */}
-          {!communitiesOpen && !votesOpen && !graphView && !comboView && guestComboId && (
+          {!communitiesOpen && !votesOpen && !graphView && !feedbackInbox && !comboView && guestComboId && (
             <div>
               <div style={{ padding: '12px 20px 0', fontFamily: '"EB Garamond", Georgia, serif' }}>
                 <span onClick={() => setGuestComboId(null)} style={{ cursor: 'pointer', color: '#888', fontSize: '14px', textDecoration: 'underline' }}>{'\u2190'} Back</span>
@@ -1788,7 +1837,7 @@ const AppShell = () => {
           )}
 
           {/* Normal tab content — hidden when overlays are active */}
-          {!communitiesOpen && !votesOpen && !graphView && !comboView && !guestComboId && (
+          {!communitiesOpen && !votesOpen && !graphView && !feedbackInbox && !comboView && !guestComboId && (
             <>
               {/* Combo tab content — render all, hide inactive to preserve state */}
               {!isGuest && comboSubscriptions.map(combo => {
@@ -1835,6 +1884,10 @@ const AppShell = () => {
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
+                        onOpenInbox={handleOpenInbox}
+                        inboxRefreshKey={inboxRefreshKey}
+                        pendingFeedback={isActive ? pendingFeedback : null}
+                        onPendingFeedbackConsumed={() => setPendingFeedback(null)}
                       />
                     ) : (
                       <Concept
@@ -1858,6 +1911,10 @@ const AppShell = () => {
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
+                        onOpenInbox={handleOpenInbox}
+                        inboxRefreshKey={inboxRefreshKey}
+                        pendingFeedback={isActive ? pendingFeedback : null}
+                        onPendingFeedbackConsumed={() => setPendingFeedback(null)}
                       />
                     )}
                   </div>

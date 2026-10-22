@@ -10,6 +10,11 @@ const { feedbackCreateLimiter } = require('../utils/userRateLimiter');
 // Read one card's feedback (guest-accessible).
 router.get('/edge/:edgeId', optionalAuth, feedbackController.getFeedbackForEdge);
 
+// Phase 72e-2: a page's new_child (branch) suggestions (guest-accessible), and the
+// owner inbox for a whole community (owners only).
+router.get('/page', optionalAuth, feedbackController.getPageFeedback);
+router.get('/inbox', authenticateToken, feedbackController.getInbox);
+
 // Create / edit / delete an item.
 router.post('/', authenticateToken, feedbackCreateLimiter, feedbackController.createFeedback);
 router.post('/:id/edit', authenticateToken, feedbackController.editFeedback);

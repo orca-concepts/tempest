@@ -52,9 +52,21 @@ const ConceptGrid = ({
   showFeedback = false,
   currentUserId = null,
   onFeedbackChanged,
+  // Phase 72e-2: inbox navigation can request a specific card's feedback panel.
+  autoOpenFeedbackEdgeId = null,
+  onFeedbackAutoOpened,
 }) => {
   // Phase 72e-1: which card's feedback panel is open (keyed by edge_id).
   const [feedbackEdgeId, setFeedbackEdgeId] = useState(null);
+
+  // Phase 72e-2: open a card's feedback panel on request (from the owner inbox),
+  // once that card is present in this grid.
+  useEffect(() => {
+    if (autoOpenFeedbackEdgeId == null) return;
+    if (!concepts.some((c) => c.edge_id === autoOpenFeedbackEdgeId)) return;
+    setFeedbackEdgeId(autoOpenFeedbackEdgeId);
+    if (onFeedbackAutoOpened) onFeedbackAutoOpened();
+  }, [autoOpenFeedbackEdgeId, concepts]); // eslint-disable-line react-hooks/exhaustive-deps
   // Which card's delete confirm is open (keyed by edge_id), and any delete error.
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const [deleteError, setDeleteError] = useState(null);

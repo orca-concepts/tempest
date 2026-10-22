@@ -492,4 +492,26 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 72e-2 — Branch suggestions, owner inbox, badges (curated)
+
+### Schema
+- [ ] Migration runs twice cleanly; `\d feedback_suggested_nodes` shows `feedback_id` (NOT NULL, FK feedback_items CASCADE), `parent_node_id` (FK self CASCADE), `name` (NOT NULL VARCHAR 255), `answer_url`/`answer_title`/`answer_published_on`/`answer_comment`, `position` (NOT NULL), and indexes `idx_feedback_suggested_nodes_feedback` / `_parent`
+
+### Endpoints (`/api/feedback`, curated only)
+- [ ] `POST /` with `kind: 'new_child'` and a nested `nodes` tree succeeds (201): `edgeId` = a page's parent edge, or `edgeId` null + `communityId` for the community root list; the item + all nodes are inserted in one transaction with `parent_node_id` + `position`; snapshot records the parent question text (or `community root`)
+- [ ] `GET /feedback/page?communityId=&parentEdgeId=` (guest-readable) returns a page's `new_child` items with their nested nodes (and answers), same shape/sort as the per-card read; `parentEdgeId` omitted → the community root list (`edge_id IS NULL`)
+- [ ] Validation: 0 nodes → 400 `nodes_required`; > 50 nodes → 400 `too_many_nodes`; empty name → 400 `name_required`; a bad answer URL → 400 `invalid_url` (Safe Browsing on valid URLs); a bad date → 400 `invalid_published_on`; open community → 403 `curated_only`; guest POST → 401
+- [ ] Editing a `new_child` item while unlocked replaces its nodes and comment (one transaction); after an owner replies (or status changes) → 409 `locked`
+- [ ] Soft-deleting the parent question archives its `new_child` items (page read `archived: true`, writes → 409 `archived`); root-list items (`edge_id IS NULL`) are never archived and stay live
+- [ ] `new_child` items are excluded from the per-card read (`GET /feedback/edge/:edgeId`) and from the per-card `openFeedbackCount`
+- [ ] `GET /feedback/inbox?communityId=&status=` (owners only; reader/guest → 403/401) returns every community feedback item (all kinds), newest first, with `counts` (open/incorporated/declined/archived/total), `archived` computed from the target edge's `deleted_at`, a `nav` target per live item, and the `status` filter (open/incorporated/declined/archived)
+
+### Frontend
+- [ ] A page-level page-with-pencil icon (inline SVG, not emoji) fixed in the bottom corner of the community root page and each curated question page, with the open count for that page's `new_child` items; positioned clear of the edit-mode "+" button and the Add / Search bar; opens `PageFeedbackPanel` (portal, Escape closes, stays open across actions)
+- [ ] The page panel lists existing suggestions as nested trees (with suggested answers), replies, votes, owner status/hide; a branch builder lets a logged-in reader add a question, add a child under any node, remove a node, give per-node optional answer fields, and a comment, then Submit; guests get the login prompt
+- [ ] An "Inbox" button in the curated community header (owners only) shows the total open count and opens `FeedbackInboxOverlay` with Open / Incorporated / Declined / Archived filters and counts; clicking a live item navigates to its page and opens the card's `FeedbackPanel` (or the page panel for `new_child`); archived items are read-only
+- [ ] Badges (card open counts, page icon count, Inbox count) refresh after actions; all controls are `<button>`s; no `window.confirm`/`alert`; bodies render via `LinkifiedText`; Stale-State Guard on the new fetches
+
+---
+
 **END OF TESTING CHECKLIST**

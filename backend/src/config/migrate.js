@@ -423,6 +423,30 @@ const createTables = async () => {
       );
     `);
 
+    // Phase 72e-2: nodes of a 'new_child' branch suggestion. One feedback_items
+    // row of kind 'new_child' owns a nested tree of suggested questions (each with
+    // an optional answer). parent_node_id is NULL for the top of the branch and
+    // self-references for nesting; position orders siblings. CASCADE from the item.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback_suggested_nodes (
+        id SERIAL PRIMARY KEY,
+        feedback_id INTEGER NOT NULL REFERENCES feedback_items(id) ON DELETE CASCADE,
+        parent_node_id INTEGER REFERENCES feedback_suggested_nodes(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        answer_url TEXT,
+        answer_title VARCHAR(255),
+        answer_published_on DATE,
+        answer_comment TEXT,
+        position INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_feedback_suggested_nodes_feedback ON feedback_suggested_nodes(feedback_id);
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_feedback_suggested_nodes_parent ON feedback_suggested_nodes(parent_node_id);
+    `);
+
     // Votes table (saves)
     await client.query(`
       CREATE TABLE IF NOT EXISTS votes (

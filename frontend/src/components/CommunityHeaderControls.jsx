@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
-import { communitiesAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { communitiesAPI, feedbackAPI } from '../services/api';
 import OrcidBadge from './OrcidBadge';
 
 // Phase 72a: community header controls — a Share button (copies the /c/:slug
 // share URL) for everyone, and an owners panel (add/remove owners) for owners.
-const CommunityHeaderControls = ({ communityId, communitySlug, isOwner, onCommunitiesChanged }) => {
+// Phase 72e-2: a curated community's owners also get an Inbox button (total open
+// feedback count) that opens the owner inbox overlay.
+const CommunityHeaderControls = ({
+  communityId, communitySlug, isOwner, onCommunitiesChanged,
+  communityMode = 'open', onOpenInbox, inboxRefreshKey = 0,
+}) => {
   const [shareCopied, setShareCopied] = useState(false);
+  const [inboxOpenCount, setInboxOpenCount] = useState(0);
+
+  // Phase 72e-2: the Inbox badge (curated owners only). Re-reads when the inbox
+  // closes (inboxRefreshKey bumps) so owner status changes update the count.
+  useEffect(() => {
+    let cancelled = false;
+    if (!(communityMode === 'curated' && isOwner && communityId)) { setInboxOpenCount(0); return; }
+    feedbackAPI.getInbox(communityId)
+      .then((res) => { if (!cancelled) setInboxOpenCount(res.data?.counts?.open || 0); })
+      .catch(() => { if (!cancelled) setInboxOpenCount(0); });
+    return () => { cancelled = true; };
+  }, [communityId, communityMode, isOwner, inboxRefreshKey]);
   const [ownersOpen, setOwnersOpen] = useState(false);
   const [owners, setOwners] = useState([]);
   const [ownersLoading, setOwnersLoading] = useState(false);
@@ -91,6 +108,11 @@ const CommunityHeaderControls = ({ communityId, communitySlug, isOwner, onCommun
       <button style={styles.button} onClick={handleShare} title="Copy this community's share link">
         {shareCopied ? 'Copied!' : 'Share'}
       </button>
+      {communityMode === 'curated' && isOwner && onOpenInbox && (
+        <button style={styles.button} onClick={() => onOpenInbox(communityId)} title="Reader feedback inbox for this community">
+          Inbox{inboxOpenCount > 0 ? ` (${inboxOpenCount})` : ''}
+        </button>
+      )}
       {isOwner && (
         <button style={styles.button} onClick={openOwners} title="Manage community owners">
           Owners

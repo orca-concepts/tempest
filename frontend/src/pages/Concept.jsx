@@ -13,6 +13,7 @@ import ConceptLinksPanel from '../components/ConceptLinksPanel';
 import HiddenConceptsView from '../components/HiddenConceptsView';
 import NewQuestionCard from '../components/NewQuestionCard';
 import EditableField from '../components/EditableField';
+import PageFeedbackLauncher from '../components/PageFeedbackLauncher';
 
 import TunnelView from '../components/TunnelView';
 
@@ -38,6 +39,9 @@ const Concept = ({
   onConceptRenamed,
   renamedConcept,
   onOpenGraph,
+  // Phase 72e-2: inbox navigation can request a card's or this page's feedback panel.
+  pendingFeedback = null,
+  onPendingFeedbackConsumed,
 }) => {
   // Determine if we're in "tab mode" (inside AppShell) or "standalone mode" (URL-routed)
   const isTabMode = !!graphTabId;
@@ -798,6 +802,12 @@ const Concept = ({
   const curatedChildrenView = communityMode === 'curated' && effectiveViewMode === 'children';
   const showLinksPanel = !!effectiveConceptId && effectiveViewMode !== 'tunnel' && !curatedChildrenView;
 
+  // Phase 72e-2: inbox navigation can target a child card's feedback panel, or
+  // this question's own page branch panel (pageEdgeId === this page's edge).
+  const autoOpenCardEdgeId = pendingFeedback && pendingFeedback.cardEdgeId != null ? pendingFeedback.cardEdgeId : null;
+  const autoOpenPagePanel = !!(pendingFeedback && Object.prototype.hasOwnProperty.call(pendingFeedback, 'pageEdgeId')
+    && pendingFeedback.pageEdgeId != null && pendingFeedback.pageEdgeId === parentEdgeId);
+
   const effectiveIndices = getEffectiveActiveSetIndices();
   const hasActiveFilters = effectiveIndices.length > 0;
   const displayChildren = getFilteredChildren();
@@ -1036,6 +1046,8 @@ const Concept = ({
                       showFeedback={communityMode === 'curated'}
                       currentUserId={user?.id || null}
                       onFeedbackChanged={refreshFeedbackCounts}
+                      autoOpenFeedbackEdgeId={autoOpenCardEdgeId}
+                      onFeedbackAutoOpened={onPendingFeedbackConsumed}
                     />
                   ))
                 ) : (
@@ -1065,6 +1077,8 @@ const Concept = ({
                     showFeedback={communityMode === 'curated'}
                     currentUserId={user?.id || null}
                     onFeedbackChanged={refreshFeedbackCounts}
+                    autoOpenFeedbackEdgeId={autoOpenCardEdgeId}
+                    onFeedbackAutoOpened={onPendingFeedbackConsumed}
                   />
                 )}
               </>
@@ -1137,6 +1151,21 @@ const Concept = ({
           onClick={() => setShowNewCard(true)}
           title="Add a child question"
         >+</button>
+      )}
+
+      {/* Phase 72e-2: page-level branch suggestions (curated, children view) */}
+      {communityMode === 'curated' && effectiveViewMode === 'children' && parentEdgeId && (
+        <PageFeedbackLauncher
+          communityId={concept?.community_id}
+          parentEdgeId={parentEdgeId}
+          questionText={concept?.name}
+          isOwner={isCommunityOwner}
+          isGuest={isGuest}
+          onRequestLogin={onRequestLogin}
+          onChanged={refreshFeedbackCounts}
+          autoOpen={autoOpenPagePanel}
+          onAutoOpenConsumed={onPendingFeedbackConsumed}
+        />
       )}
 
       {showAddModal && (

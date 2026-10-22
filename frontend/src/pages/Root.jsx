@@ -7,6 +7,7 @@ import HiddenConceptsView from '../components/HiddenConceptsView';
 import SwapModal from '../components/SwapModal';
 import CommunityHeaderControls from '../components/CommunityHeaderControls';
 import NewQuestionCard from '../components/NewQuestionCard';
+import PageFeedbackLauncher from '../components/PageFeedbackLauncher';
 
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
@@ -20,7 +21,14 @@ const Root = ({
   editMode = false, onToggleEditMode,
   onConceptRenamed, renamedConcept,
   onOpenGraph,
+  // Phase 72e-2: owner inbox + badges + inbox-driven panel opening.
+  onOpenInbox, inboxRefreshKey = 0,
+  pendingFeedback = null, onPendingFeedbackConsumed,
 }) => {
+  // Phase 72e-2: inbox navigation can target a card on the root list, or the
+  // root-list page branch panel (pageEdgeId === null).
+  const autoOpenCardEdgeId = pendingFeedback && pendingFeedback.cardEdgeId != null ? pendingFeedback.cardEdgeId : null;
+  const autoOpenPagePanel = !!(pendingFeedback && Object.prototype.hasOwnProperty.call(pendingFeedback, 'pageEdgeId') && pendingFeedback.pageEdgeId === null);
   // Phase 72a: curated communities are owner-write-only and have no voting.
   const votingAllowed = communityMode !== 'curated';
   const canCreate = communityMode === 'curated' ? communityIsOwner : !isGuest;
@@ -323,6 +331,9 @@ const Root = ({
                   communitySlug={communitySlug}
                   isOwner={communityIsOwner}
                   onCommunitiesChanged={onCommunitiesChanged}
+                  communityMode={communityMode}
+                  onOpenInbox={onOpenInbox}
+                  inboxRefreshKey={inboxRefreshKey}
                 />
               )}
             </div>
@@ -452,6 +463,8 @@ const Root = ({
                 showFeedback={communityMode === 'curated'}
                 currentUserId={user?.id || null}
                 onFeedbackChanged={refreshFeedbackCounts}
+                autoOpenFeedbackEdgeId={autoOpenCardEdgeId}
+                onFeedbackAutoOpened={onPendingFeedbackConsumed}
               />
             </>
           );
@@ -483,6 +496,21 @@ const Root = ({
           onClick={() => setShowNewCard(true)}
           title="Add a root question"
         >+</button>
+      )}
+
+      {/* Phase 72e-2: page-level branch suggestions (curated, community root list) */}
+      {isCurated && communityId && (
+        <PageFeedbackLauncher
+          communityId={communityId}
+          parentEdgeId={null}
+          questionText={communityName}
+          isOwner={communityIsOwner}
+          isGuest={isGuest}
+          onRequestLogin={onRequestLogin}
+          onChanged={refreshFeedbackCounts}
+          autoOpen={autoOpenPagePanel}
+          onAutoOpenConsumed={onPendingFeedbackConsumed}
+        />
       )}
 
       {/* Phase 38b: Swap Modal for root concepts */}

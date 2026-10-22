@@ -115,6 +115,7 @@ async function loadOpenFeedbackCountByEdge(edgeIds) {
     `SELECT edge_id, COUNT(*)::int AS cnt
        FROM feedback_items
       WHERE edge_id = ANY($1::int[]) AND is_hidden = false AND status = 'open'
+        AND kind <> 'new_child'
       GROUP BY edge_id`,
     [edgeIds]
   );

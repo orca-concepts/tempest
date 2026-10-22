@@ -169,6 +169,19 @@ export const feedbackAPI = {
   create: ({ edgeId, kind, targetLinkId, targetEdgeId, proposal, comment }) =>
     api.post('/feedback', { edgeId, kind, targetLinkId, targetEdgeId, proposal, comment }),
 
+  // Phase 72e-2: new_child (branch) suggestion. edgeId null + communityId → the
+  // community root list. nodes is a nested [{ name, answer?, children: [...] }].
+  createNewChild: ({ edgeId, communityId, nodes, comment }) =>
+    api.post('/feedback', { kind: 'new_child', edgeId: edgeId ?? null, communityId, nodes, comment }),
+
+  // Phase 72e-2: a page's branch suggestions (parentEdgeId omitted = root list).
+  getPage: (communityId, parentEdgeId) =>
+    api.get('/feedback/page', { params: { communityId, ...(parentEdgeId != null ? { parentEdgeId } : {}) } }),
+
+  // Phase 72e-2: owner inbox (all kinds). status optional filter.
+  getInbox: (communityId, status) =>
+    api.get('/feedback/inbox', { params: { communityId, ...(status ? { status } : {}) } }),
+
   edit: (id, updates) =>
     api.post(`/feedback/${id}/edit`, updates),
 

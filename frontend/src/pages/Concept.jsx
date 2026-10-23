@@ -41,6 +41,7 @@ const Concept = ({
   onConceptRenamed,
   renamedConcept,
   onOpenGraph,
+  onOpenVotes,
   // Phase 72e-2: inbox navigation can request a card's or this page's feedback panel.
   pendingFeedback = null,
   onPendingFeedbackConsumed,
@@ -877,6 +878,15 @@ const Concept = ({
             >
               Graph
             </button>
+            {votingAllowed && user && !isGuest && onOpenVotes && (
+              <button
+                onClick={onOpenVotes}
+                style={styles.shareButton}
+                title="View your saved questions and upvoted links"
+              >
+                Votes
+              </button>
+            )}
             <div style={styles.shareButtonWrapper}>
               <button
                 onClick={handleShareLink}

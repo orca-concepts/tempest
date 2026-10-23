@@ -1002,6 +1002,13 @@ const AppShell = () => {
     });
   }, []);
 
+  // Phase-72 UI fix: open the Votes overlay from a page header (open communities,
+  // logged-in users), replacing the old sidebar Votes button.
+  const handleOpenVotes = useCallback(() => {
+    setComboView(null);
+    setVotesOpen(true);
+  }, []);
+
   // ─── Phase 72e-2: owner feedback inbox ────────────────────
   const handleOpenInbox = useCallback((communityId) => {
     setFeedbackInbox(communityId || activeCommunityId);
@@ -1655,13 +1662,6 @@ const AppShell = () => {
                 style={styles.sidebarActionButton}
                 title="Browse and switch research communities"
               >{activeCommunityName ? `Community: ${activeCommunityName}` : 'Communities'}</button>
-              {!isGuest && (
-                <button
-                  onClick={() => { setComboView(null); setVotesOpen(true); }}
-                  style={styles.sidebarActionButton}
-                  title="View your saved questions and upvoted links"
-                >Votes</button>
-              )}
             </div>
 
             <div style={styles.sidebarDivider} />
@@ -1881,6 +1881,7 @@ const AppShell = () => {
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
+                        onOpenVotes={handleOpenVotes}
                         onOpenInbox={handleOpenInbox}
                         inboxRefreshKey={inboxRefreshKey}
                         pendingFeedback={isActive ? pendingFeedback : null}
@@ -1908,6 +1909,7 @@ const AppShell = () => {
                         onConceptRenamed={handleConceptRenamed}
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
+                        onOpenVotes={handleOpenVotes}
                         onOpenInbox={handleOpenInbox}
                         inboxRefreshKey={inboxRefreshKey}
                         pendingFeedback={isActive ? pendingFeedback : null}

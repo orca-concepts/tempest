@@ -21,6 +21,7 @@ const Root = ({
   editMode = false, onToggleEditMode,
   onConceptRenamed, renamedConcept,
   onOpenGraph,
+  onOpenVotes,
   // Phase 72e-2: owner inbox + badges + inbox-driven panel opening.
   onOpenInbox, inboxRefreshKey = 0,
   pendingFeedback = null, onPendingFeedbackConsumed,
@@ -317,6 +318,13 @@ const Root = ({
                   style={styles.editToggle}
                   title="Open the whole graph as a collapsible tree"
                 >Graph</button>
+              )}
+              {communityId && votingAllowed && user && !isGuest && onOpenVotes && (
+                <button
+                  onClick={onOpenVotes}
+                  style={styles.editToggle}
+                  title="View your saved questions and upvoted links"
+                >Votes</button>
               )}
               {canEditMode && (
                 <button

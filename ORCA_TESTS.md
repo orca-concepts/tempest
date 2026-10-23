@@ -547,4 +547,24 @@ Run only the specific section(s) named.
 
 ---
 
+## Post-72 UI fixes — Votes button relocation + sequence-link dropdowns
+
+### Votes button moved out of the sidebar
+- [ ] The sidebar top shows only the Communities button (no "Votes" button) for logged-in users and guests
+- [ ] In an **open** community, a logged-in user sees a "Votes" button in the page header immediately next to "Graph", on both the community root page and question pages; it is styled identically to the Graph button
+- [ ] Clicking that Votes button opens the Votes overlay (`VotesOverlay`), whose contents are unchanged
+- [ ] In a **curated** community the header shows Graph but no Votes button (any user, including owners)
+- [ ] A **guest** in an open community sees Graph but no Votes button
+- [ ] `VotesOverlay` behavior/contents are unchanged (still community-scoped, still opened via the overlay)
+
+### Precedent / subsequent as collapsible dropdowns (`CardSequenceSection`, curated)
+- [ ] Every curated card (children grid and root grid), in both View and Edit mode, shows two compact toggle buttons: "Precedent questions (N) ▸" and "Subsequent questions (N) ▸"; closed cards do not grow
+- [ ] Each toggle opens/closes independently; both start closed; the arrow becomes ▾ when open; open state is local (resets on reload / re-render from parent state only)
+- [ ] Opened and empty: shows "No precedent questions" / "No subsequent questions" in both View and Edit mode (the old "hide the row when both empty in view mode" behavior is gone)
+- [ ] Opened with entries: the list shows sibling names; clicking a name still scrolls to and highlights that sibling's card (300ms delay, 2s highlight)
+- [ ] Edit mode, inside the opened dropdown: the "dated earlier than its precedent" warning, the per-entry "✕" remove, and the "+" picker of eligible siblings all work; opening the picker keeps that section open
+- [ ] All controls are `<button>`s; no `window.confirm`/`alert`; inline styles with explicit fontFamily; no colored buttons, emoji (beyond ▸ ▾ ✕), or italics
+
+---
+
 **END OF TESTING CHECKLIST**

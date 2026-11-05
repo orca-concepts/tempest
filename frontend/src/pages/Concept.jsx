@@ -16,6 +16,7 @@ import HiddenConceptsView from '../components/HiddenConceptsView';
 import NewQuestionCard from '../components/NewQuestionCard';
 import EditableField from '../components/EditableField';
 import PageFeedbackLauncher from '../components/PageFeedbackLauncher';
+import RestructureBar from '../components/RestructureBar';
 
 import TunnelView from '../components/TunnelView';
 
@@ -42,6 +43,8 @@ const Concept = ({
   renamedConcept,
   onOpenGraph,
   onOpenVotes,
+  // Phase 73: reload graph tabs after a restructure (their paths may have moved).
+  onStructureChanged,
   // Phase 72e-2: inbox navigation can request a card's or this page's feedback panel.
   pendingFeedback = null,
   onPendingFeedbackConsumed,
@@ -127,6 +130,10 @@ const Concept = ({
 
   // Phase 72c-1: curated edit mode
   const [showNewCard, setShowNewCard] = useState(false);
+
+  // Phase 73: curated restructure selection + ungroup target.
+  const [restructureSel, setRestructureSel] = useState(() => new Set());
+  const [ungroupConcept, setUngroupConcept] = useState(null);
   
   // Phase 39d: Add to Combo picker
   const [showComboPicker, setShowComboPicker] = useState(false);
@@ -585,6 +592,9 @@ const Concept = ({
   useEffect(() => {
     const canEdit = communityMode === 'curated' && isCommunityOwner && editMode && effectiveViewMode === 'children';
     if (!canEdit) setShowNewCard(false);
+    // Phase 73: clear restructure selection on leaving edit mode or navigating.
+    setRestructureSel(new Set());
+    setUngroupConcept(null);
   }, [communityMode, isCommunityOwner, editMode, effectiveViewMode, effectiveConceptId, effectivePath?.join(',')]);
 
   // Tab-mgmt fix 3: when a concept is renamed (in this or any other tab), refresh
@@ -685,6 +695,36 @@ const Concept = ({
       setNestSubmitting(false);
       setNestFeedback(err?.response?.data?.error || 'Could not nest the selected questions.');
     }
+  };
+
+  // Phase 73: curated restructure (group / move into / ungroup).
+  const toggleRestructureSelect = (edgeId) => {
+    setRestructureSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(edgeId)) next.delete(edgeId); else next.add(edgeId);
+      return next;
+    });
+    setUngroupConcept(null);
+  };
+  const clearRestructureSelection = () => setRestructureSel(new Set());
+  const handleUngroup = (child) => { setRestructureSel(new Set()); setUngroupConcept(child); };
+  const highlightCard = (edgeId) => {
+    if (edgeId == null) return;
+    const el = document.getElementById(`qcard-${edgeId}`);
+    if (!el) return;
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prev = el.style.backgroundColor;
+      el.style.backgroundColor = '#fffbcc';
+      setTimeout(() => { el.style.backgroundColor = prev || ''; }, 2000);
+    }, 300);
+  };
+  const handleRestructureDone = async ({ highlightEdgeId } = {}) => {
+    setRestructureSel(new Set());
+    setUngroupConcept(null);
+    await loadConcept();
+    if (onStructureChanged) onStructureChanged();
+    highlightCard(highlightEdgeId);
   };
 
   // Phase 16c: Flag a child concept as spam
@@ -1085,7 +1125,7 @@ const Concept = ({
                       onConceptClick={handleConceptClick}
                       onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
                       onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
-                      onNestUnderSibling={canCreate ? handleNestUnderSibling : undefined}
+                      onNestUnderSibling={(canCreate && communityMode !== 'curated') ? handleNestUnderSibling : undefined}
                       onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
                       onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                       onNavigateNested={handleNavigateNested}
@@ -1119,13 +1159,15 @@ const Concept = ({
                     onConceptClick={handleConceptClick}
                     onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
                     onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
-                    onNestUnderSibling={(canCreate && !editing) ? handleNestUnderSibling : undefined}
+                    onNestUnderSibling={(canCreate && !editing && communityMode !== 'curated') ? handleNestUnderSibling : undefined}
                     onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
                     onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                     onNavigateNested={handleNavigateNested}
                     nestMode={nestMode}
-                    selectedEdgeIds={selectedEdgeIds}
-                    onToggleSelect={toggleNestSelect}
+                    restructureMode={editing}
+                    onUngroup={editing ? handleUngroup : undefined}
+                    selectedEdgeIds={editing ? restructureSel : selectedEdgeIds}
+                    onToggleSelect={editing ? toggleRestructureSelect : toggleNestSelect}
                     showVotes={votingAllowed}
                     path={path}
                     edgeToSets={votingAllowed ? edgeToSets : {}}
@@ -1318,6 +1360,18 @@ const Concept = ({
 
       {!nestMode && nestFeedback && (
         <div style={styles.nestToast}>{nestFeedback}</div>
+      )}
+
+      {/* Phase 73: curated restructure action bar (group / move into / ungroup). */}
+      {editing && (restructureSel.size > 0 || ungroupConcept) && (
+        <RestructureBar
+          selectedEdgeIds={restructureSel}
+          siblings={children}
+          ungroupConcept={ungroupConcept}
+          onClearSelection={clearRestructureSelection}
+          onCloseUngroup={() => setUngroupConcept(null)}
+          onDone={handleRestructureDone}
+        />
       )}
 
     </div>

@@ -8,6 +8,7 @@ import SwapModal from '../components/SwapModal';
 import CommunityHeaderControls from '../components/CommunityHeaderControls';
 import NewQuestionCard from '../components/NewQuestionCard';
 import PageFeedbackLauncher from '../components/PageFeedbackLauncher';
+import RestructureBar from '../components/RestructureBar';
 
 const ATTR_FILTER_KEY = 'orca_root_attribute_filter';
 const ATTR_DISPLAY_ORDER = ['value', 'action', 'tool', 'question'];
@@ -22,6 +23,8 @@ const Root = ({
   onConceptRenamed, renamedConcept,
   onOpenGraph,
   onOpenVotes,
+  // Phase 73: reload graph tabs after a restructure (their paths may have moved).
+  onStructureChanged,
   // Phase 72e-2: owner inbox + badges + inbox-driven panel opening.
   onOpenInbox, inboxRefreshKey = 0,
   pendingFeedback = null, onPendingFeedbackConsumed,
@@ -54,6 +57,10 @@ const Root = ({
   const [nestPickerOpen, setNestPickerOpen] = useState(false);
   const [nestSubmitting, setNestSubmitting] = useState(false);
   const [nestFeedback, setNestFeedback] = useState(null);
+
+  // Phase 73: curated restructure selection + ungroup target.
+  const [restructureSel, setRestructureSel] = useState(() => new Set());
+  const [ungroupConcept, setUngroupConcept] = useState(null);
 
   // Phase 16c: Hidden root concepts state
   const [hiddenCount, setHiddenCount] = useState(0);
@@ -219,6 +226,41 @@ const Root = ({
       setNestFeedback(err?.response?.data?.error || 'Could not nest the selected questions.');
     }
   };
+
+  // Phase 73: curated restructure (group / move into / ungroup) on the root list.
+  const toggleRestructureSelect = (edgeId) => {
+    setRestructureSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(edgeId)) next.delete(edgeId); else next.add(edgeId);
+      return next;
+    });
+    setUngroupConcept(null);
+  };
+  const clearRestructureSelection = () => setRestructureSel(new Set());
+  const handleUngroup = (child) => { setRestructureSel(new Set()); setUngroupConcept(child); };
+  const highlightCard = (edgeId) => {
+    if (edgeId == null) return;
+    const el = document.getElementById(`qcard-${edgeId}`);
+    if (!el) return;
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prev = el.style.backgroundColor;
+      el.style.backgroundColor = '#fffbcc';
+      setTimeout(() => { el.style.backgroundColor = prev || ''; }, 2000);
+    }, 300);
+  };
+  const handleRestructureDone = async ({ highlightEdgeId } = {}) => {
+    setRestructureSel(new Set());
+    setUngroupConcept(null);
+    await loadRootConcepts();
+    if (onStructureChanged) onStructureChanged();
+    highlightCard(highlightEdgeId);
+  };
+
+  // Clear restructure selection on leaving edit mode or switching community.
+  useEffect(() => {
+    if (!editing) { setRestructureSel(new Set()); setUngroupConcept(null); }
+  }, [editing, communityId]);
 
   // Phase 16c: Flag a root concept as spam
   const handleFlag = async (child) => {
@@ -451,12 +493,14 @@ const Root = ({
                 onConceptClick={handleConceptClick}
                 onVote={(votingAllowed && !isGuest) ? handleVote : undefined}
                 onSwapClick={(votingAllowed && !isGuest) ? handleSwapClick : undefined}
-                onNestUnderSibling={(canCreate && !editing) ? handleNestUnderSibling : undefined}
+                onNestUnderSibling={(canCreate && !editing && communityMode !== 'curated') ? handleNestUnderSibling : undefined}
                 onFlag={(votingAllowed && !isGuest) ? handleFlag : undefined}
                 onUnflag={(votingAllowed && !isGuest) ? handleUnflag : undefined}
                 nestMode={nestMode}
-                selectedEdgeIds={selectedEdgeIds}
-                onToggleSelect={toggleNestSelect}
+                restructureMode={editing}
+                onUngroup={editing ? handleUngroup : undefined}
+                selectedEdgeIds={editing ? restructureSel : selectedEdgeIds}
+                onToggleSelect={editing ? toggleRestructureSelect : toggleNestSelect}
                 showVotes={votingAllowed}
                 showAttributeBadge={true}
                 path={[]}
@@ -604,6 +648,18 @@ const Root = ({
 
       {!nestMode && nestFeedback && (
         <div style={styles.nestToast}>{nestFeedback}</div>
+      )}
+
+      {/* Phase 73: curated restructure action bar (group / move into / ungroup). */}
+      {editing && (restructureSel.size > 0 || ungroupConcept) && (
+        <RestructureBar
+          selectedEdgeIds={restructureSel}
+          siblings={concepts}
+          ungroupConcept={ungroupConcept}
+          onClearSelection={clearRestructureSelection}
+          onCloseUngroup={() => setUngroupConcept(null)}
+          onDone={handleRestructureDone}
+        />
       )}
     </div>
   );

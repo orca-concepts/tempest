@@ -165,6 +165,191 @@ async function loadTopLinkByEdge(edgeIds, userId) {
   return byEdge;
 }
 
+// ============================================================
+// Phase 73: restructuring curated graphs (group / move / ungroup)
+// Shared path-rewrite helpers. These run INSIDE the caller's transaction on a
+// client that has already issued BEGIN. Edge ids are never changed — only
+// graph_path and parent_id are rewritten (keeping answers, feedback and kept
+// sequence links attached), plus every user's graph_tabs path for tabs inside a
+// moved subtree. Path-scoped matching only (graph_path prefix), never by concept
+// id alone (CLAUDE.md). graph_path is root-to-parent inclusive; graph_tabs store
+// `path` = the viewed edge's graph_path (the parent prefix) and `concept_id` =
+// the viewed child, so the full node path is `path || concept_id`.
+// ============================================================
+
+const RESTRUCTURE_EDGE_CAP = 1000;
+
+// Lock (FOR UPDATE) the "moved set" for a group/move: the selected top edges plus
+// every path-scoped descendant, INCLUDING soft-deleted ones (so restore-by-re-add
+// keeps working at the new location). G = the shared graph_path of the selected
+// siblings; selectedChildIds = their child concepts. A descendant of a selected
+// concept C_i has graph_path[1:L] = G and graph_path[L+1] = C_i.
+async function lockMovedSet(client, selectedEdgeIds, G, selectedChildIds) {
+  const L = G.length;
+  const gLiteral = '{' + G.join(',') + '}';
+  const result = await client.query(
+    `SELECT id, child_id, graph_path, attribute_id, legal_hold, deleted_at
+       FROM edges e
+      WHERE e.id = ANY($1::int[])
+         OR (e.graph_path[1:$2] = $3::integer[] AND e.graph_path[$4] = ANY($5::int[]))
+      ORDER BY COALESCE(array_length(e.graph_path, 1), 0)
+      FOR UPDATE`,
+    [selectedEdgeIds, L, gLiteral, L + 1, selectedChildIds]
+  );
+  return result.rows;
+}
+
+// Any legal hold on the given edges or their links blocks a restructure.
+async function anyLegalHoldInSet(client, edgeIds) {
+  if (!edgeIds.length) return false;
+  const e = await client.query(
+    'SELECT 1 FROM edges WHERE id = ANY($1::int[]) AND legal_hold = true LIMIT 1', [edgeIds]
+  );
+  if (e.rows.length) return true;
+  const l = await client.query(
+    'SELECT 1 FROM concept_links WHERE edge_id = ANY($1::int[]) AND legal_hold = true LIMIT 1', [edgeIds]
+  );
+  return l.rows.length > 0;
+}
+
+// Rewrite graph_path + parent_id for a set of edges (ids kept) and the matching
+// graph_tabs rows. computeNewPath(oldPathArr) -> newPathArr. Throws a tagged error
+// (err.restructureCode = 'conflict', err.conflictNames) if a rewritten identity
+// would collide with an edge outside the set (visible OR soft-deleted). New paths
+// are disjoint from every edge's old path in a valid move (the inserted/removed
+// element differs), so sequential per-edge UPDATEs never transiently violate the
+// (parent_id, child_id, graph_path, attribute_id) unique constraint.
+async function applyPathRewrite(client, movedRows, computeNewPath) {
+  const idArr = movedRows.map((r) => r.id);
+  for (const r of movedRows) {
+    const newPath = computeNewPath(r.graph_path || []);
+    const literal = '{' + newPath.join(',') + '}';
+    const clash = await client.query(
+      `SELECT c.name
+         FROM edges e JOIN concepts c ON c.id = e.child_id
+        WHERE e.child_id = $1 AND e.graph_path = $2::integer[] AND e.id <> ALL($3::int[])
+        LIMIT 1`,
+      [r.child_id, literal, idArr]
+    );
+    if (clash.rows.length) {
+      const err = new Error('conflict');
+      err.restructureCode = 'conflict';
+      err.conflictNames = [clash.rows[0].name];
+      throw err;
+    }
+  }
+  for (const r of movedRows) {
+    const oldPath = r.graph_path || [];
+    const newPath = computeNewPath(oldPath);
+    const newParent = newPath.length ? newPath[newPath.length - 1] : null;
+    const newLiteral = '{' + newPath.join(',') + '}';
+    const oldLiteral = '{' + oldPath.join(',') + '}';
+    await client.query(
+      'UPDATE edges SET graph_path = $1::integer[], parent_id = $2 WHERE id = $3',
+      [newLiteral, newParent, r.id]
+    );
+    // Rewrite tabs pointing at this edge's OLD identity (path + concept_id) so no
+    // tab inside a moved subtree goes blank.
+    await client.query(
+      'UPDATE graph_tabs SET path = $1::integer[], updated_at = CURRENT_TIMESTAMP WHERE concept_id = $2 AND path = $3::integer[]',
+      [newLiteral, r.child_id, oldLiteral]
+    );
+  }
+}
+
+// Group/move: a sequence link stops joining siblings when exactly one of its two
+// edges moved (XOR). Links between edges that moved together are kept. Returns the
+// removed rows [{ linkId, fromName, toName }]; deletes them unless dryRun.
+async function removeCrossingSequenceLinks(client, movedIds, dryRun) {
+  const removed = await client.query(
+    `SELECT ql.id AS link_id, fc.name AS from_name, tc.name AS to_name
+       FROM question_sequence_links ql
+       JOIN edges fe ON fe.id = ql.from_edge_id
+       JOIN edges te ON te.id = ql.to_edge_id
+       JOIN concepts fc ON fc.id = fe.child_id
+       JOIN concepts tc ON tc.id = te.child_id
+      WHERE (ql.from_edge_id = ANY($1::int[])) <> (ql.to_edge_id = ANY($1::int[]))
+      ORDER BY ql.id`,
+    [movedIds]
+  );
+  const rows = removed.rows.map((r) => ({ linkId: r.link_id, fromName: r.from_name, toName: r.to_name }));
+  if (!dryRun && rows.length) {
+    await client.query('DELETE FROM question_sequence_links WHERE id = ANY($1::int[])', [rows.map((r) => r.linkId)]);
+  }
+  return rows;
+}
+
+// Ungroup: every sequence link touching Q's edge is removed (Q is leaving).
+async function removeSequenceLinksTouching(client, edgeId, dryRun) {
+  const removed = await client.query(
+    `SELECT ql.id AS link_id, fc.name AS from_name, tc.name AS to_name
+       FROM question_sequence_links ql
+       JOIN edges fe ON fe.id = ql.from_edge_id
+       JOIN edges te ON te.id = ql.to_edge_id
+       JOIN concepts fc ON fc.id = fe.child_id
+       JOIN concepts tc ON tc.id = te.child_id
+      WHERE ql.from_edge_id = $1 OR ql.to_edge_id = $1
+      ORDER BY ql.id`,
+    [edgeId]
+  );
+  const rows = removed.rows.map((r) => ({ linkId: r.link_id, fromName: r.from_name, toName: r.to_name }));
+  if (!dryRun && rows.length) {
+    await client.query('DELETE FROM question_sequence_links WHERE id = ANY($1::int[])', [rows.map((r) => r.linkId)]);
+  }
+  return rows;
+}
+
+// Validate + lock the selected sibling edges for a group/move. They must all
+// exist, be visible (not hidden), not soft-deleted, and share parent_id,
+// graph_path and attribute. At the root level (parent_id NULL, graph_path '{}')
+// they must also share a community. Returns either { ok, rows, G, selectedChildIds,
+// attributeId, communityId, parentForLevel } or { ok:false, status, code, error }.
+async function validateSelectedSiblings(client, selectedEdgeIds) {
+  if (!selectedEdgeIds.length) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'Select at least one question.' };
+  }
+  const sel = await client.query(
+    `SELECT e.id, e.parent_id, e.graph_path, e.child_id, e.attribute_id,
+            e.is_hidden, e.deleted_at, c.community_id
+       FROM edges e JOIN concepts c ON c.id = e.child_id
+      WHERE e.id = ANY($1::int[])
+      FOR UPDATE`,
+    [selectedEdgeIds]
+  );
+  if (sel.rows.length !== selectedEdgeIds.length) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'Some selected questions no longer exist.' };
+  }
+  if (sel.rows.some((r) => r.deleted_at)) {
+    return { ok: false, status: 409, code: 'edge_deleted', error: 'One of the selected questions has been deleted.' };
+  }
+  if (sel.rows.some((r) => r.is_hidden)) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'One of the selected questions is hidden.' };
+  }
+  const first = sel.rows[0];
+  const samePath = (a) => (a.graph_path || []).join(',') === (first.graph_path || []).join(',');
+  const sameParent = (a) => (a.parent_id === null ? first.parent_id === null : a.parent_id === first.parent_id);
+  if (!sel.rows.every((r) => samePath(r) && sameParent(r))) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'The selected questions are not all siblings.' };
+  }
+  if (new Set(sel.rows.map((r) => r.attribute_id)).size > 1) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'The selected questions do not share the same attribute.' };
+  }
+  const isRoot = first.parent_id === null;
+  if (isRoot && new Set(sel.rows.map((r) => r.community_id)).size > 1) {
+    return { ok: false, status: 400, code: 'not_siblings', error: 'The selected questions must be in the same community.' };
+  }
+  const G = first.graph_path || [];
+  return {
+    ok: true,
+    rows: sel.rows,
+    G,
+    selectedChildIds: sel.rows.map((r) => r.child_id),
+    attributeId: first.attribute_id,
+    communityId: first.community_id,
+    parentForLevel: G.length ? G[G.length - 1] : null,
+  };
+}
+
 const conceptsController = {
   // Get all root concepts (concepts with no parents)
   getRootConcepts: async (req, res) => {
@@ -1489,9 +1674,17 @@ const conceptsController = {
       const T = targetRow.child_id;
       const targetName = (await pool.query('SELECT name FROM concepts WHERE id = $1', [T])).rows[0]?.name || null;
 
-      // Phase 72a: curated communities are owner-write-only. The page's community
-      // is that of the target edge (all siblings share it).
+      // Phase 73: nest-under-sibling (a copy) is open-communities only. In curated
+      // communities "Move into…" (a true move) replaces it, so refuse here for
+      // everyone, owners included.
       const nestCommunity = await communityAccess.getCommunityForEdge(targetEdgeId);
+      if (nestCommunity && nestCommunity.mode === 'curated') {
+        return res.status(403).json({
+          error: 'Nest under sibling is only available in open communities. Use “Move into…” to restructure a curated graph.',
+          code: 'open_only',
+        });
+      }
+      // Phase 72a: open communities still require a logged-in writer.
       const nestWriteCheck = await communityAccess.assertCanWriteStructure(nestCommunity, req.user.userId);
       if (!nestWriteCheck.ok) {
         return res.status(nestWriteCheck.status).json({ error: nestWriteCheck.error, code: nestWriteCheck.code });
@@ -1603,6 +1796,352 @@ const conceptsController = {
     } catch (error) {
       console.error('Error nesting under sibling:', error);
       res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Phase 73: group selected sibling questions under a NEW parent question.
+  // Curated-owner-only. Inserts a goal question at this level and moves the
+  // selection (with their subtrees) under it. Supports dryRun (every check, no
+  // writes). Body: { selectedEdgeIds, name, dryRun? }.
+  groupUnderNewParent: async (req, res) => {
+    const selectedEdgeIds = Array.isArray(req.body.selectedEdgeIds)
+      ? [...new Set(req.body.selectedEdgeIds.map(Number).filter((n) => !isNaN(n)))]
+      : [];
+    const dryRun = !!req.body.dryRun;
+    const rawName = typeof req.body.name === 'string' ? req.body.name : '';
+    const trimmed = rawName.trim();
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const v = await validateSelectedSiblings(client, selectedEdgeIds);
+      if (!v.ok) { await client.query('ROLLBACK'); return res.status(v.status).json({ error: v.error, code: v.code }); }
+
+      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
+      const community = await communityAccess.getCommunityForConcept(v.selectedChildIds[0]);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) { await client.query('ROLLBACK'); return res.status(gate.status).json({ error: gate.error, code: gate.code }); }
+
+      if (!trimmed) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'A name is required.', code: 'empty_name' }); }
+      if (trimmed.length > 255) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'The name must be 255 characters or fewer.', code: 'name_too_long' }); }
+
+      const movedRows = await lockMovedSet(client, selectedEdgeIds, v.G, v.selectedChildIds);
+      if (movedRows.length > RESTRUCTURE_EDGE_CAP) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Too many questions to move (limit ${RESTRUCTURE_EDGE_CAP}).`, code: 'too_large' });
+      }
+      if (await anyLegalHoldInSet(client, movedRows.map((r) => r.id))) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'One of these questions (or its links) is held for legal reasons.', code: 'legal_hold' });
+      }
+
+      const gLiteral = '{' + v.G.join(',') + '}';
+      const parentForLevel = v.parentForLevel;
+
+      // Resolve the new parent concept N (reuse an existing same-name concept, as
+      // /child does; otherwise create it).
+      let N = null;
+      let newEdgeId = null;
+      const existingConcept = await client.query(
+        'SELECT id, legal_hold FROM concepts WHERE community_id = $1 AND LOWER(name) = LOWER($2)',
+        [v.communityId, trimmed]
+      );
+      if (existingConcept.rows.length) {
+        N = existingConcept.rows[0].id;
+        if (existingConcept.rows[0].legal_hold) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'A question with that name is held for legal reasons.', code: 'legal_hold' });
+        }
+        const existingEdge = await client.query(
+          'SELECT id, deleted_at FROM edges WHERE child_id = $1 AND graph_path = $2::integer[] AND (parent_id IS NOT DISTINCT FROM $3)',
+          [N, gLiteral, parentForLevel]
+        );
+        if (existingEdge.rows.length) {
+          if (!existingEdge.rows[0].deleted_at) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({
+              error: 'A question with that name is already here. Use “Move into…” to group the selection under it.',
+              code: 'sibling_exists',
+              edgeId: existingEdge.rows[0].id,
+            });
+          }
+          // Restore the soft-deleted edge as the new parent edge.
+          newEdgeId = existingEdge.rows[0].id;
+        }
+      }
+
+      // Cycle: N must not be an ancestor (in G) nor appear inside any moved subtree.
+      const forbidden = new Set(v.G);
+      for (const r of movedRows) { forbidden.add(r.child_id); for (const g of (r.graph_path || [])) forbidden.add(g); }
+      if (N !== null && forbidden.has(N)) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'That would place a question inside itself.', code: 'cycle' });
+      }
+
+      // Create or restore N's edge at this level.
+      if (N === null) {
+        const created = await client.query(
+          'INSERT INTO concepts (name, created_by, community_id) VALUES ($1, $2, $3) RETURNING id',
+          [trimmed, req.user.userId, v.communityId]
+        );
+        N = created.rows[0].id;
+      }
+      if (newEdgeId === null) {
+        const ce = await client.query(
+          'INSERT INTO edges (parent_id, child_id, graph_path, attribute_id, created_by) VALUES ($1, $2, $3::integer[], $4, $5) RETURNING id',
+          [parentForLevel, N, gLiteral, v.attributeId, req.user.userId]
+        );
+        newEdgeId = ce.rows[0].id;
+      } else {
+        await client.query(
+          'UPDATE edges SET deleted_at = NULL, deleted_by = NULL, delete_batch_id = NULL, is_hidden = false WHERE id = $1',
+          [newEdgeId]
+        );
+      }
+
+      // Rewrite: insert N right after the shared prefix G for every moved edge.
+      const L = v.G.length;
+      const insertN = (oldPath) => [...oldPath.slice(0, L), N, ...oldPath.slice(L)];
+      try {
+        await applyPathRewrite(client, movedRows, insertN);
+      } catch (e) {
+        if (e.restructureCode === 'conflict') {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'A question with the same name already exists at the destination.', code: 'conflict', names: e.conflictNames });
+        }
+        throw e;
+      }
+
+      const removedSequenceLinks = await removeCrossingSequenceLinks(client, movedRows.map((r) => r.id), dryRun);
+
+      const movedCount = selectedEdgeIds.length;
+      const descendantCount = movedRows.length - movedCount;
+
+      if (dryRun) {
+        await client.query('ROLLBACK');
+        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved: 0 });
+      }
+      await client.query('COMMIT');
+      return res.status(201).json({
+        message: 'Grouped under a new question',
+        newEdgeId, newConceptId: N, movedCount, descendantCount,
+        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error in groupUnderNewParent:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Phase 73: move selected sibling questions INTO an existing sibling (the
+  // target becomes their new parent). Curated-owner-only. Supports dryRun.
+  // Body: { selectedEdgeIds, targetEdgeId, dryRun? }.
+  moveIntoSibling: async (req, res) => {
+    const selectedEdgeIds = Array.isArray(req.body.selectedEdgeIds)
+      ? [...new Set(req.body.selectedEdgeIds.map(Number).filter((n) => !isNaN(n)))]
+      : [];
+    const targetEdgeId = parseInt(req.body.targetEdgeId, 10);
+    const dryRun = !!req.body.dryRun;
+
+    if (!targetEdgeId || isNaN(targetEdgeId)) {
+      return res.status(400).json({ error: 'A target question is required.', code: 'not_siblings' });
+    }
+    if (selectedEdgeIds.includes(targetEdgeId)) {
+      return res.status(400).json({ error: 'The target cannot be one of the selected questions.', code: 'target_selected' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const v = await validateSelectedSiblings(client, selectedEdgeIds);
+      if (!v.ok) { await client.query('ROLLBACK'); return res.status(v.status).json({ error: v.error, code: v.code }); }
+
+      const community = await communityAccess.getCommunityForConcept(v.selectedChildIds[0]);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) { await client.query('ROLLBACK'); return res.status(gate.status).json({ error: gate.error, code: gate.code }); }
+
+      // The target must be a visible, non-deleted sibling on the same level.
+      const tRes = await client.query(
+        `SELECT id, parent_id, graph_path, child_id, is_hidden, deleted_at
+           FROM edges WHERE id = $1 FOR UPDATE`,
+        [targetEdgeId]
+      );
+      if (tRes.rows.length === 0) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'The target question no longer exists.', code: 'not_siblings' }); }
+      const target = tRes.rows[0];
+      const targetSamePath = (target.graph_path || []).join(',') === v.G.join(',');
+      const targetSameParent = (target.parent_id === null ? v.parentForLevel === null : target.parent_id === v.parentForLevel);
+      if (target.deleted_at || target.is_hidden || !targetSamePath || !targetSameParent) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'The target must be a sibling of the selected questions.', code: 'not_siblings' });
+      }
+      const N = target.child_id;
+
+      const movedRows = await lockMovedSet(client, selectedEdgeIds, v.G, v.selectedChildIds);
+      if (movedRows.length > RESTRUCTURE_EDGE_CAP) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Too many questions to move (limit ${RESTRUCTURE_EDGE_CAP}).`, code: 'too_large' });
+      }
+      if (await anyLegalHoldInSet(client, movedRows.map((r) => r.id))) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'One of these questions (or its links) is held for legal reasons.', code: 'legal_hold' });
+      }
+
+      // Cycle: the target concept must not appear inside any moved subtree.
+      const forbidden = new Set(v.G);
+      for (const r of movedRows) { forbidden.add(r.child_id); for (const g of (r.graph_path || [])) forbidden.add(g); }
+      if (forbidden.has(N)) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'That would place a question inside itself.', code: 'cycle' });
+      }
+
+      const L = v.G.length;
+      const insertN = (oldPath) => [...oldPath.slice(0, L), N, ...oldPath.slice(L)];
+      try {
+        await applyPathRewrite(client, movedRows, insertN);
+      } catch (e) {
+        if (e.restructureCode === 'conflict') {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'A question with the same name already exists under the target.', code: 'conflict', names: e.conflictNames });
+        }
+        throw e;
+      }
+
+      const removedSequenceLinks = await removeCrossingSequenceLinks(client, movedRows.map((r) => r.id), dryRun);
+      const movedCount = selectedEdgeIds.length;
+      const descendantCount = movedRows.length - movedCount;
+
+      if (dryRun) {
+        await client.query('ROLLBACK');
+        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved: 0 });
+      }
+      await client.query('COMMIT');
+      return res.status(200).json({
+        message: 'Moved into the target question',
+        targetEdgeId, movedCount, descendantCount,
+        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error in moveIntoSibling:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    } finally {
+      client.release();
+    }
+  },
+
+  // Phase 73: ungroup a question — move its children up one level and soft-delete
+  // it. Curated-owner-only. Supports dryRun. Body: { dryRun? }.
+  ungroupEdge: async (req, res) => {
+    const edgeId = parseInt(req.params.edgeId, 10);
+    const dryRun = !!req.body.dryRun;
+    if (!edgeId || isNaN(edgeId)) {
+      return res.status(400).json({ error: 'Invalid edge id' });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const qRes = await client.query(
+        'SELECT id, parent_id, graph_path, child_id, deleted_at FROM edges WHERE id = $1 FOR UPDATE',
+        [edgeId]
+      );
+      if (qRes.rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Question not found' }); }
+      const Qe = qRes.rows[0];
+      if (Qe.deleted_at) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'This question has been deleted.', code: 'edge_deleted' }); }
+
+      const community = await communityAccess.getCommunityForEdge(edgeId);
+      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
+      if (!gate.ok) { await client.query('ROLLBACK'); return res.status(gate.status).json({ error: gate.error, code: gate.code }); }
+
+      const G = Qe.graph_path || [];           // root-to-parent of Q
+      const Q = Qe.child_id;
+      const fullQ = [...G, Q];                   // children live at graph_path = fullQ
+      const LQ = fullQ.length;                   // = G.length + 1
+      const fullQLiteral = '{' + fullQ.join(',') + '}';
+
+      // Lock the whole subtree under Q (children + deeper, including soft-deleted).
+      const movedRows = (await client.query(
+        `SELECT id, child_id, graph_path, legal_hold, deleted_at
+           FROM edges e
+          WHERE e.graph_path[1:$1] = $2::integer[]
+          ORDER BY COALESCE(array_length(e.graph_path, 1), 0)
+          FOR UPDATE`,
+        [LQ, fullQLiteral]
+      )).rows;
+
+      // At least one VISIBLE direct child is required.
+      const directChildren = movedRows.filter((r) => (r.graph_path || []).length === LQ && !r.deleted_at);
+      const visibleDirect = (await client.query(
+        `SELECT 1 FROM edges WHERE graph_path = $1::integer[] AND is_hidden = false AND deleted_at IS NULL LIMIT 1`,
+        [fullQLiteral]
+      )).rows;
+      if (visibleDirect.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'This question has no children to ungroup.', code: 'no_children' });
+      }
+
+      if (movedRows.length + 1 > RESTRUCTURE_EDGE_CAP) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Too many questions to move (limit ${RESTRUCTURE_EDGE_CAP}).`, code: 'too_large' });
+      }
+      if (await anyLegalHoldInSet(client, [Qe.id, ...movedRows.map((r) => r.id)])) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'This question (or part of its subtree, or a link) is held for legal reasons.', code: 'legal_hold' });
+      }
+
+      // Rewrite: drop the Q element at position LQ (0-indexed = G.length) for every
+      // edge under Q, so children move up to level G.
+      const Lg = G.length;
+      const removeQ = (oldPath) => [...oldPath.slice(0, Lg), ...oldPath.slice(Lg + 1)];
+      try {
+        await applyPathRewrite(client, movedRows, removeQ);
+      } catch (e) {
+        if (e.restructureCode === 'conflict') {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'A question with the same name already exists at the upper level.', code: 'conflict', names: e.conflictNames });
+        }
+        throw e;
+      }
+
+      // Soft-delete Q's edge (its answers hide with it).
+      await client.query(
+        `WITH b AS (SELECT gen_random_uuid() AS batch_id)
+         UPDATE edges SET deleted_at = CURRENT_TIMESTAMP, deleted_by = $2,
+                          delete_batch_id = (SELECT batch_id FROM b), is_hidden = true
+          WHERE id = $1`,
+        [Qe.id, req.user.userId]
+      );
+
+      const removedSequenceLinks = await removeSequenceLinksTouching(client, Qe.id, dryRun);
+      const answersRemoved = parseInt((await client.query(
+        'SELECT COUNT(*)::int AS c FROM concept_links WHERE edge_id = $1', [Qe.id]
+      )).rows[0].c, 10);
+
+      const movedCount = directChildren.length;
+      const descendantCount = movedRows.length - directChildren.length;
+
+      if (dryRun) {
+        await client.query('ROLLBACK');
+        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved });
+      }
+      await client.query('COMMIT');
+      return res.status(200).json({
+        message: 'Ungrouped',
+        movedCount, descendantCount, deletedEdgeId: Qe.id,
+        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error in ungroupEdge:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    } finally {
+      client.release();
     }
   },
 

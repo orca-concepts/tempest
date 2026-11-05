@@ -636,6 +636,20 @@ const AppShell = () => {
     }
   };
 
+  // Phase 73: after a restructure, a graph_tab's stored path may have been
+  // rewritten server-side. Re-pull the tabs so open tabs don't go blank. Keeps
+  // labels/ordering from the server. Guests have ephemeral tabs (no server state),
+  // and restructuring is owner-only, so this only runs for logged-in owners.
+  const reloadGraphTabs = useCallback(async () => {
+    if (isGuest) return;
+    try {
+      const res = await votesAPI.getGraphTabs();
+      setGraphTabs(res.data.graphTabs || []);
+    } catch (err) {
+      // non-critical
+    }
+  }, [isGuest]);
+
   // ─── Sidebar DnD Handlers (Phase 19c) ──────────────────
 
   const handleDragStart = ({ active }) => {
@@ -1882,6 +1896,7 @@ const AppShell = () => {
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
                         onOpenVotes={handleOpenVotes}
+                        onStructureChanged={reloadGraphTabs}
                         onOpenInbox={handleOpenInbox}
                         inboxRefreshKey={inboxRefreshKey}
                         pendingFeedback={isActive ? pendingFeedback : null}
@@ -1910,6 +1925,7 @@ const AppShell = () => {
                         renamedConcept={renamedConcept}
                         onOpenGraph={handleOpenGraph}
                         onOpenVotes={handleOpenVotes}
+                        onStructureChanged={reloadGraphTabs}
                         onOpenInbox={handleOpenInbox}
                         inboxRefreshKey={inboxRefreshKey}
                         pendingFeedback={isActive ? pendingFeedback : null}

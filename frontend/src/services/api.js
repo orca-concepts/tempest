@@ -118,9 +118,19 @@ export const conceptsAPI = {
   createChildConcept: (name, parentId, path) =>
     api.post('/concepts/child', { name, parentId, path }),
 
-  // Copy selected sibling questions' subtrees under another sibling
+  // Copy selected sibling questions' subtrees under another sibling (open mode only)
   nestUnderSibling: ({ parentConceptId, path, selectedEdgeIds, targetEdgeId }) =>
     api.post('/concepts/nest-under-sibling', { parentConceptId, path, selectedEdgeIds, targetEdgeId }),
+
+  // Phase 73: restructuring curated graphs (true moves; dryRun returns a preview).
+  groupUnderNewParent: ({ selectedEdgeIds, name, dryRun }) =>
+    api.post('/concepts/group-under-new-parent', { selectedEdgeIds, name, dryRun: !!dryRun }),
+
+  moveIntoSibling: ({ selectedEdgeIds, targetEdgeId, dryRun }) =>
+    api.post('/concepts/move-into-sibling', { selectedEdgeIds, targetEdgeId, dryRun: !!dryRun }),
+
+  ungroupEdge: (edgeId, dryRun) =>
+    api.post(`/concepts/edges/${edgeId}/ungroup`, { dryRun: !!dryRun }),
 
   // Phase 72c-1: curated edit mode
   renameConcept: (id, name) =>

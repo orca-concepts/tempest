@@ -30,8 +30,16 @@ router.post('/root', authenticateToken, rootConceptCreateLimiter, conceptsContro
 // Create child concept (requires login)
 router.post('/child', authenticateToken, childConceptCreateLimiter, conceptsController.createChildConcept);
 
-// Copy selected sibling questions' subtrees under another sibling (requires login)
+// Copy selected sibling questions' subtrees under another sibling (requires login).
+// Phase 73: open-communities only (403 open_only in curated, gated in controller).
 router.post('/nest-under-sibling', authenticateToken, conceptsController.nestUnderSibling);
+
+// Phase 73: restructuring curated graphs (group / move into / ungroup). Literal
+// paths registered before the `/:id` catch-all. Curated-owner-only (gated in the
+// controller via communityAccess); each accepts dryRun.
+router.post('/group-under-new-parent', authenticateToken, conceptsController.groupUnderNewParent);
+router.post('/move-into-sibling', authenticateToken, conceptsController.moveIntoSibling);
+router.post('/edges/:edgeId/ungroup', authenticateToken, conceptsController.ungroupEdge);
 
 // Phase 72c-1: curated edit mode — rename a question, soft-delete an edge+subtree.
 // Both are curated-owner-only (gated in the controller via communityAccess).

@@ -28,6 +28,10 @@ const ConceptGrid = ({
   onUnflag,
   onNavigateNested,
   nestMode = false,
+  // Phase 73: curated restructure selection (edit mode). Reuses selectedEdgeIds /
+  // onToggleSelect; onUngroup(concept) opens the ungroup confirm for a card.
+  restructureMode = false,
+  onUngroup,
   selectedEdgeIds = null,
   onToggleSelect,
   showVotes = false,
@@ -164,7 +168,7 @@ const ConceptGrid = ({
               style={{
                 ...styles.card,
                 ...(editMode ? styles.cardEdit : {}),
-                ...(nestMode && isSelected(concept.edge_id) ? styles.cardSelected : {}),
+                ...(((nestMode || restructureMode) && isSelected(concept.edge_id)) ? styles.cardSelected : {}),
               }}
             >
               <div
@@ -191,6 +195,23 @@ const ConceptGrid = ({
                     />
                     <span style={styles.nestCheckboxLabel}>
                       {isSelected(concept.edge_id) ? 'Selected to nest' : 'Select to nest'}
+                    </span>
+                  </label>
+                )}
+                {/* Phase 73: restructure selection checkbox (top-left), curated edit mode. */}
+                {restructureMode && (
+                  <label
+                    style={styles.restructureCheckboxRow}
+                    onClick={(e) => { e.stopPropagation(); if (onToggleSelect) onToggleSelect(concept.edge_id); }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected(concept.edge_id)}
+                      readOnly
+                      style={styles.nestCheckbox}
+                    />
+                    <span style={styles.nestCheckboxLabel}>
+                      {isSelected(concept.edge_id) ? 'Selected' : 'Select'}
                     </span>
                   </label>
                 )}
@@ -293,6 +314,15 @@ const ConceptGrid = ({
                     </div>
                   );
                 })()}
+                {/* Phase 73: ungroup control (curated edit mode, questions with children). */}
+                {editMode && onUngroup && Number(concept.child_count) > 0 && (
+                  <button
+                    type="button"
+                    style={styles.ungroupBtn}
+                    title="Move its children up to this level and remove this question"
+                    onClick={(e) => { e.stopPropagation(); onUngroup(concept); }}
+                  >Ungroup</button>
+                )}
                 {concept.flag_count != null && Number(concept.flag_count) > 0 && Number(concept.flag_count) < 10 && (
                   <div style={styles.flagCount}>
                     {concept.flag_count} {Number(concept.flag_count) === 1 ? 'user has' : 'users have'} flagged this as spam
@@ -625,6 +655,24 @@ const styles = {
   nestCheckbox: {
     cursor: 'pointer',
     accentColor: '#333',
+  },
+  restructureCheckboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '8px',
+    cursor: 'pointer',
+  },
+  ungroupBtn: {
+    marginTop: '8px',
+    fontSize: '13px',
+    color: '#555',
+    cursor: 'pointer',
+    border: '1px solid #e0d9cf',
+    background: '#faf9f6',
+    borderRadius: '3px',
+    padding: '3px 10px',
+    fontFamily: '"EB Garamond", Georgia, serif',
   },
   nestCheckboxLabel: {
     fontSize: '13px',

@@ -567,4 +567,31 @@ Run only the specific section(s) named.
 
 ---
 
+## Phase 73 — Restructuring curated graphs (group / move into / ungroup)
+
+Scripted coverage lives in `backend/phase73-test.js` (throwaway communities + users on a separate-port server; 53 checks, all passing as of implementation). Re-run with the backend on PORT 5050: `PORT=5050 node src/server.js` then `node phase73-test.js`.
+
+### Backend — shared rewrite + endpoints
+- [ ] `POST /concepts/group-under-new-parent` groups one, several, and root-level selections: inserts the new parent edge at the level, reparents the selection, and rewrites every path-scoped descendant (3+ levels) to the new paths; edge ids are unchanged
+- [ ] Group reuses an existing same-name concept; `sibling_exists` (409, returns `edgeId`) when that concept is already a visible sibling; `empty_name`/`name_too_long`; `cycle` when the new-parent concept appears in the level path or inside a moved subtree; `conflict` (409) when a destination identity already exists (incl. soft-deleted); `not_siblings`; `legal_hold`; `too_large` (1000)
+- [ ] `POST /concepts/move-into-sibling` moves the selection under an existing sibling (N = target concept); `target_selected`, `not_siblings`, `cycle`, `conflict`, `legal_hold` all enforced
+- [ ] `POST /concepts/edges/:edgeId/ungroup` moves direct children up one level, soft-deletes Q (its answers hide with it), and removes sequence links touching Q; `no_children` (400), `conflict` (409) when a child name already exists at the upper level; root-level ungroup makes children roots
+- [ ] All three accept `dryRun: true` and return `{ movedCount, descendantCount, removedSequenceLinks:[{linkId,fromName,toName}], answersRemoved }` with NO writes (verified by before/after row counts)
+- [ ] Answers, feedback, and kept sequence links stay attached (same edge ids); after group/move a sequence link is removed exactly when one endpoint moved and the other did not (XOR) — matches the dry-run list; after ungroup every link touching Q is removed
+- [ ] Soft-deleted descendants are rewritten to the new location and remain restorable by re-adding the same concept there
+- [ ] `graph_tabs.path` is rewritten for every tab inside a moved subtree (tab = `path` + `concept_id`); tabs don't go blank
+- [ ] Gating via `communityAccess`: `curated_only` (open community), `curated_owner_only` (reader), 401 (guest) on each endpoint
+- [ ] `POST /concepts/nest-under-sibling` returns 403 `open_only` in curated communities (owners included) and is unchanged in open communities
+
+### Frontend — curated edit mode (owners)
+- [ ] Each card (root list and question pages) shows a top-left selection checkbox in Edit mode; selected cards get the ring; clicking the checkbox does not navigate
+- [ ] The action bar above the Add / Search bar reads "N selected · Group under a new question · Move into… · Clear" and matches the nest-bar styling
+- [ ] Group opens an inline name field; a dry-run preview line shows before Confirm; Move into… offers a picker of unselected siblings, then the preview line; Ungroup is a per-card control (children > 0) with an inline confirm + preview
+- [ ] After any success: silent refresh, scroll-to + 2s highlight of the new/target card (`qcard-<edgeId>`), selection cleared, and AppShell reloads graph tabs (`onStructureChanged` → `reloadGraphTabs`)
+- [ ] Selection clears on leaving Edit mode and on navigation; errors show inline in plain words (no `window.confirm`/`alert`)
+- [ ] The right-click "Nest under sibling…" entry is hidden in curated communities; open communities are unchanged
+- [ ] All controls are `<button>`s (native checkboxes for selection are fine); inline styles with explicit fontFamily; no colored buttons, emoji, or italics; `npm run build` passes
+
+---
+
 **END OF TESTING CHECKLIST**

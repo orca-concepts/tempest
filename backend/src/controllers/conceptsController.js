@@ -562,22 +562,28 @@ const conceptsController = {
       let currentEdgeVoteCount = null;
       let currentAttribute = null;
       let currentEdgeId = null;
+      // Phase 73 follow-up: whether the current edge is soft-deleted. The edge
+      // lookups below carry no is_hidden/deleted_at filter, so they still resolve a
+      // deleted edge (e.g. a question opened from an old sidebar tab); the frontend
+      // uses this to show a "removed" notice instead of empty content.
+      let currentEdgeDeleted = false;
       if (graphPath.length >= 2) {
         const parentId = graphPath[graphPath.length - 2];
         const parentPath = graphPath.slice(0, -1);
 
         const edgeVoteQuery = `
-          SELECT e.id as edge_id, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
+          SELECT e.id as edge_id, e.deleted_at, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
           FROM edges e
           JOIN attributes a ON e.attribute_id = a.id
           LEFT JOIN votes v ON e.id = v.edge_id
           WHERE e.parent_id = $1 AND e.child_id = $2 AND e.graph_path = $3
-          GROUP BY e.id, a.id, a.name
+          GROUP BY e.id, e.deleted_at, a.id, a.name
         `;
 
         const edgeVoteResult = await pool.query(edgeVoteQuery, [parentId, id, parentPath]);
         if (edgeVoteResult.rows.length > 0) {
           currentEdgeId = edgeVoteResult.rows[0].edge_id;
+          currentEdgeDeleted = !!edgeVoteResult.rows[0].deleted_at;
           currentEdgeVoteCount = parseInt(edgeVoteResult.rows[0].vote_count || 0);
           currentAttribute = {
             id: edgeVoteResult.rows[0].attribute_id,
@@ -586,17 +592,18 @@ const conceptsController = {
         }
       } else if (graphPath.length === 1) {
         const edgeVoteQuery = `
-          SELECT e.id as edge_id, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
+          SELECT e.id as edge_id, e.deleted_at, COUNT(DISTINCT v.id) as vote_count, a.id as attribute_id, a.name as attribute_name
           FROM edges e
           JOIN attributes a ON e.attribute_id = a.id
           LEFT JOIN votes v ON e.id = v.edge_id
           WHERE e.parent_id IS NULL AND e.child_id = $1 AND e.graph_path = '{}'
-          GROUP BY e.id, a.id, a.name
+          GROUP BY e.id, e.deleted_at, a.id, a.name
         `;
 
         const edgeVoteResult = await pool.query(edgeVoteQuery, [id]);
         if (edgeVoteResult.rows.length > 0) {
           currentEdgeId = edgeVoteResult.rows[0].edge_id;
+          currentEdgeDeleted = !!edgeVoteResult.rows[0].deleted_at;
           currentEdgeVoteCount = parseInt(edgeVoteResult.rows[0].vote_count || 0);
           currentAttribute = {
             id: edgeVoteResult.rows[0].attribute_id,
@@ -729,6 +736,7 @@ const conceptsController = {
         currentEdgeVoteCount,
         currentAttribute,
         currentEdgeId,
+        currentEdgeDeleted,
         currentAnswers,
         altParentCount,
         tunnelLinkCount,
@@ -2122,13 +2130,18 @@ const conceptsController = {
       const answersRemoved = parseInt((await client.query(
         'SELECT COUNT(*)::int AS c FROM concept_links WHERE edge_id = $1', [Qe.id]
       )).rows[0].c, 10);
+      // Q's feedback becomes archived (computed from its deleted_at) when Q is
+      // soft-deleted. Count the non-hidden items on Q's edge (any status, any kind).
+      const feedbackArchived = parseInt((await client.query(
+        'SELECT COUNT(*)::int AS c FROM feedback_items WHERE edge_id = $1 AND is_hidden = false', [Qe.id]
+      )).rows[0].c, 10);
 
       const movedCount = directChildren.length;
       const descendantCount = movedRows.length - directChildren.length;
 
       if (dryRun) {
         await client.query('ROLLBACK');
-        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved });
+        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved, feedbackArchived });
       }
       await client.query('COMMIT');
       return res.status(200).json({

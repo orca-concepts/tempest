@@ -88,6 +88,8 @@ const Concept = ({
   // Phase 72f: the current question's own edge id and (curated) its own answers,
   // for the own-page answer/link section rendered under the question title.
   const [currentEdgeId, setCurrentEdgeId] = useState(null);
+  // Phase 73 follow-up: the current edge is soft-deleted (opened from an old tab).
+  const [currentEdgeDeleted, setCurrentEdgeDeleted] = useState(false);
   const [currentAnswers, setCurrentAnswers] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -207,6 +209,7 @@ const Concept = ({
       setCurrentEdgeVoteCount(response.data.currentEdgeVoteCount);
       setCurrentAttribute(response.data.currentAttribute || null);
       setCurrentEdgeId(response.data.currentEdgeId || null);
+      setCurrentEdgeDeleted(!!response.data.currentEdgeDeleted);
       setCurrentAnswers(response.data.currentAnswers || null);
       setAltParentCount(response.data.altParentCount || 0);
       setTunnelLinkCount(response.data.tunnelLinkCount || 0);
@@ -977,7 +980,7 @@ const Concept = ({
         </div>
       </div>
 
-      <main style={styles.main}>
+      <main style={(editing && (restructureSel.size > 0 || ungroupConcept)) ? { ...styles.main, paddingBottom: '260px' } : styles.main}>
         <div style={effectiveConceptId ? (isNarrow ? styles.twoColumnLayoutNarrow : styles.twoColumnLayout) : undefined}>
           <div style={effectiveConceptId ? ((effectiveViewMode === 'tunnel' || !showLinksPanel) ? { flex: 1, width: '100%' } : (isNarrow ? styles.leftColumnNarrow : styles.leftColumn)) : undefined}>
             {effectiveViewMode === 'children' ? (
@@ -1035,6 +1038,11 @@ const Concept = ({
                     </button>
                   )}
                 </div>
+
+                {currentEdgeDeleted ? (
+                  <div style={styles.removedNotice}>This question has been removed.</div>
+                ) : (
+                <>
 
                 {/* Phase 72f: the question's OWN answers/links under its title,
                     both modes. Curated → its answers (owners add/edit/remove in
@@ -1191,6 +1199,8 @@ const Concept = ({
                     onFeedbackAutoOpened={onPendingFeedbackConsumed}
                   />
                 )}
+                </>
+                )}
               </>
             ) : effectiveViewMode === 'tunnel' ? (
               <TunnelView
@@ -1249,13 +1259,13 @@ const Concept = ({
         graphTabId={graphTabId}
         onNavigate={onNavigate}
         isGuest={isGuest}
-        canCreate={canCreate}
+        canCreate={canCreate && !currentEdgeDeleted}
         communityId={concept?.community_id}
         curated={communityMode === 'curated'}
       />
 
       {/* Phase 72c-1: edit-mode add-child button (curated owners, children view) */}
-      {editing && !showNewCard && !nestMode && (
+      {editing && !showNewCard && !nestMode && !currentEdgeDeleted && (
         <button
           style={styles.addFab}
           onClick={() => setShowNewCard(true)}
@@ -1264,7 +1274,7 @@ const Concept = ({
       )}
 
       {/* Phase 72e-2: page-level branch suggestions (curated, children view) */}
-      {communityMode === 'curated' && effectiveViewMode === 'children' && parentEdgeId && (
+      {communityMode === 'curated' && effectiveViewMode === 'children' && parentEdgeId && !currentEdgeDeleted && (
         <PageFeedbackLauncher
           communityId={concept?.community_id}
           parentEdgeId={parentEdgeId}
@@ -1363,7 +1373,7 @@ const Concept = ({
       )}
 
       {/* Phase 73: curated restructure action bar (group / move into / ungroup). */}
-      {editing && (restructureSel.size > 0 || ungroupConcept) && (
+      {editing && !currentEdgeDeleted && (restructureSel.size > 0 || ungroupConcept) && (
         <RestructureBar
           selectedEdgeIds={restructureSel}
           siblings={children}
@@ -1706,6 +1716,13 @@ const styles = {
     textAlign: 'center',
     padding: '60px 20px',
     color: '#666',
+  },
+  removedNotice: {
+    textAlign: 'center',
+    padding: '60px 20px',
+    color: '#666',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontSize: '18px',
   },
   nestBar: {
     position: 'fixed',

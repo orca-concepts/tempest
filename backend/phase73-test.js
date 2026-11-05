@@ -261,8 +261,11 @@ async function run() {
     const g = await buildCurated();
     const ansA = await mkAnswer(g.eA);
     const seqAB = await mkSeq(g.eA, g.eB); // touches A → removed on ungroup
+    const fbA1 = await mkFeedback(g.cid, g.eA);
+    const fbA2 = await mkFeedback(g.cid, g.eA); // two non-hidden feedback items on A
     const dry = await api('POST', `/concepts/edges/${g.eA}/ungroup`, ownerTok, { dryRun: true });
     check('ungroup dryRun preview', dry.status === 200 && dry.data.movedCount === 2 && dry.data.answersRemoved === 1 && dry.data.removedSequenceLinks.length === 1, JSON.stringify(dry.data));
+    check('ungroup dryRun feedbackArchived count', dry.data.feedbackArchived === 2, JSON.stringify(dry.data));
     const res = await api('POST', `/concepts/edges/${g.eA}/ungroup`, ownerTok, {});
     check('ungroup success', res.status === 200 && res.data.deletedEdgeId === g.eA && res.data.movedCount === 2, JSON.stringify(res.data));
     check('ungroup: A1 moved up to {R}', pathEq((await edgePath(g.eA1)).path, [g.R]) && (await edgePath(g.eA1)).parent === g.R);

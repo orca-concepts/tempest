@@ -153,6 +153,7 @@ export default function RestructureBar({
     const line = preview
       ? `Moves ${preview.movedCount} ${preview.movedCount === 1 ? 'child' : 'children'} up to this level and removes “${ungroupConcept.name}”.`
         + (preview.answersRemoved > 0 ? ` Its ${preview.answersRemoved} answer${preview.answersRemoved === 1 ? '' : 's'} will be removed with it.` : '')
+        + (preview.feedbackArchived > 0 ? ` Its ${preview.feedbackArchived} feedback item${preview.feedbackArchived === 1 ? '' : 's'} will be archived.` : '')
         + seqPhrase(preview.removedSequenceLinks)
       : null;
     return (

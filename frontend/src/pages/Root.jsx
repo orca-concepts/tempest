@@ -346,7 +346,7 @@ const Root = ({
 
   return (
     <div style={styles.container}>
-      <main style={styles.main}>
+      <main style={(editing && (restructureSel.size > 0 || ungroupConcept)) ? { ...styles.main, paddingBottom: '260px' } : styles.main}>
         {communityName && (
           <div style={styles.communityTitleRow}>
             <div style={styles.communityTitle}>

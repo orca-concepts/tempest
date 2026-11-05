@@ -243,6 +243,22 @@ const AppShell = () => {
     }
   }, [loading, tabsLoaded, communities, activeTab, graphTabs, activeCommunityId]);
 
+  // Tab-mgmt fix (?gtab root tab): a root tab carries no community (community_id
+  // null), so when the page is reloaded with ?gtab=<root tab id>, loadAllTabs
+  // can't set the active community and the mount restore effect skipped it (because
+  // ?gtab was present). Result: "No community selected" despite a valid stored
+  // slug. Order-independent recovery: once tabs + the community list have resolved,
+  // if nothing has set the active community, restore the browser's stored choice.
+  // Deep links (/concept, /link, /c/:slug) decide the community themselves, so skip
+  // them; and a non-root ?gtab tab already set activeCommunityId in loadAllTabs, so
+  // this is a no-op there (guard on activeCommunityId == null).
+  useEffect(() => {
+    if (!tabsLoaded || communities.length === 0) return;
+    if (hasDeepLinkInUrl) return;
+    if (activeCommunityId != null) return;
+    applyStoredCommunity(communities);
+  }, [communities, tabsLoaded, activeCommunityId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Phase 72a: re-fetch the community list (e.g. after owner add/remove, which
   // can change `is_owner` for the current user).
   const refreshCommunities = useCallback(async () => {

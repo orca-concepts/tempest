@@ -15,6 +15,7 @@ import InfoPage from '../components/InfoPage';
 import ComboListView from '../components/ComboListView';
 import ComboTabContent from '../components/ComboTabContent';
 import LegalPage from '../components/LegalPage';
+import ContactPage from '../components/ContactPage';
 import TermsPage from '../components/TermsPage';
 import PrivacyPage from '../components/PrivacyPage';
 import CopyrightPolicyPage from '../components/CopyrightPolicyPage';
@@ -51,6 +52,7 @@ const AppShell = () => {
   const LEGAL_SLUGS = ['legal', 'terms', 'privacy', 'copyright', 'copyright-policy', 'report-infringement', 'counter-notice', 'admin/legal'];
   const infoSlug = INFO_SLUGS.find(s => location.pathname === `/${s}`);
   const isLegalPage = LEGAL_SLUGS.some(s => location.pathname === `/${s}`);
+  const isContactPage = location.pathname === '/contact';
 
   // Graph tabs (new Phase 5c — persistent navigation panes)
   const [graphTabs, setGraphTabs] = useState([]);
@@ -1597,6 +1599,7 @@ const AppShell = () => {
             <button style={{ ...styles.navLink, ...(infoSlug === 'thoroughly-conscious-ignorance' ? styles.navLinkActive : {}) }} onClick={() => navigate('/thoroughly-conscious-ignorance')}>Thoroughly Conscious Ignorance</button>
             <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>What is orca?</button>
             {!isOutreachMode && <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>}
+            <button style={{ ...styles.navLink, ...(isContactPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/contact')}>Contact</button>
           </div>
           {isOutreachMode ? null : isGuest ? (
             <div style={styles.userSection}>
@@ -1655,10 +1658,11 @@ const AppShell = () => {
 
       {/* Phase 30g: Info pages replace normal layout */}
       {/* Legal pages also replace normal layout */}
-      {infoSlug || isLegalPage ? (
+      {infoSlug || isLegalPage || isContactPage ? (
         <div style={styles.mainLayout}>
           <div style={styles.contentArea}>
             {infoSlug && <InfoPage slug={infoSlug} onRequestLogin={handleRequestLogin} />}
+            {location.pathname === '/contact' && <ContactPage />}
             {location.pathname === '/legal' && <LegalPage />}
             {location.pathname === '/terms' && <TermsPage />}
             {location.pathname === '/privacy' && <PrivacyPage />}

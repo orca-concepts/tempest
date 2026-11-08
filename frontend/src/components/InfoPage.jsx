@@ -9,13 +9,13 @@ const PAGE_TITLES = {
 };
 
 // ── What is orca? content (left column) ──────────────────────
-const UsingOrcaContent = ({ onImageClick }) => {
-  const showImage = (file, alt) => (
+const UsingOrcaContent = ({ onImageClick, navigate }) => {
+  const showImage = (file, alt, maxWidth) => (
     <div style={{ marginBottom: '28px' }}>
       <img
         src={`/images/using-orca/${file}`}
         alt={alt}
-        style={usingOrcaStyles.heroImage}
+                style={{ ...usingOrcaStyles.heroImage, ...(maxWidth ? { maxWidth, margin: '0 auto' } : {}) }}
         onClick={() => onImageClick({
           slides: [{ image: `/images/using-orca/${file}`, caption: '' }],
           index: 0,
@@ -28,44 +28,40 @@ const UsingOrcaContent = ({ onImageClick }) => {
     <div>
 
       <p style={usingOrcaStyles.intro}>
-        orca is a tool for exploring research questions. Research questions can range from the broad and
-        abstract to the specific and concrete, and the work of answering the former lies in
-        answering the latter.
+        orca treats research questions as categories. An open goal question holds together 
+        the more concrete questions that pursue it and the linked research that answers them.
       </p>
+  
+      <div style={usingOrcaStyles.sectionTitle}>Goal questions as categories</div>
       <p style={usingOrcaStyles.intro}>
-        Mapping the relationships between these questions in hierarchies of abstract parents and
-        concrete children can help us consider and explore the work questions do in science.
-        Linking research work to questions provides the final concretion, instantiating questions
-        with the research aimed at answering them.
+        Exploring the relationship between members of the same goal category can inspire new ideas.
+        Answered questions are ordered by the publication date of their research, with open questions on top,
+        so scrolling through a goal question shows how it has been pursued. Each answer links its paper and 
+        states the finding.
       </p>
+      {showImage('goal-page.png', 'A goal question page with answered and open child questions')}
 
-      {showImage('children_view_questions_soil.png', 'Children view of research questions')}
-
-      <div style={usingOrcaStyles.sectionTitle}>Votes</div>
+      <div style={usingOrcaStyles.sectionTitle}>Curated communities with researcher feedback</div>
       <p style={usingOrcaStyles.intro}>
-        You can view all the questions and links you've voted for on a single page for easy navigation and 
-        maintenance of votes.
+        The moderators of a community decide which questions appear, how they are grouped,
+        and which research answers them.
       </p>
-
-      {showImage('votes_page_soil.png', 'Votes page listing voted questions and links')}
-
-      <div style={usingOrcaStyles.sectionTitle}>Append-only; vote set colors</div>
+      {showImage('edit-mode.png', 'A community page in edit mode')}
       <p style={usingOrcaStyles.intro}>
-        As users vote on different questions, common patterns of votes will emerge, groups of users who voted 
-        for the same set of child questions for a given parent. These groups are visualized by color swatches 
-        which can be clicked to filter the page to only that set.
+        Readers can suggest rewordings, new questions, and changes to answers. 
+        Moderators reply and mark each suggestion incorporated or declined, so the graph keeps pace with its field.
       </p>
+      {showImage('feedback.png', "A reader suggestion with an editor's reply", '420px')}
       <p style={usingOrcaStyles.intro}>
-        This feature is designed to allow the child set of questions for a given parent 
-        (or indeed the set of root level questions) to be a dynamic expression of that set of different users’ 
-        preferred directions for research. orca is append-only, meaning questions cannot be deleted once they 
-        are made, so curating and maintaining ones votes is an important mechanism by which the app can display 
-        and weight the different avenues that can emerge from a given question. Viewing and comparing these color 
-        sets allows users to explore how that given question can be differentiated, which might help to spark new 
-        ideas for differentiation.
+        The graph view shows a community's full structure, with its answers, at a glance:
       </p>
-        {showImage('vote_set.png', 'Children view displaying color vote sets')}
+      {showImage('graph-view.png', 'Graph view of a community')}
 
+      <div style={usingOrcaStyles.sectionTitle}>Open communities</div>
+      <p style={usingOrcaStyles.intro}>
+        Communities can also be open: anyone can add questions and links, and votes show which directions
+        people favor.
+      </p>
 
       <p style={usingOrcaStyles.intro}>
         This is a free, open-source project for use by researchers:{' '}
@@ -186,6 +182,19 @@ const usingOrcaStyles = {
     textDecorationColor: '#ccc',
     textUnderlineOffset: '2px',
     fontFamily: '"EB Garamond", Georgia, serif',
+  },
+  subtleLinkButton: {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    color: '#333',
+    textDecoration: 'underline',
+    textDecorationColor: '#ccc',
+    textUnderlineOffset: '2px',
+    fontFamily: '"EB Garamond", Georgia, serif',
+    fontSize: 'inherit',
+    lineHeight: 'inherit',
   },
   sectionTitle: {
     fontSize: '1.1em',
@@ -472,7 +481,7 @@ const InfoPage = ({ slug, onRequestLogin }) => {
         <div style={styles.twoColWrapper}>
           <div style={styles.leftCol}>
             <h1 style={{ ...styles.pageTitle, ...(isEssay ? styles.pageTitleCentered : {}) }}>{title}</h1>
-            {isUsingOrca && <UsingOrcaContent onImageClick={setLightbox} />}
+            {isUsingOrca && <UsingOrcaContent onImageClick={setLightbox} navigate={navigate} />}
             {isEssay && <ThoroughlyConsciousIgnoranceContent onImageClick={setLightbox} />}
 
             {isEssay && (

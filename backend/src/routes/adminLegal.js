@@ -8,6 +8,7 @@ router.get('/legal/notices', authenticateToken, adminLegalController.getNotices)
 router.get('/legal/counter-notices', authenticateToken, adminLegalController.getCounterNotices);
 router.get('/legal/removals', authenticateToken, adminLegalController.getRemovals);
 router.post('/legal/removals/:id/mark-notified', authenticateToken, adminLegalController.markNotified);
+router.post('/legal/removals/:id/restore', authenticateToken, adminLegalController.restoreRemoval);
 router.get('/legal/repeat-infringers', authenticateToken, adminLegalController.getRepeatInfringers);
 router.post('/legal/strikes/:id/clear', authenticateToken, adminLegalController.clearStrike);
 

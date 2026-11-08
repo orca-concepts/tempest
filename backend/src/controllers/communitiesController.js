@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { isOwner } = require('../utils/communityAccess');
 
 // Derive a URL-safe slug from a community name. Uniqueness is enforced by the
 // caller (append -2, -3, ... on collision).
@@ -21,7 +22,6 @@ const communitiesController = {
       const userId = req.user ? req.user.userId : null;
       const result = await pool.query(
         `SELECT comm.id, comm.name, comm.slug, comm.description, comm.mode, comm.created_at,
-                u.username AS created_by_username,
                 (SELECT COUNT(*) FROM concepts c WHERE c.community_id = comm.id) AS concept_count,
                 (SELECT COUNT(*) FROM edges e
                    JOIN concepts c ON c.id = e.child_id
@@ -33,7 +33,6 @@ const communitiesController = {
                   WHERE co.community_id = comm.id AND co.user_id = $1
                 ) AS is_owner
          FROM communities comm
-         LEFT JOIN users u ON u.id = comm.created_by
          ORDER BY comm.name`,
         [userId]
       );
@@ -53,13 +52,11 @@ const communitiesController = {
       const userId = req.user ? req.user.userId : null;
       const result = await pool.query(
         `SELECT comm.id, comm.name, comm.slug, comm.description, comm.mode, comm.created_at,
-                u.username AS created_by_username,
                 EXISTS (
                   SELECT 1 FROM community_owners co
                   WHERE co.community_id = comm.id AND co.user_id = $2
                 ) AS is_owner
          FROM communities comm
-         LEFT JOIN users u ON u.id = comm.created_by
          WHERE LOWER(comm.slug) = LOWER($1)`,
         [slug, userId]
       );
@@ -68,20 +65,24 @@ const communitiesController = {
       }
       const community = result.rows[0];
 
-      // LEFT JOIN users through the SET NULL added_by/user_id provenance.
-      const owners = await pool.query(
-        `SELECT co.user_id, u.username, u.orcid_id
-           FROM community_owners co
-           LEFT JOIN users u ON u.id = co.user_id
-          WHERE co.community_id = $1
-          ORDER BY u.username`,
-        [community.id]
-      );
-      community.owners = owners.rows.map((o) => ({
-        userId: o.user_id,
-        username: o.username,
-        orcidId: o.orcid_id,
-      }));
+      // Owner usernames are a membership detail; return the `owners` list only to
+      // owners of this community. Readers and guests get `is_owner` but no roster.
+      if (userId && (await isOwner(community.id, userId))) {
+        // LEFT JOIN users through the SET NULL added_by/user_id provenance.
+        const owners = await pool.query(
+          `SELECT co.user_id, u.username, u.orcid_id
+             FROM community_owners co
+             LEFT JOIN users u ON u.id = co.user_id
+            WHERE co.community_id = $1
+            ORDER BY u.username`,
+          [community.id]
+        );
+        community.owners = owners.rows.map((o) => ({
+          userId: o.user_id,
+          username: o.username,
+          orcidId: o.orcid_id,
+        }));
+      }
 
       res.json({ community });
     } catch (error) {

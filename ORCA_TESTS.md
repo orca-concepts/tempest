@@ -587,4 +587,31 @@ Both features were removed completely. Verify they are gone and nothing else reg
 
 ---
 
+## Privacy/legal fixes (Nov 2026)
+
+Three scoped fixes: data-export completeness, owner-roster visibility, and admin restore of legal removals. Scripted coverage was run with a throwaway admin on a separate-port backend (33 checks, all passing); re-create it from the fix spec if you need to re-run.
+
+### FIX 1 — Data export completeness (`GET /api/users/me/export`)
+- [ ] The export JSON adds, under `contributions`: `feedback_items` (authored, **including the user's own hidden items**, each with `community_name`/`community_slug`, `kind`, `comment`, `proposal`, `snapshot`, `status`, `is_hidden`, timestamps), `feedback_replies` (authored), `link_addenda` (authored, with `link_id`), `concepts_created`, and `edges_created` (**soft-deleted edges included, with `deleted_at`**)
+- [ ] Under `votes_and_subscriptions`: `feedback_votes` the user cast
+- [ ] A top-level `communities` array lists communities the user **created** (`role: 'creator'`) and communities they **own** but did not create (`role: 'owner'`, `is_creator: false`), each with id/name/slug/mode/created_at/added_at
+- [ ] Another user's feedback items/replies/votes/questions do NOT appear in the requester's export
+- [ ] The existing sections and the 2-exports-per-12-months limit are unchanged; all new queries use LEFT JOINs through SET NULL columns and `.catch(() => [])`
+
+### FIX 2 — Owner usernames visible only to owners (`GET /api/communities/:slug`)
+- [ ] An owner of the community still receives the `owners` array (userId/username/orcidId) and `is_owner: true`
+- [ ] A reader (logged-in non-owner) receives the community with `is_owner: false` and **no `owners` field**
+- [ ] A guest receives the community with **no `owners` field**
+- [ ] `CommunityHeaderControls` still shows the owners panel for owners (its `|| []` fallback and `isOwner` gate mean readers/guests are unaffected). Note: `created_by_username` is still returned to everyone in `listCommunities` and `getCommunityBySlug` (unchanged, by design)
+
+### FIX 3 — Admin restore for legal removals (`POST /api/admin/legal/removals/:id/restore`)
+- [ ] Migration runs twice cleanly; `legal_removals` has `restored_at TIMESTAMP` and `restored_by INTEGER` (FK users ON DELETE SET NULL)
+- [ ] Restoring a `concept` or `web_link` removal clears `legal_hold`; a 200 returns the removal row with `restored_at`/`restored_by` set and an `effect` string
+- [ ] Restoring an `edge` removal also sets `is_hidden = false` — but only when the edge is NOT soft-deleted (`deleted_at IS NULL`) and its flag count is below 10; otherwise `is_hidden` is left in place and the `effect` says so (soft-deleted / flag threshold)
+- [ ] A second restore of the same removal returns 409 `{ code: 'already_restored' }`; an unknown id returns 404
+- [ ] Non-admins get 403, guests 401, and a rejected restore leaves `legal_hold` untouched; `dmca_strikes` are never modified by restore
+- [ ] `AdminLegalRemovalsPanel` shows a "Restore" button (inline confirm, no `window.confirm`) on unrestored removals, a "Restored <date>" label afterwards, and the effect/errors inline
+
+---
+
 **END OF TESTING CHECKLIST**

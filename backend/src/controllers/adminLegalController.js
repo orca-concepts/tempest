@@ -124,6 +124,127 @@ const adminLegalController = {
     }
   },
 
+  // POST /api/admin/legal/removals/:id/restore — reverse a legal removal.
+  // Clears legal_hold on the target (concept / edge / web_link). For an edge it
+  // also unhides, but only when the edge is not soft-deleted and its current flag
+  // count is below the hide threshold; otherwise is_hidden is left as is. DMCA
+  // strikes are never touched here (clearing a strike is a separate admin action).
+  restoreRemoval: async (req, res) => {
+    const FLAG_HIDE_THRESHOLD = 10;
+    try {
+      const adminUserId = parseInt(process.env.ADMIN_USER_ID);
+      if (!adminUserId || req.user.userId !== adminUserId) {
+        return res.status(403).json({ error: 'Only administrators can restore legal removals' });
+      }
+
+      const removalId = parseInt(req.params.id, 10);
+      if (isNaN(removalId)) {
+        return res.status(400).json({ error: 'Invalid removal ID' });
+      }
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        const removalRes = await client.query(
+          'SELECT * FROM legal_removals WHERE id = $1 FOR UPDATE',
+          [removalId]
+        );
+        if (removalRes.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Legal removal not found' });
+        }
+        const removal = removalRes.rows[0];
+        if (removal.restored_at) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'This removal has already been restored', code: 'already_restored' });
+        }
+
+        let effect;
+
+        if (removal.target_type === 'concept') {
+          const r = await client.query(
+            'UPDATE concepts SET legal_hold = false WHERE id = $1 RETURNING id',
+            [removal.target_id]
+          );
+          effect = r.rows.length === 0
+            ? 'Target concept no longer exists; recorded the restore anyway.'
+            : 'Cleared legal_hold on the concept.';
+
+        } else if (removal.target_type === 'web_link') {
+          const r = await client.query(
+            'UPDATE concept_links SET legal_hold = false WHERE id = $1 RETURNING id',
+            [removal.target_id]
+          );
+          effect = r.rows.length === 0
+            ? 'Target link no longer exists; recorded the restore anyway.'
+            : 'Cleared legal_hold on the link.';
+
+        } else if (removal.target_type === 'edge') {
+          const edgeRes = await client.query(
+            'SELECT id, deleted_at FROM edges WHERE id = $1',
+            [removal.target_id]
+          );
+          if (edgeRes.rows.length === 0) {
+            await client.query(
+              'UPDATE edges SET legal_hold = false WHERE id = $1',
+              [removal.target_id]
+            );
+            effect = 'Target edge no longer exists; recorded the restore anyway.';
+          } else {
+            const edge = edgeRes.rows[0];
+            const flagRes = await client.query(
+              'SELECT COUNT(*)::int AS count FROM concept_flags WHERE edge_id = $1',
+              [removal.target_id]
+            );
+            const flagCount = flagRes.rows[0].count;
+            const softDeleted = edge.deleted_at !== null;
+            const atThreshold = flagCount >= FLAG_HIDE_THRESHOLD;
+
+            if (softDeleted || atThreshold) {
+              // Clear only the legal hold; leave is_hidden as is.
+              await client.query(
+                'UPDATE edges SET legal_hold = false WHERE id = $1',
+                [removal.target_id]
+              );
+              effect = softDeleted
+                ? 'Cleared legal_hold, but left the edge hidden because it is soft-deleted.'
+                : `Cleared legal_hold, but left the edge hidden because it has ${flagCount} community flags (threshold ${FLAG_HIDE_THRESHOLD}).`;
+            } else {
+              await client.query(
+                'UPDATE edges SET legal_hold = false, is_hidden = false WHERE id = $1',
+                [removal.target_id]
+              );
+              effect = 'Cleared legal_hold and unhid the edge.';
+            }
+          }
+        } else {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: `Unknown target_type: ${removal.target_type}` });
+        }
+
+        const updated = await client.query(
+          `UPDATE legal_removals
+             SET restored_at = NOW(), restored_by = $2
+           WHERE id = $1
+           RETURNING *`,
+          [removalId, req.user.userId]
+        );
+
+        await client.query('COMMIT');
+        res.json({ removal: updated.rows[0], effect });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error restoring legal removal:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
   getNotices: async (req, res) => {
     try {
       const adminUserId = parseInt(process.env.ADMIN_USER_ID);

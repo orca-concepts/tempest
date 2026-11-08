@@ -832,6 +832,14 @@ const createTables = async () => {
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_legal_removals_reason ON legal_removals(removal_reason, removed_at);
     `);
+    // Admin restore (Nov 2026): record who reversed a legal removal and when.
+    // Idempotent for databases whose legal_removals predates these columns.
+    await client.query(`
+      ALTER TABLE legal_removals ADD COLUMN IF NOT EXISTS restored_at TIMESTAMP;
+    `);
+    await client.query(`
+      ALTER TABLE legal_removals ADD COLUMN IF NOT EXISTS restored_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+    `);
 
     // ============================================================
     // legal_hold flag on hideable tables (Phase 53b)

@@ -177,6 +177,8 @@ const usersController = {
         graphVotes, swapVotes, linkVotes,
         webLinkVotes, flagVotes, tunnelVotes, pageCommentVotes,
         comboSubs, graphTabs,
+        feedbackItems, feedbackReplies, feedbackVotes, linkAddenda,
+        communitiesGoverned, conceptsCreated, edgesCreated,
       ] = await Promise.all([
         // Web links added by user
         pool.query(
@@ -279,6 +281,73 @@ const usersController = {
            FROM graph_tabs WHERE user_id = $1`,
           [userId]
         ).then(r => r.rows).catch(e => { console.error('export: graph_tabs failed:', e.message); return []; }),
+
+        // Feedback items authored (include this user's own hidden items — it is their data)
+        pool.query(
+          `SELECT fi.id, fi.kind, fi.comment, fi.proposal, fi.snapshot,
+                  fi.status, fi.is_hidden, fi.created_at, fi.updated_at,
+                  comm.name AS community_name, comm.slug AS community_slug
+           FROM feedback_items fi
+           LEFT JOIN communities comm ON comm.id = fi.community_id
+           WHERE fi.author_id = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: feedback_items failed:', e.message); return []; }),
+
+        // Feedback replies authored
+        pool.query(
+          `SELECT id, feedback_id, body, is_hidden, created_at, updated_at
+           FROM feedback_replies WHERE author_id = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: feedback_replies failed:', e.message); return []; }),
+
+        // Feedback votes cast
+        pool.query(
+          `SELECT feedback_id, created_at
+           FROM feedback_votes WHERE user_id = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: feedback_votes failed:', e.message); return []; }),
+
+        // Link addenda authored
+        pool.query(
+          `SELECT id, concept_link_id AS link_id, body, created_at
+           FROM concept_link_addenda WHERE author_id = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: link_addenda failed:', e.message); return []; }),
+
+        // Communities created or owned (role = creator/owner)
+        pool.query(
+          `SELECT comm.id, comm.name, comm.slug, comm.mode, comm.created_at,
+                  (comm.created_by = $1) AS is_creator,
+                  (co.user_id IS NOT NULL) AS is_owner,
+                  co.created_at AS owner_added_at
+           FROM communities comm
+           LEFT JOIN community_owners co
+             ON co.community_id = comm.id AND co.user_id = $1
+           WHERE comm.created_by = $1 OR co.user_id IS NOT NULL`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: communities_governed failed:', e.message); return []; }),
+
+        // Questions created — concept rows (concepts.created_by)
+        pool.query(
+          `SELECT c.id AS concept_id, c.name, c.created_at,
+                  comm.name AS community_name, comm.slug AS community_slug
+           FROM concepts c
+           LEFT JOIN communities comm ON comm.id = c.community_id
+           WHERE c.created_by = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: concepts_created failed:', e.message); return []; }),
+
+        // Questions placed — edge rows (edges.created_by); include soft-deleted edges
+        pool.query(
+          `SELECT e.id AS edge_id, e.child_id AS concept_id, c.name AS concept_name,
+                  e.parent_id, e.graph_path, e.created_at, e.deleted_at,
+                  comm.name AS community_name, comm.slug AS community_slug
+           FROM edges e
+           LEFT JOIN concepts c ON c.id = e.child_id
+           LEFT JOIN communities comm ON comm.id = c.community_id
+           WHERE e.created_by = $1`,
+          [userId]
+        ).then(r => r.rows).catch(e => { console.error('export: edges_created failed:', e.message); return []; }),
       ]);
 
       // Record the export request (after successful data collection)
@@ -304,6 +373,11 @@ const usersController = {
           page_comments: pageComments,
           moderation_comments: moderationComments,
           situations_owned: situations,
+          feedback_items: feedbackItems,
+          feedback_replies: feedbackReplies,
+          link_addenda: linkAddenda,
+          concepts_created: conceptsCreated,
+          edges_created: edgesCreated,
         },
         votes_and_subscriptions: {
           graph_votes: graphVotes,
@@ -315,7 +389,19 @@ const usersController = {
           page_comment_votes: pageCommentVotes,
           combo_subscriptions: comboSubs,
           graph_tabs: graphTabs,
+          feedback_votes: feedbackVotes,
         },
+        communities: communitiesGoverned.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          mode: c.mode,
+          role: c.is_creator ? 'creator' : 'owner',
+          is_creator: c.is_creator,
+          is_owner: c.is_owner,
+          created_at: c.created_at,
+          added_at: c.owner_added_at,
+        })),
       };
 
       const isoDate = new Date().toISOString().split('T')[0];

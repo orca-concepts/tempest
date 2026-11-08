@@ -32,6 +32,12 @@ const AdminLegalRemovalsPanel = () => {
   const [removalResult, setRemovalResult] = useState(null); // { noticeId, email, username, removalId }
   const [copiedEmail, setCopiedEmail] = useState(false);
 
+  // Restore (reverse a legal removal) state
+  const [restoringId, setRestoringId] = useState(null); // removal id with the inline confirm open
+  const [restoreSubmitting, setRestoreSubmitting] = useState(false);
+  const [restoreError, setRestoreError] = useState(null); // { id, message }
+  const [restoreEffect, setRestoreEffect] = useState(null); // { id, effect }
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -102,6 +108,21 @@ const AdminLegalRemovalsPanel = () => {
       alert(err.response?.data?.error || 'Failed to clear strike');
     } finally {
       setClearSubmitting(false);
+    }
+  };
+
+  const handleRestore = async (removalId) => {
+    setRestoreSubmitting(true);
+    setRestoreError(null);
+    try {
+      const res = await adminAPI.restoreRemoval(removalId);
+      setRestoreEffect({ id: removalId, effect: res.data.effect });
+      setRestoringId(null);
+      await loadData();
+    } catch (err) {
+      setRestoreError({ id: removalId, message: err.response?.data?.error || 'Restore failed' });
+    } finally {
+      setRestoreSubmitting(false);
     }
   };
 
@@ -511,11 +532,50 @@ const AdminLegalRemovalsPanel = () => {
                   <div style={styles.detailRow}>
                     <span style={styles.detailLabel}>Status:</span>
                     <span style={styles.detailValue}>
-                      {r.restored_at
-                        ? `Restored ${formatDate(r.restored_at)}${r.restored_reason ? ` — ${r.restored_reason}` : ''}`
-                        : 'Active'}
+                      {r.restored_at ? (
+                        `Restored ${formatDate(r.restored_at)}`
+                      ) : restoringId === r.id ? (
+                        <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          Reverse this removal?
+                          <button
+                            onClick={() => handleRestore(r.id)}
+                            disabled={restoreSubmitting}
+                            style={styles.submitButton}
+                          >
+                            {restoreSubmitting ? 'Restoring...' : 'Confirm restore'}
+                          </button>
+                          <button
+                            onClick={() => { setRestoringId(null); setRestoreError(null); }}
+                            style={styles.cancelButton}
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                          Active
+                          <button
+                            onClick={() => { setRestoringId(r.id); setRestoreError(null); setRestoreEffect(null); }}
+                            style={styles.removeButton}
+                          >
+                            Restore
+                          </button>
+                        </span>
+                      )}
                     </span>
                   </div>
+                  {restoreEffect && restoreEffect.id === r.id && (
+                    <div style={styles.detailRow}>
+                      <span style={styles.detailLabel}></span>
+                      <span style={styles.detailValue}>{restoreEffect.effect}</span>
+                    </div>
+                  )}
+                  {restoreError && restoreError.id === r.id && (
+                    <div style={styles.detailRow}>
+                      <span style={styles.detailLabel}></span>
+                      <span style={{ ...styles.detailValue, color: '#333' }}>{restoreError.message}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

@@ -486,6 +486,8 @@ export const adminAPI = {
     api.post('/admin/legal-removal', data),
   markNotified: (removalId) =>
     api.post(`/admin/legal/removals/${removalId}/mark-notified`),
+  restoreRemoval: (removalId) =>
+    api.post(`/admin/legal/removals/${removalId}/restore`),
   getRepeatInfringers: () =>
     api.get('/admin/legal/repeat-infringers'),
   clearStrike: (strikeId, reason) =>

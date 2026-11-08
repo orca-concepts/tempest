@@ -104,17 +104,18 @@ const SearchField = ({ parentId, path, viewMode, onConceptAdded, isRootPage, gra
 
   const handleResultClick = (concept) => {
     if (graphTabId && onNavigate) {
-      // Tab mode: navigate current tab to decontextualized flip view
+      // Tab mode: navigate current tab to the concept's children view (as a root,
+      // decontextualized — path empty).
       onNavigate(graphTabId, {
         tabType: 'concept',
         conceptId: concept.id,
         path: [],
-        viewMode: 'flip',
+        viewMode: 'children',
         label: concept.name,
       });
     } else {
       // Standalone mode: URL navigation
-      navigate(`/concept/${concept.id}?view=flip`);
+      navigate(`/concept/${concept.id}`);
     }
     setQuery('');
     setShowDropdown(false);

@@ -14,12 +14,6 @@ const movedPhrase = (movedCount, descendantCount) => {
   return `${q} (and ${descendantCount === 1 ? 'its' : 'their'} ${descendantCount} descendant${descendantCount === 1 ? '' : 's'})`;
 };
 
-const seqPhrase = (removed) => {
-  const n = removed ? removed.length : 0;
-  if (!n) return '';
-  return ` ${n} precedent/subsequent link${n === 1 ? '' : 's'} will be removed.`;
-};
-
 export default function RestructureBar({
   selectedEdgeIds,
   siblings = [],
@@ -154,7 +148,6 @@ export default function RestructureBar({
       ? `Moves ${preview.movedCount} ${preview.movedCount === 1 ? 'child' : 'children'} up to this level and removes “${ungroupConcept.name}”.`
         + (preview.answersRemoved > 0 ? ` Its ${preview.answersRemoved} answer${preview.answersRemoved === 1 ? '' : 's'} will be removed with it.` : '')
         + (preview.feedbackArchived > 0 ? ` Its ${preview.feedbackArchived} feedback item${preview.feedbackArchived === 1 ? '' : 's'} will be archived.` : '')
-        + seqPhrase(preview.removedSequenceLinks)
       : null;
     return (
       <div style={styles.bar}>
@@ -176,7 +169,7 @@ export default function RestructureBar({
   // ---- Group form ----
   if (phase === 'group') {
     const line = preview
-      ? `Creates “${name.trim()}” here and moves ${movedPhrase(preview.movedCount, preview.descendantCount)} under it.${seqPhrase(preview.removedSequenceLinks)}`
+      ? `Creates “${name.trim()}” here and moves ${movedPhrase(preview.movedCount, preview.descendantCount)} under it.`
       : null;
     return (
       <div style={styles.bar}>
@@ -209,7 +202,7 @@ export default function RestructureBar({
     const targets = siblings.filter((s) => !(selectedEdgeIds && selectedEdgeIds.has(s.edge_id)));
     const targetName = (siblings.find((s) => s.edge_id === moveTarget) || {}).name;
     const line = preview
-      ? `Moves ${movedPhrase(preview.movedCount, preview.descendantCount)} into “${targetName}”.${seqPhrase(preview.removedSequenceLinks)}`
+      ? `Moves ${movedPhrase(preview.movedCount, preview.descendantCount)} into “${targetName}”.`
       : null;
     return (
       <div style={styles.bar}>

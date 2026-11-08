@@ -5,7 +5,7 @@ import LinkifiedText from './LinkifiedText';
 import OrcidBadge from './OrcidBadge';
 
 // Phase 72f: the in-card / own-page link section for OPEN communities. It replaces
-// the side ConceptLinksPanel in children view. Collapsed it shows the question's
+// the former side links panel in children view. Collapsed it shows the question's
 // TOP link (highest vote count, ties newest) with a one-line comment and a vote
 // button; "Show N more links" expands the full list inside the card using the
 // existing LinkCard (all features intact), a Top / New sort toggle, and the
@@ -52,7 +52,7 @@ const CardLinksSection = ({
   const linkRefs = useRef({});
   const requestIdRef = useRef(0);
 
-  // Add-link form state (mirrors ConceptLinksPanel's form).
+  // Add-link form state (same fields as the former links panel form).
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUrl, setNewUrl] = useState('');
   const [newTitle, setNewTitle] = useState('');

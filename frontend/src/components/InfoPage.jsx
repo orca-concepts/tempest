@@ -41,15 +41,6 @@ const UsingOrcaContent = ({ onImageClick }) => {
 
       {showImage('children_view_questions_soil.png', 'Children view of research questions')}
 
-      <div style={usingOrcaStyles.sectionTitle}>Flip View</div>
-      <p style={usingOrcaStyles.intro}>
-        When a question is attached to multiple parents paths, you can explore those using Flip View.
-        A question's parent path is a good contextualizing mechanism, so adding and exploring questions 
-        that exist in multiple parent paths allows users to compare those different contexts.
-      </p>
-
-      {showImage('flip_view_questions.png', 'Flip View of a question with multiple parent paths')}
-
       <div style={usingOrcaStyles.sectionTitle}>Votes</div>
       <p style={usingOrcaStyles.intro}>
         You can view all the questions and links you've voted for on a single page for easy navigation and 

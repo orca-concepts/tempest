@@ -330,34 +330,14 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_edges_delete_batch ON edges(delete_batch_id) WHERE deleted_at IS NOT NULL;
     `);
 
-    // Phase 72c-2: precedent / subsequent links between SIBLING questions in a
-    // curated community. Directional and stored once: a row (from_edge_id,
-    // to_edge_id) means "from precedes to" — from is the precedent, to is the
-    // subsequent — and is shown on both cards. The siblings-only rule and the
-    // "no reverse link" rule are enforced in the controller, not the schema.
-    // CASCADE on both edge FKs: deleting an edge row drops its sequence links;
-    // soft delete (deleted_at) is handled by the read filter instead.
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS question_sequence_links (
-        id SERIAL PRIMARY KEY,
-        from_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,
-        to_edge_id INTEGER NOT NULL REFERENCES edges(id) ON DELETE CASCADE,
-        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT question_sequence_links_not_self CHECK (from_edge_id <> to_edge_id),
-        CONSTRAINT question_sequence_links_unique UNIQUE (from_edge_id, to_edge_id)
-      );
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_qseq_from ON question_sequence_links(from_edge_id);
-    `);
-    await client.query(`
-      CREATE INDEX IF NOT EXISTS idx_qseq_to ON question_sequence_links(to_edge_id);
-    `);
+    // Precedent / subsequent sibling links (Phase 72c-2, retired) have been removed
+    // along with Flip View. Phases 72–73 were never deployed, so production never
+    // had this table; drop it idempotently in case a dev database still carries it.
+    await client.query(`DROP TABLE IF EXISTS question_sequence_links;`);
 
     // Phase 72e-1: reader feedback (curated communities only). A feedback item is a
     // public suggestion attached to a question card (edge): reword the question,
-    // change an answer, add/remove a precedent or subsequent sibling link, or just
+    // change an answer, suggest a new question/branch (new_child), or just
     // a free-text note. Each item snapshots the text it was written against so the
     // thread stays legible after the owner edits the question. Replies thread under
     // an item; votes are one-per-user and only sort feedback inside its menu.
@@ -385,8 +365,7 @@ const createTables = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT feedback_items_kind_check CHECK (kind IN (
-          'edit_question', 'edit_answer', 'add_precedent', 'remove_precedent',
-          'add_subsequent', 'remove_subsequent', 'new_child', 'general'
+          'edit_question', 'edit_answer', 'new_child', 'general'
         )),
         CONSTRAINT feedback_items_status_check CHECK (status IN ('open', 'incorporated', 'declined'))
       );
@@ -958,9 +937,11 @@ const createTables = async () => {
     `);
 
     // ── Phase 27a: Retire links/fliplinks view modes from graph_tabs ──
+    // Flip View retired: normalize any 'flip' tab back to the default children view
+    // too (the column stays; 'flip' is no longer written or read).
     await client.query(`
       UPDATE graph_tabs SET view_mode = 'children'
-      WHERE view_mode IN ('links', 'fliplinks')
+      WHERE view_mode IN ('links', 'fliplinks', 'flip')
     `);
 
     // Phase 28g: Widen concept name column from VARCHAR(40) to VARCHAR(255)

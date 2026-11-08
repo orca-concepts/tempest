@@ -24,7 +24,6 @@ const optionalAuth = (req, res, next) => {
 
 // Web Links (Phase 6) — GET is guest-accessible, write ops require auth
 router.get('/web-links/by-url', optionalAuth, votesController.getWebLinksByUrl); // Phase 58b-2: cross-concept URL search
-router.get('/web-links/all/:conceptId', optionalAuth, votesController.getAllWebLinksForConcept);
 router.get('/web-links/preview-title', authenticateToken, votesController.previewTitle); // Phase 60a — must be before :edgeId
 router.get('/web-links/votes/me', authenticateToken, votesController.getMyLinkVotes); // Phase 58d-2 — must be before :edgeId
 router.get('/web-links/:linkId/location', optionalAuth, votesController.getWebLinkLocation); // Phase 65a — must be before :edgeId
@@ -88,10 +87,6 @@ router.post('/remove-from-tab', votesController.removeVoteFromTab);
 
 // Vote Set Drift (Phase 23b — retired, returns 410)
 router.get('/drift/:parentEdgeId', votesController.getVoteSetDrift);
-
-// Link votes (similarity votes — Flip View only)
-router.post('/link/add', votesController.addLinkVote);
-router.post('/link/remove', votesController.removeLinkVote);
 
 // Swap votes (replace votes)
 router.get('/swap/:edgeId', votesController.getSwapVotes);

@@ -69,10 +69,6 @@ async function mkEdge(parentId, childId, graphPath, opts = {}) {
   );
   return r.rows[0].id;
 }
-async function mkSeq(fromEdge, toEdge) {
-  const r = await pool.query(`INSERT INTO question_sequence_links (from_edge_id, to_edge_id, created_by) VALUES ($1,$2,NULL) RETURNING id`, [fromEdge, toEdge]);
-  return r.rows[0].id;
-}
 async function mkAnswer(edgeId) {
   const r = await pool.query(`INSERT INTO concept_links (edge_id, url, title, published_on, added_by) VALUES ($1,'http://ex.com','T','2024-01-01',NULL) RETURNING id`, [edgeId]);
   return r.rows[0].id;
@@ -94,10 +90,9 @@ async function edgePath(id) {
 }
 function pathEq(a, b) { return (a || []).join(',') === b.join(','); }
 async function tabPath(id) { const r = await pool.query('SELECT path FROM graph_tabs WHERE id=$1', [id]); return r.rows[0] ? r.rows[0].path : null; }
-async function seqExists(id) { const r = await pool.query('SELECT 1 FROM question_sequence_links WHERE id=$1', [id]); return r.rows.length > 0; }
 async function rowCounts() {
   const q = async (t) => parseInt((await pool.query(`SELECT COUNT(*)::int c FROM ${t}`)).rows[0].c, 10);
-  return { edges: await q('edges'), concepts: await q('concepts'), seq: await q('question_sequence_links'), links: await q('concept_links') };
+  return { edges: await q('edges'), concepts: await q('concepts'), links: await q('concept_links') };
 }
 
 async function run() {
@@ -131,9 +126,6 @@ async function run() {
   // ===== TEST 1: group several ([A,B]) at a mid level =====
   {
     const g = await buildCurated();
-    const seqAB = await mkSeq(g.eA, g.eB);   // both move → kept
-    const seqAC = await mkSeq(g.eA, g.eC);   // A moves, C stays → removed
-    const seqA1A2 = await mkSeq(g.eA1, g.eA2); // both move → kept
     const ansA = await mkAnswer(g.eA);
     const fbA = await mkFeedback(g.cid, g.eA);
     const tabA1x = await mkTab(ownerId, g.A1x, [g.R, g.A, g.A1]);
@@ -143,9 +135,6 @@ async function run() {
     const dry = await api('POST', '/concepts/group-under-new-parent', ownerTok, { selectedEdgeIds: [g.eA, g.eB], name: 'Goal', dryRun: true });
     const after = await rowCounts();
     check('group dryRun returns preview', dry.status === 200 && dry.data.movedCount === 2 && dry.data.descendantCount === 4, JSON.stringify(dry.data));
-    check('group dryRun lists removed seq links (A->C only)',
-      dry.data.removedSequenceLinks && dry.data.removedSequenceLinks.length === 1 && dry.data.removedSequenceLinks[0].linkId === seqAC,
-      JSON.stringify(dry.data.removedSequenceLinks));
     check('group dryRun makes no writes', JSON.stringify(before) === JSON.stringify(after), `${JSON.stringify(before)} vs ${JSON.stringify(after)}`);
 
     // real
@@ -161,9 +150,6 @@ async function run() {
     check('group: soft-deleted Adel rewritten + still deleted', pathEq((await edgePath(g.eAdel)).path, [g.R, N, g.A, g.A2]) && (await edgePath(g.eAdel)).deleted);
     check('group: answer still on eA (same edge id)', (await pool.query('SELECT 1 FROM concept_links WHERE id=$1 AND edge_id=$2', [ansA, g.eA])).rows.length === 1);
     check('group: feedback still on eA', (await pool.query('SELECT 1 FROM feedback_items WHERE id=$1 AND edge_id=$2', [fbA, g.eA])).rows.length === 1);
-    check('group: kept seq A->B survives', await seqExists(seqAB));
-    check('group: kept seq A1->A2 survives', await seqExists(seqA1A2));
-    check('group: crossing seq A->C removed (== preview)', !(await seqExists(seqAC)));
     check('group: graph_tab inside moved subtree rewritten', pathEq(await tabPath(tabA1x), [g.R, N, g.A, g.A1]));
 
     // restore a soft-deleted descendant at the NEW location via createChild
@@ -260,11 +246,10 @@ async function run() {
   {
     const g = await buildCurated();
     const ansA = await mkAnswer(g.eA);
-    const seqAB = await mkSeq(g.eA, g.eB); // touches A → removed on ungroup
     const fbA1 = await mkFeedback(g.cid, g.eA);
     const fbA2 = await mkFeedback(g.cid, g.eA); // two non-hidden feedback items on A
     const dry = await api('POST', `/concepts/edges/${g.eA}/ungroup`, ownerTok, { dryRun: true });
-    check('ungroup dryRun preview', dry.status === 200 && dry.data.movedCount === 2 && dry.data.answersRemoved === 1 && dry.data.removedSequenceLinks.length === 1, JSON.stringify(dry.data));
+    check('ungroup dryRun preview', dry.status === 200 && dry.data.movedCount === 2 && dry.data.answersRemoved === 1, JSON.stringify(dry.data));
     check('ungroup dryRun feedbackArchived count', dry.data.feedbackArchived === 2, JSON.stringify(dry.data));
     const res = await api('POST', `/concepts/edges/${g.eA}/ungroup`, ownerTok, {});
     check('ungroup success', res.status === 200 && res.data.deletedEdgeId === g.eA && res.data.movedCount === 2, JSON.stringify(res.data));
@@ -272,7 +257,6 @@ async function run() {
     check('ungroup: A2 moved up to {R}', pathEq((await edgePath(g.eA2)).path, [g.R]));
     check('ungroup: deep A1x path {R,A1}', pathEq((await edgePath(g.eA1x)).path, [g.R, g.A1]));
     check('ungroup: A soft-deleted', (await edgePath(g.eA)).deleted);
-    check('ungroup: seq touching A removed', !(await seqExists(seqAB)));
     // re-add A at this level restores WITHOUT its old children
     const restore = await api('POST', '/concepts/child', ownerTok, { name: 'A', parentId: g.R, path: '' });
     check('ungroup: re-add restores A (restored flag)', restore.status === 201 && restore.data.restored === true, JSON.stringify(restore.data));
@@ -343,7 +327,7 @@ async function run() {
 
 async function cleanup() {
   // concepts.community_id lacks ON DELETE CASCADE on this DB, so remove dependents
-  // first (edges, links, seq, feedback cascade from concepts/edges).
+  // first (edges, links, feedback cascade from concepts/edges).
   for (const cid of created.communities) {
     await pool.query('DELETE FROM feedback_items WHERE community_id=$1', [cid]).catch(() => {});
     await pool.query('DELETE FROM concepts WHERE community_id=$1', [cid]).catch((e) => console.error('cleanup concepts', e.message));

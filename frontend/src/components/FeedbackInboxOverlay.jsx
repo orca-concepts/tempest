@@ -14,10 +14,6 @@ const FONT = '"EB Garamond", Georgia, serif';
 const KIND_LABEL = {
   edit_question: 'Reword question',
   edit_answer: 'Answer change',
-  add_precedent: 'Add precedent',
-  remove_precedent: 'Remove precedent',
-  add_subsequent: 'Add subsequent',
-  remove_subsequent: 'Remove subsequent',
   new_child: 'New question / branch',
   general: 'Comment',
 };

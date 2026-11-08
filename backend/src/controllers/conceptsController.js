@@ -61,52 +61,6 @@ function sortByRecency(rows, recencyOf, createdAtOf) {
   });
 }
 
-// Phase 72c-2: load precedent/subsequent sibling links for a set of page edges in
-// ONE query (no N+1). Returns a Map edgeId → { precedents: [], subsequents: [] }.
-// A row (from→to) means "from precedes to": the TO question is a SUBSEQUENT entry
-// on the FROM card, and the FROM question is a PRECEDENT entry on the TO card.
-// Links touching a deleted (deleted_at) or hidden (is_hidden) edge on either side
-// are excluded, so a deleted question's links vanish from its surviving siblings.
-// Entry shape: { linkId, edgeId, conceptId, name }.
-async function loadSequenceLinksByEdge(edgeIds) {
-  const byEdge = new Map();
-  if (!edgeIds || edgeIds.length === 0) return byEdge;
-  const ensure = (id) => {
-    if (!byEdge.has(id)) byEdge.set(id, { precedents: [], subsequents: [] });
-    return byEdge.get(id);
-  };
-  const result = await pool.query(
-    `SELECT ql.id AS link_id,
-            ql.from_edge_id, ql.to_edge_id,
-            fe.child_id AS from_concept_id, fc.name AS from_name,
-            te.child_id AS to_concept_id, tc.name AS to_name
-       FROM question_sequence_links ql
-       JOIN edges fe ON fe.id = ql.from_edge_id
-       JOIN edges te ON te.id = ql.to_edge_id
-       JOIN concepts fc ON fc.id = fe.child_id
-       JOIN concepts tc ON tc.id = te.child_id
-      WHERE (ql.from_edge_id = ANY($1::int[]) OR ql.to_edge_id = ANY($1::int[]))
-        AND fe.deleted_at IS NULL AND te.deleted_at IS NULL
-        AND fe.is_hidden = false AND te.is_hidden = false
-      ORDER BY ql.id`,
-    [edgeIds]
-  );
-  const onPage = new Set(edgeIds);
-  for (const r of result.rows) {
-    if (onPage.has(r.from_edge_id)) {
-      ensure(r.from_edge_id).subsequents.push({
-        linkId: r.link_id, edgeId: r.to_edge_id, conceptId: r.to_concept_id, name: r.to_name,
-      });
-    }
-    if (onPage.has(r.to_edge_id)) {
-      ensure(r.to_edge_id).precedents.push({
-        linkId: r.link_id, edgeId: r.from_edge_id, conceptId: r.from_concept_id, name: r.from_name,
-      });
-    }
-  }
-  return byEdge;
-}
-
 // Phase 72e-1: open-feedback count per edge for curated cards. One grouped query;
 // counts only live (status = 'open'), not-hidden items. Returns Map edgeId → int.
 async function loadOpenFeedbackCountByEdge(edgeIds) {
@@ -169,8 +123,8 @@ async function loadTopLinkByEdge(edgeIds, userId) {
 // Phase 73: restructuring curated graphs (group / move / ungroup)
 // Shared path-rewrite helpers. These run INSIDE the caller's transaction on a
 // client that has already issued BEGIN. Edge ids are never changed — only
-// graph_path and parent_id are rewritten (keeping answers, feedback and kept
-// sequence links attached), plus every user's graph_tabs path for tabs inside a
+// graph_path and parent_id are rewritten (keeping answers and feedback attached),
+// plus every user's graph_tabs path for tabs inside a
 // moved subtree. Path-scoped matching only (graph_path prefix), never by concept
 // id alone (CLAUDE.md). graph_path is root-to-parent inclusive; graph_tabs store
 // `path` = the viewed edge's graph_path (the parent prefix) and `concept_id` =
@@ -255,48 +209,6 @@ async function applyPathRewrite(client, movedRows, computeNewPath) {
       [newLiteral, r.child_id, oldLiteral]
     );
   }
-}
-
-// Group/move: a sequence link stops joining siblings when exactly one of its two
-// edges moved (XOR). Links between edges that moved together are kept. Returns the
-// removed rows [{ linkId, fromName, toName }]; deletes them unless dryRun.
-async function removeCrossingSequenceLinks(client, movedIds, dryRun) {
-  const removed = await client.query(
-    `SELECT ql.id AS link_id, fc.name AS from_name, tc.name AS to_name
-       FROM question_sequence_links ql
-       JOIN edges fe ON fe.id = ql.from_edge_id
-       JOIN edges te ON te.id = ql.to_edge_id
-       JOIN concepts fc ON fc.id = fe.child_id
-       JOIN concepts tc ON tc.id = te.child_id
-      WHERE (ql.from_edge_id = ANY($1::int[])) <> (ql.to_edge_id = ANY($1::int[]))
-      ORDER BY ql.id`,
-    [movedIds]
-  );
-  const rows = removed.rows.map((r) => ({ linkId: r.link_id, fromName: r.from_name, toName: r.to_name }));
-  if (!dryRun && rows.length) {
-    await client.query('DELETE FROM question_sequence_links WHERE id = ANY($1::int[])', [rows.map((r) => r.linkId)]);
-  }
-  return rows;
-}
-
-// Ungroup: every sequence link touching Q's edge is removed (Q is leaving).
-async function removeSequenceLinksTouching(client, edgeId, dryRun) {
-  const removed = await client.query(
-    `SELECT ql.id AS link_id, fc.name AS from_name, tc.name AS to_name
-       FROM question_sequence_links ql
-       JOIN edges fe ON fe.id = ql.from_edge_id
-       JOIN edges te ON te.id = ql.to_edge_id
-       JOIN concepts fc ON fc.id = fe.child_id
-       JOIN concepts tc ON tc.id = te.child_id
-      WHERE ql.from_edge_id = $1 OR ql.to_edge_id = $1
-      ORDER BY ql.id`,
-    [edgeId]
-  );
-  const rows = removed.rows.map((r) => ({ linkId: r.link_id, fromName: r.from_name, toName: r.to_name }));
-  if (!dryRun && rows.length) {
-    await client.query('DELETE FROM question_sequence_links WHERE id = ANY($1::int[])', [rows.map((r) => r.linkId)]);
-  }
-  return rows;
 }
 
 // Validate + lock the selected sibling edges for a group/move. They must all
@@ -436,14 +348,6 @@ const conceptsController = {
           (r) => r.edge_created_at
         );
         for (const root of result.rows) delete root._recency;
-
-        // Phase 72c-2: precedent/subsequent sibling links for the root list.
-        const seqByEdge = await loadSequenceLinksByEdge(rootEdgeIds);
-        for (const root of result.rows) {
-          const seq = seqByEdge.get(root.edge_id);
-          root.precedents = seq ? seq.precedents : [];
-          root.subsequents = seq ? seq.subsequents : [];
-        }
 
         // Phase 72e-1: open-feedback count per curated card.
         const feedbackByEdge = await loadOpenFeedbackCountByEdge(rootEdgeIds);
@@ -612,7 +516,8 @@ const conceptsController = {
         }
       }
 
-      // Feature (Phase 69): counts for the Flip / Tunnel buttons.
+      // Feature (Phase 69): altParentCount backs the edit-mode "also appears under
+      // N" note; tunnelLinkCount backs the (retired) tunnel view.
       // altParentCount = other non-root parent contexts for this concept (matches
       // getConceptParents, which JOINs the parent concept and so excludes root
       // edges), minus the current context if it is itself a non-root parent.
@@ -697,14 +602,6 @@ const conceptsController = {
         );
         for (const child of childrenResult.rows) delete child._recency;
 
-        // Phase 72c-2: precedent/subsequent sibling links for these children.
-        const seqByEdge = await loadSequenceLinksByEdge(childEdgeIds);
-        for (const child of childrenResult.rows) {
-          const seq = seqByEdge.get(child.edge_id);
-          child.precedents = seq ? seq.precedents : [];
-          child.subsequents = seq ? seq.subsequents : [];
-        }
-
         // Phase 72e-1: open-feedback count per curated card.
         const feedbackByEdge = await loadOpenFeedbackCountByEdge(childEdgeIds);
         for (const child of childrenResult.rows) {
@@ -750,7 +647,8 @@ const conceptsController = {
     }
   },
 
-  // Get all parent contexts for a concept (for flip view)
+  // Get all parent contexts for a concept (used by the Diff modal; also backs the
+  // "also asked in" bridge target resolution).
   getConceptParents: async (req, res) => {
     const { id } = req.params;
     const { originPath } = req.query;
@@ -1921,20 +1819,17 @@ const conceptsController = {
         throw e;
       }
 
-      const removedSequenceLinks = await removeCrossingSequenceLinks(client, movedRows.map((r) => r.id), dryRun);
-
       const movedCount = selectedEdgeIds.length;
       const descendantCount = movedRows.length - movedCount;
 
       if (dryRun) {
         await client.query('ROLLBACK');
-        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved: 0 });
+        return res.json({ dryRun: true, movedCount, descendantCount, answersRemoved: 0 });
       }
       await client.query('COMMIT');
       return res.status(201).json({
         message: 'Grouped under a new question',
         newEdgeId, newConceptId: N, movedCount, descendantCount,
-        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -2019,19 +1914,17 @@ const conceptsController = {
         throw e;
       }
 
-      const removedSequenceLinks = await removeCrossingSequenceLinks(client, movedRows.map((r) => r.id), dryRun);
       const movedCount = selectedEdgeIds.length;
       const descendantCount = movedRows.length - movedCount;
 
       if (dryRun) {
         await client.query('ROLLBACK');
-        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved: 0 });
+        return res.json({ dryRun: true, movedCount, descendantCount, answersRemoved: 0 });
       }
       await client.query('COMMIT');
       return res.status(200).json({
         message: 'Moved into the target question',
         targetEdgeId, movedCount, descendantCount,
-        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -2126,7 +2019,6 @@ const conceptsController = {
         [Qe.id, req.user.userId]
       );
 
-      const removedSequenceLinks = await removeSequenceLinksTouching(client, Qe.id, dryRun);
       const answersRemoved = parseInt((await client.query(
         'SELECT COUNT(*)::int AS c FROM concept_links WHERE edge_id = $1', [Qe.id]
       )).rows[0].c, 10);
@@ -2141,13 +2033,12 @@ const conceptsController = {
 
       if (dryRun) {
         await client.query('ROLLBACK');
-        return res.json({ dryRun: true, movedCount, descendantCount, removedSequenceLinks, answersRemoved, feedbackArchived });
+        return res.json({ dryRun: true, movedCount, descendantCount, answersRemoved, feedbackArchived });
       }
       await client.query('COMMIT');
       return res.status(200).json({
         message: 'Ungrouped',
         movedCount, descendantCount, deletedEdgeId: Qe.id,
-        removedSequenceLinkIds: removedSequenceLinks.map((r) => r.linkId),
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -2328,123 +2219,6 @@ const conceptsController = {
     }
   },
 
-  // Phase 72c-2: create a precedent/subsequent link between two SIBLING questions
-  // in a curated community. Stored once as (from precedes to); shown on both cards.
-  // Curated-owner-only. Each rule has its own error code so the UI can message it.
-  addSequenceLink: async (req, res) => {
-    const { fromEdgeId, toEdgeId } = req.body;
-
-    try {
-      const fromId = parseInt(fromEdgeId, 10);
-      const toId = parseInt(toEdgeId, 10);
-      if (!fromId || isNaN(fromId) || !toId || isNaN(toId)) {
-        return res.status(400).json({ error: 'fromEdgeId and toEdgeId are required' });
-      }
-      if (fromId === toId) {
-        return res.status(400).json({ error: 'A question cannot link to itself.', code: 'self_link' });
-      }
-
-      const edgeRows = await pool.query(
-        `SELECT e.id, e.parent_id, e.graph_path, e.child_id, e.deleted_at,
-                c.community_id, comm.mode
-           FROM edges e
-           JOIN concepts c ON c.id = e.child_id
-           JOIN communities comm ON comm.id = c.community_id
-          WHERE e.id = ANY($1::int[])`,
-        [[fromId, toId]]
-      );
-      const byId = new Map(edgeRows.rows.map((r) => [r.id, r]));
-      const fromRow = byId.get(fromId);
-      const toRow = byId.get(toId);
-      if (!fromRow || !toRow) {
-        return res.status(404).json({ error: 'Question not found' });
-      }
-      if (fromRow.deleted_at || toRow.deleted_at) {
-        return res.status(400).json({ error: 'One of these questions has been deleted.', code: 'edge_deleted' });
-      }
-
-      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
-      const gate = await communityAccess.assertCuratedOwner(
-        { id: fromRow.community_id, mode: fromRow.mode },
-        req.user.userId
-      );
-      if (!gate.ok) {
-        return res.status(gate.status).json({ error: gate.error, code: gate.code });
-      }
-
-      // Siblings only. Roots: both root edges (parent_id NULL, graph_path '{}')
-      // whose concepts share a community. Non-roots: same parent_id and graph_path
-      // (a graph_path never crosses communities, so that already pins the community).
-      const samePath = (fromRow.graph_path || []).join(',') === (toRow.graph_path || []).join(',');
-      const bothRoots = fromRow.parent_id === null && toRow.parent_id === null;
-      const siblings = bothRoots
-        ? (samePath && fromRow.community_id === toRow.community_id)
-        : (fromRow.parent_id !== null && fromRow.parent_id === toRow.parent_id && samePath);
-      if (!siblings) {
-        return res.status(400).json({ error: 'Links can only connect sibling questions.', code: 'not_siblings' });
-      }
-
-      const dup = await pool.query(
-        'SELECT id FROM question_sequence_links WHERE from_edge_id = $1 AND to_edge_id = $2',
-        [fromId, toId]
-      );
-      if (dup.rows.length > 0) {
-        return res.status(409).json({ error: 'This link already exists.', code: 'duplicate_link' });
-      }
-      const rev = await pool.query(
-        'SELECT id FROM question_sequence_links WHERE from_edge_id = $1 AND to_edge_id = $2',
-        [toId, fromId]
-      );
-      if (rev.rows.length > 0) {
-        return res.status(409).json({ error: 'The reverse link already exists; remove it first.', code: 'reverse_exists' });
-      }
-
-      const inserted = await pool.query(
-        'INSERT INTO question_sequence_links (from_edge_id, to_edge_id, created_by) VALUES ($1, $2, $3) RETURNING id',
-        [fromId, toId, req.user.userId]
-      );
-      res.status(201).json({ message: 'Link added', linkId: inserted.rows[0].id });
-    } catch (error) {
-      console.error('Error adding sequence link:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Phase 72c-2: remove a precedent/subsequent link by id. The one row backs both
-  // cards, so deleting it removes the link from both sides. Curated-owner-only;
-  // any owner may remove any link in the community.
-  removeSequenceLink: async (req, res) => {
-    const { linkId } = req.body;
-
-    try {
-      const lid = parseInt(linkId, 10);
-      if (!lid || isNaN(lid)) {
-        return res.status(400).json({ error: 'linkId is required' });
-      }
-
-      const linkRow = await pool.query(
-        'SELECT from_edge_id FROM question_sequence_links WHERE id = $1',
-        [lid]
-      );
-      if (linkRow.rows.length === 0) {
-        return res.status(404).json({ error: 'Link not found' });
-      }
-
-      // Gate on the link's from-edge community (both edges share one community).
-      const community = await communityAccess.getCommunityForEdge(linkRow.rows[0].from_edge_id);
-      const gate = await communityAccess.assertCuratedOwner(community, req.user.userId);
-      if (!gate.ok) {
-        return res.status(gate.status).json({ error: gate.error, code: gate.code });
-      }
-
-      await pool.query('DELETE FROM question_sequence_links WHERE id = $1', [lid]);
-      res.json({ message: 'Link removed' });
-    } catch (error) {
-      console.error('Error removing sequence link:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
   // Phase 72d: the whole graph (collapsible tree) for the graph-view overlay.
   // Guest-accessible. Scope is either ONE root's graph (rootConceptId given:
   // the root edge + every descendant, matched by graph_path prefix) or the
@@ -2621,11 +2395,9 @@ const conceptsController = {
   },
 
   // Phase 71: cross-community exact-name bridge. For the concept being viewed,
-  // find same-normalized-name concepts in OTHER communities. Precompute the click
-  // destination: 'flip' when the target has a non-root placement (the
-  // decontextualized flip view lists placements), else 'root' — the flip view
-  // (getConceptParents) excludes root edges, so a root-only target would render
-  // empty and we send the user to its root page instead.
+  // find same-normalized-name concepts in OTHER communities. `viewMode` is a legacy
+  // field (Flip View is retired): the frontend now opens every bridge target in the
+  // normal children view, so the value is informational only.
   getConceptBridges: async (req, res) => {
     const { id } = req.params;
 

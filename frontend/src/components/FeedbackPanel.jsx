@@ -17,10 +17,6 @@ const FONT = '"EB Garamond", Georgia, serif';
 const KIND_LABEL = {
   edit_question: 'Suggested rewording',
   edit_answer: 'Suggested answer change',
-  add_precedent: 'Suggested precedent',
-  remove_precedent: 'Suggested precedent removal',
-  add_subsequent: 'Suggested subsequent',
-  remove_subsequent: 'Suggested subsequent removal',
   general: 'Comment',
   new_child: 'Suggested new question',
 };
@@ -31,17 +27,8 @@ const STATUS_LABEL = { open: 'Open', incorporated: 'Incorporated', declined: 'De
 // card actually has (no "change an answer" with no answers, etc.).
 function availableKinds(concept) {
   const answers = concept.answers || [];
-  const precedents = concept.precedents || [];
-  const subsequents = concept.subsequents || [];
-  const hasSiblings = true; // siblings eligibility is computed in the form itself
   const opts = [{ value: 'edit_question', label: 'Reword the question' }];
   if (answers.length > 0) opts.push({ value: 'edit_answer', label: 'Change an answer' });
-  if (hasSiblings) {
-    opts.push({ value: 'add_precedent', label: 'Add a precedent question' });
-    opts.push({ value: 'add_subsequent', label: 'Add a subsequent question' });
-  }
-  if (precedents.length > 0) opts.push({ value: 'remove_precedent', label: 'Remove a precedent question' });
-  if (subsequents.length > 0) opts.push({ value: 'remove_subsequent', label: 'Remove a subsequent question' });
   opts.push({ value: 'general', label: 'Something else' });
   return opts;
 }
@@ -84,35 +71,6 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
     setAnsDate(selectedAnswer.publishedOn || '');
   }, [targetLinkId, kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // sequence kinds — eligible sibling options come from the card's own data.
-  const precedents = concept.precedents || [];
-  const subsequents = concept.subsequents || [];
-  const linkedEdgeIds = new Set([
-    ...precedents.map((p) => p.edgeId),
-    ...subsequents.map((s) => s.edgeId),
-  ]);
-  const siblingOptions = (concept._siblings || []).filter(
-    (s) => s.edge_id !== concept.edge_id && !linkedEdgeIds.has(s.edge_id)
-  );
-  const [targetEdgeId, setTargetEdgeId] = useState(null);
-
-  const sequenceOptions = (() => {
-    if (kind === 'add_precedent' || kind === 'add_subsequent') {
-      return siblingOptions.map((s) => ({ edgeId: s.edge_id, name: s.name }));
-    }
-    if (kind === 'remove_precedent') return precedents.map((p) => ({ edgeId: p.edgeId, name: p.name }));
-    if (kind === 'remove_subsequent') return subsequents.map((s) => ({ edgeId: s.edgeId, name: s.name }));
-    return [];
-  })();
-
-  // Reset the sequence target whenever the kind changes.
-  useEffect(() => {
-    if (editing) return;
-    setTargetEdgeId(sequenceOptions[0] ? sequenceOptions[0].edgeId : null);
-  }, [kind]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const isSequence = ['add_precedent', 'remove_precedent', 'add_subsequent', 'remove_subsequent'].includes(kind);
-
   const submit = async () => {
     if (busy) return;
     setError(null);
@@ -129,11 +87,6 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
       if (ansDate) prop.publishedOn = ansDate;
       payload.proposal = prop;
       if (!editing) payload.targetLinkId = targetLinkId;
-    } else if (isSequence) {
-      if (!editing) {
-        if (!targetEdgeId) { setError('Choose a question.'); return; }
-        payload.targetEdgeId = targetEdgeId;
-      }
     } else if (kind === 'general') {
       if (!payload.comment) { setError('Enter a comment.'); return; }
     }
@@ -202,25 +155,6 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
         </>
       )}
 
-      {isSequence && !editing && (
-        <label style={styles.fieldLabel}>
-          <span style={styles.fieldLabelText}>Which question?</span>
-          {sequenceOptions.length === 0 ? (
-            <span style={styles.muted}>No eligible questions.</span>
-          ) : (
-            <select
-              value={targetEdgeId || ''}
-              onChange={(e) => setTargetEdgeId(parseInt(e.target.value, 10))}
-              style={styles.select}
-            >
-              {sequenceOptions.map((o) => (
-                <option key={o.edgeId} value={o.edgeId}>{o.name}</option>
-              ))}
-            </select>
-          )}
-        </label>
-      )}
-
       <label style={styles.fieldLabel}>
         <span style={styles.fieldLabelText}>Comment{kind === 'general' ? '' : ' (optional)'}</span>
         <textarea value={comment} onChange={(e) => setComment(e.target.value)} style={styles.textarea} rows={3} maxLength={2000} />
@@ -258,15 +192,6 @@ const ProposalSummary = ({ item }) => {
         {prop.url !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>URL →</span> {prop.url}</div>}
         {prop.publishedOn !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>Date →</span> {prop.publishedOn}</div>}
         {prop.comment !== undefined && prop.comment !== '' && <div style={styles.beforeAfter}><span style={styles.baLabel}>Comment →</span> {prop.comment}</div>}
-      </div>
-    );
-  }
-  if (['add_precedent', 'remove_precedent', 'add_subsequent', 'remove_subsequent'].includes(item.kind)) {
-    const verb = item.kind.startsWith('add') ? 'Add' : 'Remove';
-    const rel = item.kind.includes('precedent') ? 'precedent' : 'subsequent';
-    return (
-      <div style={styles.proposal}>
-        <div style={styles.beforeAfter}><span style={styles.baLabel}>{verb} {rel}</span> {snap.siblingName}</div>
       </div>
     );
   }
@@ -377,7 +302,7 @@ const FeedbackItem = ({ item, isOwner, canModerate, currentUserId, onChanged, on
 
       {editing && (
         <FeedbackForm
-          concept={{ name: item.snapshot?.questionText, edge_id: null, answers: [], precedents: [], subsequents: [] }}
+          concept={{ name: item.snapshot?.questionText, edge_id: null, answers: [] }}
           initial={item}
           onSubmit={async (payload) => {
             await feedbackAPI.edit(item.id, { comment: payload.comment, proposal: payload.proposal });
@@ -472,7 +397,6 @@ const FeedbackItem = ({ item, isOwner, canModerate, currentUserId, onChanged, on
 
 const FeedbackPanel = ({
   concept,
-  siblings = [],
   isOwner = false,
   isGuest = false,
   currentUserId = null,
@@ -520,10 +444,6 @@ const FeedbackPanel = ({
     if (onChanged) await onChanged();
   }, [load, onChanged]);
 
-  // The sequence picker needs the sibling grid; stash it on a throwaway copy of
-  // the concept so FeedbackForm can read concept._siblings.
-  const conceptForForm = { ...concept, _siblings: siblings };
-
   const canModerate = !!(data && data.canModerate);
 
   // Close this panel BEFORE opening the login modal — otherwise the modal renders
@@ -552,7 +472,7 @@ const FeedbackPanel = ({
             <button type="button" onClick={() => setShowForm(true)} style={styles.primaryBtn}>Suggest a change</button>
           ) : (
             <FeedbackForm
-              concept={conceptForForm}
+              concept={concept}
               onSubmit={async (payload) => {
                 await feedbackAPI.create({ edgeId, ...payload });
                 setShowForm(false);

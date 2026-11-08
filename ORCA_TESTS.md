@@ -110,17 +110,13 @@ Run only the specific section(s) named.
 - [ ] Auto-save on swap: casting swap A→B auto-saves B
 - [ ] Auto-save persists after swap removal
 
-### Link votes (Flip View)
-- [ ] Link votes can only be added in contextual Flip View
-- [ ] Adding and removing link votes updates counts correctly
-
 ---
 
-## 4. Flip View
+## 4. Parent contexts (Diff modal / bridge targets)
 
-- [ ] Getting parents returns all parent contexts
-- [ ] Contextual Flip View includes link vote counts and Jaccard similarity
-- [ ] Decontextualized Flip View returns parents without link vote UI
+Flip View is retired. The `GET /concepts/:id/parents` endpoint remains only to back
+the Diff modal and the "also asked in" bridge target resolution.
+- [ ] Getting parents returns all parent contexts (used by the Diff modal)
 
 ---
 
@@ -171,9 +167,6 @@ Run only the specific section(s) named.
 - [ ] Different-concept click: creates new tab if no existing tab matches
 - [ ] Auto-scroll to destination link after navigation
 - [ ] Brief highlight (2s yellow tint) on destination link
-
-### Cross-context web links tab
-- [ ] In flip view, web links from all parent contexts are shown
 
 ---
 
@@ -289,7 +282,7 @@ Run only the specific section(s) named.
 
 - [ ] Guests can browse root concepts and navigate the graph
 - [ ] Guests can view web links and superconcepts
-- [ ] Guests can view Flip View, Tunnel View
+- [ ] Guests can navigate the children view and view web links
 - [ ] Guests CANNOT: create concepts, vote, add links, flag, or subscribe
 - [ ] Login prompt appears when guest attempts a restricted action
 
@@ -349,13 +342,13 @@ Run only the specific section(s) named.
 - [ ] `POST /api/communities` with an invalid `mode` returns 400
 - [ ] Curated: a non-owner gets 403 `curated_owner_only` on create root, create child, nest-under-sibling, add link, and copy link
 - [ ] Curated: an owner can create a root and a child (201)
-- [ ] Curated: both owners and non-owners get 403 `curated_no_votes` on save, unsave, swap add/remove, link (similarity) add/remove, web-link upvote/unvote, moderation flag, and moderation vote
+- [ ] Curated: both owners and non-owners get 403 `curated_no_votes` on save, unsave, swap add/remove, web-link upvote/unvote, moderation flag, and moderation vote
 - [ ] Open communities behave exactly as before: a logged-in non-owner can create, save, and upvote
 - [ ] Owners: add another owner by username (idempotent; 404 for unknown username); remove an owner; removing the last remaining owner returns 400 `last_owner`
 - [ ] Account deletion is blocked (400, with the community list) for a user who is the sole owner of any curated community
 - [ ] `/c/:slug` opens the community for a guest and for a logged-in user (selects it, opens its root, replaces the URL with `/`); an unknown slug shows the unavailable-link toast
 - [ ] The community header Share control copies `…/c/<slug>`
-- [ ] Curated, non-owner (and guests): no create affordances (root/child create, add-link form, nest-under-sibling, copy link) and no vote/flag affordances (save ▲, swap, vote-set bar/dots, Flip View similarity votes, link upvotes, flag) are shown
+- [ ] Curated, non-owner (and guests): no create affordances (root/child create, add-link form, nest-under-sibling, copy link) and no vote/flag affordances (save ▲, swap, vote-set bar/dots, link upvotes, flag) are shown
 - [ ] Curated, owner: create affordances are shown; vote/flag affordances are hidden; an Owners panel is reachable from the community header
 - [ ] An open community's UI is unchanged aside from the mode label in the create form
 
@@ -374,7 +367,7 @@ Run only the specific section(s) named.
 - [ ] Curated removal: any owner may remove any answer in the community; a non-owner cannot (403); a `legal_hold` answer cannot be removed even by an owner (403). Open communities keep author-only removal
 - [ ] Curated UI: each question card in the children grid and the root grid shows its answers (title link opens in a new tab with `rel="noopener noreferrer"`, publication date, comment via LinkifiedText, clamped); no vote controls; no answer section on a card with no answers (non-owners/guests)
 - [ ] Curated owner UI: a per-card "Add answer" form (URL with title preview on paste/blur, title, comment, `date` input, required affirmation checkbox) and a per-answer "Remove" with an inline confirm (no `window.confirm`/`alert`)
-- [ ] Curated children view: the side links panel (ConceptLinksPanel) is hidden; Flip View still shows the links panel
+- [ ] Curated children view: no side links panel (answers render in-card and on the question's own page)
 - [ ] `/link/:id` to a curated answer opens the parent question's page and scrolls to + highlights the answer row inside its card (300ms delay, 2s highlight)
 - [ ] Open communities show no visible change (no card answer section; links panel intact)
 
@@ -398,7 +391,7 @@ Run only the specific section(s) named.
 
 ### Soft delete (`POST /api/concepts/edges/:edgeId/delete`)
 - [ ] Deleting a question with two levels of sub-questions marks the edge and its entire path-scoped subtree `deleted_at` + `is_hidden = true` under one shared `delete_batch_id`
-- [ ] The deleted questions vanish from `GET /concepts/:id`, `/concepts/root`, `/concepts/search`, Flip View parent data, `/votes/me/all`, and child counts
+- [ ] The deleted questions vanish from `GET /concepts/:id`, `/concepts/root`, `/concepts/search`, parent-context data (`/concepts/:id/parents`), `/votes/me/all`, and child counts
 - [ ] `GET /moderation/hidden/:parentId` does not list a deleted edge; unhide (admin), flag, moderation vote, and moderation comment on a deleted edge are refused
 - [ ] If any affected edge or link is under `legal_hold`, the delete is refused with 409 `legal_hold` and nothing changes
 - [ ] Re-adding the same concept under the same parent+path (create root/child) restores only that single edge (`restored: true`), leaving its former subtree deleted
@@ -414,25 +407,11 @@ Run only the specific section(s) named.
 
 ---
 
-## Phase 72c-2 — Precedent / subsequent sibling links (curated)
+## Phase 72c-2 — Precedent / subsequent sibling links (RETIRED)
 
-### Schema
-- [ ] Migration runs twice cleanly; `\d question_sequence_links` shows `from_edge_id`/`to_edge_id` (NOT NULL, FK edges ON DELETE CASCADE), `created_by` (FK users ON DELETE SET NULL), a `CHECK (from_edge_id <> to_edge_id)`, a UNIQUE `(from_edge_id, to_edge_id)`, and indexes `idx_qseq_from` / `idx_qseq_to`
-
-### Endpoints (`POST /api/concepts/sequence-links/add|remove`)
-- [ ] Owner A adds X→Y (siblings, curated); GET shows Y in X.subsequents and X in Y.precedents, each entry `{ linkId, edgeId, conceptId, name }`
-- [ ] Rejections each with their own code: Y→X → 409 `reverse_exists`; X→Y again → 409 `duplicate_link`; X→X → 400 `self_link`; X→W (different parent) → 400 `not_siblings`; non-owner B → 403 `curated_owner_only`; open community → 403 `curated_only`; a soft-deleted edge → 400 `edge_deleted`
-- [ ] Curated root-level siblings can be linked; two roots from different communities → 400 `not_siblings`
-- [ ] Remove X→Y by linkId clears it from both cards; a non-owner remove → 403 `curated_owner_only`
-- [ ] Soft-deleting Y (72c-1) removes the link from the surviving sibling X (read filter excludes deleted/hidden edges)
-- [ ] Reads add `precedents[]`/`subsequents[]` to each curated row in `GET /concepts/:id` and `/concepts/root` in one extra query (no N+1); open community responses carry no `precedents`/`subsequents` keys
-
-### Frontend (curated only)
-- [ ] Each card shows two columns, "Precedent questions" and "Subsequent questions", below the answer section; clicking a name scrolls to that sibling's card and highlights it (300ms delay, 2s highlight)
-- [ ] View mode hides the whole row when both lists are empty; edit mode always shows both columns, with "No precedent/subsequent questions" when empty
-- [ ] Edit mode: each column's "+" opens a picker of eligible siblings (not itself, not already linked in either direction); adding a precedent P to card C creates P→C, a subsequent S creates C→S; each entry has an "✕" to remove; the page refreshes so both cards update
-- [ ] Edit mode soft warning: a subsequent entry dated earlier than this card (both `sortDate` non-null) reads "dated earlier than its precedent"
-- [ ] All controls are `<button>`s (no `window.confirm`/`alert`); open communities show no sequence-link UI
+Removed entirely (see "Flip View and sequence links retired" at the end). `question_sequence_links`,
+the `/concepts/sequence-links/*` endpoints, `CardSequenceSection`, and the `precedents`/`subsequents`
+response fields no longer exist.
 
 ---
 
@@ -470,8 +449,8 @@ Run only the specific section(s) named.
 - [ ] Migration runs twice cleanly; `\d feedback_items` shows `kind` CHECK (allowing `new_child`), `status` CHECK (`open`/`incorporated`/`declined`), FKs (community CASCADE, edge CASCADE, target_link SET NULL, target_edge SET NULL, author/status_by SET NULL), and indexes `idx_feedback_items_community_status` / `idx_feedback_items_edge`; `feedback_replies` has `is_owner_reply`, `is_hidden`, and `idx_feedback_replies_feedback`; `feedback_votes` has PK `(feedback_id, user_id)`
 
 ### Endpoints (`/api/feedback`, curated only)
-- [ ] Reader B can create one item of each 72e-1 kind (`edit_question`, `edit_answer`, `general`, `add_precedent`, `add_subsequent`, `remove_precedent`, `remove_subsequent`) on a curated card → 201
-- [ ] Validation: empty `edit_question` name → 400 `name_required`; `edit_answer` with a link not on that edge → 400 `link_not_on_edge`; `add_precedent` to a non-sibling → 400 `not_siblings`; `remove_subsequent` with no such link → 400 `link_not_found`; `general` with empty comment → 400 `comment_required`; comment > 2000 → 400 `comment_too_long`; `new_child` → 400 `unsupported_kind`
+- [ ] Reader B can create one item of each live kind (`edit_question`, `edit_answer`, `general`) on a curated card → 201 (sequence kinds `add_precedent`/`remove_precedent`/`add_subsequent`/`remove_subsequent` are retired and rejected as unknown)
+- [ ] Validation: empty `edit_question` name → 400 `name_required`; `edit_answer` with a link not on that edge → 400 `link_not_on_edge`; `general` with empty comment → 400 `comment_required`; comment > 2000 → 400 `comment_too_long`; `new_child` → 400 `unsupported_kind`; a retired sequence kind → 400 `invalid_kind`
 - [ ] Feedback in an open community → 403 `curated_only`; guest POST → 401; guest GET → 200
 - [ ] Snapshot: after the owner renames the question, an earlier `edit_question` item's `snapshot.questionText` still shows the old text
 - [ ] Author edits/deletes their item before any owner reply (200); after an owner replies, or the status changes, both → 409 `locked`
@@ -485,7 +464,7 @@ Run only the specific section(s) named.
 
 ### Frontend (`FeedbackPanel.jsx`, curated cards)
 - [ ] A page-with-pencil feedback icon (inline SVG, not emoji) with the open count when > 0 shows on every curated card in both view and edit mode; clicking opens the feedback panel (overlay, Escape closes)
-- [ ] Header shows the question text; "Suggest a change" form offers a kind picker with kind-specific prefilled fields (proposed question; which answer + proposed fields; sibling picker for sequence kinds; comment on every kind); guests see "Log in to suggest a change"
+- [ ] Header shows the question text; "Suggest a change" form offers a kind picker with kind-specific prefilled fields (proposed question; which answer + proposed fields; comment on every kind); guests see "Log in to suggest a change"
 - [ ] The list shows each item's kind label, before → after summary, comment, author + ORCID badge, time, status, vote button + count, replies (owner replies marked "Owner"), reply box, and author edit/delete while unlocked
 - [ ] Owners additionally see status controls (Mark incorporated / Decline / Reopen, optional reply) and Hide/Unhide on items and replies
 - [ ] The list and the card's open count refresh after every action; all controls are `<button>`s; no `window.confirm`/`alert`; comment and reply bodies render via `LinkifiedText`; Stale-State Guard on the panel fetch
@@ -536,7 +515,7 @@ Run only the specific section(s) named.
 ### Frontend — own-page section (`Concept.jsx`, under the question title)
 - [ ] Both modes show the question's own answers/links under its title, including root questions. Curated: the question's own answers in the 72b style; in edit mode owners can add/edit/remove them there exactly as on cards. Open: the same top-link + "Show N more links" pattern for the current edge, expanding to the full list with sort and the add-link form
 - [ ] The open own-page section always lets logged-in users reach the add-link form (an "Add a link" affordance when there are 0–1 links)
-- [ ] The side links panel (`ConceptLinksPanel`) is gone from the children view in open communities (curated already hid it); no empty column/space remains. Flip View's aggregated per-context links panel is unchanged in both modes
+- [ ] The side links panel is gone from the children view in open communities (curated already hid it); no empty column/space remains
 
 ### Frontend — `/link/:id` deep link (`AppShell`)
 - [ ] `/link/:id` opens the link's own question page in both modes (conceptId + parentPath from the location endpoint), expands its own-page section, and highlights the link (300ms delay, scrollIntoView, 2s highlight) — for an open link, a curated answer, and an answer on a root question
@@ -547,7 +526,7 @@ Run only the specific section(s) named.
 
 ---
 
-## Post-72 UI fixes — Votes button relocation + sequence-link dropdowns
+## Post-72 UI fixes — Votes button relocation
 
 ### Votes button moved out of the sidebar
 - [ ] The sidebar top shows only the Communities button (no "Votes" button) for logged-in users and guests
@@ -557,27 +536,21 @@ Run only the specific section(s) named.
 - [ ] A **guest** in an open community sees Graph but no Votes button
 - [ ] `VotesOverlay` behavior/contents are unchanged (still community-scoped, still opened via the overlay)
 
-### Precedent / subsequent as collapsible dropdowns (`CardSequenceSection`, curated)
-- [ ] Every curated card (children grid and root grid), in both View and Edit mode, shows two compact toggle buttons: "Precedent questions (N) ▸" and "Subsequent questions (N) ▸"; closed cards do not grow
-- [ ] Each toggle opens/closes independently; both start closed; the arrow becomes ▾ when open; open state is local (resets on reload / re-render from parent state only)
-- [ ] Opened and empty: shows "No precedent questions" / "No subsequent questions" in both View and Edit mode (the old "hide the row when both empty in view mode" behavior is gone)
-- [ ] Opened with entries: the list shows sibling names; clicking a name still scrolls to and highlights that sibling's card (300ms delay, 2s highlight)
-- [ ] Edit mode, inside the opened dropdown: the "dated earlier than its precedent" warning, the per-entry "✕" remove, and the "+" picker of eligible siblings all work; opening the picker keeps that section open
-- [ ] All controls are `<button>`s; no `window.confirm`/`alert`; inline styles with explicit fontFamily; no colored buttons, emoji (beyond ▸ ▾ ✕), or italics
+(The precedent/subsequent dropdowns tested here are retired — see "Flip View and sequence links retired".)
 
 ---
 
 ## Phase 73 — Restructuring curated graphs (group / move into / ungroup)
 
-Scripted coverage lives in `backend/phase73-test.js` (throwaway communities + users on a separate-port server; 53 checks, all passing as of implementation). Re-run with the backend on PORT 5050: `PORT=5050 node src/server.js` then `node phase73-test.js`.
+Scripted coverage lives in `backend/phase73-test.js` (throwaway communities + users on a separate-port server; 49 checks, all passing after the Flip View / sequence-link removal). Re-run with the backend on PORT 5050: `PORT=5050 node src/server.js` then `node phase73-test.js`.
 
 ### Backend — shared rewrite + endpoints
 - [ ] `POST /concepts/group-under-new-parent` groups one, several, and root-level selections: inserts the new parent edge at the level, reparents the selection, and rewrites every path-scoped descendant (3+ levels) to the new paths; edge ids are unchanged
 - [ ] Group reuses an existing same-name concept; `sibling_exists` (409, returns `edgeId`) when that concept is already a visible sibling; `empty_name`/`name_too_long`; `cycle` when the new-parent concept appears in the level path or inside a moved subtree; `conflict` (409) when a destination identity already exists (incl. soft-deleted); `not_siblings`; `legal_hold`; `too_large` (1000)
 - [ ] `POST /concepts/move-into-sibling` moves the selection under an existing sibling (N = target concept); `target_selected`, `not_siblings`, `cycle`, `conflict`, `legal_hold` all enforced
-- [ ] `POST /concepts/edges/:edgeId/ungroup` moves direct children up one level, soft-deletes Q (its answers hide with it), and removes sequence links touching Q; `no_children` (400), `conflict` (409) when a child name already exists at the upper level; root-level ungroup makes children roots
-- [ ] All three accept `dryRun: true` and return `{ movedCount, descendantCount, removedSequenceLinks:[{linkId,fromName,toName}], answersRemoved }` with NO writes (verified by before/after row counts)
-- [ ] Answers, feedback, and kept sequence links stay attached (same edge ids); after group/move a sequence link is removed exactly when one endpoint moved and the other did not (XOR) — matches the dry-run list; after ungroup every link touching Q is removed
+- [ ] `POST /concepts/edges/:edgeId/ungroup` moves direct children up one level, soft-deletes Q (its answers hide with it); `no_children` (400), `conflict` (409) when a child name already exists at the upper level; root-level ungroup makes children roots
+- [ ] All three accept `dryRun: true` and return `{ movedCount, descendantCount, answersRemoved }` (ungroup also `feedbackArchived`) with NO writes (verified by before/after row counts)
+- [ ] Answers and feedback stay attached (same edge ids) after group/move/ungroup
 - [ ] Soft-deleted descendants are rewritten to the new location and remain restorable by re-adding the same concept there
 - [ ] `graph_tabs.path` is rewritten for every tab inside a moved subtree (tab = `path` + `concept_id`); tabs don't go blank
 - [ ] Gating via `communityAccess`: `curated_only` (open community), `curated_owner_only` (reader), 401 (guest) on each endpoint
@@ -591,6 +564,26 @@ Scripted coverage lives in `backend/phase73-test.js` (throwaway communities + us
 - [ ] Selection clears on leaving Edit mode and on navigation; errors show inline in plain words (no `window.confirm`/`alert`)
 - [ ] The right-click "Nest under sibling…" entry is hidden in curated communities; open communities are unchanged
 - [ ] All controls are `<button>`s (native checkboxes for selection are fine); inline styles with explicit fontFamily; no colored buttons, emoji, or italics; `npm run build` passes
+
+---
+
+## Flip View and sequence links retired
+
+Both features were removed completely. Verify they are gone and nothing else regressed.
+
+### Flip View gone
+- [ ] No "Flip View" button appears on any question or community-root page header (open or curated); only Edit (curated owners), Graph, Votes (open, logged-in), and Share remain
+- [ ] `FlipView.jsx` and `ConceptLinksPanel.jsx` no longer exist; `npm run build` passes with no missing-import warnings
+- [ ] `POST /votes/link/add` and `/votes/link/remove` and `GET /votes/web-links/all/:conceptId` are unmounted (404); `GET /concepts/:id/parents` still works (Diff modal / bridge targets)
+- [ ] A clicked search result opens the concept in the normal children view (not flip); the "also asked in" bridge badge still opens the matched question (children view)
+- [ ] A graph tab whose stored `view_mode` was `flip` opens in the children view (migrate normalizes `flip` → `children`; Concept also coerces it on read); no blank page
+- [ ] `similarity_votes` table remains (used by data export); swap votes (⇄), "other instances" of a link, and search are unaffected
+
+### Sequence (precedent/subsequent) links gone
+- [ ] `question_sequence_links` table is dropped (`\d question_sequence_links` → does not exist); migrate runs twice cleanly
+- [ ] `GET /concepts/:id` and `/concepts/root` curated rows no longer carry `precedents`/`subsequents`; curated cards show no precedent/subsequent section; curated sort (open questions first, then by date) is unchanged
+- [ ] The three Phase 73 restructure endpoints and their dry runs no longer return `removedSequenceLinks` / `removedSequenceLinkIds`; the RestructureBar preview text no longer mentions removed precedent/subsequent links; group/move/ungroup otherwise behave as before (`backend/phase73-test.js` passes)
+- [ ] Feedback no longer offers `add_precedent`/`remove_precedent`/`add_subsequent`/`remove_subsequent` kinds (FeedbackPanel form, inbox labels); `edit_question`, `edit_answer`, `general`, `new_child` still work
 
 ---
 

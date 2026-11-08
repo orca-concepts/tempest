@@ -29,7 +29,7 @@ const CardAnswerSection = ({
   const [submitting, setSubmitting] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
 
-  // Title preview (mirrors the add-link form in ConceptLinksPanel)
+  // Title preview (same behavior as the open-community add-link form)
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
   const [previewResult, setPreviewResult] = useState(null);

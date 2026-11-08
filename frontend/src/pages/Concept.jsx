@@ -5,11 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import ConceptGrid from '../components/ConceptGrid';
 import AddConceptModal from '../components/AddConceptModal';
 import Breadcrumb from '../components/Breadcrumb';
-import FlipView from '../components/FlipView';
 import SearchField from '../components/SearchField';
 import SwapModal from '../components/SwapModal';
 import VoteSetBar from '../components/VoteSetBar';
-import ConceptLinksPanel from '../components/ConceptLinksPanel';
 import CardLinksSection from '../components/CardLinksSection';
 import CardAnswerSection from '../components/CardAnswerSection';
 import HiddenConceptsView from '../components/HiddenConceptsView';
@@ -30,7 +28,6 @@ const Concept = ({
   isGuest = false,
   onOpenConceptTab,
   onRequestLogin,
-  onNavigateToSituation,
   ownedCombos = [],
   onComboEdgeAdded,
   pendingScrollLinkId,
@@ -71,9 +68,13 @@ const Concept = ({
   const effectivePath = isTabMode
     ? tabPath
     : (searchParams.get('path') || '').split(',').filter(Boolean).map(Number);
-  const effectiveViewMode = isTabMode
+  // Flip View is retired: any legacy 'flip' value (stored tab or pasted URL) falls
+  // back to the normal children view. Only 'children' and 'tunnel' remain.
+  const effectiveViewMode = (isTabMode
     ? tabViewMode
-    : (searchParams.get('view') === 'flip' ? 'flip' : searchParams.get('view') === 'tunnel' ? 'tunnel' : 'children');
+    : (searchParams.get('view') === 'tunnel' ? 'tunnel' : 'children')) === 'tunnel'
+    ? 'tunnel'
+    : 'children';
 
   const [concept, setConcept] = useState(null);
   // Phase 72a: owning community's mode + the caller's ownership, from the
@@ -108,7 +109,8 @@ const Concept = ({
   // Parent edge ID for ranking context (Phase 5f)
   const [parentEdgeId, setParentEdgeId] = useState(null);
 
-  // Phase 69: counts shown on the Flip / Tunnel buttons
+  // Phase 69: altParentCount drives the edit-mode "also appears under N" note;
+  // tunnelLinkCount is used by the (retired) tunnel view.
   const [altParentCount, setAltParentCount] = useState(0);
   const [tunnelLinkCount, setTunnelLinkCount] = useState(0);
 
@@ -143,28 +145,6 @@ const Concept = ({
   const comboPickerRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Phase 27d: Responsive layout
-  const [isNarrow, setIsNarrow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 900);
-
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 899px)');
-    const handler = (e) => setIsNarrow(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
-
-  // Flip view state
-  const [parents, setParents] = useState([]);
-  const [originEdgeId, setOriginEdgeId] = useState(null);
-  const [loadingFlip, setLoadingFlip] = useState(false);
-  const userToggledFlip = useRef(false);
-
-  // Decontextualized flip view detection
-  const hasPath = isTabMode
-    ? effectivePath.length > 0
-    : (searchParams.has('path') && searchParams.get('path') !== '');
-  const isDecontextualized = effectiveViewMode === 'flip' && !hasPath;
-
   useEffect(() => {
     loadConcept();
   }, [effectiveConceptId, effectivePath.join(','), sortMode, effectiveViewMode]);
@@ -181,7 +161,6 @@ const Concept = ({
       setTabConceptId(initialConceptId);
       setTabPath(initialPath || []);
       setTabViewMode(initialViewMode || 'children');
-      userToggledFlip.current = false;
     }
   }, [initialConceptId, initialPathKey, initialViewMode]);
 
@@ -220,19 +199,10 @@ const Concept = ({
         .then((br) => setBridges(br.data.bridges || []))
         .catch(() => setBridges([]));
 
-      // If flip view, load parents too
-      if (effectiveViewMode === 'flip') {
-        const parentsResponse = await conceptsAPI.getConceptParents(effectiveConceptId, pathParam);
-        setParents(parentsResponse.data.parents);
-        setOriginEdgeId(parentsResponse.data.originEdgeId || null);
-      }
-
-      // Load vote sets for children view
-      if (effectiveViewMode !== 'flip') {
-        await loadVoteSets(pathParam);
-        // Phase 16c: Load hidden children count
-        loadHiddenCount();
-      }
+      // Load vote sets + hidden children count for the children/tunnel views.
+      await loadVoteSets(pathParam);
+      // Phase 16c: Load hidden children count
+      loadHiddenCount();
     } catch (err) {
       setError('Failed to load concept');
       console.error(err);
@@ -254,7 +224,7 @@ const Concept = ({
       undefined,
       undefined,
       undefined,
-      bridge.viewMode === 'flip' ? 'flip' : 'children'
+      'children'
     );
   };
 
@@ -298,7 +268,7 @@ const Concept = ({
     const tunnelFragMatch = hash.match(/^#tunnel-(\d+)$/);
 
     if (linkFragMatch) {
-      // No view mode change — ConceptLinksPanel renders alongside any view.
+      // No view mode change — the own-page links/answers section handles /link.
     } else if (tunnelFragMatch) {
       // View mode switch is handled upstream by handleOpenConceptTab's
       // viewMode arg; this branch is retained for manually-pasted fragment URLs.
@@ -348,7 +318,7 @@ const Concept = ({
       }
     } else {
       const pathStr = newPath.join(',');
-      const viewParam = newViewMode === 'flip' ? '&view=flip' : newViewMode === 'tunnel' ? '&view=tunnel' : '';
+      const viewParam = newViewMode === 'tunnel' ? '&view=tunnel' : '';
       navigate(`/concept/${newConceptId}?path=${pathStr}${viewParam}`);
     }
   };
@@ -381,37 +351,12 @@ const Concept = ({
 
   // ─── Handlers (mostly unchanged from original) ──────────
 
-  const loadFlipView = async () => {
-    try {
-      setLoadingFlip(true);
-      const pathParam = effectivePath.join(',');
-      const response = await conceptsAPI.getConceptParents(effectiveConceptId, pathParam);
-      
-      setParents(response.data.parents);
-      setOriginEdgeId(response.data.originEdgeId || null);
-
-      if (isTabMode) {
-        navigateInTab(effectiveConceptId, effectivePath, 'flip');
-      } else {
-        const params = new URLSearchParams(searchParams);
-        params.set('view', 'flip');
-        navigate(`/concept/${effectiveConceptId}?${params.toString()}`);
-      }
-    } catch (err) {
-      console.error('Failed to load flip view:', err);
-      alert('Failed to load parent contexts');
-    } finally {
-      setLoadingFlip(false);
-    }
-  };
-
   const handleConceptClick = (childId) => {
     navigateInTab(childId, path, 'children');
   };
 
   // Phase 69: jump to a deeper (cross-sibling) occurrence of a child. The nested
-  // location's graph_path IS that occurrence's path-to-parent (see Concept.jsx:459
-  // flip-parent nav for the same convention).
+  // location's graph_path IS that occurrence's path-to-parent.
   const handleNavigateNested = (childId, nestedGraphPath) => {
     navigateInTab(childId, nestedGraphPath, 'children');
   };
@@ -479,29 +424,11 @@ const Concept = ({
     }
   };
 
-  const handleToggleView = () => {
-    userToggledFlip.current = true;
-    if (effectiveViewMode === 'children') {
-      loadFlipView();
-    } else {
-      if (isTabMode) {
-        setTabViewMode('children');
-        if (onNavigate && graphTabId) {
-          onNavigate(graphTabId, { viewMode: 'children' });
-        }
-      } else {
-        const params = new URLSearchParams(searchParams);
-        params.delete('view');
-        navigate(`/concept/${effectiveConceptId}?${params.toString()}`);
-      }
-    }
-  };
-
   const handleEnterTunnel = () => {
     navigateInTab(effectiveConceptId, effectivePath, 'tunnel');
   };
 
-  // Callback for TunnelView and FlipView to open a concept in a new graph tab
+  // Callback for TunnelView to open a concept in a new graph tab
   const handleOpenNewTab = (newConceptId, newPath) => {
     if (onOpenConceptTab) {
       onOpenConceptTab(newConceptId, newPath || [], undefined, undefined, undefined, 'children');
@@ -591,7 +518,7 @@ const Concept = ({
   }, [effectiveConceptId, effectivePath?.join(',')]);
 
   // Phase 72c-1: close the inline new-question card whenever edit mode isn't active
-  // (left edit mode, switched to flip/tunnel, lost ownership, or navigated).
+  // (left edit mode, switched to tunnel view, lost ownership, or navigated).
   useEffect(() => {
     const canEdit = communityMode === 'curated' && isCommunityOwner && editMode && effectiveViewMode === 'children';
     if (!canEdit) setShowNewCard(false);
@@ -612,12 +539,6 @@ const Concept = ({
       children.some((ch) => Number(ch.id) === cid);
     if (shows) loadConcept();
   }, [renamedConcept]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // When user clicks an alt parent card in Flip View, stay on the current concept
-  // but switch to the clicked parent's context (Phase 38a)
-  const handleFlipViewParentClick = (parent) => {
-    navigateInTab(effectiveConceptId, parent.graph_path, 'children');
-  };
 
   const handleConceptAdded = () => {
     loadConcept();
@@ -852,9 +773,7 @@ const Concept = ({
 
   // Phase 72f: the side links panel is gone from children view in BOTH modes
   // (curated → in-card answers since 72b; open → in-card link section now). The
-  // question's own links/answers render under its title instead. Flip View keeps
-  // its aggregated per-context links panel in both modes.
-  const showLinksPanel = !!effectiveConceptId && effectiveViewMode === 'flip';
+  // question's own links/answers render under its title instead.
   const openChildrenView = communityMode !== 'curated' && effectiveViewMode === 'children';
 
   // Phase 72e-2: inbox navigation can target a child card's feedback panel, or
@@ -876,21 +795,12 @@ const Concept = ({
       <div style={styles.headerBar}>
         <div style={styles.headerContent}>
           <div style={styles.breadcrumbWithBack}>
-            {!isDecontextualized ? (
-              <>
-                <Breadcrumb
-                  path={path}
-                  currentConcept={concept}
-                  currentAttribute={currentAttribute}
-                  onBreadcrumbClick={handleBreadcrumbClick}
-                />
-              </>
-            ) : (
-              <div style={styles.decontextTitle}>
-                {concept.name}
-                <span style={styles.decontextSubtitle}> — all parent contexts</span>
-              </div>
-            )}
+            <Breadcrumb
+              path={path}
+              currentConcept={concept}
+              currentAttribute={currentAttribute}
+              onBreadcrumbClick={handleBreadcrumbClick}
+            />
           </div>
           <div style={styles.buttonSection}>
             {canEditMode && effectiveViewMode === 'children' && (
@@ -899,20 +809,6 @@ const Concept = ({
                 style={editMode ? styles.editToggleActive : styles.editToggle}
                 title={editMode ? 'Return to reader view' : 'Edit this community'}
               >{editMode ? 'Done' : 'Edit'}</button>
-            )}
-            {!(isDecontextualized && !userToggledFlip.current) && (
-              <button
-                onClick={handleToggleView}
-                style={styles.flipButton}
-                disabled={loadingFlip}
-                title="View and vote on alternative parent contexts that exist for this question; vote for contexts helpful to explore from this one"
-              >
-                {loadingFlip
-                  ? 'Loading...'
-                  : effectiveViewMode === 'children'
-                    ? `Flip View${altParentCount > 0 ? ` · ${altParentCount}` : ''}`
-                    : 'Children View'}
-              </button>
             )}
             <button
               onClick={handleOpenGraphView}
@@ -981,8 +877,7 @@ const Concept = ({
       </div>
 
       <main style={(editing && (restructureSel.size > 0 || ungroupConcept)) ? { ...styles.main, paddingBottom: '260px' } : styles.main}>
-        <div style={effectiveConceptId ? (isNarrow ? styles.twoColumnLayoutNarrow : styles.twoColumnLayout) : undefined}>
-          <div style={effectiveConceptId ? ((effectiveViewMode === 'tunnel' || !showLinksPanel) ? { flex: 1, width: '100%' } : (isNarrow ? styles.leftColumnNarrow : styles.leftColumn)) : undefined}>
+        <div style={effectiveConceptId ? { width: '100%' } : undefined}>
             {effectiveViewMode === 'children' ? (
               <>
                 <div style={styles.conceptHeader}>
@@ -1202,7 +1097,7 @@ const Concept = ({
                 </>
                 )}
               </>
-            ) : effectiveViewMode === 'tunnel' ? (
+            ) : (
               <TunnelView
                 conceptId={effectiveConceptId}
                 edgeId={parentEdgeId}
@@ -1213,41 +1108,7 @@ const Concept = ({
                 pendingScrollTunnelLinkId={pendingScrollTunnelLinkId}
                 onPendingScrollTunnelLinkConsumed={onPendingScrollTunnelLinkConsumed}
               />
-            ) : (
-              <FlipView
-                concept={concept}
-                parents={parents}
-                originPath={path}
-                originEdgeId={originEdgeId}
-                mode={isDecontextualized ? 'exploratory' : 'contextual'}
-                isGuest={isGuest}
-                votingAllowed={votingAllowed}
-                onParentClick={handleFlipViewParentClick}
-                onOpenNewTab={handleOpenNewTab}
-              />
             )}
-          </div>
-          {showLinksPanel && (
-            <div style={isNarrow ? styles.rightColumnNarrow : styles.rightColumn}>
-              <ConceptLinksPanel
-                conceptId={effectiveConceptId}
-                conceptName={concept.name}
-                path={effectivePath}
-                currentEdgeId={parentEdgeId}
-                voteSets={votingAllowed ? voteSets : []}
-                isGuest={isGuest}
-                canAddLink={canCreate}
-                votingAllowed={votingAllowed}
-                viewMode={effectiveViewMode}
-                onRequestLogin={onRequestLogin}
-                onNavigateToSituation={onNavigateToSituation}
-                onOpenConceptTab={onOpenConceptTab}
-                pendingScrollLinkId={pendingScrollLinkId}
-                onPendingScrollLinkConsumed={onPendingScrollLinkConsumed}
-                collapsible={isNarrow}
-              />
-            </div>
-          )}
         </div>
       </main>
 
@@ -1414,32 +1275,11 @@ const styles = {
     minWidth: 0,
     flex: 1,
   },
-  decontextTitle: {
-    fontSize: '20px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    color: '#333',
-  },
-  decontextSubtitle: {
-    fontSize: '16px',
-    color: '#888',
-    fontStyle: 'normal',
-  },
   buttonSection: {
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '8px',
-  },
-  flipButton: {
-    padding: '8px 16px',
-    backgroundColor: 'transparent',
-    color: '#333',
-    border: '1px solid #333',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontFamily: '"EB Garamond", Georgia, serif',
-    fontWeight: '500',
   },
   editToggle: {
     padding: '8px 16px',
@@ -1557,38 +1397,6 @@ const styles = {
     // Bottom padding clears the fixed Add/Search bar (≈54px tall, 30px above the
     // viewport bottom) so it never overlaps the last card / add-answer form.
     padding: '40px 20px 120px',
-  },
-  twoColumnLayout: {
-    display: 'flex',
-    gap: '0',
-    alignItems: 'stretch',
-  },
-  twoColumnLayoutNarrow: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0',
-  },
-  leftColumn: {
-    flex: '0 0 65%',
-    maxWidth: '65%',
-    overflowY: 'auto',
-    paddingRight: '20px',
-  },
-  leftColumnNarrow: {
-    width: '100%',
-  },
-  rightColumn: {
-    flex: '0 0 35%',
-    maxWidth: '35%',
-    overflowY: 'auto',
-    borderLeft: '1px solid #e0d9cf',
-    paddingLeft: '20px',
-  },
-  rightColumnNarrow: {
-    width: '100%',
-    borderTop: '1px solid #e0d9cf',
-    paddingTop: '20px',
-    marginTop: '20px',
   },
   // Phase 46: flex-wrap so sort toggles reflow below the concept name at narrow widths
   // instead of compressing the name into an unreadable sliver.

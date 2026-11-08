@@ -495,9 +495,6 @@ const AppShell = () => {
       if (path && path.length > 0) {
         params.set('p', path.join(','));
       }
-      if (viewMode === 'flip') {
-        params.set('v', 'flip');
-      }
     }
     return '?' + params.toString();
   };

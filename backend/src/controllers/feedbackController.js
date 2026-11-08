@@ -1,8 +1,8 @@
 // Phase 72e-1: reader feedback for curated communities.
 //
 // A feedback item is a public suggestion attached to one question card (edge):
-// reword the question, change an answer, add/remove a precedent or subsequent
-// sibling link, or just a free-text note. Items are visible immediately; owners
+// reword the question, change an answer, or just a free-text note (plus branch
+// suggestions, new_child). Items are visible immediately; owners
 // can hide items or replies and set a status (open / incorporated / declined).
 // Readers reply and upvote. Every item snapshots the text it was written against
 // so the thread stays legible after the owner edits the question.
@@ -18,10 +18,8 @@ const communityAccess = require('../utils/communityAccess');
 const safeBrowsing = require('../utils/safeBrowsing');
 
 const KINDS = new Set([
-  'edit_question', 'edit_answer', 'add_precedent', 'remove_precedent',
-  'add_subsequent', 'remove_subsequent', 'new_child', 'general',
+  'edit_question', 'edit_answer', 'new_child', 'general',
 ]);
-const SEQUENCE_KINDS = new Set(['add_precedent', 'remove_precedent', 'add_subsequent', 'remove_subsequent']);
 const STATUSES = new Set(['open', 'incorporated', 'declined']);
 const MAX_COMMENT = 2000;
 
@@ -65,15 +63,6 @@ async function loadEdge(edgeId) {
     [edgeId]
   );
   return r.rows[0] || null;
-}
-
-// Sibling rule reused from Phase 72c-2 addSequenceLink: same parent + graph_path
-// (non-roots), or both root edges in the same community.
-function areSiblings(a, b) {
-  const samePath = (a.graph_path || []).join(',') === (b.graph_path || []).join(',');
-  const bothRoots = a.parent_id === null && b.parent_id === null;
-  if (bothRoots) return samePath && a.community_id === b.community_id;
-  return a.parent_id !== null && a.parent_id === b.parent_id && samePath;
 }
 
 // Validate + normalize the kind-specific proposal (edit_question, edit_answer).
@@ -388,7 +377,7 @@ const feedbackController = {
   // a curated community, on a live (non-archived) target.
   createFeedback: async (req, res) => {
     try {
-      const { edgeId, kind, targetLinkId, targetEdgeId, proposal, comment } = req.body;
+      const { edgeId, kind, targetLinkId, proposal, comment } = req.body;
       const userId = req.user.userId;
 
       if (!KINDS.has(kind)) return res.status(400).json({ error: 'Unknown feedback kind', code: 'invalid_kind' });
@@ -437,32 +426,6 @@ const feedbackController = {
         const link = linkRow.rows[0];
         snapshot.answer = { title: link.title, url: link.url, comment: link.comment, publishedOn: link.published_on };
         resolvedLinkId = lid;
-      } else if (SEQUENCE_KINDS.has(kind)) {
-        const sid = parseInt(targetEdgeId, 10);
-        if (!sid || isNaN(sid)) return res.status(400).json({ error: 'targetEdgeId is required', code: 'target_required' });
-        const sibling = await loadEdge(sid);
-        if (!sibling) return res.status(400).json({ error: 'Sibling question not found', code: 'target_required' });
-        if (sibling.deleted_at) return res.status(400).json({ error: 'That question has been removed.', code: 'edge_deleted' });
-        if (!areSiblings(edge, sibling)) {
-          return res.status(400).json({ error: 'Precedent/subsequent suggestions must target a sibling question.', code: 'not_siblings' });
-        }
-        // Existence checks mirror the directional semantics of 72c-2
-        // (from_edge precedes to_edge).
-        const isAdd = kind === 'add_precedent' || kind === 'add_subsequent';
-        const fromId = (kind === 'add_precedent' || kind === 'remove_precedent') ? sid : eid;
-        const toId = (kind === 'add_precedent' || kind === 'remove_precedent') ? eid : sid;
-        const existing = await pool.query(
-          'SELECT id FROM question_sequence_links WHERE from_edge_id = $1 AND to_edge_id = $2',
-          [fromId, toId]
-        );
-        if (isAdd && existing.rows.length > 0) {
-          return res.status(409).json({ error: 'That link already exists.', code: 'duplicate_link' });
-        }
-        if (!isAdd && existing.rows.length === 0) {
-          return res.status(400).json({ error: 'That link does not currently exist.', code: 'link_not_found' });
-        }
-        snapshot.siblingName = sibling.concept_name;
-        resolvedTargetEdgeId = sid;
       }
 
       const prop = await buildProposal(kind, proposal, userId);

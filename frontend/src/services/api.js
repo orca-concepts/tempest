@@ -139,13 +139,6 @@ export const conceptsAPI = {
   softDeleteEdge: (edgeId) =>
     api.post(`/concepts/edges/${edgeId}/delete`),
 
-  // Phase 72c-2: precedent/subsequent links between sibling questions (curated)
-  addSequenceLink: (fromEdgeId, toEdgeId) =>
-    api.post('/concepts/sequence-links/add', { fromEdgeId, toEdgeId }),
-
-  removeSequenceLink: (linkId) =>
-    api.post('/concepts/sequence-links/remove', { linkId }),
-
   // Phase 14a: Batch children for diff modal
   getBatchChildrenForDiff: (panes) =>
     api.post('/concepts/batch-children-for-diff', { panes }),
@@ -296,13 +289,6 @@ export const votesAPI = {
   removeVoteFromTab: (edgeId, tabId) =>
     api.post('/votes/remove-from-tab', { edgeId, tabId }),
 
-  // Link votes (similarity votes — Flip View only)
-  addLinkVote: (originEdgeId, similarEdgeId) =>
-    api.post('/votes/link/add', { originEdgeId, similarEdgeId }),
-
-  removeLinkVote: (originEdgeId, similarEdgeId) =>
-    api.post('/votes/link/remove', { originEdgeId, similarEdgeId }),
-
   // Swap votes (replace votes)
   getSwapVotes: (edgeId) =>
     api.get(`/votes/swap/${edgeId}`),
@@ -326,9 +312,6 @@ export const votesAPI = {
 
   getWebLinksByUrl: (url) =>
     api.get('/votes/web-links/by-url', { params: { url } }),
-
-  getAllWebLinksForConcept: (conceptId, path) =>
-    api.get(`/votes/web-links/all/${conceptId}`, { params: path ? { path } : {} }),
 
   addWebLink: (edgeId, url, title, comment, publishedOn) =>
     api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined, publishedOn: publishedOn || undefined }),

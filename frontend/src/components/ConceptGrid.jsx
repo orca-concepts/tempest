@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { getSetColor } from './VoteSetBar';
 import CardAnswerSection from './CardAnswerSection';
 import CardLinksSection from './CardLinksSection';
-import CardSequenceSection from './CardSequenceSection';
 import EditableField from './EditableField';
 import FeedbackPanel from './FeedbackPanel';
 
@@ -102,18 +101,6 @@ const ConceptGrid = ({
   const isSelected = (edgeId) =>
     !!(selectedEdgeIds && (selectedEdgeIds.has ? selectedEdgeIds.has(edgeId) : selectedEdgeIds.includes(edgeId)));
 
-  // Phase 72c-2: scroll to and briefly highlight a sibling card (clicked from a
-  // precedent/subsequent list). 300ms delay, scrollIntoView, 2s highlight.
-  const scrollToCard = (edgeId) => {
-    const el = document.getElementById(`qcard-${edgeId}`);
-    if (!el) return;
-    setTimeout(() => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const prev = el.style.backgroundColor;
-      el.style.backgroundColor = '#fffbcc';
-      setTimeout(() => { el.style.backgroundColor = prev || ''; }, 2000);
-    }, 300);
-  };
   // Phase 14a: Right-click context menu for concept diffing
   const [contextMenu, setContextMenu] = useState(null);
   // Phase 69: which card's nested-location picker is open (keyed by edge_id)
@@ -380,17 +367,6 @@ const ConceptGrid = ({
                 />
               )}
 
-              {/* Phase 72c-2: precedent/subsequent sibling links (curated). */}
-              {showAnswers && !nestMode && (
-                <CardSequenceSection
-                  concept={concept}
-                  siblings={concepts}
-                  editMode={editMode && canManageAnswers}
-                  onScrollToCard={scrollToCard}
-                  onChanged={onAnswersChanged}
-                />
-              )}
-
               {/* Phase 72e-1: reader feedback icon (curated, view + edit mode). */}
               {showFeedback && !nestMode && concept.edge_id != null && (
                 <div style={styles.feedbackFooter} onClick={(e) => e.stopPropagation()}>
@@ -540,7 +516,6 @@ const ConceptGrid = ({
         return (
           <FeedbackPanel
             concept={fbConcept}
-            siblings={concepts}
             isOwner={canManageAnswers}
             isGuest={isGuest}
             currentUserId={currentUserId}

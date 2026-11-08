@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+﻿const pool = require('../config/database');
 const crypto = require('crypto');
 const { fetchOgTitle } = require('../utils/ogTitleFetcher');
 const safeBrowsing = require('../utils/safeBrowsing');
@@ -36,7 +36,7 @@ function validatePublishedOn(raw) {
 }
 
 const votesController = {
-  // Save a concept — creates votes on every edge along the full path.
+  // Save a concept â€” creates votes on every edge along the full path.
   addVote: async (req, res) => {
     const { edgeId, path } = req.body;
 
@@ -49,7 +49,7 @@ const votesController = {
       const userId = req.user.userId;
 
       // path should be an array of concept IDs from root to the current concept
-      // e.g. [1, 2, 3] means Root(1) → Child(2) → Child(3)
+      // e.g. [1, 2, 3] means Root(1) â†’ Child(2) â†’ Child(3)
       // For root concepts, path will be empty [] or not provided
       const conceptPath = Array.isArray(path) ? path : [];
 
@@ -113,7 +113,7 @@ const votesController = {
       try {
         await client.query('BEGIN');
 
-        // Phase 20c: Mutual exclusivity — remove any swap vote for this edge before saving
+        // Phase 20c: Mutual exclusivity â€” remove any swap vote for this edge before saving
         await client.query(
           'DELETE FROM replace_votes WHERE user_id = $1 AND edge_id = $2',
           [userId, edgeId]
@@ -160,7 +160,7 @@ const votesController = {
     }
   },
 
-  // Unsave a concept — removes vote on this edge AND all descendant edges
+  // Unsave a concept â€” removes vote on this edge AND all descendant edges
   removeVote: async (req, res) => {
     const { edgeId } = req.body;
 
@@ -255,7 +255,7 @@ const votesController = {
     }
   },
 
-  // Unsave from a specific tab only — removes the vote-tab link, but keeps
+  // Unsave from a specific tab only â€” removes the vote-tab link, but keeps
   // the vote itself if it's linked to other tabs. If it's the last tab link,
   // the vote itself is also deleted (full unsave with cascade).
   removeVoteFromTab: async (req, res) => {
@@ -337,7 +337,7 @@ const votesController = {
         );
 
         if (parseInt(remainingLinks.rows[0].cnt) === 0) {
-          // No more tab links — delete the vote entirely
+          // No more tab links â€” delete the vote entirely
           await pool.query('DELETE FROM votes WHERE id = $1', [voteRow.id]);
           removedVoteCount++;
         }
@@ -397,7 +397,7 @@ const votesController = {
           ORDER BY e.graph_path, c.name`;
         params = [userId, tabId];
       } else {
-        // No tab filter — return all saves (backwards compatible)
+        // No tab filter â€” return all saves (backwards compatible)
         query = `
           SELECT 
             e.id AS edge_id,
@@ -584,7 +584,7 @@ const votesController = {
         return res.status(400).json({ error: 'Cannot delete your last tab' });
       }
 
-      // Delete the tab — vote_tab_links cascade automatically.
+      // Delete the tab â€” vote_tab_links cascade automatically.
       // Votes that lose their last tab link are orphaned but still count
       // as endorsements. We clean them up: delete votes with no remaining links.
       // First, find votes that are ONLY linked to this tab
@@ -620,108 +620,8 @@ const votesController = {
     }
   },
 
-  // Add a link vote (similarity vote) in contextual Flip View
-  addLinkVote: async (req, res) => {
-    const { originEdgeId, similarEdgeId } = req.body;
-
-    try {
-      if (!originEdgeId || !similarEdgeId) {
-        return res.status(400).json({ error: 'originEdgeId and similarEdgeId are required' });
-      }
-
-      if (originEdgeId === similarEdgeId) {
-        return res.status(400).json({ error: 'Cannot link an edge to itself' });
-      }
-
-      const userId = req.user.userId;
-
-      // Phase 72a: voting is disabled in curated communities.
-      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(originEdgeId));
-      if (!voteCheck.ok) {
-        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
-      }
-
-      // Verify both edges exist
-      const edgeCheck = await pool.query(
-        'SELECT id FROM edges WHERE id = ANY($1::integer[])',
-        [[originEdgeId, similarEdgeId]]
-      );
-
-      if (edgeCheck.rows.length < 2) {
-        return res.status(404).json({ error: 'One or both edges not found' });
-      }
-
-      // Insert link vote (ON CONFLICT = already voted, just return current count)
-      const insertResult = await pool.query(
-        `INSERT INTO similarity_votes (user_id, origin_edge_id, similar_edge_id)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (user_id, origin_edge_id, similar_edge_id) DO NOTHING
-         RETURNING id`,
-        [userId, originEdgeId, similarEdgeId]
-      );
-
-      // Get updated link vote count for this similar_edge from this origin
-      const countResult = await pool.query(
-        'SELECT COUNT(*) as link_count FROM similarity_votes WHERE origin_edge_id = $1 AND similar_edge_id = $2',
-        [originEdgeId, similarEdgeId]
-      );
-
-      res.status(201).json({
-        message: insertResult.rows.length > 0 ? 'Link vote added' : 'Already linked',
-        linkCount: parseInt(countResult.rows[0].link_count)
-      });
-    } catch (error) {
-      console.error('Error adding link vote:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
-  // Remove a link vote
-  removeLinkVote: async (req, res) => {
-    const { originEdgeId, similarEdgeId } = req.body;
-
-    try {
-      if (!originEdgeId || !similarEdgeId) {
-        return res.status(400).json({ error: 'originEdgeId and similarEdgeId are required' });
-      }
-
-      const userId = req.user.userId;
-
-      // Phase 72a: voting is disabled in curated communities.
-      const voteCheck = communityAccess.assertVotingAllowed(await communityAccess.getCommunityForEdge(originEdgeId));
-      if (!voteCheck.ok) {
-        return res.status(voteCheck.status).json({ error: voteCheck.error, code: voteCheck.code });
-      }
-
-      const deleteResult = await pool.query(
-        `DELETE FROM similarity_votes
-         WHERE user_id = $1 AND origin_edge_id = $2 AND similar_edge_id = $3
-         RETURNING id`,
-        [userId, originEdgeId, similarEdgeId]
-      );
-
-      if (deleteResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Link vote not found' });
-      }
-
-      // Get updated link vote count
-      const countResult = await pool.query(
-        'SELECT COUNT(*) as link_count FROM similarity_votes WHERE origin_edge_id = $1 AND similar_edge_id = $2',
-        [originEdgeId, similarEdgeId]
-      );
-
-      res.json({
-        message: 'Link vote removed',
-        linkCount: parseInt(countResult.rows[0].link_count)
-      });
-    } catch (error) {
-      console.error('Error removing link vote:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
   // Get all swap votes for a specific edge (for the swap modal)
-  // Phase 44: Returns two lists — existingSwaps (siblings with swap votes) and otherSiblings (siblings without)
+  // Phase 44: Returns two lists â€” existingSwaps (siblings with swap votes) and otherSiblings (siblings without)
   getSwapVotes: async (req, res) => {
     const { edgeId } = req.params;
 
@@ -742,7 +642,7 @@ const votesController = {
       }
       const sourceEdge = sourceResult.rows[0];
 
-      // Query 1: existingSwaps — siblings that already have swap votes from this edge
+      // Query 1: existingSwaps â€” siblings that already have swap votes from this edge
       const existingSwapsResult = await pool.query(
         `SELECT
           rv.replacement_edge_id,
@@ -760,7 +660,7 @@ const votesController = {
         [edgeId, userId]
       );
 
-      // Query 2: otherSiblings — sibling edges with NO swap votes from this edge
+      // Query 2: otherSiblings â€” sibling edges with NO swap votes from this edge
       let otherSiblingsResult;
       if (sourceEdge.parent_id === null) {
         // Root siblings: same attribute, parent_id IS NULL
@@ -878,7 +778,7 @@ const votesController = {
         isSibling = sourceEdge.attribute_id === replacementEdge.attribute_id;
       } else if (!sourceIsRoot && !replacementIsRoot) {
         // Both non-root: must share parent_id and graph_path
-        // PostgreSQL arrays returned by pg driver are JS arrays — compare via JSON
+        // PostgreSQL arrays returned by pg driver are JS arrays â€” compare via JSON
         isSibling = sourceEdge.parent_id === replacementEdge.parent_id
           && JSON.stringify(sourceEdge.graph_path) === JSON.stringify(replacementEdge.graph_path);
       }
@@ -894,7 +794,7 @@ const votesController = {
       try {
         await client.query('BEGIN');
 
-        // Phase 20c: Mutual exclusivity — remove any save vote for this edge before swapping.
+        // Phase 20c: Mutual exclusivity â€” remove any save vote for this edge before swapping.
         // This mirrors the cascade logic in removeVote: delete the direct vote + all descendant votes.
         const existingSaveForEdge = await client.query(
           'SELECT id FROM votes WHERE user_id = $1 AND edge_id = $2',
@@ -1183,7 +1083,7 @@ const votesController = {
     }
   },
 
-  // ─── Tab Groups (Phase 5d) ──────────────────────────────
+  // â”€â”€â”€ Tab Groups (Phase 5d) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   // Get all tab groups for the current user
   getTabGroups: async (req, res) => {
@@ -1264,7 +1164,7 @@ const votesController = {
     }
   },
 
-  // Delete a tab group (tabs inside become ungrouped — NOT deleted)
+  // Delete a tab group (tabs inside become ungrouped â€” NOT deleted)
   deleteTabGroup: async (req, res) => {
     const { groupId } = req.body;
     try {
@@ -1282,7 +1182,7 @@ const votesController = {
         'UPDATE graph_tabs SET group_id = NULL WHERE group_id = $1 AND user_id = $2',
         [groupId, userId]
       );
-      // Note: corpus_subscriptions.group_id was dropped in Phase 19d — no update needed
+      // Note: corpus_subscriptions.group_id was dropped in Phase 19d â€” no update needed
 
       const result = await pool.query(
         'DELETE FROM tab_groups WHERE id = $1 AND user_id = $2 RETURNING id',
@@ -1497,7 +1397,7 @@ const votesController = {
   // Get rankings for a specific parent edge + vote set key
   // Returns both the current user's rankings and the aggregated
   // rankings from all users in that vote set.
-  // Child Rankings (Phase 5f) — removed in Phase 28b
+  // Child Rankings (Phase 5f) â€” removed in Phase 28b
   getChildRankings: async (req, res) => {
     res.status(410).json({ error: 'Child rankings feature has been removed' });
   },
@@ -1691,7 +1591,7 @@ const votesController = {
         [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment, resolvedPublishedOn]
       );
 
-      // Auto-upvote the link by the person who added it — but NOT in curated
+      // Auto-upvote the link by the person who added it â€” but NOT in curated
       // communities, where links are answers and voting is disabled entirely.
       if (!isCurated) {
         await pool.query(
@@ -1792,7 +1692,7 @@ const votesController = {
         return res.status(400).json({ error: 'Destination must be in the same root graph' });
       }
 
-      // Insert the copy — Phase 72b: carry the source's publication date so a
+      // Insert the copy â€” Phase 72b: carry the source's publication date so a
       // copied answer keeps its date (and its place in recency sorting).
       const result = await pool.query(
         `INSERT INTO concept_links (edge_id, url, title, comment, added_by, published_on)
@@ -1865,192 +1765,6 @@ const votesController = {
     }
   },
 
-  // Get all web links for a concept across ALL parent contexts
-  // Groups links by parent edge, with parent name/path info
-  getAllWebLinksForConcept: async (req, res) => {
-    const { conceptId } = req.params;
-    const { path: pathParam } = req.query;
-
-    try {
-      if (!conceptId) {
-        return res.status(400).json({ error: 'Concept ID is required' });
-      }
-
-      const userId = req.user ? req.user.userId : -1;
-
-      // Find all edges where this concept is the child (i.e., all parent contexts)
-      // For each edge, get its web links with vote counts
-      const query = `
-        SELECT
-          e.id AS edge_id,
-          e.parent_id,
-          e.graph_path,
-          e.attribute_id,
-          a.name AS attribute_name,
-          cp.name AS parent_name,
-          cl.id AS link_id,
-          cl.url,
-          cl.title,
-          cl.added_by,
-          u.username AS added_by_username,
-          u.orcid_id AS author_orcid_id,
-          cl.created_at AS link_created_at,
-          cl.comment,
-          cl.updated_at AS link_updated_at,
-          cl.edge_id AS source_edge_id,
-          COUNT(clv.id) AS vote_count,
-          BOOL_OR(clv.user_id = $2) AS user_voted
-        FROM edges e
-        JOIN attributes a ON e.attribute_id = a.id
-        LEFT JOIN concepts cp ON e.parent_id = cp.id
-        -- A link applies ONLY to the edge it is placed on. It never surfaces
-        -- on ancestor edges, so each parent-context group lists only its own
-        -- edge's links.
-        LEFT JOIN concept_links cl ON cl.edge_id = e.id AND cl.legal_hold = false
-        LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
-        LEFT JOIN users u ON u.id = cl.added_by
-        WHERE e.child_id = $1
-        GROUP BY e.id, e.parent_id, e.graph_path, e.attribute_id, a.name,
-                 cp.name, cl.id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at,
-                 cl.comment, cl.updated_at, cl.edge_id
-        ORDER BY e.id, COUNT(clv.id) DESC, cl.created_at DESC
-      `;
-
-      const result = await pool.query(query, [conceptId, userId]);
-
-      // Group by edge_id
-      const edgeMap = {};
-      const edgeOrder = [];
-
-      for (const row of result.rows) {
-        if (!edgeMap[row.edge_id]) {
-          edgeMap[row.edge_id] = {
-            edgeId: row.edge_id,
-            parentId: row.parent_id,
-            parentName: row.parent_name || '(root)',
-            graphPath: row.graph_path || [],
-            attributeId: row.attribute_id,
-            attributeName: row.attribute_name,
-            links: [],
-          };
-          edgeOrder.push(row.edge_id);
-        }
-        // Only add a link entry if there's actually a link (cl.id is not null)
-        if (row.link_id) {
-          edgeMap[row.edge_id].links.push({
-            id: row.link_id,
-            url: row.url,
-            title: row.title,
-            addedBy: row.added_by,
-            addedByUsername: row.added_by_username,
-            authorOrcidId: orcidForDisplay(row.author_orcid_id),
-            createdAt: row.link_created_at,
-            comment: row.comment,
-            updatedAt: row.link_updated_at,
-            voteCount: parseInt(row.vote_count),
-            userVoted: row.user_voted || false,
-            sourceEdgeId: row.source_edge_id,
-          });
-        }
-      }
-
-      // Batch-fetch addenda for all link IDs across all edges
-      const allLinkIds = [];
-      for (const eid of edgeOrder) {
-        for (const link of edgeMap[eid].links) {
-          allLinkIds.push(link.id);
-        }
-      }
-      if (allLinkIds.length > 0) {
-        const addendaResult = await pool.query(
-          `SELECT id, concept_link_id, body, created_at
-           FROM concept_link_addenda
-           WHERE concept_link_id = ANY($1::integer[])
-           ORDER BY created_at ASC`,
-          [allLinkIds]
-        );
-        const addendaMap = {};
-        for (const row of addendaResult.rows) {
-          if (!addendaMap[row.concept_link_id]) addendaMap[row.concept_link_id] = [];
-          addendaMap[row.concept_link_id].push({ id: row.id, body: row.body, createdAt: row.created_at });
-        }
-        for (const eid of edgeOrder) {
-          for (const link of edgeMap[eid].links) {
-            link.addenda = addendaMap[link.id] || [];
-          }
-        }
-      }
-
-      // Determine which edge is the "current context" based on the path param
-      let currentEdgeId = null;
-      if (pathParam) {
-        const pathArray = pathParam.split(',').map(Number).filter(Boolean);
-        // The current edge connects the last concept in the path to conceptId
-        if (pathArray.length > 0) {
-          const parentId = pathArray[pathArray.length - 1];
-          // Find matching edge
-          for (const eid of edgeOrder) {
-            const e = edgeMap[eid];
-            if (e.parentId === parentId && 
-                JSON.stringify(e.graphPath) === JSON.stringify(pathArray)) {
-              currentEdgeId = eid;
-              break;
-            }
-          }
-        } else {
-          // Root concept: find edge with parent_id IS NULL
-          for (const eid of edgeOrder) {
-            const e = edgeMap[eid];
-            if (e.parentId === null) {
-              currentEdgeId = eid;
-              break;
-            }
-          }
-        }
-      }
-
-      // Build response: current context first, then others sorted by total link votes desc
-      const groups = edgeOrder.map(eid => edgeMap[eid]);
-      
-      // Sort: current context first, then by total link count desc
-      groups.sort((a, b) => {
-        if (a.edgeId === currentEdgeId) return -1;
-        if (b.edgeId === currentEdgeId) return 1;
-        const aTotal = a.links.reduce((sum, l) => sum + l.voteCount, 0);
-        const bTotal = b.links.reduce((sum, l) => sum + l.voteCount, 0);
-        if (bTotal !== aTotal) return bTotal - aTotal;
-        return b.links.length - a.links.length;
-      });
-
-      // Collect concept IDs from graph paths for name resolution
-      const pathConceptIds = new Set();
-      groups.forEach(g => {
-        (g.graphPath || []).forEach(id => pathConceptIds.add(id));
-        if (g.parentId) pathConceptIds.add(g.parentId);
-      });
-
-      let conceptNames = {};
-      if (pathConceptIds.size > 0) {
-        const namesResult = await pool.query(
-          'SELECT id, name FROM concepts WHERE id = ANY($1::integer[])',
-          [Array.from(pathConceptIds)]
-        );
-        namesResult.rows.forEach(row => {
-          conceptNames[row.id] = row.name;
-        });
-      }
-
-      res.json({
-        groups,
-        currentEdgeId,
-        conceptNames,
-      });
-    } catch (error) {
-      console.error('Error fetching all web links for concept:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-
   // Remove upvote from a web link. One vote per user per link.
   removeWebLinkVote: async (req, res) => {
     const { linkId } = req.body;
@@ -2095,7 +1809,7 @@ const votesController = {
   },
 
   // Update comment on a web link (creator only)
-  // POST /api/votes/web-links/:linkId/addenda — add an addendum to a concept link
+  // POST /api/votes/web-links/:linkId/addenda â€” add an addendum to a concept link
   addConceptLinkAddendum: async (req, res) => {
     const { linkId } = req.params;
     const { body } = req.body;
@@ -2378,7 +2092,7 @@ const votesController = {
     res.status(410).json({ error: 'Vote set drift has been retired' });
   },
 
-  // Phase 59b: Unified votes endpoint — savedEdges + linkVotes + contextEdges + ancestorEdges
+  // Phase 59b: Unified votes endpoint â€” savedEdges + linkVotes + contextEdges + ancestorEdges
   // AD: Votes pages are display-only. No remove affordance. Click-to-navigate only.
   // AD: Link-voted edges without a save vote appear with full ancestry as context rows.
   getAllVotes: async (req, res) => {
@@ -2466,7 +2180,7 @@ const votesController = {
         voteCount: row.vote_count,
       }));
 
-      // 3. Context edges — edges referenced by linkVotes not in savedEdges
+      // 3. Context edges â€” edges referenced by linkVotes not in savedEdges
       const savedEdgeIds = new Set(savedEdges.map(e => e.edgeId));
       const contextOnlyEdgeIds = new Set();
       for (const lv of linkVotes) {
@@ -2505,7 +2219,7 @@ const votesController = {
         }));
       }
 
-      // 4. Ancestor edges — walk up the graph_path of all saved + context edges
+      // 4. Ancestor edges â€” walk up the graph_path of all saved + context edges
       //    to fill in tree scaffolding the user doesn't directly have.
       //    Use a single batch query: collect all (parent_id, child_id, graph_path)
       //    combos from graph_path arrays and fetch them in one query.
@@ -2687,7 +2401,7 @@ const votesController = {
       }
       const existing = existingRes.rows[0];
 
-      // Curated-owner gating (open → curated_only, non-owner → curated_owner_only).
+      // Curated-owner gating (open â†’ curated_only, non-owner â†’ curated_owner_only).
       const community = await communityAccess.getCommunityForLink(linkId);
       const gate = await communityAccess.assertCuratedOwner(community, userId);
       if (!gate.ok) {
@@ -2698,7 +2412,7 @@ const votesController = {
         return res.status(403).json({ error: 'This answer is held for legal reasons and cannot be edited.', code: 'legal_hold' });
       }
 
-      // ── URL (with Safe Browsing on change) ──
+      // â”€â”€ URL (with Safe Browsing on change) â”€â”€
       let newUrl = existing.url;
       const urlProvided = url !== undefined;
       if (urlProvided) {
@@ -2724,7 +2438,7 @@ const votesController = {
         newUrl = trimmedUrl;
       }
 
-      // ── publication date (cannot be cleared) ──
+      // â”€â”€ publication date (cannot be cleared) â”€â”€
       let newPublishedOn = existing.published_on;
       if (publishedOn !== undefined) {
         const raw = publishedOn != null ? String(publishedOn).trim() : '';
@@ -2738,7 +2452,7 @@ const votesController = {
         newPublishedOn = validation.value;
       }
 
-      // ── title (blank → OG fetch of the resolved URL, else the URL itself) ──
+      // â”€â”€ title (blank â†’ OG fetch of the resolved URL, else the URL itself) â”€â”€
       let newTitle = existing.title;
       if (title !== undefined) {
         const trimmedTitle = String(title).trim();
@@ -2750,7 +2464,7 @@ const votesController = {
         }
       }
 
-      // ── comment (mutable in curated) ──
+      // â”€â”€ comment (mutable in curated) â”€â”€
       let newComment = existing.comment;
       if (comment !== undefined) {
         newComment = comment != null && String(comment).trim() ? String(comment).trim() : null;
@@ -2821,7 +2535,7 @@ const votesController = {
     }
   },
 
-  // GET /api/votes/web-links/:linkId/location — resolve a link ID to its concept + path
+  // GET /api/votes/web-links/:linkId/location â€” resolve a link ID to its concept + path
   getWebLinkLocation: async (req, res) => {
     const linkId = parseInt(req.params.linkId, 10);
     if (!Number.isFinite(linkId)) return res.status(404).json({ error: 'Not found' });
@@ -2848,7 +2562,7 @@ const votesController = {
       // Phase 72b: a curated "answer" renders inside the child card in the PARENT's
       // grid, not on the child's own page (the links panel is hidden there). So the
       // page to open is the parent question. For a root edge there is no parent
-      // concept — the card lives in the community root list (cardConceptId = null).
+      // concept â€” the card lives in the community root list (cardConceptId = null).
       const cardConceptId = graphPath.length > 0 ? graphPath[graphPath.length - 1] : null;
       const cardPath = graphPath.length > 0 ? graphPath.slice(0, -1) : [];
       return res.json({

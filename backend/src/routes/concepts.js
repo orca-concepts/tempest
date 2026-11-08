@@ -45,12 +45,6 @@ router.post('/edges/:edgeId/ungroup', authenticateToken, conceptsController.ungr
 // Both are curated-owner-only (gated in the controller via communityAccess).
 router.post('/edges/:edgeId/delete', authenticateToken, conceptsController.softDeleteEdge);
 
-// Phase 72c-2: precedent/subsequent links between sibling questions (curated,
-// owner-only, gated in the controller). Registered before the `/:id/*` routes so
-// the literal path isn't captured by the id param.
-router.post('/sequence-links/add', authenticateToken, conceptsController.addSequenceLink);
-router.post('/sequence-links/remove', authenticateToken, conceptsController.removeSequenceLink);
-
 router.post('/:id/rename', authenticateToken, conceptsController.renameConcept);
 
 module.exports = router;

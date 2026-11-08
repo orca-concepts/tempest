@@ -1,6 +1,6 @@
 # ORCA — Project Status & Technical Reference
 
-**Last Updated:** November 8, 2026 (Flip View and precedent/subsequent links retired; Phase 73 complete)
+**Last Updated:** November 8, 2026 (privacy/legal fixes: fuller data export, owner roster owner-only, admin restore for legal removals; legal docs redlined)
 
 This file is the canonical technical reference for Orca. It describes the system **as it is now**. Completed-phase narratives, commit lists, and the design history of removed features live in `ORCA_HISTORY.md`. `CLAUDE.md` holds the conventions loaded into every Claude Code session. `ORCA_TESTS.md` is the testing checklist.
 
@@ -138,7 +138,7 @@ All tables are created and maintained idempotently in `backend/src/config/migrat
 **page_comments** (slug-scoped, one level of replies via `parent_comment_id`), **page_comment_votes**.
 
 ### Legal and audit
-- **legal_removals** — admin removal log (target_type: concept, edge, web_link). **dmca_strikes** — per-user strikes.
+- **legal_removals** — admin removal log (target_type: concept, edge, web_link). `restored_at`, `restored_by` (FK users, SET NULL) added November 2026 for admin restores; the older `restored_reason` column is unused. **dmca_strikes** — per-user strikes.
 - **copyright_infringement_notices**, **copyright_counter_notices** — submissions from the public notice forms.
 - **link_removal_log** — sparse audit of user link deletions (URL sha256 only, no plaintext).
 - **safe_browsing_rejections** — sparse audit of URLs rejected by Safe Browsing (URL sha256, threat types, `source` = `add`/`preview`).
@@ -197,8 +197,8 @@ All routes are mounted in `backend/src/server.js`. "Guest" = `optionalAuth`; "Ye
 ### Communities (`/api/communities`, Phase 71)
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/` | Guest | All communities with `mode`, `is_owner` (when logged in), `concept_count`, `root_count`, ordered by name. |
-| GET | `/:slug` | Guest | One community by slug (case-insensitive) with `mode`, `is_owner`, and `owners: [{ userId, username, orcidId }]`; 404 if missing. Used by the `/c/:slug` share link. |
+| GET | `/` | Guest | All communities with `mode`, `is_owner` (when logged in), `concept_count`, `root_count`, ordered by name. No usernames (creator name removed November 2026). |
+| GET | `/:slug` | Guest | One community by slug (case-insensitive) with `mode` and `is_owner`; `owners: [{ userId, username, orcidId }]` is included **only when the requester is an owner** (November 2026; readers and guests get no roster). No creator username is returned anywhere. 404 if missing. Used by the `/c/:slug` share link. |
 | POST | `/` | Yes | Create. Body `{ name, description, mode }` (`mode` defaults to `open`; 400 if not `open`/`curated`). ≤255 chars; 409 on case-insensitive name clash; slug auto-generated with `-2`, `-3` on collision. Creator inserted into `community_owners` in the same transaction. |
 | POST | `/:id/owners/add` | Yes | Owner only (403 `owner_only`). Body `{ username }`; 404 if no such user; idempotent. |
 | POST | `/:id/owners/remove` | Yes | Owner only. Body `{ userId }`. Locks owner rows (`FOR UPDATE`) then refuses to leave zero owners (400 `last_owner`). An owner may remove themselves if another remains. |
@@ -251,9 +251,9 @@ Every write returns 409 `archived` when the target question is deleted, and 403 
 ### Other namespaces
 - **Moderation (`/api/moderation`):** POST `/flag`, `/unflag`, `/vote`, `/vote/remove`, `/comment`, `/unhide` (admin); GET `/hidden/:parentId`, `/comments/:edgeId`.
 - **Pages (`/api/pages`):** GET/POST `/:slug/comments`, POST `/comments/:commentId/vote`.
-- **Users (`/api/users`):** GET `/search`, `/:id/profile`, `/me/export`, `/me/export-status`; PATCH `/me`.
+- **Users (`/api/users`):** GET `/search`, `/:id/profile`, `/me/export`, `/me/export-status`; PATCH `/me`. **Export contents (November 2026):** `contributions` (web links, page comments, moderation comments, situations owned, feedback items incl. the user's own hidden ones, feedback replies, link addenda, concepts created, edges created incl. soft-deleted with `deleted_at`), `votes_and_subscriptions` (existing members + feedback votes), and `communities` (created → role `creator`, owned → role `owner`). Any new user-authored table must be added to the export.
 - **Legal (`/api/legal`):** POST `/infringement`, `/counter-notice` (public notice forms).
-- **Admin (`/api/admin`):** POST `/legal-removal`; GET `/legal/notices`, `/legal/counter-notices`, `/legal/removals`, `/legal/repeat-infringers`; POST `/legal/removals/:id/mark-notified`, `/legal/strikes/:id/clear`.
+- **Admin (`/api/admin`):** POST `/legal-removal`; GET `/legal/notices`, `/legal/counter-notices`, `/legal/removals`, `/legal/repeat-infringers`; POST `/legal/removals/:id/mark-notified`, `/legal/strikes/:id/clear`, `/legal/removals/:id/restore` (November 2026: admin only; one transaction; 409 `already_restored`; clears `legal_hold` on the concept/edge/link, and for an edge also unhides it unless it is soft-deleted or has ≥10 flags, saying so in the response's `effect`; sets `restored_at`/`restored_by`; never touches `dmca_strikes`). Every legal removal is reversible: `legalRemove` only sets flags, never hard-deletes. AdminLegalRemovalsPanel has a Restore button with inline confirm.
 - **Dead code:** `/api/combos/*`, `/api/tunnels/*`.
 
 ---
@@ -376,6 +376,7 @@ All external-service utilities share one contract: **never throw**; return a res
 - **Frontend success pages should verify, not trust a query param.**
 - **Over-general ADs outlive their rationale.** Re-evaluate principles written for removed features.
 - **Keep commits to one feature, and stage files by name.**
+- **Privacy surfaces follow features.** Every new user-authored table must be added to the data export, to account-deletion behavior (CASCADE vs SET NULL, documented), and to the Privacy Policy. Every new third-party call (e.g. Google Safe Browsing) needs a Privacy Policy entry. Check what public endpoints return, not just what the UI shows.
 - **Prefer in-place rewrites that keep ids.** Phase 73 moved subtrees by rewriting paths on existing edge rows rather than copying, so every id-keyed attachment (answers, feedback) followed automatically. Copying (nest-under-sibling) would have needed a remap for each.
 - **Dry runs make previews trustworthy.** Running the real transaction and rolling it back means the preview and the action can never disagree.
 
@@ -385,6 +386,7 @@ All external-service utilities share one contract: **never throw**; return a res
 
 - **Legacy votes endpoints** (`/saved`, `/web-links/votes/me`) and retired-feature routes in `routes/votes.js` should be removed once confirmed unused.
 - **Dead code** for situations and tunnels (backend + frontend) could be deleted in a dedicated cleanup phase. `DeleteAccountFlow` and `/delete-account` still pre-check owned combos.
+- **Legal docs lag the app.** Technical redlines of the Privacy Policy and Terms (November 8, 2026: communities, curated owners, reader feedback, Google Safe Browsing, retired Flip View, rate limits, export) are with the attorney; until they are published, the live legal pages describe the pre-community app. The Copyright Policy needed no technical changes.
 - **Legacy page files** `Saved.jsx`, `SavedTabContent.jsx`, `Login.jsx`, `Register.jsx` are unrouted.
 - **Tabs on removed questions** stay in the sidebar after a delete or ungroup (they now show "This question has been removed."); they could be closed or flagged automatically.
 - **Restructure bar crowding:** on narrow windows the bar sits close to the page-feedback icon and the edit-mode "+" button.

@@ -15,7 +15,7 @@ async function loadAnswersByEdge(edgeIds) {
   if (!edgeIds || edgeIds.length === 0) return byEdge;
   const result = await pool.query(
     `SELECT cl.id, cl.edge_id, cl.url, cl.title, cl.comment,
-            to_char(cl.published_on, 'YYYY-MM-DD') AS published_on,
+            to_char(cl.published_on, 'YYYY-MM-DD') AS published_on, cl.publisher,
             cl.created_at, cl.added_by
        FROM concept_links cl
       WHERE cl.edge_id = ANY($1::int[]) AND cl.legal_hold = false
@@ -31,6 +31,7 @@ async function loadAnswersByEdge(edgeIds) {
       title: row.title,
       comment: row.comment,
       publishedOn: row.published_on,
+      publisher: row.publisher,
       createdAt: row.created_at,
       addedBy: row.added_by,
     });

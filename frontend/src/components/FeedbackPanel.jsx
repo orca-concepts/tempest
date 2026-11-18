@@ -61,6 +61,7 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
   const [ansUrl, setAnsUrl] = useState(initialAns ? (initialAns.url || '') : '');
   const [ansComment, setAnsComment] = useState(initialAns ? (initialAns.comment || '') : '');
   const [ansDate, setAnsDate] = useState(initialAns ? (initialAns.publishedOn || '') : '');
+  const [ansPublisher, setAnsPublisher] = useState(initialAns ? (initialAns.publisher || '') : '');
 
   // On picking an answer (create mode), prefill the fields from it.
   useEffect(() => {
@@ -69,6 +70,7 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
     setAnsUrl(selectedAnswer.url || '');
     setAnsComment(selectedAnswer.comment || '');
     setAnsDate(selectedAnswer.publishedOn || '');
+    setAnsPublisher(selectedAnswer.publisher || '');
   }, [targetLinkId, kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
@@ -85,6 +87,7 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
       if (ansUrl.trim()) prop.url = ansUrl.trim();
       prop.comment = ansComment.trim();
       if (ansDate) prop.publishedOn = ansDate;
+      if (ansPublisher.trim()) prop.publisher = ansPublisher.trim();
       payload.proposal = prop;
       if (!editing) payload.targetLinkId = targetLinkId;
     } else if (kind === 'general') {
@@ -149,6 +152,10 @@ const FeedbackForm = ({ concept, initial, onSubmit, onCancel }) => {
             <textarea value={ansComment} onChange={(e) => setAnsComment(e.target.value)} style={styles.textarea} rows={2} maxLength={2000} />
           </label>
           <label style={styles.fieldLabel}>
+            <span style={styles.fieldLabelText}>Proposed publication venue</span>
+            <input type="text" value={ansPublisher} onChange={(e) => setAnsPublisher(e.target.value)} style={styles.input} placeholder="Journal, book, or outlet" maxLength={200} />
+          </label>
+          <label style={styles.fieldLabel}>
             <span style={styles.fieldLabelText}>Proposed publication date</span>
             <input type="date" value={ansDate} onChange={(e) => setAnsDate(e.target.value)} style={styles.dateInput} />
           </label>
@@ -190,6 +197,7 @@ const ProposalSummary = ({ item }) => {
         <div style={styles.beforeAfter}><span style={styles.baLabel}>Answer</span> {ans.title || ans.url || '(untitled)'}</div>
         {prop.title !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>Title →</span> {prop.title}</div>}
         {prop.url !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>URL →</span> {prop.url}</div>}
+        {prop.publisher !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>Published in →</span> {prop.publisher}</div>}
         {prop.publishedOn !== undefined && <div style={styles.beforeAfter}><span style={styles.baLabel}>Date →</span> {prop.publishedOn}</div>}
         {prop.comment !== undefined && prop.comment !== '' && <div style={styles.beforeAfter}><span style={styles.baLabel}>Comment →</span> {prop.comment}</div>}
       </div>

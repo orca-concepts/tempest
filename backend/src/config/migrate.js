@@ -614,6 +614,11 @@ const createTables = async () => {
     // sorting. Nullable (optional in open communities, required in curated at the API).
     await client.query(`ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS published_on DATE`);
 
+    // Publisher ("Published in" venue) for answers (curated communities). Required
+    // at the API in curated communities alongside published_on; nullable at the
+    // database level (existing answers and all open-community links have none).
+    await client.query(`ALTER TABLE concept_links ADD COLUMN IF NOT EXISTS publisher VARCHAR(200)`);
+
     // ============================================================
     // Concept Link Votes table (Phase 6)
     // Simple upvote system for web links. One vote per user per

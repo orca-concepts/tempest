@@ -1,5 +1,5 @@
 const pool = require('../config/database');
-const { isOwner } = require('../utils/communityAccess');
+const { isOwner, assertCuratedOwner } = require('../utils/communityAccess');
 
 // Derive a URL-safe slug from a community name. Uniqueness is enforced by the
 // caller (append -2, -3, ... on collision).
@@ -161,6 +161,72 @@ const communitiesController = {
       }
     } catch (error) {
       console.error('Error creating community:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  // Rename a curated community (owners only). The slug NEVER changes, so existing
+  // /c/:slug share links keep working. Name follows the same rules as create
+  // (trimmed, non-empty, ≤255, case-insensitive unique). Description is optional:
+  // omitted leaves it unchanged; provided (incl. empty) replaces it.
+  renameCommunity: async (req, res) => {
+    const communityId = parseInt(req.params.id, 10);
+    const { name, description } = req.body;
+    try {
+      if (!communityId || isNaN(communityId)) {
+        return res.status(400).json({ error: 'Invalid community id' });
+      }
+
+      // Load the community for its mode (needed by the curated-owner gate).
+      const commRow = await pool.query(
+        'SELECT id, mode FROM communities WHERE id = $1',
+        [communityId]
+      );
+      if (commRow.rows.length === 0) {
+        return res.status(404).json({ error: 'Community not found' });
+      }
+
+      // Curated-only, owners-only: open → 403 curated_only, non-owner → 403 curated_owner_only.
+      const gate = await assertCuratedOwner(commRow.rows[0], req.user.userId);
+      if (!gate.ok) {
+        return res.status(gate.status).json({ error: gate.error, code: gate.code });
+      }
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Name is required' });
+      }
+      if (name.length > 255) {
+        return res.status(400).json({ error: 'Community name must be 255 characters or fewer' });
+      }
+      const trimmedName = name.trim();
+
+      // Case-insensitive uniqueness, excluding this community itself.
+      const nameClash = await pool.query(
+        'SELECT id FROM communities WHERE LOWER(name) = LOWER($1) AND id <> $2',
+        [trimmedName, communityId]
+      );
+      if (nameClash.rows.length > 0) {
+        return res.status(409).json({ error: 'A community with this name already exists' });
+      }
+
+      // description: omitted → unchanged; provided → set (empty string becomes null).
+      const descProvided = description !== undefined;
+      const newDescription = descProvided ? (description && description.trim() ? description.trim() : null) : null;
+
+      const updated = await pool.query(
+        descProvided
+          ? `UPDATE communities SET name = $1, description = $2 WHERE id = $3
+             RETURNING id, name, slug, description, mode, created_at`
+          : `UPDATE communities SET name = $1 WHERE id = $2
+             RETURNING id, name, slug, description, mode, created_at`,
+        descProvided ? [trimmedName, newDescription, communityId] : [trimmedName, communityId]
+      );
+
+      const community = updated.rows[0];
+      community.is_owner = true;
+      res.json({ community });
+    } catch (error) {
+      console.error('Error renaming community:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   },

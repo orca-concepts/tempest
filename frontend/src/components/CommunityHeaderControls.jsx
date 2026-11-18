@@ -30,6 +30,46 @@ const CommunityHeaderControls = ({
   const [ownerError, setOwnerError] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Rename (curated owners only)
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState('');
+  const [renameDescription, setRenameDescription] = useState('');
+  const [renameError, setRenameError] = useState('');
+  const [renameBusy, setRenameBusy] = useState(false);
+
+  const openRename = async () => {
+    setRenameOpen(true);
+    setRenameError('');
+    // Prefill current name + description from the community record.
+    setRenameName('');
+    setRenameDescription('');
+    if (!communitySlug) return;
+    try {
+      const res = await communitiesAPI.getCommunityBySlug(communitySlug);
+      setRenameName(res.data.community.name || '');
+      setRenameDescription(res.data.community.description || '');
+    } catch { /* leave fields empty on failure */ }
+  };
+
+  const handleRename = async () => {
+    const name = renameName.trim();
+    if (renameBusy) return;
+    if (!name) { setRenameError('Name is required'); return; }
+    setRenameBusy(true);
+    setRenameError('');
+    try {
+      await communitiesAPI.renameCommunity(communityId, name, renameDescription.trim());
+      setRenameOpen(false);
+      // Re-fetch the community list so the new name propagates everywhere
+      // (page header, sidebar button, communities list, cached state) without a reload.
+      if (onCommunitiesChanged) onCommunitiesChanged();
+    } catch (err) {
+      setRenameError(err.response?.data?.error || 'Could not rename community');
+    } finally {
+      setRenameBusy(false);
+    }
+  };
+
   const shareUrl = communitySlug
     ? `${window.location.origin}/c/${communitySlug}`
     : window.location.origin;
@@ -113,10 +153,55 @@ const CommunityHeaderControls = ({
           Inbox{inboxOpenCount > 0 ? ` (${inboxOpenCount})` : ''}
         </button>
       )}
+      {communityMode === 'curated' && isOwner && (
+        <button style={styles.button} onClick={openRename} title="Rename this community">
+          Rename
+        </button>
+      )}
       {isOwner && (
         <button style={styles.button} onClick={openOwners} title="Manage community owners">
           Owners
         </button>
+      )}
+
+      {renameOpen && (
+        <div style={styles.overlay} onClick={() => setRenameOpen(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalTitle}>Rename community</div>
+            <div style={styles.renameField}>
+              <span style={styles.renameLabel}>Name</span>
+              <input
+                type="text"
+                value={renameName}
+                onChange={(e) => { setRenameName(e.target.value); setRenameError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleRename(); }}
+                maxLength={255}
+                style={styles.input}
+              />
+            </div>
+            <div style={styles.renameField}>
+              <span style={styles.renameLabel}>Description</span>
+              <textarea
+                value={renameDescription}
+                onChange={(e) => setRenameDescription(e.target.value)}
+                rows={3}
+                style={styles.textarea}
+              />
+            </div>
+            {renameError && <div style={styles.error}>{renameError}</div>}
+            <div style={styles.renameButtons}>
+              <button
+                style={{ ...styles.button, ...(renameBusy ? styles.disabled : {}) }}
+                onClick={handleRename}
+                disabled={renameBusy}
+              >
+                {renameBusy ? 'Saving…' : 'Save'}
+              </button>
+              <button style={styles.button} onClick={() => setRenameOpen(false)} disabled={renameBusy}>Cancel</button>
+            </div>
+            <div style={styles.renameNote}>The share link (/c/{communitySlug}) will not change.</div>
+          </div>
+        </div>
       )}
 
       {ownersOpen && (
@@ -226,6 +311,15 @@ const styles = {
   },
   error: { fontSize: '13px', color: '#c33', marginBottom: '8px' },
   closeRow: { display: 'flex', justifyContent: 'flex-end' },
+  renameField: { display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' },
+  renameLabel: { fontSize: '13px', color: '#666', fontFamily: FONT },
+  textarea: {
+    padding: '8px 10px', fontSize: '14px', fontFamily: FONT,
+    border: '1px solid #ccc', borderRadius: '4px', outline: 'none',
+    color: '#333', backgroundColor: 'white', resize: 'vertical', boxSizing: 'border-box',
+  },
+  renameButtons: { display: 'flex', gap: '8px', marginBottom: '8px' },
+  renameNote: { fontSize: '12px', color: '#999', fontFamily: FONT },
 };
 
 export default CommunityHeaderControls;

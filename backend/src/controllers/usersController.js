@@ -182,7 +182,8 @@ const usersController = {
       ] = await Promise.all([
         // Web links added by user
         pool.query(
-          `SELECT cl.id, e.child_id AS concept_id, c.name AS concept_name, cl.url, cl.created_at
+          `SELECT cl.id, e.child_id AS concept_id, c.name AS concept_name, cl.url,
+                  to_char(cl.published_on, 'YYYY-MM-DD') AS published_on, cl.publisher, cl.created_at
            FROM concept_links cl
            LEFT JOIN edges e ON e.id = cl.edge_id
            LEFT JOIN concepts c ON c.id = e.child_id

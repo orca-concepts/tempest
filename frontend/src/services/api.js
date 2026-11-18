@@ -156,6 +156,11 @@ export const communitiesAPI = {
   createCommunity: (name, description, mode) =>
     api.post('/communities', { name, description, mode }),
 
+  // Rename a curated community (owners only). Slug never changes; description
+  // omitted leaves it unchanged.
+  renameCommunity: (communityId, name, description) =>
+    api.post(`/communities/${communityId}/rename`, description === undefined ? { name } : { name, description }),
+
   // Phase 72a: owner management
   addOwner: (communityId, username) =>
     api.post(`/communities/${communityId}/owners/add`, { username }),
@@ -313,8 +318,8 @@ export const votesAPI = {
   getWebLinksByUrl: (url) =>
     api.get('/votes/web-links/by-url', { params: { url } }),
 
-  addWebLink: (edgeId, url, title, comment, publishedOn) =>
-    api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined, publishedOn: publishedOn || undefined }),
+  addWebLink: (edgeId, url, title, comment, publishedOn, publisher) =>
+    api.post('/votes/web-links/add', { edgeId, url, title: title || undefined, comment: comment || undefined, publishedOn: publishedOn || undefined, publisher: publisher || undefined }),
 
   copyWebLink: (sourceLinkId, destEdgeId) =>
     api.post('/votes/web-links/copy', { sourceLinkId, destEdgeId }),

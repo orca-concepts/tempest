@@ -614,4 +614,32 @@ Three scoped fixes: data-export completeness, owner-roster visibility, and admin
 
 ---
 
+## Answer publisher field ("Published in") + curated community rename
+
+Scripted coverage was run with a throwaway curated + open community and users on a
+separate-port backend (PORT 5050), 26 checks all passing, then cleaned up.
+
+### Publisher field (curated answers)
+- [ ] Migration runs twice cleanly; `\d concept_links` shows `publisher varchar(200)` (nullable)
+- [ ] Curated `POST /votes/web-links/add` without a publisher → 400 `publisher_required`; publisher > 200 chars → 400 `publisher_too_long`; a valid add trims and returns `publisher`
+- [ ] Open `POST /votes/web-links/add` ignores any `publisher` sent (stored NULL, returned null/absent)
+- [ ] Curated `POST /votes/web-links/:linkId/edit` changes `publisher`; omitted leaves it unchanged; an empty value → 400 `publisher_required`
+- [ ] `POST /votes/web-links/copy` carries the source's publisher to the copy
+- [ ] `GET /votes/web-links/:edgeId` returns `publisher` per link
+- [ ] Curated `GET /concepts/:id` child `answers[]` and `currentAnswers`, and `GET /concepts/root` `answers[]`, carry `publisher`
+- [ ] `GET /concepts/graph` curated nested `answers[]` carry `publisher`
+- [ ] `GET /users/me/export` web links include `publisher` (and `published_on`)
+- [ ] `edit_answer` feedback proposals accept `publisher` (snapshot records current publisher; proposal shows it); applying is manual — Orca does not auto-apply feedback
+- [ ] Frontend `npm run build` passes
+- [ ] Curated add form has a required "Published in" text input next to the date ("A publication venue is required." client check); answers display `<publisher> · <date>` under the title (date alone when publisher absent); edit mode edits publisher inline ("set publication" when empty); graph view nested answers show `<publisher> · <date>`
+
+### Rename a curated community (`POST /api/communities/:id/rename`)
+- [ ] Owner rename succeeds and the slug is unchanged; description provided updates, omitted leaves it unchanged
+- [ ] Reader → 403 `curated_owner_only`; guest → 401; open community → 403 `curated_only`
+- [ ] Duplicate name → 409; empty name → 400
+- [ ] `GET /communities/<old slug>` still resolves to the renamed community (share links keep working)
+- [ ] Frontend: curated owners see a "Rename" control in the community header; after saving, the new name shows in the page header, sidebar button, and communities list without a reload
+
+---
+
 **END OF TESTING CHECKLIST**

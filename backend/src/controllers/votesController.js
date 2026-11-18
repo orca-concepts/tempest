@@ -35,6 +35,20 @@ function validatePublishedOn(raw) {
   return { ok: true, value: s };
 }
 
+// Validate an answer's "Published in" venue (publisher). Trimmed, non-empty,
+// max 200 chars. Returns { ok: true, value } or { ok: false, status, code, error }.
+const PUBLISHER_MAX = 200;
+function validatePublisher(raw) {
+  const s = raw != null ? String(raw).trim() : '';
+  if (!s) {
+    return { ok: false, status: 400, code: 'publisher_required', error: 'A publication venue is required.' };
+  }
+  if (s.length > PUBLISHER_MAX) {
+    return { ok: false, status: 400, code: 'publisher_too_long', error: 'Publication venue is too long (max 200 characters).' };
+  }
+  return { ok: true, value: s };
+}
+
 const votesController = {
   // Save a concept â€” creates votes on every edge along the full path.
   addVote: async (req, res) => {
@@ -1444,6 +1458,7 @@ const votesController = {
           cl.comment,
           cl.updated_at,
           to_char(cl.published_on, 'YYYY-MM-DD') AS published_on,
+          cl.publisher,
           COUNT(clv.id) AS vote_count,
           BOOL_OR(clv.user_id = $2) AS user_voted,
           array_agg(DISTINCT clv.user_id) FILTER (WHERE clv.user_id IS NOT NULL) AS voter_user_ids
@@ -1451,7 +1466,7 @@ const votesController = {
         LEFT JOIN concept_link_votes clv ON clv.concept_link_id = cl.id
         LEFT JOIN users u ON u.id = cl.added_by
         WHERE cl.edge_id = $1 AND cl.legal_hold = false
-        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at, cl.published_on
+        GROUP BY cl.id, cl.edge_id, cl.url, cl.title, cl.added_by, u.username, u.orcid_id, cl.created_at, cl.comment, cl.updated_at, cl.published_on, cl.publisher
         ${orderClause}`,
         [parseInt(edgeId, 10), userId]
       );
@@ -1494,6 +1509,7 @@ const votesController = {
           comment: row.comment,
           updatedAt: row.updated_at,
           publishedOn: row.published_on,
+          publisher: row.publisher,
           voteCount: parseInt(row.vote_count),
           userVoted: row.user_voted || false,
           voterUserIds: row.voter_user_ids || [],
@@ -1508,7 +1524,7 @@ const votesController = {
 
   // Add a new web link to an edge
   addWebLink: async (req, res) => {
-    const { edgeId, url, title, comment, publishedOn } = req.body;
+    const { edgeId, url, title, comment, publishedOn, publisher } = req.body;
 
     try {
       if (!edgeId || !url) {
@@ -1563,6 +1579,17 @@ const votesController = {
         resolvedPublishedOn = validation.value;
       }
 
+      // Publisher ("Published in" venue). Required in curated communities (like
+      // publishedOn); ignored (stored NULL) in open communities.
+      let resolvedPublisher = null;
+      if (isCurated) {
+        const pubCheck = validatePublisher(publisher);
+        if (!pubCheck.ok) {
+          return res.status(pubCheck.status).json({ error: pubCheck.error, code: pubCheck.code });
+        }
+        resolvedPublisher = pubCheck.value;
+      }
+
       // Google Safe Browsing check
       const sbResult = await safeBrowsing.checkUrl(trimmedUrl);
       if (!sbResult.safe) {
@@ -1584,11 +1611,11 @@ const votesController = {
       const trimmedComment = comment ? comment.trim() : null;
 
       const result = await pool.query(
-        `INSERT INTO concept_links (edge_id, url, title, added_by, comment, published_on)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO concept_links (edge_id, url, title, added_by, comment, published_on, publisher)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, edge_id, url, title, added_by, created_at, comment, updated_at,
-                   to_char(published_on, 'YYYY-MM-DD') AS published_on`,
-        [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment, resolvedPublishedOn]
+                   to_char(published_on, 'YYYY-MM-DD') AS published_on, publisher`,
+        [edgeId, trimmedUrl, resolvedTitle, userId, trimmedComment, resolvedPublishedOn, resolvedPublisher]
       );
 
       // Auto-upvote the link by the person who added it â€” but NOT in curated
@@ -1614,6 +1641,7 @@ const votesController = {
           comment: result.rows[0].comment,
           updatedAt: result.rows[0].updated_at,
           publishedOn: result.rows[0].published_on,
+          publisher: result.rows[0].publisher,
           voteCount: isCurated ? 0 : 1,
           userVoted: !isCurated,
         }
@@ -1636,7 +1664,7 @@ const votesController = {
 
       // Load source link
       const sourceResult = await pool.query(
-        'SELECT id, edge_id, url, title, comment, added_by, published_on FROM concept_links WHERE id = $1',
+        'SELECT id, edge_id, url, title, comment, added_by, published_on, publisher FROM concept_links WHERE id = $1',
         [sourceLinkId]
       );
       if (sourceResult.rows.length === 0) {
@@ -1695,11 +1723,11 @@ const votesController = {
       // Insert the copy â€” Phase 72b: carry the source's publication date so a
       // copied answer keeps its date (and its place in recency sorting).
       const result = await pool.query(
-        `INSERT INTO concept_links (edge_id, url, title, comment, added_by, published_on)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO concept_links (edge_id, url, title, comment, added_by, published_on, publisher)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, edge_id, url, title, comment, added_by, created_at, updated_at,
-                   to_char(published_on, 'YYYY-MM-DD') AS published_on`,
-        [destEdgeId, source.url, source.title, source.comment, userId, source.published_on]
+                   to_char(published_on, 'YYYY-MM-DD') AS published_on, publisher`,
+        [destEdgeId, source.url, source.title, source.comment, userId, source.published_on, source.publisher]
       );
 
       // Auto-upvote the copied link by the person who copied it.
@@ -2382,7 +2410,7 @@ const votesController = {
   // are mutable here (curated), unlike open communities. Legal-held links refused.
   editWebLink: async (req, res) => {
     const linkId = parseInt(req.params.linkId, 10);
-    const { url, title, comment, publishedOn } = req.body;
+    const { url, title, comment, publishedOn, publisher } = req.body;
     const userId = req.user.userId;
 
     try {
@@ -2392,7 +2420,7 @@ const votesController = {
 
       const existingRes = await pool.query(
         `SELECT id, edge_id, url, title, comment, legal_hold,
-                to_char(published_on, 'YYYY-MM-DD') AS published_on
+                to_char(published_on, 'YYYY-MM-DD') AS published_on, publisher
            FROM concept_links WHERE id = $1`,
         [linkId]
       );
@@ -2452,6 +2480,16 @@ const votesController = {
         newPublishedOn = validation.value;
       }
 
+      // â”€â”€ publisher ("Published in" venue; cannot be cleared once set) â”€â”€
+      let newPublisher = existing.publisher;
+      if (publisher !== undefined) {
+        const pubCheck = validatePublisher(publisher);
+        if (!pubCheck.ok) {
+          return res.status(pubCheck.status).json({ error: pubCheck.error, code: pubCheck.code });
+        }
+        newPublisher = pubCheck.value;
+      }
+
       // â”€â”€ title (blank â†’ OG fetch of the resolved URL, else the URL itself) â”€â”€
       let newTitle = existing.title;
       if (title !== undefined) {
@@ -2472,11 +2510,11 @@ const votesController = {
 
       const updated = await pool.query(
         `UPDATE concept_links
-            SET url = $2, title = $3, comment = $4, published_on = $5, updated_at = CURRENT_TIMESTAMP
+            SET url = $2, title = $3, comment = $4, published_on = $5, publisher = $6, updated_at = CURRENT_TIMESTAMP
           WHERE id = $1
           RETURNING id, edge_id, url, title, comment, updated_at,
-                    to_char(published_on, 'YYYY-MM-DD') AS published_on`,
-        [linkId, newUrl, newTitle, newComment, newPublishedOn]
+                    to_char(published_on, 'YYYY-MM-DD') AS published_on, publisher`,
+        [linkId, newUrl, newTitle, newComment, newPublishedOn, newPublisher]
       );
 
       const row = updated.rows[0];
@@ -2490,6 +2528,7 @@ const votesController = {
           comment: row.comment,
           updatedAt: row.updated_at,
           publishedOn: row.published_on,
+          publisher: row.publisher,
         },
       });
     } catch (error) {

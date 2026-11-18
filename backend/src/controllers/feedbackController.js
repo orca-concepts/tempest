@@ -106,6 +106,11 @@ async function buildProposal(kind, proposalInput, userId) {
       if (!v.ok) return { ok: false, status: 400, code: 'invalid_published_on', error: v.error };
       p.publishedOn = v.value; any = true;
     }
+    if (src.publisher !== undefined && String(src.publisher).trim() !== '') {
+      const venue = String(src.publisher).trim();
+      if (venue.length > 200) return { ok: false, status: 400, code: 'publisher_too_long', error: 'Publication venue is too long (max 200 characters).' };
+      p.publisher = venue; any = true;
+    }
     if (!any) return { ok: false, status: 400, code: 'empty_proposal', error: 'Suggest at least one change to the answer.' };
     return { ok: true, proposal: p };
   }
@@ -416,7 +421,7 @@ const feedbackController = {
         const lid = parseInt(targetLinkId, 10);
         if (!lid || isNaN(lid)) return res.status(400).json({ error: 'targetLinkId is required', code: 'target_required' });
         const linkRow = await pool.query(
-          `SELECT id, url, title, comment, to_char(published_on, 'YYYY-MM-DD') AS published_on
+          `SELECT id, url, title, comment, to_char(published_on, 'YYYY-MM-DD') AS published_on, publisher
              FROM concept_links WHERE id = $1 AND edge_id = $2 AND legal_hold = false`,
           [lid, eid]
         );
@@ -424,7 +429,7 @@ const feedbackController = {
           return res.status(400).json({ error: 'That answer is not on this question.', code: 'link_not_on_edge' });
         }
         const link = linkRow.rows[0];
-        snapshot.answer = { title: link.title, url: link.url, comment: link.comment, publishedOn: link.published_on };
+        snapshot.answer = { title: link.title, url: link.url, comment: link.comment, publishedOn: link.published_on, publisher: link.publisher };
         resolvedLinkId = lid;
       }
 

@@ -24,6 +24,7 @@ const CardAnswerSection = ({
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [publishedOn, setPublishedOn] = useState('');
+  const [publisher, setPublisher] = useState('');
   const [affirmed, setAffirmed] = useState(false);
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +80,7 @@ const CardAnswerSection = ({
 
   const resetForm = () => {
     setShowForm(false);
-    setUrl(''); setTitle(''); setComment(''); setPublishedOn('');
+    setUrl(''); setTitle(''); setComment(''); setPublishedOn(''); setPublisher('');
     setAffirmed(false); setFormError(null); setSubmitting(false);
     setPreviewResult(null); setPreviewError(false); setPreviewLoading(false);
     setUnsafeUrl(false); setUnsafeUrlValue('');
@@ -93,10 +94,11 @@ const CardAnswerSection = ({
     if (!trimmed) { setFormError('A URL is required.'); return; }
     if (!/^https?:\/\/.+/i.test(trimmed)) { setFormError('URL must start with http:// or https://'); return; }
     if (!publishedOn) { setFormError('A publication date is required.'); return; }
+    if (!publisher.trim()) { setFormError('A publication venue is required.'); return; }
     setFormError(null);
     setSubmitting(true);
     try {
-      await votesAPI.addWebLink(edgeId, trimmed, title.trim() || undefined, comment.trim() || undefined, publishedOn);
+      await votesAPI.addWebLink(edgeId, trimmed, title.trim() || undefined, comment.trim() || undefined, publishedOn, publisher.trim());
       resetForm();
       if (onChanged) onChanged();
     } catch (err) {
@@ -162,7 +164,19 @@ const CardAnswerSection = ({
                 ) : (
                   <span style={styles.answerTitle}>{a.title}</span>
                 )}
-                {canEdit ? (
+              </div>
+              {canEdit ? (
+                <div style={styles.answerMetaEdit}>
+                  <EditableField
+                    value={a.publisher || ''}
+                    onSave={(v) => handleEditField(a.id, { publisher: v })}
+                    placeholder="Journal, book, or outlet"
+                    inputStyle={{ fontSize: '12px', width: '100%', fontFamily: '"EB Garamond", Georgia, serif' }}
+                    displayStyle={styles.answerDate}
+                  >
+                    {a.publisher || 'set publication'}
+                  </EditableField>
+                  <span style={styles.answerMetaSep}>·</span>
                   <EditableField
                     value={a.publishedOn || ''}
                     type="date"
@@ -172,10 +186,14 @@ const CardAnswerSection = ({
                   >
                     {a.publishedOn || 'set date'}
                   </EditableField>
-                ) : (
-                  a.publishedOn && <span style={styles.answerDate}>{a.publishedOn}</span>
-                )}
-              </div>
+                </div>
+              ) : (
+                (a.publisher || a.publishedOn) && (
+                  <div style={styles.answerDate}>
+                    {[a.publisher, a.publishedOn].filter(Boolean).join(' · ')}
+                  </div>
+                )
+              )}
               {canEdit && (
                 <div style={styles.answerUrlRow}>
                   <span style={styles.answerUrlLabel}>URL </span>
@@ -269,15 +287,27 @@ const CardAnswerSection = ({
             style={styles.textarea}
             rows={2}
           />
-          <label style={styles.dateLabel}>
-            <span style={styles.dateLabelText}>Publication date</span>
-            <input
-              type="date"
-              value={publishedOn}
-              onChange={(e) => { setPublishedOn(e.target.value); setFormError(null); }}
-              style={styles.dateInput}
-            />
-          </label>
+          <div style={styles.metaRow}>
+            <label style={styles.dateLabel}>
+              <span style={styles.dateLabelText}>Published in</span>
+              <input
+                type="text"
+                value={publisher}
+                onChange={(e) => { setPublisher(e.target.value); setFormError(null); }}
+                placeholder="Journal, book, or outlet"
+                style={styles.publisherInput}
+              />
+            </label>
+            <label style={styles.dateLabel}>
+              <span style={styles.dateLabelText}>Publication date</span>
+              <input
+                type="date"
+                value={publishedOn}
+                onChange={(e) => { setPublishedOn(e.target.value); setFormError(null); }}
+                style={styles.dateInput}
+              />
+            </label>
+          </div>
           {formError && <div style={styles.formError}>{formError}</div>}
           <label style={styles.affirmLabel}>
             <input type="checkbox" checked={affirmed} onChange={(e) => setAffirmed(e.target.checked)} style={styles.affirmCheckbox} />
@@ -310,7 +340,9 @@ const styles = {
   answerRow: { transition: 'background-color 0.2s', borderRadius: '3px' },
   answerTopRow: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' },
   answerTitle: { fontSize: '14px', color: '#333', textDecoration: 'underline', fontFamily: FONT, overflowWrap: 'anywhere', wordBreak: 'break-word' },
-  answerDate: { fontSize: '12px', color: '#888', fontFamily: FONT, flexShrink: 0 },
+  answerDate: { fontSize: '12px', color: '#888', fontFamily: FONT, marginTop: '2px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
+  answerMetaEdit: { display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px', flexWrap: 'wrap' },
+  answerMetaSep: { fontSize: '12px', color: '#aaa', fontFamily: FONT },
   answerComment: { fontSize: '13px', color: '#555', fontFamily: FONT, lineHeight: 1.4, marginTop: '3px', overflowWrap: 'anywhere', wordBreak: 'break-word' },
   answerUrlRow: { display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '3px' },
   answerUrlLabel: { fontSize: '11px', color: '#999', fontFamily: FONT, flexShrink: 0 },
@@ -327,9 +359,11 @@ const styles = {
   form: { marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' },
   input: { width: '100%', fontFamily: FONT, fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', outline: 'none', boxSizing: 'border-box' },
   textarea: { width: '100%', fontFamily: FONT, fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '6px 8px', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+  metaRow: { display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' },
   dateLabel: { display: 'flex', alignItems: 'center', gap: '8px' },
-  dateLabelText: { fontSize: '12px', color: '#666', fontFamily: FONT },
+  dateLabelText: { fontSize: '12px', color: '#666', fontFamily: FONT, flexShrink: 0 },
   dateInput: { fontFamily: FONT, fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '5px 8px', outline: 'none' },
+  publisherInput: { fontFamily: FONT, fontSize: '13px', color: '#333', backgroundColor: '#faf9f6', border: '1px solid #e0d9cf', borderRadius: '3px', padding: '5px 8px', outline: 'none', minWidth: '160px' },
   formError: { fontSize: '12px', color: '#c44', fontFamily: FONT },
   unsafeUrlError: { fontSize: '12px', color: '#c44', fontFamily: FONT, backgroundColor: '#fdf0f0', padding: '8px 10px', borderRadius: '3px', lineHeight: 1.4 },
   previewStatus: { fontSize: '11px', color: '#999', fontFamily: FONT },

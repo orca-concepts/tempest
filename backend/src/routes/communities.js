@@ -9,6 +9,7 @@ const { optionalAuth } = require('../middleware/auth');
 router.get('/', optionalAuth, communitiesController.listCommunities);
 // Owner management (Phase 72a) — registered before the `/:slug` catch-all GET is
 // irrelevant (these are POST), but kept grouped for clarity.
+router.post('/:id/rename', authenticateToken, communitiesController.renameCommunity);
 router.post('/:id/owners/add', authenticateToken, communitiesController.addOwner);
 router.post('/:id/owners/remove', authenticateToken, communitiesController.removeOwner);
 router.get('/:slug', optionalAuth, communitiesController.getCommunityBySlug);

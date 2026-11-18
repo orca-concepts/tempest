@@ -243,8 +243,10 @@ const GraphViewOverlay = ({
                         >
                           {ans.title || ans.url}
                         </a>
-                        {ans.publishedOn && (
-                          <span style={styles.answerDate}>{ans.publishedOn}</span>
+                        {(ans.publisher || ans.publishedOn) && (
+                          <span style={styles.answerDate}>
+                            {[ans.publisher, ans.publishedOn].filter(Boolean).join(' · ')}
+                          </span>
                         )}
                       </div>
                       {ans.comment && (

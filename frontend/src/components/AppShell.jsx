@@ -1596,10 +1596,11 @@ const AppShell = () => {
         <div style={styles.headerContent}>
           <div style={styles.titleRow}>
             <h1 style={styles.title} onClick={() => navigate('/')} role="button" tabIndex={0}>orca</h1>
+            <button style={{ ...styles.navLink, ...(!infoSlug && !isLegalPage && !isContactPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/')}>Use Orca</button>
             <button style={{ ...styles.navLink, ...(infoSlug === 'thoroughly-conscious-ignorance' ? styles.navLinkActive : {}) }} onClick={() => navigate('/thoroughly-conscious-ignorance')}>Thoroughly Conscious Ignorance</button>
-            <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>What is orca?</button>
+            <button style={{ ...styles.navLink, ...(infoSlug === 'using-orca' ? styles.navLinkActive : {}) }} onClick={() => navigate('/using-orca')}>What is Orca?</button>
             {!isOutreachMode && <button style={{ ...styles.navLink, ...(isLegalPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/legal')}>Legal/Copyright Info</button>}
-            <button style={{ ...styles.navLink, ...(isContactPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/contact')}>Contact</button>
+            <button style={{ ...styles.navLink, ...(isContactPage ? styles.navLinkActive : {}) }} onClick={() => navigate('/contact')}>Contact Me</button>
           </div>
           {isOutreachMode ? null : isGuest ? (
             <div style={styles.userSection}>

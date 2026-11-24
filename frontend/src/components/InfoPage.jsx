@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { pagesAPI } from '../services/api';
 
 const PAGE_TITLES = {
-  'using-orca': 'what is orca?',
+  'using-orca': 'What is Orca?',
   'thoroughly-conscious-ignorance': 'Thoroughly Conscious Ignorance',
 };
 
@@ -28,7 +28,7 @@ const UsingOrcaContent = ({ onImageClick, navigate }) => {
     <div>
 
       <p style={usingOrcaStyles.intro}>
-        orca treats research questions as categories. An open goal question holds together 
+        Orca treats research questions as categories. An open goal question holds together 
         the more concrete questions that pursue it and the linked research that answers them.
       </p>
   
@@ -590,10 +590,10 @@ const InfoPage = ({ slug, onRequestLogin }) => {
             {isEssay && (
               <div style={styles.footerNav}>
                 <button style={styles.footerNavButton} onClick={() => navigate('/')}>
-                  <span style={styles.footerArrow}>←</span> use orca
+                  <span style={styles.footerArrow}>←</span> Use Orca
                 </button>
                 <button style={styles.footerNavButton} onClick={() => navigate('/using-orca')}>
-                  what is orca? <span style={styles.footerArrow}>→</span>
+                  What is Orca? <span style={styles.footerArrow}>→</span>
                 </button>
               </div>
             )}
@@ -601,10 +601,10 @@ const InfoPage = ({ slug, onRequestLogin }) => {
             {isUsingOrca && (
               <div style={styles.footerNavLeft}>
                 <button style={styles.footerNavButton} onClick={() => navigate('/')}>
-                  <span style={styles.footerArrow}>«</span> use orca
+                  <span style={styles.footerArrow}>«</span> Use Orca
                 </button>
                 <button style={styles.footerNavButton} onClick={() => navigate('/thoroughly-conscious-ignorance')}>
-                  <span style={styles.footerArrow}>←</span> thoroughly conscious ignorance
+                  <span style={styles.footerArrow}>←</span> Thoroughly Conscious Ignorance
                 </button>
               </div>
             )}
